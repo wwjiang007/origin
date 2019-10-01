@@ -21,6 +21,7 @@ import (
 	"context"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -32,27 +33,30 @@ import (
 // Text can be at most 1024 characters long.
 // If the content passed to the text API or the image API exceeds the size limits, the API will return an error code
 // that informs about the issue.
-//
-// This API is currently available in:
-//
-// * West US - westus.api.cognitive.microsoft.com
-// * East US 2 - eastus2.api.cognitive.microsoft.com
-// * West Central US - westcentralus.api.cognitive.microsoft.com
-// * West Europe - westeurope.api.cognitive.microsoft.com
-// * Southeast Asia - southeastasia.api.cognitive.microsoft.com .
 type ListManagementTermListsClient struct {
 	BaseClient
 }
 
 // NewListManagementTermListsClient creates an instance of the ListManagementTermListsClient client.
-func NewListManagementTermListsClient(baseURL AzureRegionBaseURL) ListManagementTermListsClient {
-	return ListManagementTermListsClient{New(baseURL)}
+func NewListManagementTermListsClient(endpoint string) ListManagementTermListsClient {
+	return ListManagementTermListsClient{New(endpoint)}
 }
 
 // Create creates a Term List
-//
-// contentType is the content type. body is schema of the body.
+// Parameters:
+// contentType - the content type.
+// body - schema of the body.
 func (client ListManagementTermListsClient) Create(ctx context.Context, contentType string, body Body) (result TermList, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ListManagementTermListsClient.Create")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.CreatePreparer(ctx, contentType, body)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "contentmoderator.ListManagementTermListsClient", "Create", nil, "Failure preparing request")
@@ -77,13 +81,13 @@ func (client ListManagementTermListsClient) Create(ctx context.Context, contentT
 // CreatePreparer prepares the Create request.
 func (client ListManagementTermListsClient) CreatePreparer(ctx context.Context, contentType string, body Body) (*http.Request, error) {
 	urlParameters := map[string]interface{}{
-		"baseUrl": client.BaseURL,
+		"Endpoint": client.Endpoint,
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
-		autorest.WithCustomBaseURL("https://{baseUrl}", urlParameters),
+		autorest.WithCustomBaseURL("{Endpoint}", urlParameters),
 		autorest.WithPath("/contentmoderator/lists/v1.0/termlists"),
 		autorest.WithJSON(body),
 		autorest.WithHeader("Content-Type", autorest.String(contentType)))
@@ -93,8 +97,8 @@ func (client ListManagementTermListsClient) CreatePreparer(ctx context.Context, 
 // CreateSender sends the Create request. The method will close the
 // http.Response Body if it receives an error.
 func (client ListManagementTermListsClient) CreateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateResponder handles the response to the Create request. The method always
@@ -111,9 +115,19 @@ func (client ListManagementTermListsClient) CreateResponder(resp *http.Response)
 }
 
 // Delete deletes term list with the list Id equal to list Id passed.
-//
-// listID is list Id of the image list.
+// Parameters:
+// listID - list Id of the image list.
 func (client ListManagementTermListsClient) Delete(ctx context.Context, listID string) (result String, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ListManagementTermListsClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeletePreparer(ctx, listID)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "contentmoderator.ListManagementTermListsClient", "Delete", nil, "Failure preparing request")
@@ -138,7 +152,7 @@ func (client ListManagementTermListsClient) Delete(ctx context.Context, listID s
 // DeletePreparer prepares the Delete request.
 func (client ListManagementTermListsClient) DeletePreparer(ctx context.Context, listID string) (*http.Request, error) {
 	urlParameters := map[string]interface{}{
-		"baseUrl": client.BaseURL,
+		"Endpoint": client.Endpoint,
 	}
 
 	pathParameters := map[string]interface{}{
@@ -147,7 +161,7 @@ func (client ListManagementTermListsClient) DeletePreparer(ctx context.Context, 
 
 	preparer := autorest.CreatePreparer(
 		autorest.AsDelete(),
-		autorest.WithCustomBaseURL("https://{baseUrl}", urlParameters),
+		autorest.WithCustomBaseURL("{Endpoint}", urlParameters),
 		autorest.WithPathParameters("/contentmoderator/lists/v1.0/termlists/{listId}", pathParameters))
 	return preparer.Prepare((&http.Request{}).WithContext(ctx))
 }
@@ -155,8 +169,8 @@ func (client ListManagementTermListsClient) DeletePreparer(ctx context.Context, 
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client ListManagementTermListsClient) DeleteSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
@@ -174,6 +188,16 @@ func (client ListManagementTermListsClient) DeleteResponder(resp *http.Response)
 
 // GetAllTermLists gets all the Term Lists
 func (client ListManagementTermListsClient) GetAllTermLists(ctx context.Context) (result ListTermList, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ListManagementTermListsClient.GetAllTermLists")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetAllTermListsPreparer(ctx)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "contentmoderator.ListManagementTermListsClient", "GetAllTermLists", nil, "Failure preparing request")
@@ -198,12 +222,12 @@ func (client ListManagementTermListsClient) GetAllTermLists(ctx context.Context)
 // GetAllTermListsPreparer prepares the GetAllTermLists request.
 func (client ListManagementTermListsClient) GetAllTermListsPreparer(ctx context.Context) (*http.Request, error) {
 	urlParameters := map[string]interface{}{
-		"baseUrl": client.BaseURL,
+		"Endpoint": client.Endpoint,
 	}
 
 	preparer := autorest.CreatePreparer(
 		autorest.AsGet(),
-		autorest.WithCustomBaseURL("https://{baseUrl}", urlParameters),
+		autorest.WithCustomBaseURL("{Endpoint}", urlParameters),
 		autorest.WithPath("/contentmoderator/lists/v1.0/termlists"))
 	return preparer.Prepare((&http.Request{}).WithContext(ctx))
 }
@@ -211,8 +235,8 @@ func (client ListManagementTermListsClient) GetAllTermListsPreparer(ctx context.
 // GetAllTermListsSender sends the GetAllTermLists request. The method will close the
 // http.Response Body if it receives an error.
 func (client ListManagementTermListsClient) GetAllTermListsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetAllTermListsResponder handles the response to the GetAllTermLists request. The method always
@@ -229,9 +253,19 @@ func (client ListManagementTermListsClient) GetAllTermListsResponder(resp *http.
 }
 
 // GetDetails returns list Id details of the term list with list Id equal to list Id passed.
-//
-// listID is list Id of the image list.
+// Parameters:
+// listID - list Id of the image list.
 func (client ListManagementTermListsClient) GetDetails(ctx context.Context, listID string) (result TermList, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ListManagementTermListsClient.GetDetails")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetDetailsPreparer(ctx, listID)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "contentmoderator.ListManagementTermListsClient", "GetDetails", nil, "Failure preparing request")
@@ -256,7 +290,7 @@ func (client ListManagementTermListsClient) GetDetails(ctx context.Context, list
 // GetDetailsPreparer prepares the GetDetails request.
 func (client ListManagementTermListsClient) GetDetailsPreparer(ctx context.Context, listID string) (*http.Request, error) {
 	urlParameters := map[string]interface{}{
-		"baseUrl": client.BaseURL,
+		"Endpoint": client.Endpoint,
 	}
 
 	pathParameters := map[string]interface{}{
@@ -265,7 +299,7 @@ func (client ListManagementTermListsClient) GetDetailsPreparer(ctx context.Conte
 
 	preparer := autorest.CreatePreparer(
 		autorest.AsGet(),
-		autorest.WithCustomBaseURL("https://{baseUrl}", urlParameters),
+		autorest.WithCustomBaseURL("{Endpoint}", urlParameters),
 		autorest.WithPathParameters("/contentmoderator/lists/v1.0/termlists/{listId}", pathParameters))
 	return preparer.Prepare((&http.Request{}).WithContext(ctx))
 }
@@ -273,8 +307,8 @@ func (client ListManagementTermListsClient) GetDetailsPreparer(ctx context.Conte
 // GetDetailsSender sends the GetDetails request. The method will close the
 // http.Response Body if it receives an error.
 func (client ListManagementTermListsClient) GetDetailsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetDetailsResponder handles the response to the GetDetails request. The method always
@@ -291,9 +325,20 @@ func (client ListManagementTermListsClient) GetDetailsResponder(resp *http.Respo
 }
 
 // RefreshIndexMethod refreshes the index of the list with list Id equal to list ID passed.
-//
-// listID is list Id of the image list. language is language of the terms.
+// Parameters:
+// listID - list Id of the image list.
+// language - language of the terms.
 func (client ListManagementTermListsClient) RefreshIndexMethod(ctx context.Context, listID string, language string) (result RefreshIndex, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ListManagementTermListsClient.RefreshIndexMethod")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.RefreshIndexMethodPreparer(ctx, listID, language)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "contentmoderator.ListManagementTermListsClient", "RefreshIndexMethod", nil, "Failure preparing request")
@@ -318,7 +363,7 @@ func (client ListManagementTermListsClient) RefreshIndexMethod(ctx context.Conte
 // RefreshIndexMethodPreparer prepares the RefreshIndexMethod request.
 func (client ListManagementTermListsClient) RefreshIndexMethodPreparer(ctx context.Context, listID string, language string) (*http.Request, error) {
 	urlParameters := map[string]interface{}{
-		"baseUrl": client.BaseURL,
+		"Endpoint": client.Endpoint,
 	}
 
 	pathParameters := map[string]interface{}{
@@ -331,7 +376,7 @@ func (client ListManagementTermListsClient) RefreshIndexMethodPreparer(ctx conte
 
 	preparer := autorest.CreatePreparer(
 		autorest.AsPost(),
-		autorest.WithCustomBaseURL("https://{baseUrl}", urlParameters),
+		autorest.WithCustomBaseURL("{Endpoint}", urlParameters),
 		autorest.WithPathParameters("/contentmoderator/lists/v1.0/termlists/{listId}/RefreshIndex", pathParameters),
 		autorest.WithQueryParameters(queryParameters))
 	return preparer.Prepare((&http.Request{}).WithContext(ctx))
@@ -340,8 +385,8 @@ func (client ListManagementTermListsClient) RefreshIndexMethodPreparer(ctx conte
 // RefreshIndexMethodSender sends the RefreshIndexMethod request. The method will close the
 // http.Response Body if it receives an error.
 func (client ListManagementTermListsClient) RefreshIndexMethodSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // RefreshIndexMethodResponder handles the response to the RefreshIndexMethod request. The method always
@@ -358,9 +403,21 @@ func (client ListManagementTermListsClient) RefreshIndexMethodResponder(resp *ht
 }
 
 // Update updates an Term List.
-//
-// listID is list Id of the image list. contentType is the content type. body is schema of the body.
+// Parameters:
+// listID - list Id of the image list.
+// contentType - the content type.
+// body - schema of the body.
 func (client ListManagementTermListsClient) Update(ctx context.Context, listID string, contentType string, body Body) (result TermList, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ListManagementTermListsClient.Update")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UpdatePreparer(ctx, listID, contentType, body)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "contentmoderator.ListManagementTermListsClient", "Update", nil, "Failure preparing request")
@@ -385,7 +442,7 @@ func (client ListManagementTermListsClient) Update(ctx context.Context, listID s
 // UpdatePreparer prepares the Update request.
 func (client ListManagementTermListsClient) UpdatePreparer(ctx context.Context, listID string, contentType string, body Body) (*http.Request, error) {
 	urlParameters := map[string]interface{}{
-		"baseUrl": client.BaseURL,
+		"Endpoint": client.Endpoint,
 	}
 
 	pathParameters := map[string]interface{}{
@@ -393,9 +450,9 @@ func (client ListManagementTermListsClient) UpdatePreparer(ctx context.Context, 
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
-		autorest.WithCustomBaseURL("https://{baseUrl}", urlParameters),
+		autorest.WithCustomBaseURL("{Endpoint}", urlParameters),
 		autorest.WithPathParameters("/contentmoderator/lists/v1.0/termlists/{listId}", pathParameters),
 		autorest.WithJSON(body),
 		autorest.WithHeader("Content-Type", autorest.String(contentType)))
@@ -405,8 +462,8 @@ func (client ListManagementTermListsClient) UpdatePreparer(ctx context.Context, 
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client ListManagementTermListsClient) UpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateResponder handles the response to the Update request. The method always

@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -44,10 +45,21 @@ func NewADCCatalogsClientWithBaseURI(baseURI string, subscriptionID string, cata
 // CreateOrUpdate the Create Azure Data Catalog service operation creates a new data catalog service with the specified
 // parameters. If the specific service already exists, then any patchable properties will be updated and any immutable
 // properties will remain unchanged.
-//
-// resourceGroupName is the name of the resource group within the user's subscription. The name is case
-// insensitive. properties is properties supplied to the Create or Update a data catalog.
+// Parameters:
+// resourceGroupName - the name of the resource group within the user's subscription. The name is case
+// insensitive.
+// properties - properties supplied to the Create or Update a data catalog.
 func (client ADCCatalogsClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, properties ADCCatalog) (result ADCCatalog, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ADCCatalogsClient.CreateOrUpdate")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -91,7 +103,7 @@ func (client ADCCatalogsClient) CreateOrUpdatePreparer(ctx context.Context, reso
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.DataCatalog/catalogs/{catalogName}", pathParameters),
@@ -103,8 +115,8 @@ func (client ADCCatalogsClient) CreateOrUpdatePreparer(ctx context.Context, reso
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client ADCCatalogsClient) CreateOrUpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateOrUpdateResponder handles the response to the CreateOrUpdate request. The method always
@@ -121,10 +133,20 @@ func (client ADCCatalogsClient) CreateOrUpdateResponder(resp *http.Response) (re
 }
 
 // Delete the Delete Azure Data Catalog Service operation deletes an existing data catalog.
-//
-// resourceGroupName is the name of the resource group within the user's subscription. The name is case
+// Parameters:
+// resourceGroupName - the name of the resource group within the user's subscription. The name is case
 // insensitive.
 func (client ADCCatalogsClient) Delete(ctx context.Context, resourceGroupName string) (result ADCCatalogsDeleteFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ADCCatalogsClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -172,15 +194,13 @@ func (client ADCCatalogsClient) DeletePreparer(ctx context.Context, resourceGrou
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client ADCCatalogsClient) DeleteSender(req *http.Request) (future ADCCatalogsDeleteFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -197,10 +217,20 @@ func (client ADCCatalogsClient) DeleteResponder(resp *http.Response) (result aut
 }
 
 // Get the Get Azure Data Catalog Service operation retrieves a json representation of the data catalog.
-//
-// resourceGroupName is the name of the resource group within the user's subscription. The name is case
+// Parameters:
+// resourceGroupName - the name of the resource group within the user's subscription. The name is case
 // insensitive.
 func (client ADCCatalogsClient) Get(ctx context.Context, resourceGroupName string) (result ADCCatalog, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ADCCatalogsClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -254,8 +284,8 @@ func (client ADCCatalogsClient) GetPreparer(ctx context.Context, resourceGroupNa
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client ADCCatalogsClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -273,10 +303,20 @@ func (client ADCCatalogsClient) GetResponder(resp *http.Response) (result ADCCat
 
 // ListtByResourceGroup the List catalogs in Resource Group operation lists all the Azure Data Catalogs available under
 // the given resource group.
-//
-// resourceGroupName is the name of the resource group within the user's subscription. The name is case
+// Parameters:
+// resourceGroupName - the name of the resource group within the user's subscription. The name is case
 // insensitive.
 func (client ADCCatalogsClient) ListtByResourceGroup(ctx context.Context, resourceGroupName string) (result ADCCatalogsListResult, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ADCCatalogsClient.ListtByResourceGroup")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -329,8 +369,8 @@ func (client ADCCatalogsClient) ListtByResourceGroupPreparer(ctx context.Context
 // ListtByResourceGroupSender sends the ListtByResourceGroup request. The method will close the
 // http.Response Body if it receives an error.
 func (client ADCCatalogsClient) ListtByResourceGroupSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListtByResourceGroupResponder handles the response to the ListtByResourceGroup request. The method always
@@ -348,10 +388,21 @@ func (client ADCCatalogsClient) ListtByResourceGroupResponder(resp *http.Respons
 
 // Update the Update Azure Data Catalog Service operation can be used to update the existing deployment. The update
 // call only supports the properties listed in the PATCH body.
-//
-// resourceGroupName is the name of the resource group within the user's subscription. The name is case
-// insensitive. properties is properties supplied to the Update a data catalog.
+// Parameters:
+// resourceGroupName - the name of the resource group within the user's subscription. The name is case
+// insensitive.
+// properties - properties supplied to the Update a data catalog.
 func (client ADCCatalogsClient) Update(ctx context.Context, resourceGroupName string, properties ADCCatalog) (result ADCCatalog, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ADCCatalogsClient.Update")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -395,7 +446,7 @@ func (client ADCCatalogsClient) UpdatePreparer(ctx context.Context, resourceGrou
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.DataCatalog/catalogs/{catalogName}", pathParameters),
@@ -407,8 +458,8 @@ func (client ADCCatalogsClient) UpdatePreparer(ctx context.Context, resourceGrou
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client ADCCatalogsClient) UpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateResponder handles the response to the Update request. The method always

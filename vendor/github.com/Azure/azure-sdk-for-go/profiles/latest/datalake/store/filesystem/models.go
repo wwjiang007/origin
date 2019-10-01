@@ -1,6 +1,6 @@
 // +build go1.9
 
-// Copyright 2018 Microsoft Corporation
+// Copyright 2019 Microsoft Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,21 +24,6 @@ import original "github.com/Azure/azure-sdk-for-go/services/datalake/store/2016-
 const (
 	DefaultAdlsFileSystemDNSSuffix = original.DefaultAdlsFileSystemDNSSuffix
 )
-
-type BaseClient = original.BaseClient
-
-func New() BaseClient {
-	return original.New()
-}
-func NewWithoutDefaults(adlsFileSystemDNSSuffix string) BaseClient {
-	return original.NewWithoutDefaults(adlsFileSystemDNSSuffix)
-}
-
-type Client = original.Client
-
-func NewClient() Client {
-	return original.NewClient()
-}
 
 type AppendModeType = original.AppendModeType
 
@@ -93,23 +78,49 @@ type AdlsBadOffsetException = original.AdlsBadOffsetException
 type AdlsError = original.AdlsError
 type AdlsFileAlreadyExistsException = original.AdlsFileAlreadyExistsException
 type AdlsFileNotFoundException = original.AdlsFileNotFoundException
-type AdlsIllegalArgumentException = original.AdlsIllegalArgumentException
 type AdlsIOException = original.AdlsIOException
-type BasicAdlsRemoteException = original.BasicAdlsRemoteException
+type AdlsIllegalArgumentException = original.AdlsIllegalArgumentException
 type AdlsRemoteException = original.AdlsRemoteException
 type AdlsRuntimeException = original.AdlsRuntimeException
 type AdlsSecurityException = original.AdlsSecurityException
 type AdlsThrottledException = original.AdlsThrottledException
 type AdlsUnsupportedOperationException = original.AdlsUnsupportedOperationException
+type BaseClient = original.BaseClient
+type BasicAdlsRemoteException = original.BasicAdlsRemoteException
+type Client = original.Client
 type ContentSummary = original.ContentSummary
 type ContentSummaryResult = original.ContentSummaryResult
 type FileOperationResult = original.FileOperationResult
-type FileStatuses = original.FileStatuses
-type FileStatusesResult = original.FileStatusesResult
 type FileStatusProperties = original.FileStatusProperties
 type FileStatusResult = original.FileStatusResult
+type FileStatuses = original.FileStatuses
+type FileStatusesResult = original.FileStatusesResult
 type ReadCloser = original.ReadCloser
 
+func New() BaseClient {
+	return original.New()
+}
+func NewClient() Client {
+	return original.NewClient()
+}
+func NewWithoutDefaults(adlsFileSystemDNSSuffix string) BaseClient {
+	return original.NewWithoutDefaults(adlsFileSystemDNSSuffix)
+}
+func PossibleAppendModeTypeValues() []AppendModeType {
+	return original.PossibleAppendModeTypeValues()
+}
+func PossibleExceptionValues() []Exception {
+	return original.PossibleExceptionValues()
+}
+func PossibleExpiryOptionTypeValues() []ExpiryOptionType {
+	return original.PossibleExpiryOptionTypeValues()
+}
+func PossibleFileTypeValues() []FileType {
+	return original.PossibleFileTypeValues()
+}
+func PossibleSyncFlagValues() []SyncFlag {
+	return original.PossibleSyncFlagValues()
+}
 func UserAgent() string {
 	return original.UserAgent() + " profiles/latest"
 }

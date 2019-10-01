@@ -22,134 +22,77 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
-// QueryClient is the operational Insights Data Client
+// QueryClient is the log Analytics Data Plane Client
 type QueryClient struct {
 	BaseClient
 }
 
 // NewQueryClient creates an instance of the QueryClient client.
-func NewQueryClient(workspaceID string) QueryClient {
-	return NewQueryClientWithBaseURI(DefaultBaseURI, workspaceID)
+func NewQueryClient() QueryClient {
+	return NewQueryClientWithBaseURI(DefaultBaseURI)
 }
 
 // NewQueryClientWithBaseURI creates an instance of the QueryClient client.
-func NewQueryClientWithBaseURI(baseURI string, workspaceID string) QueryClient {
-	return QueryClient{NewWithBaseURI(baseURI, workspaceID)}
+func NewQueryClientWithBaseURI(baseURI string) QueryClient {
+	return QueryClient{NewWithBaseURI(baseURI)}
 }
 
-// Get executes an Analytics query for data
-//
-// query is the Analytics query. Learn more about the [Analytics query
-// syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/) timespan is
-// optional. The timespan over which to query data. This is an ISO8601 time period value.  This timespan is applied
-// in addition to any that are specified in the query expression.
-func (client QueryClient) Get(ctx context.Context, query string, timespan *string) (result QueryResults, err error) {
-	req, err := client.GetPreparer(ctx, query, timespan)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "operationalinsights.QueryClient", "Get", nil, "Failure preparing request")
-		return
-	}
-
-	resp, err := client.GetSender(req)
-	if err != nil {
-		result.Response = autorest.Response{Response: resp}
-		err = autorest.NewErrorWithError(err, "operationalinsights.QueryClient", "Get", resp, "Failure sending request")
-		return
-	}
-
-	result, err = client.GetResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "operationalinsights.QueryClient", "Get", resp, "Failure responding to request")
-	}
-
-	return
-}
-
-// GetPreparer prepares the Get request.
-func (client QueryClient) GetPreparer(ctx context.Context, query string, timespan *string) (*http.Request, error) {
-	pathParameters := map[string]interface{}{
-		"workspaceId": autorest.Encode("path", client.WorkspaceID),
-	}
-
-	queryParameters := map[string]interface{}{
-		"query": autorest.Encode("query", query),
-	}
-	if timespan != nil {
-		queryParameters["timespan"] = autorest.Encode("query", *timespan)
-	}
-
-	preparer := autorest.CreatePreparer(
-		autorest.AsGet(),
-		autorest.WithBaseURL(client.BaseURI),
-		autorest.WithPathParameters("/workspaces/{workspaceId}/query", pathParameters),
-		autorest.WithQueryParameters(queryParameters))
-	return preparer.Prepare((&http.Request{}).WithContext(ctx))
-}
-
-// GetSender sends the Get request. The method will close the
-// http.Response Body if it receives an error.
-func (client QueryClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-}
-
-// GetResponder handles the response to the Get request. The method always
-// closes the http.Response Body.
-func (client QueryClient) GetResponder(resp *http.Response) (result QueryResults, err error) {
-	err = autorest.Respond(
-		resp,
-		client.ByInspecting(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK),
-		autorest.ByUnmarshallingJSON(&result),
-		autorest.ByClosing())
-	result.Response = autorest.Response{Response: resp}
-	return
-}
-
-// Post executes an Analytics query for data. [Here](/documentation/2-Using-the-API/Query) is an example for using POST
-// with an Analytics query.
-//
-// body is the Analytics query. Learn more about the [Analytics query
+// Execute executes an Analytics query for data. [Here](https://dev.loganalytics.io/documentation/Using-the-API) is an
+// example for using POST with an Analytics query.
+// Parameters:
+// workspaceID - ID of the workspace. This is Workspace ID from the Properties blade in the Azure portal.
+// body - the Analytics query. Learn more about the [Analytics query
 // syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/)
-func (client QueryClient) Post(ctx context.Context, body QueryBody) (result QueryResults, err error) {
+func (client QueryClient) Execute(ctx context.Context, workspaceID string, body QueryBody) (result QueryResults, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/QueryClient.Execute")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: body,
 			Constraints: []validation.Constraint{{Target: "body.Query", Name: validation.Null, Rule: true, Chain: nil}}}}); err != nil {
-		return result, validation.NewError("operationalinsights.QueryClient", "Post", err.Error())
+		return result, validation.NewError("operationalinsights.QueryClient", "Execute", err.Error())
 	}
 
-	req, err := client.PostPreparer(ctx, body)
+	req, err := client.ExecutePreparer(ctx, workspaceID, body)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "operationalinsights.QueryClient", "Post", nil, "Failure preparing request")
+		err = autorest.NewErrorWithError(err, "operationalinsights.QueryClient", "Execute", nil, "Failure preparing request")
 		return
 	}
 
-	resp, err := client.PostSender(req)
+	resp, err := client.ExecuteSender(req)
 	if err != nil {
 		result.Response = autorest.Response{Response: resp}
-		err = autorest.NewErrorWithError(err, "operationalinsights.QueryClient", "Post", resp, "Failure sending request")
+		err = autorest.NewErrorWithError(err, "operationalinsights.QueryClient", "Execute", resp, "Failure sending request")
 		return
 	}
 
-	result, err = client.PostResponder(resp)
+	result, err = client.ExecuteResponder(resp)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "operationalinsights.QueryClient", "Post", resp, "Failure responding to request")
+		err = autorest.NewErrorWithError(err, "operationalinsights.QueryClient", "Execute", resp, "Failure responding to request")
 	}
 
 	return
 }
 
-// PostPreparer prepares the Post request.
-func (client QueryClient) PostPreparer(ctx context.Context, body QueryBody) (*http.Request, error) {
+// ExecutePreparer prepares the Execute request.
+func (client QueryClient) ExecutePreparer(ctx context.Context, workspaceID string, body QueryBody) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
-		"workspaceId": autorest.Encode("path", client.WorkspaceID),
+		"workspaceId": autorest.Encode("path", workspaceID),
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/workspaces/{workspaceId}/query", pathParameters),
@@ -157,16 +100,16 @@ func (client QueryClient) PostPreparer(ctx context.Context, body QueryBody) (*ht
 	return preparer.Prepare((&http.Request{}).WithContext(ctx))
 }
 
-// PostSender sends the Post request. The method will close the
+// ExecuteSender sends the Execute request. The method will close the
 // http.Response Body if it receives an error.
-func (client QueryClient) PostSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+func (client QueryClient) ExecuteSender(req *http.Request) (*http.Response, error) {
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
-// PostResponder handles the response to the Post request. The method always
+// ExecuteResponder handles the response to the Execute request. The method always
 // closes the http.Response Body.
-func (client QueryClient) PostResponder(resp *http.Response) (result QueryResults, err error) {
+func (client QueryClient) ExecuteResponder(resp *http.Response) (result QueryResults, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),

@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -41,11 +42,23 @@ func NewApplicationPackageClientWithBaseURI(baseURI string, subscriptionID strin
 }
 
 // Activate activates the specified application package.
-//
-// resourceGroupName is the name of the resource group that contains the Batch account. accountName is the name of
-// the Batch account. applicationID is the ID of the application. version is the version of the application to
-// activate. parameters is the parameters for the request.
+// Parameters:
+// resourceGroupName - the name of the resource group that contains the Batch account.
+// accountName - the name of the Batch account.
+// applicationID - the ID of the application.
+// version - the version of the application to activate.
+// parameters - the parameters for the request.
 func (client ApplicationPackageClient) Activate(ctx context.Context, resourceGroupName string, accountName string, applicationID string, version string, parameters ActivateApplicationPackageParameters) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ApplicationPackageClient.Activate")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.Pattern, Rule: `^[-\w\._]+$`, Chain: nil}}},
@@ -95,7 +108,7 @@ func (client ApplicationPackageClient) ActivatePreparer(ctx context.Context, res
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Batch/batchAccounts/{accountName}/applications/{applicationId}/versions/{version}/activate", pathParameters),
@@ -107,8 +120,8 @@ func (client ApplicationPackageClient) ActivatePreparer(ctx context.Context, res
 // ActivateSender sends the Activate request. The method will close the
 // http.Response Body if it receives an error.
 func (client ApplicationPackageClient) ActivateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ActivateResponder handles the response to the Activate request. The method always
@@ -124,10 +137,22 @@ func (client ApplicationPackageClient) ActivateResponder(resp *http.Response) (r
 }
 
 // Create creates an application package record.
-//
-// resourceGroupName is the name of the resource group that contains the Batch account. accountName is the name of
-// the Batch account. applicationID is the ID of the application. version is the version of the application.
+// Parameters:
+// resourceGroupName - the name of the resource group that contains the Batch account.
+// accountName - the name of the Batch account.
+// applicationID - the ID of the application.
+// version - the version of the application.
 func (client ApplicationPackageClient) Create(ctx context.Context, resourceGroupName string, accountName string, applicationID string, version string) (result ApplicationPackage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ApplicationPackageClient.Create")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.Pattern, Rule: `^[-\w\._]+$`, Chain: nil}}},
@@ -185,8 +210,8 @@ func (client ApplicationPackageClient) CreatePreparer(ctx context.Context, resou
 // CreateSender sends the Create request. The method will close the
 // http.Response Body if it receives an error.
 func (client ApplicationPackageClient) CreateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateResponder handles the response to the Create request. The method always
@@ -203,11 +228,22 @@ func (client ApplicationPackageClient) CreateResponder(resp *http.Response) (res
 }
 
 // Delete deletes an application package record and its associated binary file.
-//
-// resourceGroupName is the name of the resource group that contains the Batch account. accountName is the name of
-// the Batch account. applicationID is the ID of the application. version is the version of the application to
-// delete.
+// Parameters:
+// resourceGroupName - the name of the resource group that contains the Batch account.
+// accountName - the name of the Batch account.
+// applicationID - the ID of the application.
+// version - the version of the application to delete.
 func (client ApplicationPackageClient) Delete(ctx context.Context, resourceGroupName string, accountName string, applicationID string, version string) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ApplicationPackageClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.Pattern, Rule: `^[-\w\._]+$`, Chain: nil}}},
@@ -265,8 +301,8 @@ func (client ApplicationPackageClient) DeletePreparer(ctx context.Context, resou
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client ApplicationPackageClient) DeleteSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
@@ -282,10 +318,22 @@ func (client ApplicationPackageClient) DeleteResponder(resp *http.Response) (res
 }
 
 // Get gets information about the specified application package.
-//
-// resourceGroupName is the name of the resource group that contains the Batch account. accountName is the name of
-// the Batch account. applicationID is the ID of the application. version is the version of the application.
+// Parameters:
+// resourceGroupName - the name of the resource group that contains the Batch account.
+// accountName - the name of the Batch account.
+// applicationID - the ID of the application.
+// version - the version of the application.
 func (client ApplicationPackageClient) Get(ctx context.Context, resourceGroupName string, accountName string, applicationID string, version string) (result ApplicationPackage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ApplicationPackageClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.Pattern, Rule: `^[-\w\._]+$`, Chain: nil}}},
@@ -343,8 +391,8 @@ func (client ApplicationPackageClient) GetPreparer(ctx context.Context, resource
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client ApplicationPackageClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always

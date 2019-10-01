@@ -18,13 +18,18 @@ package network
 // Changes may cause incorrect behavior and will be lost if the code is regenerated.
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
+
+// The package's fully qualified name.
+const fqdn = "github.com/Azure/azure-sdk-for-go/services/network/mgmt/2017-03-01/network"
 
 // Access enumerates the values for access.
 type Access string
@@ -35,6 +40,11 @@ const (
 	// Deny ...
 	Deny Access = "Deny"
 )
+
+// PossibleAccessValues returns an array of possible values for the Access const type.
+func PossibleAccessValues() []Access {
+	return []Access{Allow, Deny}
+}
 
 // ApplicationGatewayBackendHealthServerHealth enumerates the values for application gateway backend health
 // server health.
@@ -53,6 +63,11 @@ const (
 	Up ApplicationGatewayBackendHealthServerHealth = "Up"
 )
 
+// PossibleApplicationGatewayBackendHealthServerHealthValues returns an array of possible values for the ApplicationGatewayBackendHealthServerHealth const type.
+func PossibleApplicationGatewayBackendHealthServerHealthValues() []ApplicationGatewayBackendHealthServerHealth {
+	return []ApplicationGatewayBackendHealthServerHealth{Down, Draining, Partial, Unknown, Up}
+}
+
 // ApplicationGatewayCookieBasedAffinity enumerates the values for application gateway cookie based affinity.
 type ApplicationGatewayCookieBasedAffinity string
 
@@ -63,6 +78,11 @@ const (
 	Enabled ApplicationGatewayCookieBasedAffinity = "Enabled"
 )
 
+// PossibleApplicationGatewayCookieBasedAffinityValues returns an array of possible values for the ApplicationGatewayCookieBasedAffinity const type.
+func PossibleApplicationGatewayCookieBasedAffinityValues() []ApplicationGatewayCookieBasedAffinity {
+	return []ApplicationGatewayCookieBasedAffinity{Disabled, Enabled}
+}
+
 // ApplicationGatewayFirewallMode enumerates the values for application gateway firewall mode.
 type ApplicationGatewayFirewallMode string
 
@@ -72,6 +92,11 @@ const (
 	// Prevention ...
 	Prevention ApplicationGatewayFirewallMode = "Prevention"
 )
+
+// PossibleApplicationGatewayFirewallModeValues returns an array of possible values for the ApplicationGatewayFirewallMode const type.
+func PossibleApplicationGatewayFirewallModeValues() []ApplicationGatewayFirewallMode {
+	return []ApplicationGatewayFirewallMode{Detection, Prevention}
+}
 
 // ApplicationGatewayOperationalState enumerates the values for application gateway operational state.
 type ApplicationGatewayOperationalState string
@@ -87,6 +112,11 @@ const (
 	Stopping ApplicationGatewayOperationalState = "Stopping"
 )
 
+// PossibleApplicationGatewayOperationalStateValues returns an array of possible values for the ApplicationGatewayOperationalState const type.
+func PossibleApplicationGatewayOperationalStateValues() []ApplicationGatewayOperationalState {
+	return []ApplicationGatewayOperationalState{Running, Starting, Stopped, Stopping}
+}
+
 // ApplicationGatewayProtocol enumerates the values for application gateway protocol.
 type ApplicationGatewayProtocol string
 
@@ -96,6 +126,11 @@ const (
 	// HTTPS ...
 	HTTPS ApplicationGatewayProtocol = "Https"
 )
+
+// PossibleApplicationGatewayProtocolValues returns an array of possible values for the ApplicationGatewayProtocol const type.
+func PossibleApplicationGatewayProtocolValues() []ApplicationGatewayProtocol {
+	return []ApplicationGatewayProtocol{HTTP, HTTPS}
+}
 
 // ApplicationGatewayRequestRoutingRuleType enumerates the values for application gateway request routing rule
 // type.
@@ -107,6 +142,11 @@ const (
 	// PathBasedRouting ...
 	PathBasedRouting ApplicationGatewayRequestRoutingRuleType = "PathBasedRouting"
 )
+
+// PossibleApplicationGatewayRequestRoutingRuleTypeValues returns an array of possible values for the ApplicationGatewayRequestRoutingRuleType const type.
+func PossibleApplicationGatewayRequestRoutingRuleTypeValues() []ApplicationGatewayRequestRoutingRuleType {
+	return []ApplicationGatewayRequestRoutingRuleType{Basic, PathBasedRouting}
+}
 
 // ApplicationGatewaySkuName enumerates the values for application gateway sku name.
 type ApplicationGatewaySkuName string
@@ -124,6 +164,11 @@ const (
 	WAFMedium ApplicationGatewaySkuName = "WAF_Medium"
 )
 
+// PossibleApplicationGatewaySkuNameValues returns an array of possible values for the ApplicationGatewaySkuName const type.
+func PossibleApplicationGatewaySkuNameValues() []ApplicationGatewaySkuName {
+	return []ApplicationGatewaySkuName{StandardLarge, StandardMedium, StandardSmall, WAFLarge, WAFMedium}
+}
+
 // ApplicationGatewaySslProtocol enumerates the values for application gateway ssl protocol.
 type ApplicationGatewaySslProtocol string
 
@@ -136,6 +181,11 @@ const (
 	TLSv12 ApplicationGatewaySslProtocol = "TLSv1_2"
 )
 
+// PossibleApplicationGatewaySslProtocolValues returns an array of possible values for the ApplicationGatewaySslProtocol const type.
+func PossibleApplicationGatewaySslProtocolValues() []ApplicationGatewaySslProtocol {
+	return []ApplicationGatewaySslProtocol{TLSv10, TLSv11, TLSv12}
+}
+
 // ApplicationGatewayTier enumerates the values for application gateway tier.
 type ApplicationGatewayTier string
 
@@ -145,6 +195,11 @@ const (
 	// WAF ...
 	WAF ApplicationGatewayTier = "WAF"
 )
+
+// PossibleApplicationGatewayTierValues returns an array of possible values for the ApplicationGatewayTier const type.
+func PossibleApplicationGatewayTierValues() []ApplicationGatewayTier {
+	return []ApplicationGatewayTier{Standard, WAF}
+}
 
 // AssociationType enumerates the values for association type.
 type AssociationType string
@@ -156,6 +211,11 @@ const (
 	Contains AssociationType = "Contains"
 )
 
+// PossibleAssociationTypeValues returns an array of possible values for the AssociationType const type.
+func PossibleAssociationTypeValues() []AssociationType {
+	return []AssociationType{Associated, Contains}
+}
+
 // AuthorizationUseStatus enumerates the values for authorization use status.
 type AuthorizationUseStatus string
 
@@ -165,6 +225,11 @@ const (
 	// InUse ...
 	InUse AuthorizationUseStatus = "InUse"
 )
+
+// PossibleAuthorizationUseStatusValues returns an array of possible values for the AuthorizationUseStatus const type.
+func PossibleAuthorizationUseStatusValues() []AuthorizationUseStatus {
+	return []AuthorizationUseStatus{Available, InUse}
+}
 
 // BgpPeerState enumerates the values for bgp peer state.
 type BgpPeerState string
@@ -182,6 +247,11 @@ const (
 	BgpPeerStateUnknown BgpPeerState = "Unknown"
 )
 
+// PossibleBgpPeerStateValues returns an array of possible values for the BgpPeerState const type.
+func PossibleBgpPeerStateValues() []BgpPeerState {
+	return []BgpPeerState{BgpPeerStateConnected, BgpPeerStateConnecting, BgpPeerStateIdle, BgpPeerStateStopped, BgpPeerStateUnknown}
+}
+
 // ConnectionStatus enumerates the values for connection status.
 type ConnectionStatus string
 
@@ -195,6 +265,11 @@ const (
 	// ConnectionStatusUnknown ...
 	ConnectionStatusUnknown ConnectionStatus = "Unknown"
 )
+
+// PossibleConnectionStatusValues returns an array of possible values for the ConnectionStatus const type.
+func PossibleConnectionStatusValues() []ConnectionStatus {
+	return []ConnectionStatus{ConnectionStatusConnected, ConnectionStatusDegraded, ConnectionStatusDisconnected, ConnectionStatusUnknown}
+}
 
 // DhGroup enumerates the values for dh group.
 type DhGroup string
@@ -218,6 +293,11 @@ const (
 	None DhGroup = "None"
 )
 
+// PossibleDhGroupValues returns an array of possible values for the DhGroup const type.
+func PossibleDhGroupValues() []DhGroup {
+	return []DhGroup{DHGroup1, DHGroup14, DHGroup2, DHGroup2048, DHGroup24, ECP256, ECP384, None}
+}
+
 // Direction enumerates the values for direction.
 type Direction string
 
@@ -227,6 +307,11 @@ const (
 	// Outbound ...
 	Outbound Direction = "Outbound"
 )
+
+// PossibleDirectionValues returns an array of possible values for the Direction const type.
+func PossibleDirectionValues() []Direction {
+	return []Direction{Inbound, Outbound}
+}
 
 // EffectiveRouteSource enumerates the values for effective route source.
 type EffectiveRouteSource string
@@ -242,6 +327,11 @@ const (
 	EffectiveRouteSourceVirtualNetworkGateway EffectiveRouteSource = "VirtualNetworkGateway"
 )
 
+// PossibleEffectiveRouteSourceValues returns an array of possible values for the EffectiveRouteSource const type.
+func PossibleEffectiveRouteSourceValues() []EffectiveRouteSource {
+	return []EffectiveRouteSource{EffectiveRouteSourceDefault, EffectiveRouteSourceUnknown, EffectiveRouteSourceUser, EffectiveRouteSourceVirtualNetworkGateway}
+}
+
 // EffectiveRouteState enumerates the values for effective route state.
 type EffectiveRouteState string
 
@@ -251,6 +341,11 @@ const (
 	// Invalid ...
 	Invalid EffectiveRouteState = "Invalid"
 )
+
+// PossibleEffectiveRouteStateValues returns an array of possible values for the EffectiveRouteState const type.
+func PossibleEffectiveRouteStateValues() []EffectiveRouteState {
+	return []EffectiveRouteState{Active, Invalid}
+}
 
 // ExpressRouteCircuitPeeringAdvertisedPublicPrefixState enumerates the values for express route circuit
 // peering advertised public prefix state.
@@ -267,6 +362,11 @@ const (
 	ValidationNeeded ExpressRouteCircuitPeeringAdvertisedPublicPrefixState = "ValidationNeeded"
 )
 
+// PossibleExpressRouteCircuitPeeringAdvertisedPublicPrefixStateValues returns an array of possible values for the ExpressRouteCircuitPeeringAdvertisedPublicPrefixState const type.
+func PossibleExpressRouteCircuitPeeringAdvertisedPublicPrefixStateValues() []ExpressRouteCircuitPeeringAdvertisedPublicPrefixState {
+	return []ExpressRouteCircuitPeeringAdvertisedPublicPrefixState{Configured, Configuring, NotConfigured, ValidationNeeded}
+}
+
 // ExpressRouteCircuitPeeringState enumerates the values for express route circuit peering state.
 type ExpressRouteCircuitPeeringState string
 
@@ -276,6 +376,11 @@ const (
 	// ExpressRouteCircuitPeeringStateEnabled ...
 	ExpressRouteCircuitPeeringStateEnabled ExpressRouteCircuitPeeringState = "Enabled"
 )
+
+// PossibleExpressRouteCircuitPeeringStateValues returns an array of possible values for the ExpressRouteCircuitPeeringState const type.
+func PossibleExpressRouteCircuitPeeringStateValues() []ExpressRouteCircuitPeeringState {
+	return []ExpressRouteCircuitPeeringState{ExpressRouteCircuitPeeringStateDisabled, ExpressRouteCircuitPeeringStateEnabled}
+}
 
 // ExpressRouteCircuitPeeringType enumerates the values for express route circuit peering type.
 type ExpressRouteCircuitPeeringType string
@@ -289,6 +394,11 @@ const (
 	MicrosoftPeering ExpressRouteCircuitPeeringType = "MicrosoftPeering"
 )
 
+// PossibleExpressRouteCircuitPeeringTypeValues returns an array of possible values for the ExpressRouteCircuitPeeringType const type.
+func PossibleExpressRouteCircuitPeeringTypeValues() []ExpressRouteCircuitPeeringType {
+	return []ExpressRouteCircuitPeeringType{AzurePrivatePeering, AzurePublicPeering, MicrosoftPeering}
+}
+
 // ExpressRouteCircuitSkuFamily enumerates the values for express route circuit sku family.
 type ExpressRouteCircuitSkuFamily string
 
@@ -299,6 +409,11 @@ const (
 	UnlimitedData ExpressRouteCircuitSkuFamily = "UnlimitedData"
 )
 
+// PossibleExpressRouteCircuitSkuFamilyValues returns an array of possible values for the ExpressRouteCircuitSkuFamily const type.
+func PossibleExpressRouteCircuitSkuFamilyValues() []ExpressRouteCircuitSkuFamily {
+	return []ExpressRouteCircuitSkuFamily{MeteredData, UnlimitedData}
+}
+
 // ExpressRouteCircuitSkuTier enumerates the values for express route circuit sku tier.
 type ExpressRouteCircuitSkuTier string
 
@@ -308,6 +423,11 @@ const (
 	// ExpressRouteCircuitSkuTierStandard ...
 	ExpressRouteCircuitSkuTierStandard ExpressRouteCircuitSkuTier = "Standard"
 )
+
+// PossibleExpressRouteCircuitSkuTierValues returns an array of possible values for the ExpressRouteCircuitSkuTier const type.
+func PossibleExpressRouteCircuitSkuTierValues() []ExpressRouteCircuitSkuTier {
+	return []ExpressRouteCircuitSkuTier{ExpressRouteCircuitSkuTierPremium, ExpressRouteCircuitSkuTierStandard}
+}
 
 // IkeEncryption enumerates the values for ike encryption.
 type IkeEncryption string
@@ -325,6 +445,11 @@ const (
 	DES3 IkeEncryption = "DES3"
 )
 
+// PossibleIkeEncryptionValues returns an array of possible values for the IkeEncryption const type.
+func PossibleIkeEncryptionValues() []IkeEncryption {
+	return []IkeEncryption{AES128, AES192, AES256, DES, DES3}
+}
+
 // IkeIntegrity enumerates the values for ike integrity.
 type IkeIntegrity string
 
@@ -339,6 +464,11 @@ const (
 	SHA384 IkeIntegrity = "SHA384"
 )
 
+// PossibleIkeIntegrityValues returns an array of possible values for the IkeIntegrity const type.
+func PossibleIkeIntegrityValues() []IkeIntegrity {
+	return []IkeIntegrity{MD5, SHA1, SHA256, SHA384}
+}
+
 // IPAllocationMethod enumerates the values for ip allocation method.
 type IPAllocationMethod string
 
@@ -348,6 +478,11 @@ const (
 	// Static ...
 	Static IPAllocationMethod = "Static"
 )
+
+// PossibleIPAllocationMethodValues returns an array of possible values for the IPAllocationMethod const type.
+func PossibleIPAllocationMethodValues() []IPAllocationMethod {
+	return []IPAllocationMethod{Dynamic, Static}
+}
 
 // IpsecEncryption enumerates the values for ipsec encryption.
 type IpsecEncryption string
@@ -373,6 +508,11 @@ const (
 	IpsecEncryptionNone IpsecEncryption = "None"
 )
 
+// PossibleIpsecEncryptionValues returns an array of possible values for the IpsecEncryption const type.
+func PossibleIpsecEncryptionValues() []IpsecEncryption {
+	return []IpsecEncryption{IpsecEncryptionAES128, IpsecEncryptionAES192, IpsecEncryptionAES256, IpsecEncryptionDES, IpsecEncryptionDES3, IpsecEncryptionGCMAES128, IpsecEncryptionGCMAES192, IpsecEncryptionGCMAES256, IpsecEncryptionNone}
+}
+
 // IpsecIntegrity enumerates the values for ipsec integrity.
 type IpsecIntegrity string
 
@@ -391,6 +531,11 @@ const (
 	IpsecIntegritySHA256 IpsecIntegrity = "SHA256"
 )
 
+// PossibleIpsecIntegrityValues returns an array of possible values for the IpsecIntegrity const type.
+func PossibleIpsecIntegrityValues() []IpsecIntegrity {
+	return []IpsecIntegrity{IpsecIntegrityGCMAES128, IpsecIntegrityGCMAES192, IpsecIntegrityGCMAES256, IpsecIntegrityMD5, IpsecIntegritySHA1, IpsecIntegritySHA256}
+}
+
 // IPVersion enumerates the values for ip version.
 type IPVersion string
 
@@ -400,6 +545,11 @@ const (
 	// IPv6 ...
 	IPv6 IPVersion = "IPv6"
 )
+
+// PossibleIPVersionValues returns an array of possible values for the IPVersion const type.
+func PossibleIPVersionValues() []IPVersion {
+	return []IPVersion{IPv4, IPv6}
+}
 
 // IssueType enumerates the values for issue type.
 type IssueType string
@@ -425,6 +575,11 @@ const (
 	IssueTypeUserDefinedRoute IssueType = "UserDefinedRoute"
 )
 
+// PossibleIssueTypeValues returns an array of possible values for the IssueType const type.
+func PossibleIssueTypeValues() []IssueType {
+	return []IssueType{IssueTypeAgentStopped, IssueTypeDNSResolution, IssueTypeGuestFirewall, IssueTypeNetworkSecurityRule, IssueTypePlatform, IssueTypePortThrottled, IssueTypeSocketBind, IssueTypeUnknown, IssueTypeUserDefinedRoute}
+}
+
 // LoadDistribution enumerates the values for load distribution.
 type LoadDistribution string
 
@@ -436,6 +591,11 @@ const (
 	// SourceIPProtocol ...
 	SourceIPProtocol LoadDistribution = "SourceIPProtocol"
 )
+
+// PossibleLoadDistributionValues returns an array of possible values for the LoadDistribution const type.
+func PossibleLoadDistributionValues() []LoadDistribution {
+	return []LoadDistribution{Default, SourceIP, SourceIPProtocol}
+}
 
 // NextHopType enumerates the values for next hop type.
 type NextHopType string
@@ -455,6 +615,11 @@ const (
 	NextHopTypeVnetLocal NextHopType = "VnetLocal"
 )
 
+// PossibleNextHopTypeValues returns an array of possible values for the NextHopType const type.
+func PossibleNextHopTypeValues() []NextHopType {
+	return []NextHopType{NextHopTypeHyperNetGateway, NextHopTypeInternet, NextHopTypeNone, NextHopTypeVirtualAppliance, NextHopTypeVirtualNetworkGateway, NextHopTypeVnetLocal}
+}
+
 // OperationStatus enumerates the values for operation status.
 type OperationStatus string
 
@@ -467,6 +632,11 @@ const (
 	Succeeded OperationStatus = "Succeeded"
 )
 
+// PossibleOperationStatusValues returns an array of possible values for the OperationStatus const type.
+func PossibleOperationStatusValues() []OperationStatus {
+	return []OperationStatus{Failed, InProgress, Succeeded}
+}
+
 // Origin enumerates the values for origin.
 type Origin string
 
@@ -478,6 +648,11 @@ const (
 	// OriginOutbound ...
 	OriginOutbound Origin = "Outbound"
 )
+
+// PossibleOriginValues returns an array of possible values for the Origin const type.
+func PossibleOriginValues() []Origin {
+	return []Origin{OriginInbound, OriginLocal, OriginOutbound}
+}
 
 // PcError enumerates the values for pc error.
 type PcError string
@@ -495,6 +670,11 @@ const (
 	StorageFailed PcError = "StorageFailed"
 )
 
+// PossiblePcErrorValues returns an array of possible values for the PcError const type.
+func PossiblePcErrorValues() []PcError {
+	return []PcError{AgentStopped, CaptureFailed, InternalError, LocalFileFailed, StorageFailed}
+}
+
 // PcProtocol enumerates the values for pc protocol.
 type PcProtocol string
 
@@ -506,6 +686,11 @@ const (
 	// UDP ...
 	UDP PcProtocol = "UDP"
 )
+
+// PossiblePcProtocolValues returns an array of possible values for the PcProtocol const type.
+func PossiblePcProtocolValues() []PcProtocol {
+	return []PcProtocol{Any, TCP, UDP}
+}
 
 // PcStatus enumerates the values for pc status.
 type PcStatus string
@@ -522,6 +707,11 @@ const (
 	// PcStatusUnknown ...
 	PcStatusUnknown PcStatus = "Unknown"
 )
+
+// PossiblePcStatusValues returns an array of possible values for the PcStatus const type.
+func PossiblePcStatusValues() []PcStatus {
+	return []PcStatus{PcStatusError, PcStatusNotStarted, PcStatusRunning, PcStatusStopped, PcStatusUnknown}
+}
 
 // PfsGroup enumerates the values for pfs group.
 type PfsGroup string
@@ -543,6 +733,11 @@ const (
 	PfsGroupPFS24 PfsGroup = "PFS24"
 )
 
+// PossiblePfsGroupValues returns an array of possible values for the PfsGroup const type.
+func PossiblePfsGroupValues() []PfsGroup {
+	return []PfsGroup{PfsGroupECP256, PfsGroupECP384, PfsGroupNone, PfsGroupPFS1, PfsGroupPFS2, PfsGroupPFS2048, PfsGroupPFS24}
+}
+
 // ProbeProtocol enumerates the values for probe protocol.
 type ProbeProtocol string
 
@@ -552,6 +747,11 @@ const (
 	// ProbeProtocolTCP ...
 	ProbeProtocolTCP ProbeProtocol = "Tcp"
 )
+
+// PossibleProbeProtocolValues returns an array of possible values for the ProbeProtocol const type.
+func PossibleProbeProtocolValues() []ProbeProtocol {
+	return []ProbeProtocol{ProbeProtocolHTTP, ProbeProtocolTCP}
+}
 
 // ProcessorArchitecture enumerates the values for processor architecture.
 type ProcessorArchitecture string
@@ -563,6 +763,11 @@ const (
 	X86 ProcessorArchitecture = "X86"
 )
 
+// PossibleProcessorArchitectureValues returns an array of possible values for the ProcessorArchitecture const type.
+func PossibleProcessorArchitectureValues() []ProcessorArchitecture {
+	return []ProcessorArchitecture{Amd64, X86}
+}
+
 // Protocol enumerates the values for protocol.
 type Protocol string
 
@@ -572,6 +777,11 @@ const (
 	// ProtocolUDP ...
 	ProtocolUDP Protocol = "UDP"
 )
+
+// PossibleProtocolValues returns an array of possible values for the Protocol const type.
+func PossibleProtocolValues() []Protocol {
+	return []Protocol{ProtocolTCP, ProtocolUDP}
+}
 
 // ProvisioningState enumerates the values for provisioning state.
 type ProvisioningState string
@@ -586,6 +796,11 @@ const (
 	// ProvisioningStateUpdating ...
 	ProvisioningStateUpdating ProvisioningState = "Updating"
 )
+
+// PossibleProvisioningStateValues returns an array of possible values for the ProvisioningState const type.
+func PossibleProvisioningStateValues() []ProvisioningState {
+	return []ProvisioningState{ProvisioningStateDeleting, ProvisioningStateFailed, ProvisioningStateSucceeded, ProvisioningStateUpdating}
+}
 
 // RouteNextHopType enumerates the values for route next hop type.
 type RouteNextHopType string
@@ -603,6 +818,11 @@ const (
 	RouteNextHopTypeVnetLocal RouteNextHopType = "VnetLocal"
 )
 
+// PossibleRouteNextHopTypeValues returns an array of possible values for the RouteNextHopType const type.
+func PossibleRouteNextHopTypeValues() []RouteNextHopType {
+	return []RouteNextHopType{RouteNextHopTypeInternet, RouteNextHopTypeNone, RouteNextHopTypeVirtualAppliance, RouteNextHopTypeVirtualNetworkGateway, RouteNextHopTypeVnetLocal}
+}
+
 // SecurityRuleAccess enumerates the values for security rule access.
 type SecurityRuleAccess string
 
@@ -613,6 +833,11 @@ const (
 	SecurityRuleAccessDeny SecurityRuleAccess = "Deny"
 )
 
+// PossibleSecurityRuleAccessValues returns an array of possible values for the SecurityRuleAccess const type.
+func PossibleSecurityRuleAccessValues() []SecurityRuleAccess {
+	return []SecurityRuleAccess{SecurityRuleAccessAllow, SecurityRuleAccessDeny}
+}
+
 // SecurityRuleDirection enumerates the values for security rule direction.
 type SecurityRuleDirection string
 
@@ -622,6 +847,11 @@ const (
 	// SecurityRuleDirectionOutbound ...
 	SecurityRuleDirectionOutbound SecurityRuleDirection = "Outbound"
 )
+
+// PossibleSecurityRuleDirectionValues returns an array of possible values for the SecurityRuleDirection const type.
+func PossibleSecurityRuleDirectionValues() []SecurityRuleDirection {
+	return []SecurityRuleDirection{SecurityRuleDirectionInbound, SecurityRuleDirectionOutbound}
+}
 
 // SecurityRuleProtocol enumerates the values for security rule protocol.
 type SecurityRuleProtocol string
@@ -634,6 +864,11 @@ const (
 	// SecurityRuleProtocolUDP ...
 	SecurityRuleProtocolUDP SecurityRuleProtocol = "Udp"
 )
+
+// PossibleSecurityRuleProtocolValues returns an array of possible values for the SecurityRuleProtocol const type.
+func PossibleSecurityRuleProtocolValues() []SecurityRuleProtocol {
+	return []SecurityRuleProtocol{SecurityRuleProtocolAsterisk, SecurityRuleProtocolTCP, SecurityRuleProtocolUDP}
+}
 
 // ServiceProviderProvisioningState enumerates the values for service provider provisioning state.
 type ServiceProviderProvisioningState string
@@ -649,6 +884,11 @@ const (
 	Provisioning ServiceProviderProvisioningState = "Provisioning"
 )
 
+// PossibleServiceProviderProvisioningStateValues returns an array of possible values for the ServiceProviderProvisioningState const type.
+func PossibleServiceProviderProvisioningStateValues() []ServiceProviderProvisioningState {
+	return []ServiceProviderProvisioningState{Deprovisioning, NotProvisioned, Provisioned, Provisioning}
+}
+
 // Severity enumerates the values for severity.
 type Severity string
 
@@ -659,6 +899,11 @@ const (
 	SeverityWarning Severity = "Warning"
 )
 
+// PossibleSeverityValues returns an array of possible values for the Severity const type.
+func PossibleSeverityValues() []Severity {
+	return []Severity{SeverityError, SeverityWarning}
+}
+
 // TransportProtocol enumerates the values for transport protocol.
 type TransportProtocol string
 
@@ -668,6 +913,11 @@ const (
 	// TransportProtocolUDP ...
 	TransportProtocolUDP TransportProtocol = "Udp"
 )
+
+// PossibleTransportProtocolValues returns an array of possible values for the TransportProtocol const type.
+func PossibleTransportProtocolValues() []TransportProtocol {
+	return []TransportProtocol{TransportProtocolTCP, TransportProtocolUDP}
+}
 
 // VirtualNetworkGatewayConnectionStatus enumerates the values for virtual network gateway connection status.
 type VirtualNetworkGatewayConnectionStatus string
@@ -683,6 +933,11 @@ const (
 	VirtualNetworkGatewayConnectionStatusUnknown VirtualNetworkGatewayConnectionStatus = "Unknown"
 )
 
+// PossibleVirtualNetworkGatewayConnectionStatusValues returns an array of possible values for the VirtualNetworkGatewayConnectionStatus const type.
+func PossibleVirtualNetworkGatewayConnectionStatusValues() []VirtualNetworkGatewayConnectionStatus {
+	return []VirtualNetworkGatewayConnectionStatus{VirtualNetworkGatewayConnectionStatusConnected, VirtualNetworkGatewayConnectionStatusConnecting, VirtualNetworkGatewayConnectionStatusNotConnected, VirtualNetworkGatewayConnectionStatusUnknown}
+}
+
 // VirtualNetworkGatewayConnectionType enumerates the values for virtual network gateway connection type.
 type VirtualNetworkGatewayConnectionType string
 
@@ -696,6 +951,11 @@ const (
 	// VPNClient ...
 	VPNClient VirtualNetworkGatewayConnectionType = "VPNClient"
 )
+
+// PossibleVirtualNetworkGatewayConnectionTypeValues returns an array of possible values for the VirtualNetworkGatewayConnectionType const type.
+func PossibleVirtualNetworkGatewayConnectionTypeValues() []VirtualNetworkGatewayConnectionType {
+	return []VirtualNetworkGatewayConnectionType{ExpressRoute, IPsec, Vnet2Vnet, VPNClient}
+}
 
 // VirtualNetworkGatewaySkuName enumerates the values for virtual network gateway sku name.
 type VirtualNetworkGatewaySkuName string
@@ -717,6 +977,11 @@ const (
 	VirtualNetworkGatewaySkuNameVpnGw3 VirtualNetworkGatewaySkuName = "VpnGw3"
 )
 
+// PossibleVirtualNetworkGatewaySkuNameValues returns an array of possible values for the VirtualNetworkGatewaySkuName const type.
+func PossibleVirtualNetworkGatewaySkuNameValues() []VirtualNetworkGatewaySkuName {
+	return []VirtualNetworkGatewaySkuName{VirtualNetworkGatewaySkuNameBasic, VirtualNetworkGatewaySkuNameHighPerformance, VirtualNetworkGatewaySkuNameStandard, VirtualNetworkGatewaySkuNameUltraPerformance, VirtualNetworkGatewaySkuNameVpnGw1, VirtualNetworkGatewaySkuNameVpnGw2, VirtualNetworkGatewaySkuNameVpnGw3}
+}
+
 // VirtualNetworkGatewaySkuTier enumerates the values for virtual network gateway sku tier.
 type VirtualNetworkGatewaySkuTier string
 
@@ -737,6 +1002,11 @@ const (
 	VirtualNetworkGatewaySkuTierVpnGw3 VirtualNetworkGatewaySkuTier = "VpnGw3"
 )
 
+// PossibleVirtualNetworkGatewaySkuTierValues returns an array of possible values for the VirtualNetworkGatewaySkuTier const type.
+func PossibleVirtualNetworkGatewaySkuTierValues() []VirtualNetworkGatewaySkuTier {
+	return []VirtualNetworkGatewaySkuTier{VirtualNetworkGatewaySkuTierBasic, VirtualNetworkGatewaySkuTierHighPerformance, VirtualNetworkGatewaySkuTierStandard, VirtualNetworkGatewaySkuTierUltraPerformance, VirtualNetworkGatewaySkuTierVpnGw1, VirtualNetworkGatewaySkuTierVpnGw2, VirtualNetworkGatewaySkuTierVpnGw3}
+}
+
 // VirtualNetworkGatewayType enumerates the values for virtual network gateway type.
 type VirtualNetworkGatewayType string
 
@@ -746,6 +1016,11 @@ const (
 	// VirtualNetworkGatewayTypeVpn ...
 	VirtualNetworkGatewayTypeVpn VirtualNetworkGatewayType = "Vpn"
 )
+
+// PossibleVirtualNetworkGatewayTypeValues returns an array of possible values for the VirtualNetworkGatewayType const type.
+func PossibleVirtualNetworkGatewayTypeValues() []VirtualNetworkGatewayType {
+	return []VirtualNetworkGatewayType{VirtualNetworkGatewayTypeExpressRoute, VirtualNetworkGatewayTypeVpn}
+}
 
 // VirtualNetworkPeeringState enumerates the values for virtual network peering state.
 type VirtualNetworkPeeringState string
@@ -759,6 +1034,11 @@ const (
 	Initiated VirtualNetworkPeeringState = "Initiated"
 )
 
+// PossibleVirtualNetworkPeeringStateValues returns an array of possible values for the VirtualNetworkPeeringState const type.
+func PossibleVirtualNetworkPeeringStateValues() []VirtualNetworkPeeringState {
+	return []VirtualNetworkPeeringState{Connected, Disconnected, Initiated}
+}
+
 // VpnType enumerates the values for vpn type.
 type VpnType string
 
@@ -769,8 +1049,13 @@ const (
 	RouteBased VpnType = "RouteBased"
 )
 
-// AddressSpace addressSpace contains an array of IP address ranges that can be used by subnets of the virtual
-// network.
+// PossibleVpnTypeValues returns an array of possible values for the VpnType const type.
+func PossibleVpnTypeValues() []VpnType {
+	return []VpnType{PolicyBased, RouteBased}
+}
+
+// AddressSpace addressSpace contains an array of IP address ranges that can be used by subnets of the
+// virtual network.
 type AddressSpace struct {
 	// AddressPrefixes - A list of address blocks reserved for this virtual network in CIDR notation.
 	AddressPrefixes *[]string `json:"addressPrefixes,omitempty"`
@@ -784,9 +1069,9 @@ type ApplicationGateway struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -805,12 +1090,6 @@ func (ag ApplicationGateway) MarshalJSON() ([]byte, error) {
 	}
 	if ag.ID != nil {
 		objectMap["id"] = ag.ID
-	}
-	if ag.Name != nil {
-		objectMap["name"] = ag.Name
-	}
-	if ag.Type != nil {
-		objectMap["type"] = ag.Type
 	}
 	if ag.Location != nil {
 		objectMap["location"] = ag.Location
@@ -910,6 +1189,24 @@ type ApplicationGatewayAuthenticationCertificate struct {
 	ID *string `json:"id,omitempty"`
 }
 
+// MarshalJSON is the custom marshaler for ApplicationGatewayAuthenticationCertificate.
+func (agac ApplicationGatewayAuthenticationCertificate) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if agac.ApplicationGatewayAuthenticationCertificatePropertiesFormat != nil {
+		objectMap["properties"] = agac.ApplicationGatewayAuthenticationCertificatePropertiesFormat
+	}
+	if agac.Name != nil {
+		objectMap["name"] = agac.Name
+	}
+	if agac.Etag != nil {
+		objectMap["etag"] = agac.Etag
+	}
+	if agac.ID != nil {
+		objectMap["id"] = agac.ID
+	}
+	return json.Marshal(objectMap)
+}
+
 // UnmarshalJSON is the custom unmarshaler for ApplicationGatewayAuthenticationCertificate struct.
 func (agac *ApplicationGatewayAuthenticationCertificate) UnmarshalJSON(body []byte) error {
 	var m map[string]*json.RawMessage
@@ -970,8 +1267,8 @@ type ApplicationGatewayAuthenticationCertificatePropertiesFormat struct {
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
 
-// ApplicationGatewayAvailableWafRuleSetsResult response for ApplicationGatewayAvailableWafRuleSets API service
-// call.
+// ApplicationGatewayAvailableWafRuleSetsResult response for ApplicationGatewayAvailableWafRuleSets API
+// service call.
 type ApplicationGatewayAvailableWafRuleSetsResult struct {
 	autorest.Response `json:"-"`
 	// Value - The list of application gateway rule sets.
@@ -995,6 +1292,24 @@ type ApplicationGatewayBackendAddressPool struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for ApplicationGatewayBackendAddressPool.
+func (agbap ApplicationGatewayBackendAddressPool) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if agbap.ApplicationGatewayBackendAddressPoolPropertiesFormat != nil {
+		objectMap["properties"] = agbap.ApplicationGatewayBackendAddressPoolPropertiesFormat
+	}
+	if agbap.Name != nil {
+		objectMap["name"] = agbap.Name
+	}
+	if agbap.Etag != nil {
+		objectMap["etag"] = agbap.Etag
+	}
+	if agbap.ID != nil {
+		objectMap["id"] = agbap.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for ApplicationGatewayBackendAddressPool struct.
@@ -1048,8 +1363,8 @@ func (agbap *ApplicationGatewayBackendAddressPool) UnmarshalJSON(body []byte) er
 	return nil
 }
 
-// ApplicationGatewayBackendAddressPoolPropertiesFormat properties of Backend Address Pool of an application
-// gateway.
+// ApplicationGatewayBackendAddressPoolPropertiesFormat properties of Backend Address Pool of an
+// application gateway.
 type ApplicationGatewayBackendAddressPoolPropertiesFormat struct {
 	// BackendIPConfigurations - Collection of references to IPs defined in network interfaces.
 	BackendIPConfigurations *[]InterfaceIPConfiguration `json:"backendIPConfigurations,omitempty"`
@@ -1100,6 +1415,24 @@ type ApplicationGatewayBackendHTTPSettings struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for ApplicationGatewayBackendHTTPSettings.
+func (agbhs ApplicationGatewayBackendHTTPSettings) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if agbhs.ApplicationGatewayBackendHTTPSettingsPropertiesFormat != nil {
+		objectMap["properties"] = agbhs.ApplicationGatewayBackendHTTPSettingsPropertiesFormat
+	}
+	if agbhs.Name != nil {
+		objectMap["name"] = agbhs.Name
+	}
+	if agbhs.Etag != nil {
+		objectMap["etag"] = agbhs.Etag
+	}
+	if agbhs.ID != nil {
+		objectMap["id"] = agbhs.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for ApplicationGatewayBackendHTTPSettings struct.
@@ -1174,8 +1507,8 @@ type ApplicationGatewayBackendHTTPSettingsPropertiesFormat struct {
 	ConnectionDraining *ApplicationGatewayConnectionDraining `json:"connectionDraining,omitempty"`
 }
 
-// ApplicationGatewayConnectionDraining connection draining allows open connections to a backend server to be
-// active for a specified time after the backend server got removed from the configuration.
+// ApplicationGatewayConnectionDraining connection draining allows open connections to a backend server to
+// be active for a specified time after the backend server got removed from the configuration.
 type ApplicationGatewayConnectionDraining struct {
 	// Enabled - Whether connection draining is enabled or not.
 	Enabled *bool `json:"enabled,omitempty"`
@@ -1183,7 +1516,8 @@ type ApplicationGatewayConnectionDraining struct {
 	DrainTimeoutInSec *int32 `json:"drainTimeoutInSec,omitempty"`
 }
 
-// ApplicationGatewayFirewallDisabledRuleGroup allows to disable rules within a rule group or an entire rule group.
+// ApplicationGatewayFirewallDisabledRuleGroup allows to disable rules within a rule group or an entire
+// rule group.
 type ApplicationGatewayFirewallDisabledRuleGroup struct {
 	// RuleGroupName - The name of the rule group that will be disabled.
 	RuleGroupName *string `json:"ruleGroupName,omitempty"`
@@ -1214,9 +1548,9 @@ type ApplicationGatewayFirewallRuleSet struct {
 	*ApplicationGatewayFirewallRuleSetPropertiesFormat `json:"properties,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -1232,12 +1566,6 @@ func (agfrs ApplicationGatewayFirewallRuleSet) MarshalJSON() ([]byte, error) {
 	}
 	if agfrs.ID != nil {
 		objectMap["id"] = agfrs.ID
-	}
-	if agfrs.Name != nil {
-		objectMap["name"] = agfrs.Name
-	}
-	if agfrs.Type != nil {
-		objectMap["type"] = agfrs.Type
 	}
 	if agfrs.Location != nil {
 		objectMap["location"] = agfrs.Location
@@ -1340,6 +1668,24 @@ type ApplicationGatewayFrontendIPConfiguration struct {
 	ID *string `json:"id,omitempty"`
 }
 
+// MarshalJSON is the custom marshaler for ApplicationGatewayFrontendIPConfiguration.
+func (agfic ApplicationGatewayFrontendIPConfiguration) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if agfic.ApplicationGatewayFrontendIPConfigurationPropertiesFormat != nil {
+		objectMap["properties"] = agfic.ApplicationGatewayFrontendIPConfigurationPropertiesFormat
+	}
+	if agfic.Name != nil {
+		objectMap["name"] = agfic.Name
+	}
+	if agfic.Etag != nil {
+		objectMap["etag"] = agfic.Etag
+	}
+	if agfic.ID != nil {
+		objectMap["id"] = agfic.ID
+	}
+	return json.Marshal(objectMap)
+}
+
 // UnmarshalJSON is the custom unmarshaler for ApplicationGatewayFrontendIPConfiguration struct.
 func (agfic *ApplicationGatewayFrontendIPConfiguration) UnmarshalJSON(body []byte) error {
 	var m map[string]*json.RawMessage
@@ -1417,6 +1763,24 @@ type ApplicationGatewayFrontendPort struct {
 	ID *string `json:"id,omitempty"`
 }
 
+// MarshalJSON is the custom marshaler for ApplicationGatewayFrontendPort.
+func (agfp ApplicationGatewayFrontendPort) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if agfp.ApplicationGatewayFrontendPortPropertiesFormat != nil {
+		objectMap["properties"] = agfp.ApplicationGatewayFrontendPortPropertiesFormat
+	}
+	if agfp.Name != nil {
+		objectMap["name"] = agfp.Name
+	}
+	if agfp.Etag != nil {
+		objectMap["etag"] = agfp.Etag
+	}
+	if agfp.ID != nil {
+		objectMap["id"] = agfp.ID
+	}
+	return json.Marshal(objectMap)
+}
+
 // UnmarshalJSON is the custom unmarshaler for ApplicationGatewayFrontendPort struct.
 func (agfp *ApplicationGatewayFrontendPort) UnmarshalJSON(body []byte) error {
 	var m map[string]*json.RawMessage
@@ -1485,6 +1849,24 @@ type ApplicationGatewayHTTPListener struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for ApplicationGatewayHTTPListener.
+func (aghl ApplicationGatewayHTTPListener) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if aghl.ApplicationGatewayHTTPListenerPropertiesFormat != nil {
+		objectMap["properties"] = aghl.ApplicationGatewayHTTPListenerPropertiesFormat
+	}
+	if aghl.Name != nil {
+		objectMap["name"] = aghl.Name
+	}
+	if aghl.Etag != nil {
+		objectMap["etag"] = aghl.Etag
+	}
+	if aghl.ID != nil {
+		objectMap["id"] = aghl.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for ApplicationGatewayHTTPListener struct.
@@ -1556,8 +1938,8 @@ type ApplicationGatewayHTTPListenerPropertiesFormat struct {
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
 
-// ApplicationGatewayIPConfiguration IP configuration of an application gateway. Currently 1 public and 1 private
-// IP configuration is allowed.
+// ApplicationGatewayIPConfiguration IP configuration of an application gateway. Currently 1 public and 1
+// private IP configuration is allowed.
 type ApplicationGatewayIPConfiguration struct {
 	*ApplicationGatewayIPConfigurationPropertiesFormat `json:"properties,omitempty"`
 	// Name - Name of the resource that is unique within a resource group. This name can be used to access the resource.
@@ -1566,6 +1948,24 @@ type ApplicationGatewayIPConfiguration struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for ApplicationGatewayIPConfiguration.
+func (agic ApplicationGatewayIPConfiguration) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if agic.ApplicationGatewayIPConfigurationPropertiesFormat != nil {
+		objectMap["properties"] = agic.ApplicationGatewayIPConfigurationPropertiesFormat
+	}
+	if agic.Name != nil {
+		objectMap["name"] = agic.Name
+	}
+	if agic.Etag != nil {
+		objectMap["etag"] = agic.Etag
+	}
+	if agic.ID != nil {
+		objectMap["id"] = agic.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for ApplicationGatewayIPConfiguration struct.
@@ -1619,7 +2019,8 @@ func (agic *ApplicationGatewayIPConfiguration) UnmarshalJSON(body []byte) error 
 	return nil
 }
 
-// ApplicationGatewayIPConfigurationPropertiesFormat properties of IP configuration of an application gateway.
+// ApplicationGatewayIPConfigurationPropertiesFormat properties of IP configuration of an application
+// gateway.
 type ApplicationGatewayIPConfigurationPropertiesFormat struct {
 	// Subnet - Reference of the subnet resource. A subnet from where application gateway gets its private address.
 	Subnet *SubResource `json:"subnet,omitempty"`
@@ -1642,20 +2043,37 @@ type ApplicationGatewayListResultIterator struct {
 	page ApplicationGatewayListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *ApplicationGatewayListResultIterator) Next() error {
+func (iter *ApplicationGatewayListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ApplicationGatewayListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *ApplicationGatewayListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -1677,6 +2095,11 @@ func (iter ApplicationGatewayListResultIterator) Value() ApplicationGateway {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the ApplicationGatewayListResultIterator type.
+func NewApplicationGatewayListResultIterator(page ApplicationGatewayListResultPage) ApplicationGatewayListResultIterator {
+	return ApplicationGatewayListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (aglr ApplicationGatewayListResult) IsEmpty() bool {
 	return aglr.Value == nil || len(*aglr.Value) == 0
@@ -1684,11 +2107,11 @@ func (aglr ApplicationGatewayListResult) IsEmpty() bool {
 
 // applicationGatewayListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (aglr ApplicationGatewayListResult) applicationGatewayListResultPreparer() (*http.Request, error) {
+func (aglr ApplicationGatewayListResult) applicationGatewayListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if aglr.NextLink == nil || len(to.String(aglr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(aglr.NextLink)))
@@ -1696,19 +2119,36 @@ func (aglr ApplicationGatewayListResult) applicationGatewayListResultPreparer() 
 
 // ApplicationGatewayListResultPage contains a page of ApplicationGateway values.
 type ApplicationGatewayListResultPage struct {
-	fn   func(ApplicationGatewayListResult) (ApplicationGatewayListResult, error)
+	fn   func(context.Context, ApplicationGatewayListResult) (ApplicationGatewayListResult, error)
 	aglr ApplicationGatewayListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *ApplicationGatewayListResultPage) Next() error {
-	next, err := page.fn(page.aglr)
+func (page *ApplicationGatewayListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ApplicationGatewayListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.aglr)
 	if err != nil {
 		return err
 	}
 	page.aglr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *ApplicationGatewayListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -1729,6 +2169,11 @@ func (page ApplicationGatewayListResultPage) Values() []ApplicationGateway {
 	return *page.aglr.Value
 }
 
+// Creates a new instance of the ApplicationGatewayListResultPage type.
+func NewApplicationGatewayListResultPage(getNextPage func(context.Context, ApplicationGatewayListResult) (ApplicationGatewayListResult, error)) ApplicationGatewayListResultPage {
+	return ApplicationGatewayListResultPage{fn: getNextPage}
+}
+
 // ApplicationGatewayPathRule path rule of URL path map of an application gateway.
 type ApplicationGatewayPathRule struct {
 	*ApplicationGatewayPathRulePropertiesFormat `json:"properties,omitempty"`
@@ -1738,6 +2183,24 @@ type ApplicationGatewayPathRule struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for ApplicationGatewayPathRule.
+func (agpr ApplicationGatewayPathRule) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if agpr.ApplicationGatewayPathRulePropertiesFormat != nil {
+		objectMap["properties"] = agpr.ApplicationGatewayPathRulePropertiesFormat
+	}
+	if agpr.Name != nil {
+		objectMap["name"] = agpr.Name
+	}
+	if agpr.Etag != nil {
+		objectMap["etag"] = agpr.Etag
+	}
+	if agpr.ID != nil {
+		objectMap["id"] = agpr.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for ApplicationGatewayPathRule struct.
@@ -1812,6 +2275,24 @@ type ApplicationGatewayProbe struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for ApplicationGatewayProbe.
+func (agp ApplicationGatewayProbe) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if agp.ApplicationGatewayProbePropertiesFormat != nil {
+		objectMap["properties"] = agp.ApplicationGatewayProbePropertiesFormat
+	}
+	if agp.Name != nil {
+		objectMap["name"] = agp.Name
+	}
+	if agp.Etag != nil {
+		objectMap["etag"] = agp.Etag
+	}
+	if agp.ID != nil {
+		objectMap["id"] = agp.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for ApplicationGatewayProbe struct.
@@ -1889,7 +2370,7 @@ type ApplicationGatewayPropertiesFormat struct {
 	Sku *ApplicationGatewaySku `json:"sku,omitempty"`
 	// SslPolicy - SSL policy of the application gateway resource.
 	SslPolicy *ApplicationGatewaySslPolicy `json:"sslPolicy,omitempty"`
-	// OperationalState - Operational state of the application gateway resource. Possible values include: 'Stopped', 'Starting', 'Running', 'Stopping'
+	// OperationalState - READ-ONLY; Operational state of the application gateway resource. Possible values include: 'Stopped', 'Starting', 'Running', 'Stopping'
 	OperationalState ApplicationGatewayOperationalState `json:"operationalState,omitempty"`
 	// GatewayIPConfigurations - Subnets of application the gateway resource.
 	GatewayIPConfigurations *[]ApplicationGatewayIPConfiguration `json:"gatewayIPConfigurations,omitempty"`
@@ -1930,6 +2411,24 @@ type ApplicationGatewayRequestRoutingRule struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for ApplicationGatewayRequestRoutingRule.
+func (agrrr ApplicationGatewayRequestRoutingRule) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if agrrr.ApplicationGatewayRequestRoutingRulePropertiesFormat != nil {
+		objectMap["properties"] = agrrr.ApplicationGatewayRequestRoutingRulePropertiesFormat
+	}
+	if agrrr.Name != nil {
+		objectMap["name"] = agrrr.Name
+	}
+	if agrrr.Etag != nil {
+		objectMap["etag"] = agrrr.Etag
+	}
+	if agrrr.ID != nil {
+		objectMap["id"] = agrrr.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for ApplicationGatewayRequestRoutingRule struct.
@@ -1983,8 +2482,8 @@ func (agrrr *ApplicationGatewayRequestRoutingRule) UnmarshalJSON(body []byte) er
 	return nil
 }
 
-// ApplicationGatewayRequestRoutingRulePropertiesFormat properties of request routing rule of the application
-// gateway.
+// ApplicationGatewayRequestRoutingRulePropertiesFormat properties of request routing rule of the
+// application gateway.
 type ApplicationGatewayRequestRoutingRulePropertiesFormat struct {
 	// RuleType - Rule type. Possible values include: 'Basic', 'PathBasedRouting'
 	RuleType ApplicationGatewayRequestRoutingRuleType `json:"ruleType,omitempty"`
@@ -2004,47 +2503,27 @@ type ApplicationGatewayRequestRoutingRulePropertiesFormat struct {
 // long-running operation.
 type ApplicationGatewaysBackendHealthFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ApplicationGatewaysBackendHealthFuture) Result(client ApplicationGatewaysClient) (agbh ApplicationGatewayBackendHealth, err error) {
+func (future *ApplicationGatewaysBackendHealthFuture) Result(client ApplicationGatewaysClient) (agbh ApplicationGatewayBackendHealth, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ApplicationGatewaysBackendHealthFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return agbh, azure.NewAsyncOpIncompleteError("network.ApplicationGatewaysBackendHealthFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		agbh, err = client.BackendHealthResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.ApplicationGatewaysBackendHealthFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.ApplicationGatewaysBackendHealthFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if agbh.Response.Response, err = future.GetResult(sender); err == nil && agbh.Response.Response.StatusCode != http.StatusNoContent {
+		agbh, err = client.BackendHealthResponder(agbh.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.ApplicationGatewaysBackendHealthFuture", "Result", agbh.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ApplicationGatewaysBackendHealthFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	agbh, err = client.BackendHealthResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ApplicationGatewaysBackendHealthFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -2053,97 +2532,51 @@ func (future ApplicationGatewaysBackendHealthFuture) Result(client ApplicationGa
 // long-running operation.
 type ApplicationGatewaysCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ApplicationGatewaysCreateOrUpdateFuture) Result(client ApplicationGatewaysClient) (ag ApplicationGateway, err error) {
+func (future *ApplicationGatewaysCreateOrUpdateFuture) Result(client ApplicationGatewaysClient) (ag ApplicationGateway, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ApplicationGatewaysCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ag, azure.NewAsyncOpIncompleteError("network.ApplicationGatewaysCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ag, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.ApplicationGatewaysCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.ApplicationGatewaysCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if ag.Response.Response, err = future.GetResult(sender); err == nil && ag.Response.Response.StatusCode != http.StatusNoContent {
+		ag, err = client.CreateOrUpdateResponder(ag.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.ApplicationGatewaysCreateOrUpdateFuture", "Result", ag.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ApplicationGatewaysCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ag, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ApplicationGatewaysCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// ApplicationGatewaysDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// ApplicationGatewaysDeleteFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type ApplicationGatewaysDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ApplicationGatewaysDeleteFuture) Result(client ApplicationGatewaysClient) (ar autorest.Response, err error) {
+func (future *ApplicationGatewaysDeleteFuture) Result(client ApplicationGatewaysClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ApplicationGatewaysDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.ApplicationGatewaysDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.ApplicationGatewaysDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.ApplicationGatewaysDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ApplicationGatewaysDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ApplicationGatewaysDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -2166,6 +2599,24 @@ type ApplicationGatewaySslCertificate struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for ApplicationGatewaySslCertificate.
+func (agsc ApplicationGatewaySslCertificate) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if agsc.ApplicationGatewaySslCertificatePropertiesFormat != nil {
+		objectMap["properties"] = agsc.ApplicationGatewaySslCertificatePropertiesFormat
+	}
+	if agsc.Name != nil {
+		objectMap["name"] = agsc.Name
+	}
+	if agsc.Etag != nil {
+		objectMap["etag"] = agsc.Etag
+	}
+	if agsc.ID != nil {
+		objectMap["id"] = agsc.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for ApplicationGatewaySslCertificate struct.
@@ -2219,7 +2670,8 @@ func (agsc *ApplicationGatewaySslCertificate) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// ApplicationGatewaySslCertificatePropertiesFormat properties of SSL certificates of an application gateway.
+// ApplicationGatewaySslCertificatePropertiesFormat properties of SSL certificates of an application
+// gateway.
 type ApplicationGatewaySslCertificatePropertiesFormat struct {
 	// Data - Base-64 encoded pfx certificate. Only applicable in PUT Request.
 	Data *string `json:"data,omitempty"`
@@ -2237,52 +2689,26 @@ type ApplicationGatewaySslPolicy struct {
 	DisabledSslProtocols *[]ApplicationGatewaySslProtocol `json:"disabledSslProtocols,omitempty"`
 }
 
-// ApplicationGatewaysStartFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// ApplicationGatewaysStartFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type ApplicationGatewaysStartFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ApplicationGatewaysStartFuture) Result(client ApplicationGatewaysClient) (ar autorest.Response, err error) {
+func (future *ApplicationGatewaysStartFuture) Result(client ApplicationGatewaysClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ApplicationGatewaysStartFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.ApplicationGatewaysStartFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.StartResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.ApplicationGatewaysStartFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.ApplicationGatewaysStartFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ApplicationGatewaysStartFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.StartResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ApplicationGatewaysStartFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -2290,48 +2716,22 @@ func (future ApplicationGatewaysStartFuture) Result(client ApplicationGatewaysCl
 // operation.
 type ApplicationGatewaysStopFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ApplicationGatewaysStopFuture) Result(client ApplicationGatewaysClient) (ar autorest.Response, err error) {
+func (future *ApplicationGatewaysStopFuture) Result(client ApplicationGatewaysClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ApplicationGatewaysStopFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.ApplicationGatewaysStopFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.StopResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.ApplicationGatewaysStopFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.ApplicationGatewaysStopFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ApplicationGatewaysStopFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.StopResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ApplicationGatewaysStopFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -2345,6 +2745,24 @@ type ApplicationGatewayURLPathMap struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for ApplicationGatewayURLPathMap.
+func (agupm ApplicationGatewayURLPathMap) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if agupm.ApplicationGatewayURLPathMapPropertiesFormat != nil {
+		objectMap["properties"] = agupm.ApplicationGatewayURLPathMapPropertiesFormat
+	}
+	if agupm.Name != nil {
+		objectMap["name"] = agupm.Name
+	}
+	if agupm.Etag != nil {
+		objectMap["etag"] = agupm.Etag
+	}
+	if agupm.ID != nil {
+		objectMap["id"] = agupm.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for ApplicationGatewayURLPathMap struct.
@@ -2425,8 +2843,8 @@ type ApplicationGatewayWebApplicationFirewallConfiguration struct {
 	DisabledRuleGroups *[]ApplicationGatewayFirewallDisabledRuleGroup `json:"disabledRuleGroups,omitempty"`
 }
 
-// AuthorizationListResult response for ListAuthorizations API service call retrieves all authorizations that
-// belongs to an ExpressRouteCircuit.
+// AuthorizationListResult response for ListAuthorizations API service call retrieves all authorizations
+// that belongs to an ExpressRouteCircuit.
 type AuthorizationListResult struct {
 	autorest.Response `json:"-"`
 	// Value - The authorizations in an ExpressRoute Circuit.
@@ -2435,27 +2853,44 @@ type AuthorizationListResult struct {
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
-// AuthorizationListResultIterator provides access to a complete listing of ExpressRouteCircuitAuthorization
-// values.
+// AuthorizationListResultIterator provides access to a complete listing of
+// ExpressRouteCircuitAuthorization values.
 type AuthorizationListResultIterator struct {
 	i    int
 	page AuthorizationListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *AuthorizationListResultIterator) Next() error {
+func (iter *AuthorizationListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AuthorizationListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *AuthorizationListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -2477,6 +2912,11 @@ func (iter AuthorizationListResultIterator) Value() ExpressRouteCircuitAuthoriza
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the AuthorizationListResultIterator type.
+func NewAuthorizationListResultIterator(page AuthorizationListResultPage) AuthorizationListResultIterator {
+	return AuthorizationListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (alr AuthorizationListResult) IsEmpty() bool {
 	return alr.Value == nil || len(*alr.Value) == 0
@@ -2484,11 +2924,11 @@ func (alr AuthorizationListResult) IsEmpty() bool {
 
 // authorizationListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (alr AuthorizationListResult) authorizationListResultPreparer() (*http.Request, error) {
+func (alr AuthorizationListResult) authorizationListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if alr.NextLink == nil || len(to.String(alr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(alr.NextLink)))
@@ -2496,19 +2936,36 @@ func (alr AuthorizationListResult) authorizationListResultPreparer() (*http.Requ
 
 // AuthorizationListResultPage contains a page of ExpressRouteCircuitAuthorization values.
 type AuthorizationListResultPage struct {
-	fn  func(AuthorizationListResult) (AuthorizationListResult, error)
+	fn  func(context.Context, AuthorizationListResult) (AuthorizationListResult, error)
 	alr AuthorizationListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *AuthorizationListResultPage) Next() error {
-	next, err := page.fn(page.alr)
+func (page *AuthorizationListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AuthorizationListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.alr)
 	if err != nil {
 		return err
 	}
 	page.alr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *AuthorizationListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -2529,6 +2986,11 @@ func (page AuthorizationListResultPage) Values() []ExpressRouteCircuitAuthorizat
 	return *page.alr.Value
 }
 
+// Creates a new instance of the AuthorizationListResultPage type.
+func NewAuthorizationListResultPage(getNextPage func(context.Context, AuthorizationListResult) (AuthorizationListResult, error)) AuthorizationListResultPage {
+	return AuthorizationListResultPage{fn: getNextPage}
+}
+
 // AuthorizationPropertiesFormat ...
 type AuthorizationPropertiesFormat struct {
 	// AuthorizationKey - The authorization key.
@@ -2540,11 +3002,11 @@ type AuthorizationPropertiesFormat struct {
 }
 
 // AzureAsyncOperationResult the response body contains the status of the specified asynchronous operation,
-// indicating whether it has succeeded, is in progress, or has failed. Note that this status is distinct from the
-// HTTP status code returned for the Get Operation Status operation itself. If the asynchronous operation
-// succeeded, the response body includes the HTTP status code for the successful request. If the asynchronous
-// operation failed, the response body includes the HTTP status code for the failed request and error information
-// regarding the failure.
+// indicating whether it has succeeded, is in progress, or has failed. Note that this status is distinct
+// from the HTTP status code returned for the Get Operation Status operation itself. If the asynchronous
+// operation succeeded, the response body includes the HTTP status code for the successful request. If the
+// asynchronous operation failed, the response body includes the HTTP status code for the failed request
+// and error information regarding the failure.
 type AzureAsyncOperationResult struct {
 	// Status - Status of the Azure async operation. Possible values are: 'InProgress', 'Succeeded', and 'Failed'. Possible values include: 'InProgress', 'Succeeded', 'Failed'
 	Status OperationStatus `json:"status,omitempty"`
@@ -2560,6 +3022,24 @@ type BackendAddressPool struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for BackendAddressPool.
+func (bap BackendAddressPool) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if bap.BackendAddressPoolPropertiesFormat != nil {
+		objectMap["properties"] = bap.BackendAddressPoolPropertiesFormat
+	}
+	if bap.Name != nil {
+		objectMap["name"] = bap.Name
+	}
+	if bap.Etag != nil {
+		objectMap["etag"] = bap.Etag
+	}
+	if bap.ID != nil {
+		objectMap["id"] = bap.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for BackendAddressPool struct.
@@ -2615,11 +3095,11 @@ func (bap *BackendAddressPool) UnmarshalJSON(body []byte) error {
 
 // BackendAddressPoolPropertiesFormat properties of the backend address pool.
 type BackendAddressPoolPropertiesFormat struct {
-	// BackendIPConfigurations - Gets collection of references to IP addresses defined in network interfaces.
+	// BackendIPConfigurations - READ-ONLY; Gets collection of references to IP addresses defined in network interfaces.
 	BackendIPConfigurations *[]InterfaceIPConfiguration `json:"backendIPConfigurations,omitempty"`
-	// LoadBalancingRules - Gets load balancing rules that use this backend address pool.
+	// LoadBalancingRules - READ-ONLY; Gets load balancing rules that use this backend address pool.
 	LoadBalancingRules *[]SubResource `json:"loadBalancingRules,omitempty"`
-	// OutboundNatRule - Gets outbound rules that use this backend address pool.
+	// OutboundNatRule - READ-ONLY; Gets outbound rules that use this backend address pool.
 	OutboundNatRule *SubResource `json:"outboundNatRule,omitempty"`
 	// ProvisioningState - Get provisioning state of the public IP resource. Possible values are: 'Updating', 'Deleting', and 'Failed'.
 	ProvisioningState *string `json:"provisioningState,omitempty"`
@@ -2639,21 +3119,21 @@ type BGPCommunity struct {
 
 // BgpPeerStatus BGP peer status details
 type BgpPeerStatus struct {
-	// LocalAddress - The virtual network gateway's local address
+	// LocalAddress - READ-ONLY; The virtual network gateway's local address
 	LocalAddress *string `json:"localAddress,omitempty"`
-	// Neighbor - The remote BGP peer
+	// Neighbor - READ-ONLY; The remote BGP peer
 	Neighbor *string `json:"neighbor,omitempty"`
-	// Asn - The autonomous system number of the remote BGP peer
+	// Asn - READ-ONLY; The autonomous system number of the remote BGP peer
 	Asn *int32 `json:"asn,omitempty"`
-	// State - The BGP peer state. Possible values include: 'BgpPeerStateUnknown', 'BgpPeerStateStopped', 'BgpPeerStateIdle', 'BgpPeerStateConnecting', 'BgpPeerStateConnected'
+	// State - READ-ONLY; The BGP peer state. Possible values include: 'BgpPeerStateUnknown', 'BgpPeerStateStopped', 'BgpPeerStateIdle', 'BgpPeerStateConnecting', 'BgpPeerStateConnected'
 	State BgpPeerState `json:"state,omitempty"`
-	// ConnectedDuration - For how long the peering has been up
+	// ConnectedDuration - READ-ONLY; For how long the peering has been up
 	ConnectedDuration *string `json:"connectedDuration,omitempty"`
-	// RoutesReceived - The number of routes learned from this peer
+	// RoutesReceived - READ-ONLY; The number of routes learned from this peer
 	RoutesReceived *int64 `json:"routesReceived,omitempty"`
-	// MessagesSent - The number of BGP messages sent
+	// MessagesSent - READ-ONLY; The number of BGP messages sent
 	MessagesSent *int64 `json:"messagesSent,omitempty"`
-	// MessagesReceived - The number of BGP messages received
+	// MessagesReceived - READ-ONLY; The number of BGP messages received
 	MessagesReceived *int64 `json:"messagesReceived,omitempty"`
 }
 
@@ -2669,9 +3149,9 @@ type BgpServiceCommunity struct {
 	*BgpServiceCommunityPropertiesFormat `json:"properties,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -2687,12 +3167,6 @@ func (bsc BgpServiceCommunity) MarshalJSON() ([]byte, error) {
 	}
 	if bsc.ID != nil {
 		objectMap["id"] = bsc.ID
-	}
-	if bsc.Name != nil {
-		objectMap["name"] = bsc.Name
-	}
-	if bsc.Type != nil {
-		objectMap["type"] = bsc.Type
 	}
 	if bsc.Location != nil {
 		objectMap["location"] = bsc.Location
@@ -2781,26 +3255,44 @@ type BgpServiceCommunityListResult struct {
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
-// BgpServiceCommunityListResultIterator provides access to a complete listing of BgpServiceCommunity values.
+// BgpServiceCommunityListResultIterator provides access to a complete listing of BgpServiceCommunity
+// values.
 type BgpServiceCommunityListResultIterator struct {
 	i    int
 	page BgpServiceCommunityListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *BgpServiceCommunityListResultIterator) Next() error {
+func (iter *BgpServiceCommunityListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BgpServiceCommunityListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *BgpServiceCommunityListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -2822,6 +3314,11 @@ func (iter BgpServiceCommunityListResultIterator) Value() BgpServiceCommunity {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the BgpServiceCommunityListResultIterator type.
+func NewBgpServiceCommunityListResultIterator(page BgpServiceCommunityListResultPage) BgpServiceCommunityListResultIterator {
+	return BgpServiceCommunityListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (bsclr BgpServiceCommunityListResult) IsEmpty() bool {
 	return bsclr.Value == nil || len(*bsclr.Value) == 0
@@ -2829,11 +3326,11 @@ func (bsclr BgpServiceCommunityListResult) IsEmpty() bool {
 
 // bgpServiceCommunityListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (bsclr BgpServiceCommunityListResult) bgpServiceCommunityListResultPreparer() (*http.Request, error) {
+func (bsclr BgpServiceCommunityListResult) bgpServiceCommunityListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if bsclr.NextLink == nil || len(to.String(bsclr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(bsclr.NextLink)))
@@ -2841,19 +3338,36 @@ func (bsclr BgpServiceCommunityListResult) bgpServiceCommunityListResultPreparer
 
 // BgpServiceCommunityListResultPage contains a page of BgpServiceCommunity values.
 type BgpServiceCommunityListResultPage struct {
-	fn    func(BgpServiceCommunityListResult) (BgpServiceCommunityListResult, error)
+	fn    func(context.Context, BgpServiceCommunityListResult) (BgpServiceCommunityListResult, error)
 	bsclr BgpServiceCommunityListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *BgpServiceCommunityListResultPage) Next() error {
-	next, err := page.fn(page.bsclr)
+func (page *BgpServiceCommunityListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BgpServiceCommunityListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.bsclr)
 	if err != nil {
 		return err
 	}
 	page.bsclr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *BgpServiceCommunityListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -2872,6 +3386,11 @@ func (page BgpServiceCommunityListResultPage) Values() []BgpServiceCommunity {
 		return nil
 	}
 	return *page.bsclr.Value
+}
+
+// Creates a new instance of the BgpServiceCommunityListResultPage type.
+func NewBgpServiceCommunityListResultPage(getNextPage func(context.Context, BgpServiceCommunityListResult) (BgpServiceCommunityListResult, error)) BgpServiceCommunityListResultPage {
+	return BgpServiceCommunityListResultPage{fn: getNextPage}
 }
 
 // BgpServiceCommunityPropertiesFormat properties of Service Community.
@@ -2918,48 +3437,48 @@ type ConnectivityDestination struct {
 
 // ConnectivityHop information about a hop between the source and the destination.
 type ConnectivityHop struct {
-	// Type - The type of the hop.
+	// Type - READ-ONLY; The type of the hop.
 	Type *string `json:"type,omitempty"`
-	// ID - The ID of the hop.
+	// ID - READ-ONLY; The ID of the hop.
 	ID *string `json:"id,omitempty"`
-	// Address - The IP address of the hop.
+	// Address - READ-ONLY; The IP address of the hop.
 	Address *string `json:"address,omitempty"`
-	// ResourceID - The ID of the resource corresponding to this hop.
+	// ResourceID - READ-ONLY; The ID of the resource corresponding to this hop.
 	ResourceID *string `json:"resourceId,omitempty"`
-	// NextHopIds - List of next hop identifiers.
+	// NextHopIds - READ-ONLY; List of next hop identifiers.
 	NextHopIds *[]string `json:"nextHopIds,omitempty"`
-	// Issues - List of issues.
+	// Issues - READ-ONLY; List of issues.
 	Issues *[]ConnectivityIssue `json:"issues,omitempty"`
 }
 
 // ConnectivityInformation information on the connectivity status.
 type ConnectivityInformation struct {
 	autorest.Response `json:"-"`
-	// Hops - List of hops between the source and the destination.
+	// Hops - READ-ONLY; List of hops between the source and the destination.
 	Hops *[]ConnectivityHop `json:"hops,omitempty"`
-	// ConnectionStatus - The connection status. Possible values include: 'ConnectionStatusUnknown', 'ConnectionStatusConnected', 'ConnectionStatusDisconnected', 'ConnectionStatusDegraded'
+	// ConnectionStatus - READ-ONLY; The connection status. Possible values include: 'ConnectionStatusUnknown', 'ConnectionStatusConnected', 'ConnectionStatusDisconnected', 'ConnectionStatusDegraded'
 	ConnectionStatus ConnectionStatus `json:"connectionStatus,omitempty"`
-	// AvgLatencyInMs - Average latency in milliseconds.
+	// AvgLatencyInMs - READ-ONLY; Average latency in milliseconds.
 	AvgLatencyInMs *int32 `json:"avgLatencyInMs,omitempty"`
-	// MinLatencyInMs - Minimum latency in milliseconds.
+	// MinLatencyInMs - READ-ONLY; Minimum latency in milliseconds.
 	MinLatencyInMs *int32 `json:"minLatencyInMs,omitempty"`
-	// MaxLatencyInMs - Maximum latency in milliseconds.
+	// MaxLatencyInMs - READ-ONLY; Maximum latency in milliseconds.
 	MaxLatencyInMs *int32 `json:"maxLatencyInMs,omitempty"`
-	// ProbesSent - Total number of probes sent.
+	// ProbesSent - READ-ONLY; Total number of probes sent.
 	ProbesSent *int32 `json:"probesSent,omitempty"`
-	// ProbesFailed - Number of failed probes.
+	// ProbesFailed - READ-ONLY; Number of failed probes.
 	ProbesFailed *int32 `json:"probesFailed,omitempty"`
 }
 
 // ConnectivityIssue information about an issue encountered in the process of checking for connectivity.
 type ConnectivityIssue struct {
-	// Origin - The origin of the issue. Possible values include: 'OriginLocal', 'OriginInbound', 'OriginOutbound'
+	// Origin - READ-ONLY; The origin of the issue. Possible values include: 'OriginLocal', 'OriginInbound', 'OriginOutbound'
 	Origin Origin `json:"origin,omitempty"`
-	// Severity - The severity of the issue. Possible values include: 'SeverityError', 'SeverityWarning'
+	// Severity - READ-ONLY; The severity of the issue. Possible values include: 'SeverityError', 'SeverityWarning'
 	Severity Severity `json:"severity,omitempty"`
-	// Type - The type of issue. Possible values include: 'IssueTypeUnknown', 'IssueTypeAgentStopped', 'IssueTypeGuestFirewall', 'IssueTypeDNSResolution', 'IssueTypeSocketBind', 'IssueTypeNetworkSecurityRule', 'IssueTypeUserDefinedRoute', 'IssueTypePortThrottled', 'IssueTypePlatform'
+	// Type - READ-ONLY; The type of issue. Possible values include: 'IssueTypeUnknown', 'IssueTypeAgentStopped', 'IssueTypeGuestFirewall', 'IssueTypeDNSResolution', 'IssueTypeSocketBind', 'IssueTypeNetworkSecurityRule', 'IssueTypeUserDefinedRoute', 'IssueTypePortThrottled', 'IssueTypePlatform'
 	Type IssueType `json:"type,omitempty"`
-	// Context - Provides additional context on the issue.
+	// Context - READ-ONLY; Provides additional context on the issue.
 	Context *[]map[string]*string `json:"context,omitempty"`
 }
 
@@ -2977,8 +3496,8 @@ type ConnectivitySource struct {
 	Port *int32 `json:"port,omitempty"`
 }
 
-// DhcpOptions dhcpOptions contains an array of DNS servers available to VMs deployed in the virtual network.
-// Standard DHCP option for a subnet overrides VNET DHCP options.
+// DhcpOptions dhcpOptions contains an array of DNS servers available to VMs deployed in the virtual
+// network. Standard DHCP option for a subnet overrides VNET DHCP options.
 type DhcpOptions struct {
 	// DNSServers - The list of DNS servers IP addresses.
 	DNSServers *[]string `json:"dnsServers,omitempty"`
@@ -3008,7 +3527,8 @@ type EffectiveNetworkSecurityGroupAssociation struct {
 	NetworkInterface *SubResource `json:"networkInterface,omitempty"`
 }
 
-// EffectiveNetworkSecurityGroupListResult response for list effective network security groups API service call.
+// EffectiveNetworkSecurityGroupListResult response for list effective network security groups API service
+// call.
 type EffectiveNetworkSecurityGroupListResult struct {
 	autorest.Response `json:"-"`
 	// Value - A list of effective network security groups.
@@ -3090,13 +3610,13 @@ type ExpressRouteCircuit struct {
 	// Sku - The SKU.
 	Sku                                  *ExpressRouteCircuitSku `json:"sku,omitempty"`
 	*ExpressRouteCircuitPropertiesFormat `json:"properties,omitempty"`
-	// Etag - Gets a unique read-only string that changes whenever the resource is updated.
+	// Etag - READ-ONLY; Gets a unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -3113,17 +3633,8 @@ func (erc ExpressRouteCircuit) MarshalJSON() ([]byte, error) {
 	if erc.ExpressRouteCircuitPropertiesFormat != nil {
 		objectMap["properties"] = erc.ExpressRouteCircuitPropertiesFormat
 	}
-	if erc.Etag != nil {
-		objectMap["etag"] = erc.Etag
-	}
 	if erc.ID != nil {
 		objectMap["id"] = erc.ID
-	}
-	if erc.Name != nil {
-		objectMap["name"] = erc.Name
-	}
-	if erc.Type != nil {
-		objectMap["type"] = erc.Type
 	}
 	if erc.Location != nil {
 		objectMap["location"] = erc.Location
@@ -3239,10 +3750,25 @@ type ExpressRouteCircuitAuthorization struct {
 	*AuthorizationPropertiesFormat `json:"properties,omitempty"`
 	// Name - Gets name of the resource that is unique within a resource group. This name can be used to access the resource.
 	Name *string `json:"name,omitempty"`
-	// Etag - A unique read-only string that changes whenever the resource is updated.
+	// Etag - READ-ONLY; A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for ExpressRouteCircuitAuthorization.
+func (erca ExpressRouteCircuitAuthorization) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if erca.AuthorizationPropertiesFormat != nil {
+		objectMap["properties"] = erca.AuthorizationPropertiesFormat
+	}
+	if erca.Name != nil {
+		objectMap["name"] = erca.Name
+	}
+	if erca.ID != nil {
+		objectMap["id"] = erca.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for ExpressRouteCircuitAuthorization struct.
@@ -3296,101 +3822,55 @@ func (erca *ExpressRouteCircuitAuthorization) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// ExpressRouteCircuitAuthorizationsCreateOrUpdateFuture an abstraction for monitoring and retrieving the results
-// of a long-running operation.
+// ExpressRouteCircuitAuthorizationsCreateOrUpdateFuture an abstraction for monitoring and retrieving the
+// results of a long-running operation.
 type ExpressRouteCircuitAuthorizationsCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ExpressRouteCircuitAuthorizationsCreateOrUpdateFuture) Result(client ExpressRouteCircuitAuthorizationsClient) (erca ExpressRouteCircuitAuthorization, err error) {
+func (future *ExpressRouteCircuitAuthorizationsCreateOrUpdateFuture) Result(client ExpressRouteCircuitAuthorizationsClient) (erca ExpressRouteCircuitAuthorization, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return erca, azure.NewAsyncOpIncompleteError("network.ExpressRouteCircuitAuthorizationsCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		erca, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.ExpressRouteCircuitAuthorizationsCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if erca.Response.Response, err = future.GetResult(sender); err == nil && erca.Response.Response.StatusCode != http.StatusNoContent {
+		erca, err = client.CreateOrUpdateResponder(erca.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsCreateOrUpdateFuture", "Result", erca.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	erca, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// ExpressRouteCircuitAuthorizationsDeleteFuture an abstraction for monitoring and retrieving the results of a
-// long-running operation.
+// ExpressRouteCircuitAuthorizationsDeleteFuture an abstraction for monitoring and retrieving the results
+// of a long-running operation.
 type ExpressRouteCircuitAuthorizationsDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ExpressRouteCircuitAuthorizationsDeleteFuture) Result(client ExpressRouteCircuitAuthorizationsClient) (ar autorest.Response, err error) {
+func (future *ExpressRouteCircuitAuthorizationsDeleteFuture) Result(client ExpressRouteCircuitAuthorizationsClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.ExpressRouteCircuitAuthorizationsDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.ExpressRouteCircuitAuthorizationsDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitAuthorizationsDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -3403,26 +3883,44 @@ type ExpressRouteCircuitListResult struct {
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
-// ExpressRouteCircuitListResultIterator provides access to a complete listing of ExpressRouteCircuit values.
+// ExpressRouteCircuitListResultIterator provides access to a complete listing of ExpressRouteCircuit
+// values.
 type ExpressRouteCircuitListResultIterator struct {
 	i    int
 	page ExpressRouteCircuitListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *ExpressRouteCircuitListResultIterator) Next() error {
+func (iter *ExpressRouteCircuitListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ExpressRouteCircuitListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *ExpressRouteCircuitListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -3444,6 +3942,11 @@ func (iter ExpressRouteCircuitListResultIterator) Value() ExpressRouteCircuit {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the ExpressRouteCircuitListResultIterator type.
+func NewExpressRouteCircuitListResultIterator(page ExpressRouteCircuitListResultPage) ExpressRouteCircuitListResultIterator {
+	return ExpressRouteCircuitListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (erclr ExpressRouteCircuitListResult) IsEmpty() bool {
 	return erclr.Value == nil || len(*erclr.Value) == 0
@@ -3451,11 +3954,11 @@ func (erclr ExpressRouteCircuitListResult) IsEmpty() bool {
 
 // expressRouteCircuitListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (erclr ExpressRouteCircuitListResult) expressRouteCircuitListResultPreparer() (*http.Request, error) {
+func (erclr ExpressRouteCircuitListResult) expressRouteCircuitListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if erclr.NextLink == nil || len(to.String(erclr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(erclr.NextLink)))
@@ -3463,19 +3966,36 @@ func (erclr ExpressRouteCircuitListResult) expressRouteCircuitListResultPreparer
 
 // ExpressRouteCircuitListResultPage contains a page of ExpressRouteCircuit values.
 type ExpressRouteCircuitListResultPage struct {
-	fn    func(ExpressRouteCircuitListResult) (ExpressRouteCircuitListResult, error)
+	fn    func(context.Context, ExpressRouteCircuitListResult) (ExpressRouteCircuitListResult, error)
 	erclr ExpressRouteCircuitListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *ExpressRouteCircuitListResultPage) Next() error {
-	next, err := page.fn(page.erclr)
+func (page *ExpressRouteCircuitListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ExpressRouteCircuitListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.erclr)
 	if err != nil {
 		return err
 	}
 	page.erclr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *ExpressRouteCircuitListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -3496,16 +4016,36 @@ func (page ExpressRouteCircuitListResultPage) Values() []ExpressRouteCircuit {
 	return *page.erclr.Value
 }
 
+// Creates a new instance of the ExpressRouteCircuitListResultPage type.
+func NewExpressRouteCircuitListResultPage(getNextPage func(context.Context, ExpressRouteCircuitListResult) (ExpressRouteCircuitListResult, error)) ExpressRouteCircuitListResultPage {
+	return ExpressRouteCircuitListResultPage{fn: getNextPage}
+}
+
 // ExpressRouteCircuitPeering peering in an ExpressRouteCircuit resource.
 type ExpressRouteCircuitPeering struct {
 	autorest.Response                           `json:"-"`
 	*ExpressRouteCircuitPeeringPropertiesFormat `json:"properties,omitempty"`
 	// Name - Gets name of the resource that is unique within a resource group. This name can be used to access the resource.
 	Name *string `json:"name,omitempty"`
-	// Etag - A unique read-only string that changes whenever the resource is updated.
+	// Etag - READ-ONLY; A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for ExpressRouteCircuitPeering.
+func (ercp ExpressRouteCircuitPeering) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if ercp.ExpressRouteCircuitPeeringPropertiesFormat != nil {
+		objectMap["properties"] = ercp.ExpressRouteCircuitPeeringPropertiesFormat
+	}
+	if ercp.Name != nil {
+		objectMap["name"] = ercp.Name
+	}
+	if ercp.ID != nil {
+		objectMap["id"] = ercp.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for ExpressRouteCircuitPeering struct.
@@ -3571,8 +4111,8 @@ type ExpressRouteCircuitPeeringConfig struct {
 	RoutingRegistryName *string `json:"routingRegistryName,omitempty"`
 }
 
-// ExpressRouteCircuitPeeringListResult response for ListPeering API service call retrieves all peerings that
-// belong to an ExpressRouteCircuit.
+// ExpressRouteCircuitPeeringListResult response for ListPeering API service call retrieves all peerings
+// that belong to an ExpressRouteCircuit.
 type ExpressRouteCircuitPeeringListResult struct {
 	autorest.Response `json:"-"`
 	// Value - The peerings in an express route circuit.
@@ -3581,27 +4121,44 @@ type ExpressRouteCircuitPeeringListResult struct {
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
-// ExpressRouteCircuitPeeringListResultIterator provides access to a complete listing of ExpressRouteCircuitPeering
-// values.
+// ExpressRouteCircuitPeeringListResultIterator provides access to a complete listing of
+// ExpressRouteCircuitPeering values.
 type ExpressRouteCircuitPeeringListResultIterator struct {
 	i    int
 	page ExpressRouteCircuitPeeringListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *ExpressRouteCircuitPeeringListResultIterator) Next() error {
+func (iter *ExpressRouteCircuitPeeringListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ExpressRouteCircuitPeeringListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *ExpressRouteCircuitPeeringListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -3623,6 +4180,11 @@ func (iter ExpressRouteCircuitPeeringListResultIterator) Value() ExpressRouteCir
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the ExpressRouteCircuitPeeringListResultIterator type.
+func NewExpressRouteCircuitPeeringListResultIterator(page ExpressRouteCircuitPeeringListResultPage) ExpressRouteCircuitPeeringListResultIterator {
+	return ExpressRouteCircuitPeeringListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (ercplr ExpressRouteCircuitPeeringListResult) IsEmpty() bool {
 	return ercplr.Value == nil || len(*ercplr.Value) == 0
@@ -3630,11 +4192,11 @@ func (ercplr ExpressRouteCircuitPeeringListResult) IsEmpty() bool {
 
 // expressRouteCircuitPeeringListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (ercplr ExpressRouteCircuitPeeringListResult) expressRouteCircuitPeeringListResultPreparer() (*http.Request, error) {
+func (ercplr ExpressRouteCircuitPeeringListResult) expressRouteCircuitPeeringListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if ercplr.NextLink == nil || len(to.String(ercplr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(ercplr.NextLink)))
@@ -3642,19 +4204,36 @@ func (ercplr ExpressRouteCircuitPeeringListResult) expressRouteCircuitPeeringLis
 
 // ExpressRouteCircuitPeeringListResultPage contains a page of ExpressRouteCircuitPeering values.
 type ExpressRouteCircuitPeeringListResultPage struct {
-	fn     func(ExpressRouteCircuitPeeringListResult) (ExpressRouteCircuitPeeringListResult, error)
+	fn     func(context.Context, ExpressRouteCircuitPeeringListResult) (ExpressRouteCircuitPeeringListResult, error)
 	ercplr ExpressRouteCircuitPeeringListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *ExpressRouteCircuitPeeringListResultPage) Next() error {
-	next, err := page.fn(page.ercplr)
+func (page *ExpressRouteCircuitPeeringListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ExpressRouteCircuitPeeringListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.ercplr)
 	if err != nil {
 		return err
 	}
 	page.ercplr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *ExpressRouteCircuitPeeringListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -3673,6 +4252,11 @@ func (page ExpressRouteCircuitPeeringListResultPage) Values() []ExpressRouteCirc
 		return nil
 	}
 	return *page.ercplr.Value
+}
+
+// Creates a new instance of the ExpressRouteCircuitPeeringListResultPage type.
+func NewExpressRouteCircuitPeeringListResultPage(getNextPage func(context.Context, ExpressRouteCircuitPeeringListResult) (ExpressRouteCircuitPeeringListResult, error)) ExpressRouteCircuitPeeringListResultPage {
+	return ExpressRouteCircuitPeeringListResultPage{fn: getNextPage}
 }
 
 // ExpressRouteCircuitPeeringPropertiesFormat ...
@@ -3713,51 +4297,31 @@ type ExpressRouteCircuitPeeringPropertiesFormat struct {
 	Ipv6PeeringConfig *Ipv6ExpressRouteCircuitPeeringConfig `json:"ipv6PeeringConfig,omitempty"`
 }
 
-// ExpressRouteCircuitPeeringsCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a
-// long-running operation.
+// ExpressRouteCircuitPeeringsCreateOrUpdateFuture an abstraction for monitoring and retrieving the results
+// of a long-running operation.
 type ExpressRouteCircuitPeeringsCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ExpressRouteCircuitPeeringsCreateOrUpdateFuture) Result(client ExpressRouteCircuitPeeringsClient) (ercp ExpressRouteCircuitPeering, err error) {
+func (future *ExpressRouteCircuitPeeringsCreateOrUpdateFuture) Result(client ExpressRouteCircuitPeeringsClient) (ercp ExpressRouteCircuitPeering, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitPeeringsCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ercp, azure.NewAsyncOpIncompleteError("network.ExpressRouteCircuitPeeringsCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ercp, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitPeeringsCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.ExpressRouteCircuitPeeringsCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if ercp.Response.Response, err = future.GetResult(sender); err == nil && ercp.Response.Response.StatusCode != http.StatusNoContent {
+		ercp, err = client.CreateOrUpdateResponder(ercp.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitPeeringsCreateOrUpdateFuture", "Result", ercp.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitPeeringsCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ercp, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitPeeringsCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -3766,48 +4330,22 @@ func (future ExpressRouteCircuitPeeringsCreateOrUpdateFuture) Result(client Expr
 // long-running operation.
 type ExpressRouteCircuitPeeringsDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ExpressRouteCircuitPeeringsDeleteFuture) Result(client ExpressRouteCircuitPeeringsClient) (ar autorest.Response, err error) {
+func (future *ExpressRouteCircuitPeeringsDeleteFuture) Result(client ExpressRouteCircuitPeeringsClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitPeeringsDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.ExpressRouteCircuitPeeringsDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitPeeringsDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.ExpressRouteCircuitPeeringsDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitPeeringsDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitPeeringsDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -3863,7 +4401,8 @@ type ExpressRouteCircuitRoutesTableSummary struct {
 	StatePfxRcd *string `json:"statePfxRcd,omitempty"`
 }
 
-// ExpressRouteCircuitsArpTableListResult response for ListArpTable associated with the Express Route Circuits API.
+// ExpressRouteCircuitsArpTableListResult response for ListArpTable associated with the Express Route
+// Circuits API.
 type ExpressRouteCircuitsArpTableListResult struct {
 	autorest.Response `json:"-"`
 	// Value - Gets list of the ARP table.
@@ -3876,101 +4415,56 @@ type ExpressRouteCircuitsArpTableListResult struct {
 // long-running operation.
 type ExpressRouteCircuitsCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ExpressRouteCircuitsCreateOrUpdateFuture) Result(client ExpressRouteCircuitsClient) (erc ExpressRouteCircuit, err error) {
+func (future *ExpressRouteCircuitsCreateOrUpdateFuture) Result(client ExpressRouteCircuitsClient) (erc ExpressRouteCircuit, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return erc, azure.NewAsyncOpIncompleteError("network.ExpressRouteCircuitsCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		erc, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.ExpressRouteCircuitsCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if erc.Response.Response, err = future.GetResult(sender); err == nil && erc.Response.Response.StatusCode != http.StatusNoContent {
+		erc, err = client.CreateOrUpdateResponder(erc.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsCreateOrUpdateFuture", "Result", erc.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	erc, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// ExpressRouteCircuitsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// ExpressRouteCircuitsDeleteFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type ExpressRouteCircuitsDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ExpressRouteCircuitsDeleteFuture) Result(client ExpressRouteCircuitsClient) (ar autorest.Response, err error) {
+func (future *ExpressRouteCircuitsDeleteFuture) Result(client ExpressRouteCircuitsClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.ExpressRouteCircuitsDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.ExpressRouteCircuitsDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
-// ExpressRouteCircuitServiceProviderProperties contains ServiceProviderProperties in an ExpressRouteCircuit.
+// ExpressRouteCircuitServiceProviderProperties contains ServiceProviderProperties in an
+// ExpressRouteCircuit.
 type ExpressRouteCircuitServiceProviderProperties struct {
 	// ServiceProviderName - The serviceProviderName.
 	ServiceProviderName *string `json:"serviceProviderName,omitempty"`
@@ -3994,47 +4488,27 @@ type ExpressRouteCircuitSku struct {
 // long-running operation.
 type ExpressRouteCircuitsListArpTableFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ExpressRouteCircuitsListArpTableFuture) Result(client ExpressRouteCircuitsClient) (ercatlr ExpressRouteCircuitsArpTableListResult, err error) {
+func (future *ExpressRouteCircuitsListArpTableFuture) Result(client ExpressRouteCircuitsClient) (ercatlr ExpressRouteCircuitsArpTableListResult, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsListArpTableFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ercatlr, azure.NewAsyncOpIncompleteError("network.ExpressRouteCircuitsListArpTableFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ercatlr, err = client.ListArpTableResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsListArpTableFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.ExpressRouteCircuitsListArpTableFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if ercatlr.Response.Response, err = future.GetResult(sender); err == nil && ercatlr.Response.Response.StatusCode != http.StatusNoContent {
+		ercatlr, err = client.ListArpTableResponder(ercatlr.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsListArpTableFuture", "Result", ercatlr.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsListArpTableFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ercatlr, err = client.ListArpTableResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsListArpTableFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -4043,96 +4517,56 @@ func (future ExpressRouteCircuitsListArpTableFuture) Result(client ExpressRouteC
 // long-running operation.
 type ExpressRouteCircuitsListRoutesTableFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ExpressRouteCircuitsListRoutesTableFuture) Result(client ExpressRouteCircuitsClient) (ercrtlr ExpressRouteCircuitsRoutesTableListResult, err error) {
+func (future *ExpressRouteCircuitsListRoutesTableFuture) Result(client ExpressRouteCircuitsClient) (ercrtlr ExpressRouteCircuitsRoutesTableListResult, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsListRoutesTableFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ercrtlr, azure.NewAsyncOpIncompleteError("network.ExpressRouteCircuitsListRoutesTableFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ercrtlr, err = client.ListRoutesTableResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsListRoutesTableFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.ExpressRouteCircuitsListRoutesTableFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if ercrtlr.Response.Response, err = future.GetResult(sender); err == nil && ercrtlr.Response.Response.StatusCode != http.StatusNoContent {
+		ercrtlr, err = client.ListRoutesTableResponder(ercrtlr.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsListRoutesTableFuture", "Result", ercrtlr.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsListRoutesTableFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ercrtlr, err = client.ListRoutesTableResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsListRoutesTableFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// ExpressRouteCircuitsListRoutesTableSummaryFuture an abstraction for monitoring and retrieving the results of a
-// long-running operation.
+// ExpressRouteCircuitsListRoutesTableSummaryFuture an abstraction for monitoring and retrieving the
+// results of a long-running operation.
 type ExpressRouteCircuitsListRoutesTableSummaryFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ExpressRouteCircuitsListRoutesTableSummaryFuture) Result(client ExpressRouteCircuitsClient) (ercrtslr ExpressRouteCircuitsRoutesTableSummaryListResult, err error) {
+func (future *ExpressRouteCircuitsListRoutesTableSummaryFuture) Result(client ExpressRouteCircuitsClient) (ercrtslr ExpressRouteCircuitsRoutesTableSummaryListResult, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsListRoutesTableSummaryFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ercrtslr, azure.NewAsyncOpIncompleteError("network.ExpressRouteCircuitsListRoutesTableSummaryFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ercrtslr, err = client.ListRoutesTableSummaryResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsListRoutesTableSummaryFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.ExpressRouteCircuitsListRoutesTableSummaryFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if ercrtslr.Response.Response, err = future.GetResult(sender); err == nil && ercrtslr.Response.Response.StatusCode != http.StatusNoContent {
+		ercrtslr, err = client.ListRoutesTableSummaryResponder(ercrtslr.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsListRoutesTableSummaryFuture", "Result", ercrtslr.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsListRoutesTableSummaryFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ercrtslr, err = client.ListRoutesTableSummaryResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsListRoutesTableSummaryFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -4147,8 +4581,8 @@ type ExpressRouteCircuitsRoutesTableListResult struct {
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
-// ExpressRouteCircuitsRoutesTableSummaryListResult response for ListRoutesTable associated with the Express Route
-// Circuits API.
+// ExpressRouteCircuitsRoutesTableSummaryListResult response for ListRoutesTable associated with the
+// Express Route Circuits API.
 type ExpressRouteCircuitsRoutesTableSummaryListResult struct {
 	autorest.Response `json:"-"`
 	// Value - A list of the routes table.
@@ -4175,9 +4609,9 @@ type ExpressRouteServiceProvider struct {
 	*ExpressRouteServiceProviderPropertiesFormat `json:"properties,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -4193,12 +4627,6 @@ func (ersp ExpressRouteServiceProvider) MarshalJSON() ([]byte, error) {
 	}
 	if ersp.ID != nil {
 		objectMap["id"] = ersp.ID
-	}
-	if ersp.Name != nil {
-		objectMap["name"] = ersp.Name
-	}
-	if ersp.Type != nil {
-		objectMap["type"] = ersp.Type
 	}
 	if ersp.Location != nil {
 		objectMap["location"] = ersp.Location
@@ -4303,20 +4731,37 @@ type ExpressRouteServiceProviderListResultIterator struct {
 	page ExpressRouteServiceProviderListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *ExpressRouteServiceProviderListResultIterator) Next() error {
+func (iter *ExpressRouteServiceProviderListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ExpressRouteServiceProviderListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *ExpressRouteServiceProviderListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -4338,6 +4783,11 @@ func (iter ExpressRouteServiceProviderListResultIterator) Value() ExpressRouteSe
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the ExpressRouteServiceProviderListResultIterator type.
+func NewExpressRouteServiceProviderListResultIterator(page ExpressRouteServiceProviderListResultPage) ExpressRouteServiceProviderListResultIterator {
+	return ExpressRouteServiceProviderListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (ersplr ExpressRouteServiceProviderListResult) IsEmpty() bool {
 	return ersplr.Value == nil || len(*ersplr.Value) == 0
@@ -4345,11 +4795,11 @@ func (ersplr ExpressRouteServiceProviderListResult) IsEmpty() bool {
 
 // expressRouteServiceProviderListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (ersplr ExpressRouteServiceProviderListResult) expressRouteServiceProviderListResultPreparer() (*http.Request, error) {
+func (ersplr ExpressRouteServiceProviderListResult) expressRouteServiceProviderListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if ersplr.NextLink == nil || len(to.String(ersplr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(ersplr.NextLink)))
@@ -4357,19 +4807,36 @@ func (ersplr ExpressRouteServiceProviderListResult) expressRouteServiceProviderL
 
 // ExpressRouteServiceProviderListResultPage contains a page of ExpressRouteServiceProvider values.
 type ExpressRouteServiceProviderListResultPage struct {
-	fn     func(ExpressRouteServiceProviderListResult) (ExpressRouteServiceProviderListResult, error)
+	fn     func(context.Context, ExpressRouteServiceProviderListResult) (ExpressRouteServiceProviderListResult, error)
 	ersplr ExpressRouteServiceProviderListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *ExpressRouteServiceProviderListResultPage) Next() error {
-	next, err := page.fn(page.ersplr)
+func (page *ExpressRouteServiceProviderListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ExpressRouteServiceProviderListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.ersplr)
 	if err != nil {
 		return err
 	}
 	page.ersplr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *ExpressRouteServiceProviderListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -4390,6 +4857,11 @@ func (page ExpressRouteServiceProviderListResultPage) Values() []ExpressRouteSer
 	return *page.ersplr.Value
 }
 
+// Creates a new instance of the ExpressRouteServiceProviderListResultPage type.
+func NewExpressRouteServiceProviderListResultPage(getNextPage func(context.Context, ExpressRouteServiceProviderListResult) (ExpressRouteServiceProviderListResult, error)) ExpressRouteServiceProviderListResultPage {
+	return ExpressRouteServiceProviderListResultPage{fn: getNextPage}
+}
+
 // ExpressRouteServiceProviderPropertiesFormat properties of ExpressRouteServiceProvider.
 type ExpressRouteServiceProviderPropertiesFormat struct {
 	// PeeringLocations - Get a list of peering locations.
@@ -4406,6 +4878,18 @@ type FlowLogInformation struct {
 	// TargetResourceID - The ID of the resource to configure for flow logging.
 	TargetResourceID   *string `json:"targetResourceId,omitempty"`
 	*FlowLogProperties `json:"properties,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for FlowLogInformation.
+func (fli FlowLogInformation) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if fli.TargetResourceID != nil {
+		objectMap["targetResourceId"] = fli.TargetResourceID
+	}
+	if fli.FlowLogProperties != nil {
+		objectMap["properties"] = fli.FlowLogProperties
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for FlowLogInformation struct.
@@ -4467,6 +4951,24 @@ type FrontendIPConfiguration struct {
 	ID *string `json:"id,omitempty"`
 }
 
+// MarshalJSON is the custom marshaler for FrontendIPConfiguration.
+func (fic FrontendIPConfiguration) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if fic.FrontendIPConfigurationPropertiesFormat != nil {
+		objectMap["properties"] = fic.FrontendIPConfigurationPropertiesFormat
+	}
+	if fic.Name != nil {
+		objectMap["name"] = fic.Name
+	}
+	if fic.Etag != nil {
+		objectMap["etag"] = fic.Etag
+	}
+	if fic.ID != nil {
+		objectMap["id"] = fic.ID
+	}
+	return json.Marshal(objectMap)
+}
+
 // UnmarshalJSON is the custom unmarshaler for FrontendIPConfiguration struct.
 func (fic *FrontendIPConfiguration) UnmarshalJSON(body []byte) error {
 	var m map[string]*json.RawMessage
@@ -4520,13 +5022,13 @@ func (fic *FrontendIPConfiguration) UnmarshalJSON(body []byte) error {
 
 // FrontendIPConfigurationPropertiesFormat properties of Frontend IP Configuration of the load balancer.
 type FrontendIPConfigurationPropertiesFormat struct {
-	// InboundNatRules - Read only. Inbound rules URIs that use this frontend IP.
+	// InboundNatRules - READ-ONLY; Read only. Inbound rules URIs that use this frontend IP.
 	InboundNatRules *[]SubResource `json:"inboundNatRules,omitempty"`
-	// InboundNatPools - Read only. Inbound pools URIs that use this frontend IP.
+	// InboundNatPools - READ-ONLY; Read only. Inbound pools URIs that use this frontend IP.
 	InboundNatPools *[]SubResource `json:"inboundNatPools,omitempty"`
-	// OutboundNatRules - Read only. Outbound rules URIs that use this frontend IP.
+	// OutboundNatRules - READ-ONLY; Read only. Outbound rules URIs that use this frontend IP.
 	OutboundNatRules *[]SubResource `json:"outboundNatRules,omitempty"`
-	// LoadBalancingRules - Gets load balancing rules URIs that use this frontend IP.
+	// LoadBalancingRules - READ-ONLY; Gets load balancing rules URIs that use this frontend IP.
 	LoadBalancingRules *[]SubResource `json:"loadBalancingRules,omitempty"`
 	// PrivateIPAddress - The private IP address of the IP configuration.
 	PrivateIPAddress *string `json:"privateIPAddress,omitempty"`
@@ -4542,19 +5044,19 @@ type FrontendIPConfigurationPropertiesFormat struct {
 
 // GatewayRoute gateway routing details
 type GatewayRoute struct {
-	// LocalAddress - The gateway's local address
+	// LocalAddress - READ-ONLY; The gateway's local address
 	LocalAddress *string `json:"localAddress,omitempty"`
-	// NetworkProperty - The route's network prefix
+	// NetworkProperty - READ-ONLY; The route's network prefix
 	NetworkProperty *string `json:"network,omitempty"`
-	// NextHop - The route's next hop
+	// NextHop - READ-ONLY; The route's next hop
 	NextHop *string `json:"nextHop,omitempty"`
-	// SourcePeer - The peer this route was learned from
+	// SourcePeer - READ-ONLY; The peer this route was learned from
 	SourcePeer *string `json:"sourcePeer,omitempty"`
-	// Origin - The source this route was learned from
+	// Origin - READ-ONLY; The source this route was learned from
 	Origin *string `json:"origin,omitempty"`
-	// AsPath - The route's AS path sequence
+	// AsPath - READ-ONLY; The route's AS path sequence
 	AsPath *string `json:"asPath,omitempty"`
-	// Weight - The route's weight
+	// Weight - READ-ONLY; The route's weight
 	Weight *int32 `json:"weight,omitempty"`
 }
 
@@ -4574,6 +5076,24 @@ type InboundNatPool struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for InboundNatPool.
+func (inp InboundNatPool) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if inp.InboundNatPoolPropertiesFormat != nil {
+		objectMap["properties"] = inp.InboundNatPoolPropertiesFormat
+	}
+	if inp.Name != nil {
+		objectMap["name"] = inp.Name
+	}
+	if inp.Etag != nil {
+		objectMap["etag"] = inp.Etag
+	}
+	if inp.ID != nil {
+		objectMap["id"] = inp.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for InboundNatPool struct.
@@ -4654,6 +5174,24 @@ type InboundNatRule struct {
 	ID *string `json:"id,omitempty"`
 }
 
+// MarshalJSON is the custom marshaler for InboundNatRule.
+func (inr InboundNatRule) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if inr.InboundNatRulePropertiesFormat != nil {
+		objectMap["properties"] = inr.InboundNatRulePropertiesFormat
+	}
+	if inr.Name != nil {
+		objectMap["name"] = inr.Name
+	}
+	if inr.Etag != nil {
+		objectMap["etag"] = inr.Etag
+	}
+	if inr.ID != nil {
+		objectMap["id"] = inr.ID
+	}
+	return json.Marshal(objectMap)
+}
+
 // UnmarshalJSON is the custom unmarshaler for InboundNatRule struct.
 func (inr *InboundNatRule) UnmarshalJSON(body []byte) error {
 	var m map[string]*json.RawMessage
@@ -4709,7 +5247,7 @@ func (inr *InboundNatRule) UnmarshalJSON(body []byte) error {
 type InboundNatRulePropertiesFormat struct {
 	// FrontendIPConfiguration - A reference to frontend IP addresses.
 	FrontendIPConfiguration *SubResource `json:"frontendIPConfiguration,omitempty"`
-	// BackendIPConfiguration - A reference to a private IP address defined on a network interface of a VM. Traffic sent to the frontend port of each of the frontend IP configurations is forwarded to the backed IP.
+	// BackendIPConfiguration - READ-ONLY; A reference to a private IP address defined on a network interface of a VM. Traffic sent to the frontend port of each of the frontend IP configurations is forwarded to the backed IP.
 	BackendIPConfiguration *InterfaceIPConfiguration `json:"backendIPConfiguration,omitempty"`
 	// Protocol - The transport protocol for the endpoint. Possible values are: 'Udp' or 'Tcp'. Possible values include: 'TransportProtocolUDP', 'TransportProtocolTCP'
 	Protocol TransportProtocol `json:"protocol,omitempty"`
@@ -4733,9 +5271,9 @@ type Interface struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -4754,12 +5292,6 @@ func (i Interface) MarshalJSON() ([]byte, error) {
 	}
 	if i.ID != nil {
 		objectMap["id"] = i.ID
-	}
-	if i.Name != nil {
-		objectMap["name"] = i.Name
-	}
-	if i.Type != nil {
-		objectMap["type"] = i.Type
 	}
 	if i.Location != nil {
 		objectMap["location"] = i.Location
@@ -4850,7 +5382,7 @@ func (i *Interface) UnmarshalJSON(body []byte) error {
 
 // InterfaceAssociation network interface and its custom security rules.
 type InterfaceAssociation struct {
-	// ID - Network interface ID.
+	// ID - READ-ONLY; Network interface ID.
 	ID *string `json:"id,omitempty"`
 	// SecurityRules - Collection of custom security rules.
 	SecurityRules *[]SecurityRule `json:"securityRules,omitempty"`
@@ -4879,6 +5411,24 @@ type InterfaceIPConfiguration struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for InterfaceIPConfiguration.
+func (iic InterfaceIPConfiguration) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if iic.InterfaceIPConfigurationPropertiesFormat != nil {
+		objectMap["properties"] = iic.InterfaceIPConfigurationPropertiesFormat
+	}
+	if iic.Name != nil {
+		objectMap["name"] = iic.Name
+	}
+	if iic.Etag != nil {
+		objectMap["etag"] = iic.Etag
+	}
+	if iic.ID != nil {
+		objectMap["id"] = iic.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for InterfaceIPConfiguration struct.
@@ -4967,20 +5517,37 @@ type InterfaceListResultIterator struct {
 	page InterfaceListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *InterfaceListResultIterator) Next() error {
+func (iter *InterfaceListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/InterfaceListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *InterfaceListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -5002,6 +5569,11 @@ func (iter InterfaceListResultIterator) Value() Interface {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the InterfaceListResultIterator type.
+func NewInterfaceListResultIterator(page InterfaceListResultPage) InterfaceListResultIterator {
+	return InterfaceListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (ilr InterfaceListResult) IsEmpty() bool {
 	return ilr.Value == nil || len(*ilr.Value) == 0
@@ -5009,11 +5581,11 @@ func (ilr InterfaceListResult) IsEmpty() bool {
 
 // interfaceListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (ilr InterfaceListResult) interfaceListResultPreparer() (*http.Request, error) {
+func (ilr InterfaceListResult) interfaceListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if ilr.NextLink == nil || len(to.String(ilr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(ilr.NextLink)))
@@ -5021,19 +5593,36 @@ func (ilr InterfaceListResult) interfaceListResultPreparer() (*http.Request, err
 
 // InterfaceListResultPage contains a page of Interface values.
 type InterfaceListResultPage struct {
-	fn  func(InterfaceListResult) (InterfaceListResult, error)
+	fn  func(context.Context, InterfaceListResult) (InterfaceListResult, error)
 	ilr InterfaceListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *InterfaceListResultPage) Next() error {
-	next, err := page.fn(page.ilr)
+func (page *InterfaceListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/InterfaceListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.ilr)
 	if err != nil {
 		return err
 	}
 	page.ilr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *InterfaceListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -5052,6 +5641,11 @@ func (page InterfaceListResultPage) Values() []Interface {
 		return nil
 	}
 	return *page.ilr.Value
+}
+
+// Creates a new instance of the InterfaceListResultPage type.
+func NewInterfaceListResultPage(getNextPage func(context.Context, InterfaceListResult) (InterfaceListResult, error)) InterfaceListResultPage {
+	return InterfaceListResultPage{fn: getNextPage}
 }
 
 // InterfacePropertiesFormat networkInterface properties.
@@ -5078,100 +5672,55 @@ type InterfacePropertiesFormat struct {
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
 
-// InterfacesCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// InterfacesCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type InterfacesCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future InterfacesCreateOrUpdateFuture) Result(client InterfacesClient) (i Interface, err error) {
+func (future *InterfacesCreateOrUpdateFuture) Result(client InterfacesClient) (i Interface, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.InterfacesCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return i, azure.NewAsyncOpIncompleteError("network.InterfacesCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		i, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.InterfacesCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.InterfacesCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if i.Response.Response, err = future.GetResult(sender); err == nil && i.Response.Response.StatusCode != http.StatusNoContent {
+		i, err = client.CreateOrUpdateResponder(i.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.InterfacesCreateOrUpdateFuture", "Result", i.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.InterfacesCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	i, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.InterfacesCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// InterfacesDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// InterfacesDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type InterfacesDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future InterfacesDeleteFuture) Result(client InterfacesClient) (ar autorest.Response, err error) {
+func (future *InterfacesDeleteFuture) Result(client InterfacesClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.InterfacesDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.InterfacesDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.InterfacesDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.InterfacesDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.InterfacesDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.InterfacesDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -5179,96 +5728,56 @@ func (future InterfacesDeleteFuture) Result(client InterfacesClient) (ar autores
 // long-running operation.
 type InterfacesGetEffectiveRouteTableFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future InterfacesGetEffectiveRouteTableFuture) Result(client InterfacesClient) (erlr EffectiveRouteListResult, err error) {
+func (future *InterfacesGetEffectiveRouteTableFuture) Result(client InterfacesClient) (erlr EffectiveRouteListResult, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.InterfacesGetEffectiveRouteTableFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return erlr, azure.NewAsyncOpIncompleteError("network.InterfacesGetEffectiveRouteTableFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		erlr, err = client.GetEffectiveRouteTableResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.InterfacesGetEffectiveRouteTableFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.InterfacesGetEffectiveRouteTableFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if erlr.Response.Response, err = future.GetResult(sender); err == nil && erlr.Response.Response.StatusCode != http.StatusNoContent {
+		erlr, err = client.GetEffectiveRouteTableResponder(erlr.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.InterfacesGetEffectiveRouteTableFuture", "Result", erlr.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.InterfacesGetEffectiveRouteTableFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	erlr, err = client.GetEffectiveRouteTableResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.InterfacesGetEffectiveRouteTableFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// InterfacesListEffectiveNetworkSecurityGroupsFuture an abstraction for monitoring and retrieving the results of a
-// long-running operation.
+// InterfacesListEffectiveNetworkSecurityGroupsFuture an abstraction for monitoring and retrieving the
+// results of a long-running operation.
 type InterfacesListEffectiveNetworkSecurityGroupsFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future InterfacesListEffectiveNetworkSecurityGroupsFuture) Result(client InterfacesClient) (ensglr EffectiveNetworkSecurityGroupListResult, err error) {
+func (future *InterfacesListEffectiveNetworkSecurityGroupsFuture) Result(client InterfacesClient) (ensglr EffectiveNetworkSecurityGroupListResult, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.InterfacesListEffectiveNetworkSecurityGroupsFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ensglr, azure.NewAsyncOpIncompleteError("network.InterfacesListEffectiveNetworkSecurityGroupsFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ensglr, err = client.ListEffectiveNetworkSecurityGroupsResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.InterfacesListEffectiveNetworkSecurityGroupsFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.InterfacesListEffectiveNetworkSecurityGroupsFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if ensglr.Response.Response, err = future.GetResult(sender); err == nil && ensglr.Response.Response.StatusCode != http.StatusNoContent {
+		ensglr, err = client.ListEffectiveNetworkSecurityGroupsResponder(ensglr.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.InterfacesListEffectiveNetworkSecurityGroupsFuture", "Result", ensglr.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.InterfacesListEffectiveNetworkSecurityGroupsFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ensglr, err = client.ListEffectiveNetworkSecurityGroupsResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.InterfacesListEffectiveNetworkSecurityGroupsFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -5291,6 +5800,24 @@ type IPConfiguration struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for IPConfiguration.
+func (ic IPConfiguration) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if ic.IPConfigurationPropertiesFormat != nil {
+		objectMap["properties"] = ic.IPConfigurationPropertiesFormat
+	}
+	if ic.Name != nil {
+		objectMap["name"] = ic.Name
+	}
+	if ic.Etag != nil {
+		objectMap["etag"] = ic.Etag
+	}
+	if ic.ID != nil {
+		objectMap["id"] = ic.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for IPConfiguration struct.
@@ -5400,9 +5927,9 @@ type LoadBalancer struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -5421,12 +5948,6 @@ func (lb LoadBalancer) MarshalJSON() ([]byte, error) {
 	}
 	if lb.ID != nil {
 		objectMap["id"] = lb.ID
-	}
-	if lb.Name != nil {
-		objectMap["name"] = lb.Name
-	}
-	if lb.Type != nil {
-		objectMap["type"] = lb.Type
 	}
 	if lb.Location != nil {
 		objectMap["location"] = lb.Location
@@ -5530,20 +6051,37 @@ type LoadBalancerListResultIterator struct {
 	page LoadBalancerListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *LoadBalancerListResultIterator) Next() error {
+func (iter *LoadBalancerListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/LoadBalancerListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *LoadBalancerListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -5565,6 +6103,11 @@ func (iter LoadBalancerListResultIterator) Value() LoadBalancer {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the LoadBalancerListResultIterator type.
+func NewLoadBalancerListResultIterator(page LoadBalancerListResultPage) LoadBalancerListResultIterator {
+	return LoadBalancerListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (lblr LoadBalancerListResult) IsEmpty() bool {
 	return lblr.Value == nil || len(*lblr.Value) == 0
@@ -5572,11 +6115,11 @@ func (lblr LoadBalancerListResult) IsEmpty() bool {
 
 // loadBalancerListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (lblr LoadBalancerListResult) loadBalancerListResultPreparer() (*http.Request, error) {
+func (lblr LoadBalancerListResult) loadBalancerListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if lblr.NextLink == nil || len(to.String(lblr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(lblr.NextLink)))
@@ -5584,19 +6127,36 @@ func (lblr LoadBalancerListResult) loadBalancerListResultPreparer() (*http.Reque
 
 // LoadBalancerListResultPage contains a page of LoadBalancer values.
 type LoadBalancerListResultPage struct {
-	fn   func(LoadBalancerListResult) (LoadBalancerListResult, error)
+	fn   func(context.Context, LoadBalancerListResult) (LoadBalancerListResult, error)
 	lblr LoadBalancerListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *LoadBalancerListResultPage) Next() error {
-	next, err := page.fn(page.lblr)
+func (page *LoadBalancerListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/LoadBalancerListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.lblr)
 	if err != nil {
 		return err
 	}
 	page.lblr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *LoadBalancerListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -5615,6 +6175,11 @@ func (page LoadBalancerListResultPage) Values() []LoadBalancer {
 		return nil
 	}
 	return *page.lblr.Value
+}
+
+// Creates a new instance of the LoadBalancerListResultPage type.
+func NewLoadBalancerListResultPage(getNextPage func(context.Context, LoadBalancerListResult) (LoadBalancerListResult, error)) LoadBalancerListResultPage {
+	return LoadBalancerListResultPage{fn: getNextPage}
 }
 
 // LoadBalancerPropertiesFormat properties of the load balancer.
@@ -5639,100 +6204,55 @@ type LoadBalancerPropertiesFormat struct {
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
 
-// LoadBalancersCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// LoadBalancersCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type LoadBalancersCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future LoadBalancersCreateOrUpdateFuture) Result(client LoadBalancersClient) (lb LoadBalancer, err error) {
+func (future *LoadBalancersCreateOrUpdateFuture) Result(client LoadBalancersClient) (lb LoadBalancer, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.LoadBalancersCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return lb, azure.NewAsyncOpIncompleteError("network.LoadBalancersCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		lb, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.LoadBalancersCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.LoadBalancersCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if lb.Response.Response, err = future.GetResult(sender); err == nil && lb.Response.Response.StatusCode != http.StatusNoContent {
+		lb, err = client.CreateOrUpdateResponder(lb.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.LoadBalancersCreateOrUpdateFuture", "Result", lb.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.LoadBalancersCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	lb, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.LoadBalancersCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// LoadBalancersDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// LoadBalancersDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type LoadBalancersDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future LoadBalancersDeleteFuture) Result(client LoadBalancersClient) (ar autorest.Response, err error) {
+func (future *LoadBalancersDeleteFuture) Result(client LoadBalancersClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.LoadBalancersDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.LoadBalancersDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.LoadBalancersDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.LoadBalancersDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.LoadBalancersDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.LoadBalancersDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -5745,6 +6265,24 @@ type LoadBalancingRule struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for LoadBalancingRule.
+func (lbr LoadBalancingRule) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if lbr.LoadBalancingRulePropertiesFormat != nil {
+		objectMap["properties"] = lbr.LoadBalancingRulePropertiesFormat
+	}
+	if lbr.Name != nil {
+		objectMap["name"] = lbr.Name
+	}
+	if lbr.Etag != nil {
+		objectMap["etag"] = lbr.Etag
+	}
+	if lbr.ID != nil {
+		objectMap["id"] = lbr.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for LoadBalancingRule struct.
@@ -5830,9 +6368,9 @@ type LocalNetworkGateway struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -5851,12 +6389,6 @@ func (lng LocalNetworkGateway) MarshalJSON() ([]byte, error) {
 	}
 	if lng.ID != nil {
 		objectMap["id"] = lng.ID
-	}
-	if lng.Name != nil {
-		objectMap["name"] = lng.Name
-	}
-	if lng.Type != nil {
-		objectMap["type"] = lng.Type
 	}
 	if lng.Location != nil {
 		objectMap["location"] = lng.Location
@@ -5954,26 +6486,44 @@ type LocalNetworkGatewayListResult struct {
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
-// LocalNetworkGatewayListResultIterator provides access to a complete listing of LocalNetworkGateway values.
+// LocalNetworkGatewayListResultIterator provides access to a complete listing of LocalNetworkGateway
+// values.
 type LocalNetworkGatewayListResultIterator struct {
 	i    int
 	page LocalNetworkGatewayListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *LocalNetworkGatewayListResultIterator) Next() error {
+func (iter *LocalNetworkGatewayListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/LocalNetworkGatewayListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *LocalNetworkGatewayListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -5995,6 +6545,11 @@ func (iter LocalNetworkGatewayListResultIterator) Value() LocalNetworkGateway {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the LocalNetworkGatewayListResultIterator type.
+func NewLocalNetworkGatewayListResultIterator(page LocalNetworkGatewayListResultPage) LocalNetworkGatewayListResultIterator {
+	return LocalNetworkGatewayListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (lnglr LocalNetworkGatewayListResult) IsEmpty() bool {
 	return lnglr.Value == nil || len(*lnglr.Value) == 0
@@ -6002,11 +6557,11 @@ func (lnglr LocalNetworkGatewayListResult) IsEmpty() bool {
 
 // localNetworkGatewayListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (lnglr LocalNetworkGatewayListResult) localNetworkGatewayListResultPreparer() (*http.Request, error) {
+func (lnglr LocalNetworkGatewayListResult) localNetworkGatewayListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if lnglr.NextLink == nil || len(to.String(lnglr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(lnglr.NextLink)))
@@ -6014,19 +6569,36 @@ func (lnglr LocalNetworkGatewayListResult) localNetworkGatewayListResultPreparer
 
 // LocalNetworkGatewayListResultPage contains a page of LocalNetworkGateway values.
 type LocalNetworkGatewayListResultPage struct {
-	fn    func(LocalNetworkGatewayListResult) (LocalNetworkGatewayListResult, error)
+	fn    func(context.Context, LocalNetworkGatewayListResult) (LocalNetworkGatewayListResult, error)
 	lnglr LocalNetworkGatewayListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *LocalNetworkGatewayListResultPage) Next() error {
-	next, err := page.fn(page.lnglr)
+func (page *LocalNetworkGatewayListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/LocalNetworkGatewayListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.lnglr)
 	if err != nil {
 		return err
 	}
 	page.lnglr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *LocalNetworkGatewayListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -6047,6 +6619,11 @@ func (page LocalNetworkGatewayListResultPage) Values() []LocalNetworkGateway {
 	return *page.lnglr.Value
 }
 
+// Creates a new instance of the LocalNetworkGatewayListResultPage type.
+func NewLocalNetworkGatewayListResultPage(getNextPage func(context.Context, LocalNetworkGatewayListResult) (LocalNetworkGatewayListResult, error)) LocalNetworkGatewayListResultPage {
+	return LocalNetworkGatewayListResultPage{fn: getNextPage}
+}
+
 // LocalNetworkGatewayPropertiesFormat localNetworkGateway properties
 type LocalNetworkGatewayPropertiesFormat struct {
 	// LocalNetworkAddressSpace - Local network site address space.
@@ -6057,7 +6634,7 @@ type LocalNetworkGatewayPropertiesFormat struct {
 	BgpSettings *BgpSettings `json:"bgpSettings,omitempty"`
 	// ResourceGUID - The resource GUID property of the LocalNetworkGateway resource.
 	ResourceGUID *string `json:"resourceGuid,omitempty"`
-	// ProvisioningState - The provisioning state of the LocalNetworkGateway resource. Possible values are: 'Updating', 'Deleting', and 'Failed'.
+	// ProvisioningState - READ-ONLY; The provisioning state of the LocalNetworkGateway resource. Possible values are: 'Updating', 'Deleting', and 'Failed'.
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
 
@@ -6065,97 +6642,51 @@ type LocalNetworkGatewayPropertiesFormat struct {
 // long-running operation.
 type LocalNetworkGatewaysCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future LocalNetworkGatewaysCreateOrUpdateFuture) Result(client LocalNetworkGatewaysClient) (lng LocalNetworkGateway, err error) {
+func (future *LocalNetworkGatewaysCreateOrUpdateFuture) Result(client LocalNetworkGatewaysClient) (lng LocalNetworkGateway, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return lng, azure.NewAsyncOpIncompleteError("network.LocalNetworkGatewaysCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		lng, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.LocalNetworkGatewaysCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if lng.Response.Response, err = future.GetResult(sender); err == nil && lng.Response.Response.StatusCode != http.StatusNoContent {
+		lng, err = client.CreateOrUpdateResponder(lng.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysCreateOrUpdateFuture", "Result", lng.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	lng, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// LocalNetworkGatewaysDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// LocalNetworkGatewaysDeleteFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type LocalNetworkGatewaysDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future LocalNetworkGatewaysDeleteFuture) Result(client LocalNetworkGatewaysClient) (ar autorest.Response, err error) {
+func (future *LocalNetworkGatewaysDeleteFuture) Result(client LocalNetworkGatewaysClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.LocalNetworkGatewaysDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.LocalNetworkGatewaysDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.LocalNetworkGatewaysDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -6191,6 +6722,24 @@ type OutboundNatRule struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for OutboundNatRule.
+func (onr OutboundNatRule) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if onr.OutboundNatRulePropertiesFormat != nil {
+		objectMap["properties"] = onr.OutboundNatRulePropertiesFormat
+	}
+	if onr.Name != nil {
+		objectMap["name"] = onr.Name
+	}
+	if onr.Etag != nil {
+		objectMap["etag"] = onr.Etag
+	}
+	if onr.ID != nil {
+		objectMap["id"] = onr.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for OutboundNatRule struct.
@@ -6259,6 +6808,15 @@ type OutboundNatRulePropertiesFormat struct {
 // PacketCapture parameters that define the create packet capture operation.
 type PacketCapture struct {
 	*PacketCaptureParameters `json:"properties,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for PacketCapture.
+func (pc PacketCapture) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if pc.PacketCaptureParameters != nil {
+		objectMap["properties"] = pc.PacketCaptureParameters
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for PacketCapture struct.
@@ -6340,12 +6898,24 @@ type PacketCaptureQueryStatusResult struct {
 // PacketCaptureResult information about packet capture session.
 type PacketCaptureResult struct {
 	autorest.Response `json:"-"`
-	// Name - Name of the packet capture session.
+	// Name - READ-ONLY; Name of the packet capture session.
 	Name *string `json:"name,omitempty"`
-	// ID - ID of the packet capture operation.
+	// ID - READ-ONLY; ID of the packet capture operation.
 	ID                             *string `json:"id,omitempty"`
 	Etag                           *string `json:"etag,omitempty"`
 	*PacketCaptureResultProperties `json:"properties,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for PacketCaptureResult.
+func (pcr PacketCaptureResult) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if pcr.Etag != nil {
+		objectMap["etag"] = pcr.Etag
+	}
+	if pcr.PacketCaptureResultProperties != nil {
+		objectMap["properties"] = pcr.PacketCaptureResultProperties
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for PacketCaptureResult struct.
@@ -6415,99 +6985,55 @@ type PacketCaptureResultProperties struct {
 	Filters            *[]PacketCaptureFilter        `json:"filters,omitempty"`
 }
 
-// PacketCapturesCreateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// PacketCapturesCreateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type PacketCapturesCreateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future PacketCapturesCreateFuture) Result(client PacketCapturesClient) (pcr PacketCaptureResult, err error) {
+func (future *PacketCapturesCreateFuture) Result(client PacketCapturesClient) (pcr PacketCaptureResult, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.PacketCapturesCreateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return pcr, azure.NewAsyncOpIncompleteError("network.PacketCapturesCreateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		pcr, err = client.CreateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.PacketCapturesCreateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.PacketCapturesCreateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if pcr.Response.Response, err = future.GetResult(sender); err == nil && pcr.Response.Response.StatusCode != http.StatusNoContent {
+		pcr, err = client.CreateResponder(pcr.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.PacketCapturesCreateFuture", "Result", pcr.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.PacketCapturesCreateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	pcr, err = client.CreateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.PacketCapturesCreateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// PacketCapturesDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// PacketCapturesDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type PacketCapturesDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future PacketCapturesDeleteFuture) Result(client PacketCapturesClient) (ar autorest.Response, err error) {
+func (future *PacketCapturesDeleteFuture) Result(client PacketCapturesClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.PacketCapturesDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.PacketCapturesDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.PacketCapturesDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.PacketCapturesDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.PacketCapturesDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.PacketCapturesDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -6515,96 +7041,51 @@ func (future PacketCapturesDeleteFuture) Result(client PacketCapturesClient) (ar
 // operation.
 type PacketCapturesGetStatusFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future PacketCapturesGetStatusFuture) Result(client PacketCapturesClient) (pcqsr PacketCaptureQueryStatusResult, err error) {
+func (future *PacketCapturesGetStatusFuture) Result(client PacketCapturesClient) (pcqsr PacketCaptureQueryStatusResult, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.PacketCapturesGetStatusFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return pcqsr, azure.NewAsyncOpIncompleteError("network.PacketCapturesGetStatusFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		pcqsr, err = client.GetStatusResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.PacketCapturesGetStatusFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.PacketCapturesGetStatusFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if pcqsr.Response.Response, err = future.GetResult(sender); err == nil && pcqsr.Response.Response.StatusCode != http.StatusNoContent {
+		pcqsr, err = client.GetStatusResponder(pcqsr.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.PacketCapturesGetStatusFuture", "Result", pcqsr.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.PacketCapturesGetStatusFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	pcqsr, err = client.GetStatusResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.PacketCapturesGetStatusFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// PacketCapturesStopFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// PacketCapturesStopFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type PacketCapturesStopFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future PacketCapturesStopFuture) Result(client PacketCapturesClient) (ar autorest.Response, err error) {
+func (future *PacketCapturesStopFuture) Result(client PacketCapturesClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.PacketCapturesStopFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.PacketCapturesStopFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.StopResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.PacketCapturesStopFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.PacketCapturesStopFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.PacketCapturesStopFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.StopResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.PacketCapturesStopFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -6621,11 +7102,11 @@ type PacketCaptureStorageLocation struct {
 // PatchRouteFilter route Filter Resource.
 type PatchRouteFilter struct {
 	*RouteFilterPropertiesFormat `json:"properties,omitempty"`
-	// Name - The name of the resource that is unique within a resource group. This name can be used to access the resource.
+	// Name - READ-ONLY; The name of the resource that is unique within a resource group. This name can be used to access the resource.
 	Name *string `json:"name,omitempty"`
-	// Etag - A unique read-only string that changes whenever the resource is updated.
+	// Etag - READ-ONLY; A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Tags - Resource tags.
 	Tags map[string]*string `json:"tags"`
@@ -6638,15 +7119,6 @@ func (prf PatchRouteFilter) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
 	if prf.RouteFilterPropertiesFormat != nil {
 		objectMap["properties"] = prf.RouteFilterPropertiesFormat
-	}
-	if prf.Name != nil {
-		objectMap["name"] = prf.Name
-	}
-	if prf.Etag != nil {
-		objectMap["etag"] = prf.Etag
-	}
-	if prf.Type != nil {
-		objectMap["type"] = prf.Type
 	}
 	if prf.Tags != nil {
 		objectMap["tags"] = prf.Tags
@@ -6729,9 +7201,9 @@ func (prf *PatchRouteFilter) UnmarshalJSON(body []byte) error {
 // PatchRouteFilterRule route Filter Rule Resource
 type PatchRouteFilterRule struct {
 	*RouteFilterRulePropertiesFormat `json:"properties,omitempty"`
-	// Name - The name of the resource that is unique within a resource group. This name can be used to access the resource.
+	// Name - READ-ONLY; The name of the resource that is unique within a resource group. This name can be used to access the resource.
 	Name *string `json:"name,omitempty"`
-	// Etag - A unique read-only string that changes whenever the resource is updated.
+	// Etag - READ-ONLY; A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
 	// Tags - Resource tags.
 	Tags map[string]*string `json:"tags"`
@@ -6744,12 +7216,6 @@ func (prfr PatchRouteFilterRule) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
 	if prfr.RouteFilterRulePropertiesFormat != nil {
 		objectMap["properties"] = prfr.RouteFilterRulePropertiesFormat
-	}
-	if prfr.Name != nil {
-		objectMap["name"] = prfr.Name
-	}
-	if prfr.Etag != nil {
-		objectMap["etag"] = prfr.Etag
 	}
 	if prfr.Tags != nil {
 		objectMap["tags"] = prfr.Tags
@@ -6831,6 +7297,24 @@ type Probe struct {
 	ID *string `json:"id,omitempty"`
 }
 
+// MarshalJSON is the custom marshaler for Probe.
+func (p Probe) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if p.ProbePropertiesFormat != nil {
+		objectMap["properties"] = p.ProbePropertiesFormat
+	}
+	if p.Name != nil {
+		objectMap["name"] = p.Name
+	}
+	if p.Etag != nil {
+		objectMap["etag"] = p.Etag
+	}
+	if p.ID != nil {
+		objectMap["id"] = p.ID
+	}
+	return json.Marshal(objectMap)
+}
+
 // UnmarshalJSON is the custom unmarshaler for Probe struct.
 func (p *Probe) UnmarshalJSON(body []byte) error {
 	var m map[string]*json.RawMessage
@@ -6884,7 +7368,7 @@ func (p *Probe) UnmarshalJSON(body []byte) error {
 
 // ProbePropertiesFormat ...
 type ProbePropertiesFormat struct {
-	// LoadBalancingRules - The load balancer rules that use this probe.
+	// LoadBalancingRules - READ-ONLY; The load balancer rules that use this probe.
 	LoadBalancingRules *[]SubResource `json:"loadBalancingRules,omitempty"`
 	// Protocol - The protocol of the end point. Possible values are: 'Http' or 'Tcp'. If 'Tcp' is specified, a received ACK is required for the probe to be successful. If 'Http' is specified, a 200 OK response from the specifies URI is required for the probe to be successful. Possible values include: 'ProbeProtocolHTTP', 'ProbeProtocolTCP'
 	Protocol ProbeProtocol `json:"protocol,omitempty"`
@@ -6908,9 +7392,9 @@ type PublicIPAddress struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -6929,12 +7413,6 @@ func (pia PublicIPAddress) MarshalJSON() ([]byte, error) {
 	}
 	if pia.ID != nil {
 		objectMap["id"] = pia.ID
-	}
-	if pia.Name != nil {
-		objectMap["name"] = pia.Name
-	}
-	if pia.Type != nil {
-		objectMap["type"] = pia.Type
 	}
 	if pia.Location != nil {
 		objectMap["location"] = pia.Location
@@ -7033,51 +7511,31 @@ type PublicIPAddressDNSSettings struct {
 	ReverseFqdn *string `json:"reverseFqdn,omitempty"`
 }
 
-// PublicIPAddressesCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// PublicIPAddressesCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type PublicIPAddressesCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future PublicIPAddressesCreateOrUpdateFuture) Result(client PublicIPAddressesClient) (pia PublicIPAddress, err error) {
+func (future *PublicIPAddressesCreateOrUpdateFuture) Result(client PublicIPAddressesClient) (pia PublicIPAddress, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.PublicIPAddressesCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return pia, azure.NewAsyncOpIncompleteError("network.PublicIPAddressesCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		pia, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.PublicIPAddressesCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.PublicIPAddressesCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if pia.Response.Response, err = future.GetResult(sender); err == nil && pia.Response.Response.StatusCode != http.StatusNoContent {
+		pia, err = client.CreateOrUpdateResponder(pia.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.PublicIPAddressesCreateOrUpdateFuture", "Result", pia.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.PublicIPAddressesCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	pia, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.PublicIPAddressesCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -7086,48 +7544,22 @@ func (future PublicIPAddressesCreateOrUpdateFuture) Result(client PublicIPAddres
 // operation.
 type PublicIPAddressesDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future PublicIPAddressesDeleteFuture) Result(client PublicIPAddressesClient) (ar autorest.Response, err error) {
+func (future *PublicIPAddressesDeleteFuture) Result(client PublicIPAddressesClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.PublicIPAddressesDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.PublicIPAddressesDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.PublicIPAddressesDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.PublicIPAddressesDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.PublicIPAddressesDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.PublicIPAddressesDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -7146,20 +7578,37 @@ type PublicIPAddressListResultIterator struct {
 	page PublicIPAddressListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *PublicIPAddressListResultIterator) Next() error {
+func (iter *PublicIPAddressListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/PublicIPAddressListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *PublicIPAddressListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -7181,6 +7630,11 @@ func (iter PublicIPAddressListResultIterator) Value() PublicIPAddress {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the PublicIPAddressListResultIterator type.
+func NewPublicIPAddressListResultIterator(page PublicIPAddressListResultPage) PublicIPAddressListResultIterator {
+	return PublicIPAddressListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (pialr PublicIPAddressListResult) IsEmpty() bool {
 	return pialr.Value == nil || len(*pialr.Value) == 0
@@ -7188,11 +7642,11 @@ func (pialr PublicIPAddressListResult) IsEmpty() bool {
 
 // publicIPAddressListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (pialr PublicIPAddressListResult) publicIPAddressListResultPreparer() (*http.Request, error) {
+func (pialr PublicIPAddressListResult) publicIPAddressListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if pialr.NextLink == nil || len(to.String(pialr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(pialr.NextLink)))
@@ -7200,19 +7654,36 @@ func (pialr PublicIPAddressListResult) publicIPAddressListResultPreparer() (*htt
 
 // PublicIPAddressListResultPage contains a page of PublicIPAddress values.
 type PublicIPAddressListResultPage struct {
-	fn    func(PublicIPAddressListResult) (PublicIPAddressListResult, error)
+	fn    func(context.Context, PublicIPAddressListResult) (PublicIPAddressListResult, error)
 	pialr PublicIPAddressListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *PublicIPAddressListResultPage) Next() error {
-	next, err := page.fn(page.pialr)
+func (page *PublicIPAddressListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/PublicIPAddressListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.pialr)
 	if err != nil {
 		return err
 	}
 	page.pialr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *PublicIPAddressListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -7233,13 +7704,19 @@ func (page PublicIPAddressListResultPage) Values() []PublicIPAddress {
 	return *page.pialr.Value
 }
 
+// Creates a new instance of the PublicIPAddressListResultPage type.
+func NewPublicIPAddressListResultPage(getNextPage func(context.Context, PublicIPAddressListResult) (PublicIPAddressListResult, error)) PublicIPAddressListResultPage {
+	return PublicIPAddressListResultPage{fn: getNextPage}
+}
+
 // PublicIPAddressPropertiesFormat public IP address properties.
 type PublicIPAddressPropertiesFormat struct {
 	// PublicIPAllocationMethod - The public IP allocation method. Possible values are: 'Static' and 'Dynamic'. Possible values include: 'Static', 'Dynamic'
 	PublicIPAllocationMethod IPAllocationMethod `json:"publicIPAllocationMethod,omitempty"`
 	// PublicIPAddressVersion - The public IP address version. Possible values are: 'IPv4' and 'IPv6'. Possible values include: 'IPv4', 'IPv6'
-	PublicIPAddressVersion IPVersion        `json:"publicIPAddressVersion,omitempty"`
-	IPConfiguration        *IPConfiguration `json:"ipConfiguration,omitempty"`
+	PublicIPAddressVersion IPVersion `json:"publicIPAddressVersion,omitempty"`
+	// IPConfiguration - READ-ONLY
+	IPConfiguration *IPConfiguration `json:"ipConfiguration,omitempty"`
 	// DNSSettings - The FQDN of the DNS record associated with the public IP address.
 	DNSSettings *PublicIPAddressDNSSettings `json:"dnsSettings,omitempty"`
 	IPAddress   *string                     `json:"ipAddress,omitempty"`
@@ -7261,9 +7738,9 @@ type QueryTroubleshootingParameters struct {
 type Resource struct {
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -7276,12 +7753,6 @@ func (r Resource) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
 	if r.ID != nil {
 		objectMap["id"] = r.ID
-	}
-	if r.Name != nil {
-		objectMap["name"] = r.Name
-	}
-	if r.Type != nil {
-		objectMap["type"] = r.Type
 	}
 	if r.Location != nil {
 		objectMap["location"] = r.Location
@@ -7297,10 +7768,25 @@ type ResourceNavigationLink struct {
 	*ResourceNavigationLinkFormat `json:"properties,omitempty"`
 	// Name - Name of the resource that is unique within a resource group. This name can be used to access the resource.
 	Name *string `json:"name,omitempty"`
-	// Etag - A unique read-only string that changes whenever the resource is updated.
+	// Etag - READ-ONLY; A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for ResourceNavigationLink.
+func (rnl ResourceNavigationLink) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if rnl.ResourceNavigationLinkFormat != nil {
+		objectMap["properties"] = rnl.ResourceNavigationLinkFormat
+	}
+	if rnl.Name != nil {
+		objectMap["name"] = rnl.Name
+	}
+	if rnl.ID != nil {
+		objectMap["id"] = rnl.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for ResourceNavigationLink struct.
@@ -7360,7 +7846,7 @@ type ResourceNavigationLinkFormat struct {
 	LinkedResourceType *string `json:"linkedResourceType,omitempty"`
 	// Link - Link to the external resource
 	Link *string `json:"link,omitempty"`
-	// ProvisioningState - Provisioning state of the ResourceNavigationLink resource.
+	// ProvisioningState - READ-ONLY; Provisioning state of the ResourceNavigationLink resource.
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
 
@@ -7382,6 +7868,24 @@ type Route struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for Route.
+func (r Route) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if r.RoutePropertiesFormat != nil {
+		objectMap["properties"] = r.RoutePropertiesFormat
+	}
+	if r.Name != nil {
+		objectMap["name"] = r.Name
+	}
+	if r.Etag != nil {
+		objectMap["etag"] = r.Etag
+	}
+	if r.ID != nil {
+		objectMap["id"] = r.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for Route struct.
@@ -7439,13 +7943,13 @@ func (r *Route) UnmarshalJSON(body []byte) error {
 type RouteFilter struct {
 	autorest.Response            `json:"-"`
 	*RouteFilterPropertiesFormat `json:"properties,omitempty"`
-	// Etag - Gets a unique read-only string that changes whenever the resource is updated.
+	// Etag - READ-ONLY; Gets a unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -7459,17 +7963,8 @@ func (rf RouteFilter) MarshalJSON() ([]byte, error) {
 	if rf.RouteFilterPropertiesFormat != nil {
 		objectMap["properties"] = rf.RouteFilterPropertiesFormat
 	}
-	if rf.Etag != nil {
-		objectMap["etag"] = rf.Etag
-	}
 	if rf.ID != nil {
 		objectMap["id"] = rf.ID
-	}
-	if rf.Name != nil {
-		objectMap["name"] = rf.Name
-	}
-	if rf.Type != nil {
-		objectMap["type"] = rf.Type
 	}
 	if rf.Location != nil {
 		objectMap["location"] = rf.Location
@@ -7573,20 +8068,37 @@ type RouteFilterListResultIterator struct {
 	page RouteFilterListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *RouteFilterListResultIterator) Next() error {
+func (iter *RouteFilterListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RouteFilterListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *RouteFilterListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -7608,6 +8120,11 @@ func (iter RouteFilterListResultIterator) Value() RouteFilter {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the RouteFilterListResultIterator type.
+func NewRouteFilterListResultIterator(page RouteFilterListResultPage) RouteFilterListResultIterator {
+	return RouteFilterListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (rflr RouteFilterListResult) IsEmpty() bool {
 	return rflr.Value == nil || len(*rflr.Value) == 0
@@ -7615,11 +8132,11 @@ func (rflr RouteFilterListResult) IsEmpty() bool {
 
 // routeFilterListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (rflr RouteFilterListResult) routeFilterListResultPreparer() (*http.Request, error) {
+func (rflr RouteFilterListResult) routeFilterListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if rflr.NextLink == nil || len(to.String(rflr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(rflr.NextLink)))
@@ -7627,19 +8144,36 @@ func (rflr RouteFilterListResult) routeFilterListResultPreparer() (*http.Request
 
 // RouteFilterListResultPage contains a page of RouteFilter values.
 type RouteFilterListResultPage struct {
-	fn   func(RouteFilterListResult) (RouteFilterListResult, error)
+	fn   func(context.Context, RouteFilterListResult) (RouteFilterListResult, error)
 	rflr RouteFilterListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *RouteFilterListResultPage) Next() error {
-	next, err := page.fn(page.rflr)
+func (page *RouteFilterListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RouteFilterListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.rflr)
 	if err != nil {
 		return err
 	}
 	page.rflr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *RouteFilterListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -7660,13 +8194,18 @@ func (page RouteFilterListResultPage) Values() []RouteFilter {
 	return *page.rflr.Value
 }
 
+// Creates a new instance of the RouteFilterListResultPage type.
+func NewRouteFilterListResultPage(getNextPage func(context.Context, RouteFilterListResult) (RouteFilterListResult, error)) RouteFilterListResultPage {
+	return RouteFilterListResultPage{fn: getNextPage}
+}
+
 // RouteFilterPropertiesFormat route Filter Resource
 type RouteFilterPropertiesFormat struct {
 	// Rules - Collection of RouteFilterRules contained within a route filter.
 	Rules *[]RouteFilterRule `json:"rules,omitempty"`
-	// Peerings - A collection of references to express route circuit peerings.
+	// Peerings - READ-ONLY; A collection of references to express route circuit peerings.
 	Peerings *[]ExpressRouteCircuitPeering `json:"peerings,omitempty"`
-	// ProvisioningState - The provisioning state of the resource. Possible values are: 'Updating', 'Deleting', 'Succeeded' and 'Failed'.
+	// ProvisioningState - READ-ONLY; The provisioning state of the resource. Possible values are: 'Updating', 'Deleting', 'Succeeded' and 'Failed'.
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
 
@@ -7674,11 +8213,11 @@ type RouteFilterPropertiesFormat struct {
 type RouteFilterRule struct {
 	autorest.Response                `json:"-"`
 	*RouteFilterRulePropertiesFormat `json:"properties,omitempty"`
-	// Name - The name of the resource that is unique within a resource group. This name can be used to access the resource.
+	// Name - READ-ONLY; The name of the resource that is unique within a resource group. This name can be used to access the resource.
 	Name *string `json:"name,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
-	// Etag - A unique read-only string that changes whenever the resource is updated.
+	// Etag - READ-ONLY; A unique read-only string that changes whenever the resource is updated.
 	Etag *string `json:"etag,omitempty"`
 	// Tags - Resource tags.
 	Tags map[string]*string `json:"tags"`
@@ -7692,14 +8231,8 @@ func (rfr RouteFilterRule) MarshalJSON() ([]byte, error) {
 	if rfr.RouteFilterRulePropertiesFormat != nil {
 		objectMap["properties"] = rfr.RouteFilterRulePropertiesFormat
 	}
-	if rfr.Name != nil {
-		objectMap["name"] = rfr.Name
-	}
 	if rfr.Location != nil {
 		objectMap["location"] = rfr.Location
-	}
-	if rfr.Etag != nil {
-		objectMap["etag"] = rfr.Etag
 	}
 	if rfr.Tags != nil {
 		objectMap["tags"] = rfr.Tags
@@ -7794,20 +8327,37 @@ type RouteFilterRuleListResultIterator struct {
 	page RouteFilterRuleListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *RouteFilterRuleListResultIterator) Next() error {
+func (iter *RouteFilterRuleListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RouteFilterRuleListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *RouteFilterRuleListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -7829,6 +8379,11 @@ func (iter RouteFilterRuleListResultIterator) Value() RouteFilterRule {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the RouteFilterRuleListResultIterator type.
+func NewRouteFilterRuleListResultIterator(page RouteFilterRuleListResultPage) RouteFilterRuleListResultIterator {
+	return RouteFilterRuleListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (rfrlr RouteFilterRuleListResult) IsEmpty() bool {
 	return rfrlr.Value == nil || len(*rfrlr.Value) == 0
@@ -7836,11 +8391,11 @@ func (rfrlr RouteFilterRuleListResult) IsEmpty() bool {
 
 // routeFilterRuleListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (rfrlr RouteFilterRuleListResult) routeFilterRuleListResultPreparer() (*http.Request, error) {
+func (rfrlr RouteFilterRuleListResult) routeFilterRuleListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if rfrlr.NextLink == nil || len(to.String(rfrlr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(rfrlr.NextLink)))
@@ -7848,19 +8403,36 @@ func (rfrlr RouteFilterRuleListResult) routeFilterRuleListResultPreparer() (*htt
 
 // RouteFilterRuleListResultPage contains a page of RouteFilterRule values.
 type RouteFilterRuleListResultPage struct {
-	fn    func(RouteFilterRuleListResult) (RouteFilterRuleListResult, error)
+	fn    func(context.Context, RouteFilterRuleListResult) (RouteFilterRuleListResult, error)
 	rfrlr RouteFilterRuleListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *RouteFilterRuleListResultPage) Next() error {
-	next, err := page.fn(page.rfrlr)
+func (page *RouteFilterRuleListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RouteFilterRuleListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.rfrlr)
 	if err != nil {
 		return err
 	}
 	page.rfrlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *RouteFilterRuleListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -7881,6 +8453,11 @@ func (page RouteFilterRuleListResultPage) Values() []RouteFilterRule {
 	return *page.rfrlr.Value
 }
 
+// Creates a new instance of the RouteFilterRuleListResultPage type.
+func NewRouteFilterRuleListResultPage(getNextPage func(context.Context, RouteFilterRuleListResult) (RouteFilterRuleListResult, error)) RouteFilterRuleListResultPage {
+	return RouteFilterRuleListResultPage{fn: getNextPage}
+}
+
 // RouteFilterRulePropertiesFormat route Filter Rule Resource
 type RouteFilterRulePropertiesFormat struct {
 	// Access - The access type of the rule. Valid values are: 'Allow', 'Deny'. Possible values include: 'Allow', 'Deny'
@@ -7889,55 +8466,35 @@ type RouteFilterRulePropertiesFormat struct {
 	RouteFilterRuleType *string `json:"routeFilterRuleType,omitempty"`
 	// Communities - The collection for bgp community values to filter on. e.g. ['12076:5010','12076:5020']
 	Communities *[]string `json:"communities,omitempty"`
-	// ProvisioningState - The provisioning state of the resource. Possible values are: 'Updating', 'Deleting', 'Succeeded' and 'Failed'.
+	// ProvisioningState - READ-ONLY; The provisioning state of the resource. Possible values are: 'Updating', 'Deleting', 'Succeeded' and 'Failed'.
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
 
-// RouteFilterRulesCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// RouteFilterRulesCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type RouteFilterRulesCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future RouteFilterRulesCreateOrUpdateFuture) Result(client RouteFilterRulesClient) (rfr RouteFilterRule, err error) {
+func (future *RouteFilterRulesCreateOrUpdateFuture) Result(client RouteFilterRulesClient) (rfr RouteFilterRule, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.RouteFilterRulesCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return rfr, azure.NewAsyncOpIncompleteError("network.RouteFilterRulesCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		rfr, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.RouteFilterRulesCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.RouteFilterRulesCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if rfr.Response.Response, err = future.GetResult(sender); err == nil && rfr.Response.Response.StatusCode != http.StatusNoContent {
+		rfr, err = client.CreateOrUpdateResponder(rfr.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.RouteFilterRulesCreateOrUpdateFuture", "Result", rfr.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.RouteFilterRulesCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	rfr, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.RouteFilterRulesCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -7946,48 +8503,22 @@ func (future RouteFilterRulesCreateOrUpdateFuture) Result(client RouteFilterRule
 // operation.
 type RouteFilterRulesDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future RouteFilterRulesDeleteFuture) Result(client RouteFilterRulesClient) (ar autorest.Response, err error) {
+func (future *RouteFilterRulesDeleteFuture) Result(client RouteFilterRulesClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.RouteFilterRulesDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.RouteFilterRulesDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.RouteFilterRulesDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.RouteFilterRulesDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.RouteFilterRulesDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.RouteFilterRulesDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -7995,192 +8526,108 @@ func (future RouteFilterRulesDeleteFuture) Result(client RouteFilterRulesClient)
 // operation.
 type RouteFilterRulesUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future RouteFilterRulesUpdateFuture) Result(client RouteFilterRulesClient) (rfr RouteFilterRule, err error) {
+func (future *RouteFilterRulesUpdateFuture) Result(client RouteFilterRulesClient) (rfr RouteFilterRule, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.RouteFilterRulesUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return rfr, azure.NewAsyncOpIncompleteError("network.RouteFilterRulesUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		rfr, err = client.UpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.RouteFilterRulesUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.RouteFilterRulesUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if rfr.Response.Response, err = future.GetResult(sender); err == nil && rfr.Response.Response.StatusCode != http.StatusNoContent {
+		rfr, err = client.UpdateResponder(rfr.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.RouteFilterRulesUpdateFuture", "Result", rfr.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.RouteFilterRulesUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	rfr, err = client.UpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.RouteFilterRulesUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// RouteFiltersCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// RouteFiltersCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type RouteFiltersCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future RouteFiltersCreateOrUpdateFuture) Result(client RouteFiltersClient) (rf RouteFilter, err error) {
+func (future *RouteFiltersCreateOrUpdateFuture) Result(client RouteFiltersClient) (rf RouteFilter, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.RouteFiltersCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return rf, azure.NewAsyncOpIncompleteError("network.RouteFiltersCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		rf, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.RouteFiltersCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.RouteFiltersCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if rf.Response.Response, err = future.GetResult(sender); err == nil && rf.Response.Response.StatusCode != http.StatusNoContent {
+		rf, err = client.CreateOrUpdateResponder(rf.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.RouteFiltersCreateOrUpdateFuture", "Result", rf.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.RouteFiltersCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	rf, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.RouteFiltersCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// RouteFiltersDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// RouteFiltersDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type RouteFiltersDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future RouteFiltersDeleteFuture) Result(client RouteFiltersClient) (ar autorest.Response, err error) {
+func (future *RouteFiltersDeleteFuture) Result(client RouteFiltersClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.RouteFiltersDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.RouteFiltersDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.RouteFiltersDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.RouteFiltersDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.RouteFiltersDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.RouteFiltersDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
-// RouteFiltersUpdateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// RouteFiltersUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type RouteFiltersUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future RouteFiltersUpdateFuture) Result(client RouteFiltersClient) (rf RouteFilter, err error) {
+func (future *RouteFiltersUpdateFuture) Result(client RouteFiltersClient) (rf RouteFilter, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.RouteFiltersUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return rf, azure.NewAsyncOpIncompleteError("network.RouteFiltersUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		rf, err = client.UpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.RouteFiltersUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.RouteFiltersUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if rf.Response.Response, err = future.GetResult(sender); err == nil && rf.Response.Response.StatusCode != http.StatusNoContent {
+		rf, err = client.UpdateResponder(rf.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.RouteFiltersUpdateFuture", "Result", rf.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.RouteFiltersUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	rf, err = client.UpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.RouteFiltersUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -8200,20 +8647,37 @@ type RouteListResultIterator struct {
 	page RouteListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *RouteListResultIterator) Next() error {
+func (iter *RouteListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RouteListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *RouteListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -8235,6 +8699,11 @@ func (iter RouteListResultIterator) Value() Route {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the RouteListResultIterator type.
+func NewRouteListResultIterator(page RouteListResultPage) RouteListResultIterator {
+	return RouteListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (rlr RouteListResult) IsEmpty() bool {
 	return rlr.Value == nil || len(*rlr.Value) == 0
@@ -8242,11 +8711,11 @@ func (rlr RouteListResult) IsEmpty() bool {
 
 // routeListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (rlr RouteListResult) routeListResultPreparer() (*http.Request, error) {
+func (rlr RouteListResult) routeListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if rlr.NextLink == nil || len(to.String(rlr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(rlr.NextLink)))
@@ -8254,19 +8723,36 @@ func (rlr RouteListResult) routeListResultPreparer() (*http.Request, error) {
 
 // RouteListResultPage contains a page of Route values.
 type RouteListResultPage struct {
-	fn  func(RouteListResult) (RouteListResult, error)
+	fn  func(context.Context, RouteListResult) (RouteListResult, error)
 	rlr RouteListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *RouteListResultPage) Next() error {
-	next, err := page.fn(page.rlr)
+func (page *RouteListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RouteListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.rlr)
 	if err != nil {
 		return err
 	}
 	page.rlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *RouteListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -8287,6 +8773,11 @@ func (page RouteListResultPage) Values() []Route {
 	return *page.rlr.Value
 }
 
+// Creates a new instance of the RouteListResultPage type.
+func NewRouteListResultPage(getNextPage func(context.Context, RouteListResult) (RouteListResult, error)) RouteListResultPage {
+	return RouteListResultPage{fn: getNextPage}
+}
+
 // RoutePropertiesFormat route resource
 type RoutePropertiesFormat struct {
 	// AddressPrefix - The destination CIDR to which the route applies.
@@ -8299,50 +8790,31 @@ type RoutePropertiesFormat struct {
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
 
-// RoutesCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// RoutesCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type RoutesCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future RoutesCreateOrUpdateFuture) Result(client RoutesClient) (r Route, err error) {
+func (future *RoutesCreateOrUpdateFuture) Result(client RoutesClient) (r Route, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.RoutesCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return r, azure.NewAsyncOpIncompleteError("network.RoutesCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		r, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.RoutesCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.RoutesCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if r.Response.Response, err = future.GetResult(sender); err == nil && r.Response.Response.StatusCode != http.StatusNoContent {
+		r, err = client.CreateOrUpdateResponder(r.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.RoutesCreateOrUpdateFuture", "Result", r.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.RoutesCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	r, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.RoutesCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -8350,48 +8822,22 @@ func (future RoutesCreateOrUpdateFuture) Result(client RoutesClient) (r Route, e
 // RoutesDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
 type RoutesDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future RoutesDeleteFuture) Result(client RoutesClient) (ar autorest.Response, err error) {
+func (future *RoutesDeleteFuture) Result(client RoutesClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.RoutesDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.RoutesDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.RoutesDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.RoutesDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.RoutesDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.RoutesDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -8403,9 +8849,9 @@ type RouteTable struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -8424,12 +8870,6 @@ func (rt RouteTable) MarshalJSON() ([]byte, error) {
 	}
 	if rt.ID != nil {
 		objectMap["id"] = rt.ID
-	}
-	if rt.Name != nil {
-		objectMap["name"] = rt.Name
-	}
-	if rt.Type != nil {
-		objectMap["type"] = rt.Type
 	}
 	if rt.Location != nil {
 		objectMap["location"] = rt.Location
@@ -8533,20 +8973,37 @@ type RouteTableListResultIterator struct {
 	page RouteTableListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *RouteTableListResultIterator) Next() error {
+func (iter *RouteTableListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RouteTableListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *RouteTableListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -8568,6 +9025,11 @@ func (iter RouteTableListResultIterator) Value() RouteTable {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the RouteTableListResultIterator type.
+func NewRouteTableListResultIterator(page RouteTableListResultPage) RouteTableListResultIterator {
+	return RouteTableListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (rtlr RouteTableListResult) IsEmpty() bool {
 	return rtlr.Value == nil || len(*rtlr.Value) == 0
@@ -8575,11 +9037,11 @@ func (rtlr RouteTableListResult) IsEmpty() bool {
 
 // routeTableListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (rtlr RouteTableListResult) routeTableListResultPreparer() (*http.Request, error) {
+func (rtlr RouteTableListResult) routeTableListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if rtlr.NextLink == nil || len(to.String(rtlr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(rtlr.NextLink)))
@@ -8587,19 +9049,36 @@ func (rtlr RouteTableListResult) routeTableListResultPreparer() (*http.Request, 
 
 // RouteTableListResultPage contains a page of RouteTable values.
 type RouteTableListResultPage struct {
-	fn   func(RouteTableListResult) (RouteTableListResult, error)
+	fn   func(context.Context, RouteTableListResult) (RouteTableListResult, error)
 	rtlr RouteTableListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *RouteTableListResultPage) Next() error {
-	next, err := page.fn(page.rtlr)
+func (page *RouteTableListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RouteTableListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.rtlr)
 	if err != nil {
 		return err
 	}
 	page.rtlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *RouteTableListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -8620,110 +9099,70 @@ func (page RouteTableListResultPage) Values() []RouteTable {
 	return *page.rtlr.Value
 }
 
+// Creates a new instance of the RouteTableListResultPage type.
+func NewRouteTableListResultPage(getNextPage func(context.Context, RouteTableListResult) (RouteTableListResult, error)) RouteTableListResultPage {
+	return RouteTableListResultPage{fn: getNextPage}
+}
+
 // RouteTablePropertiesFormat route Table resource
 type RouteTablePropertiesFormat struct {
 	// Routes - Collection of routes contained within a route table.
 	Routes *[]Route `json:"routes,omitempty"`
-	// Subnets - A collection of references to subnets.
+	// Subnets - READ-ONLY; A collection of references to subnets.
 	Subnets *[]Subnet `json:"subnets,omitempty"`
 	// ProvisioningState - The provisioning state of the resource. Possible values are: 'Updating', 'Deleting', and 'Failed'.
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
 
-// RouteTablesCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// RouteTablesCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type RouteTablesCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future RouteTablesCreateOrUpdateFuture) Result(client RouteTablesClient) (rt RouteTable, err error) {
+func (future *RouteTablesCreateOrUpdateFuture) Result(client RouteTablesClient) (rt RouteTable, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.RouteTablesCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return rt, azure.NewAsyncOpIncompleteError("network.RouteTablesCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		rt, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.RouteTablesCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.RouteTablesCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if rt.Response.Response, err = future.GetResult(sender); err == nil && rt.Response.Response.StatusCode != http.StatusNoContent {
+		rt, err = client.CreateOrUpdateResponder(rt.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.RouteTablesCreateOrUpdateFuture", "Result", rt.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.RouteTablesCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	rt, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.RouteTablesCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// RouteTablesDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// RouteTablesDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type RouteTablesDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future RouteTablesDeleteFuture) Result(client RouteTablesClient) (ar autorest.Response, err error) {
+func (future *RouteTablesDeleteFuture) Result(client RouteTablesClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.RouteTablesDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.RouteTablesDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.RouteTablesDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.RouteTablesDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.RouteTablesDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.RouteTablesDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -8735,9 +9174,9 @@ type SecurityGroup struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -8756,12 +9195,6 @@ func (sg SecurityGroup) MarshalJSON() ([]byte, error) {
 	}
 	if sg.ID != nil {
 		objectMap["id"] = sg.ID
-	}
-	if sg.Name != nil {
-		objectMap["name"] = sg.Name
-	}
-	if sg.Type != nil {
-		objectMap["type"] = sg.Type
 	}
 	if sg.Location != nil {
 		objectMap["location"] = sg.Location
@@ -8865,20 +9298,37 @@ type SecurityGroupListResultIterator struct {
 	page SecurityGroupListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *SecurityGroupListResultIterator) Next() error {
+func (iter *SecurityGroupListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/SecurityGroupListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *SecurityGroupListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -8900,6 +9350,11 @@ func (iter SecurityGroupListResultIterator) Value() SecurityGroup {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the SecurityGroupListResultIterator type.
+func NewSecurityGroupListResultIterator(page SecurityGroupListResultPage) SecurityGroupListResultIterator {
+	return SecurityGroupListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (sglr SecurityGroupListResult) IsEmpty() bool {
 	return sglr.Value == nil || len(*sglr.Value) == 0
@@ -8907,11 +9362,11 @@ func (sglr SecurityGroupListResult) IsEmpty() bool {
 
 // securityGroupListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (sglr SecurityGroupListResult) securityGroupListResultPreparer() (*http.Request, error) {
+func (sglr SecurityGroupListResult) securityGroupListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if sglr.NextLink == nil || len(to.String(sglr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(sglr.NextLink)))
@@ -8919,19 +9374,36 @@ func (sglr SecurityGroupListResult) securityGroupListResultPreparer() (*http.Req
 
 // SecurityGroupListResultPage contains a page of SecurityGroup values.
 type SecurityGroupListResultPage struct {
-	fn   func(SecurityGroupListResult) (SecurityGroupListResult, error)
+	fn   func(context.Context, SecurityGroupListResult) (SecurityGroupListResult, error)
 	sglr SecurityGroupListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *SecurityGroupListResultPage) Next() error {
-	next, err := page.fn(page.sglr)
+func (page *SecurityGroupListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/SecurityGroupListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.sglr)
 	if err != nil {
 		return err
 	}
 	page.sglr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *SecurityGroupListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -8952,6 +9424,11 @@ func (page SecurityGroupListResultPage) Values() []SecurityGroup {
 	return *page.sglr.Value
 }
 
+// Creates a new instance of the SecurityGroupListResultPage type.
+func NewSecurityGroupListResultPage(getNextPage func(context.Context, SecurityGroupListResult) (SecurityGroupListResult, error)) SecurityGroupListResultPage {
+	return SecurityGroupListResultPage{fn: getNextPage}
+}
+
 // SecurityGroupNetworkInterface network interface and all its associated security rules.
 type SecurityGroupNetworkInterface struct {
 	// ID - ID of the network interface.
@@ -8965,9 +9442,9 @@ type SecurityGroupPropertiesFormat struct {
 	SecurityRules *[]SecurityRule `json:"securityRules,omitempty"`
 	// DefaultSecurityRules - The default security rules of network security group.
 	DefaultSecurityRules *[]SecurityRule `json:"defaultSecurityRules,omitempty"`
-	// NetworkInterfaces - A collection of references to network interfaces.
+	// NetworkInterfaces - READ-ONLY; A collection of references to network interfaces.
 	NetworkInterfaces *[]Interface `json:"networkInterfaces,omitempty"`
-	// Subnets - A collection of references to subnets.
+	// Subnets - READ-ONLY; A collection of references to subnets.
 	Subnets *[]Subnet `json:"subnets,omitempty"`
 	// ResourceGUID - The resource GUID property of the network security group resource.
 	ResourceGUID *string `json:"resourceGuid,omitempty"`
@@ -8975,100 +9452,55 @@ type SecurityGroupPropertiesFormat struct {
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
 
-// SecurityGroupsCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// SecurityGroupsCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type SecurityGroupsCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future SecurityGroupsCreateOrUpdateFuture) Result(client SecurityGroupsClient) (sg SecurityGroup, err error) {
+func (future *SecurityGroupsCreateOrUpdateFuture) Result(client SecurityGroupsClient) (sg SecurityGroup, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.SecurityGroupsCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return sg, azure.NewAsyncOpIncompleteError("network.SecurityGroupsCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		sg, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.SecurityGroupsCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.SecurityGroupsCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if sg.Response.Response, err = future.GetResult(sender); err == nil && sg.Response.Response.StatusCode != http.StatusNoContent {
+		sg, err = client.CreateOrUpdateResponder(sg.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.SecurityGroupsCreateOrUpdateFuture", "Result", sg.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.SecurityGroupsCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	sg, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.SecurityGroupsCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// SecurityGroupsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// SecurityGroupsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type SecurityGroupsDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future SecurityGroupsDeleteFuture) Result(client SecurityGroupsClient) (ar autorest.Response, err error) {
+func (future *SecurityGroupsDeleteFuture) Result(client SecurityGroupsClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.SecurityGroupsDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.SecurityGroupsDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.SecurityGroupsDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.SecurityGroupsDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.SecurityGroupsDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.SecurityGroupsDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -9095,6 +9527,24 @@ type SecurityRule struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for SecurityRule.
+func (sr SecurityRule) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if sr.SecurityRulePropertiesFormat != nil {
+		objectMap["properties"] = sr.SecurityRulePropertiesFormat
+	}
+	if sr.Name != nil {
+		objectMap["name"] = sr.Name
+	}
+	if sr.Etag != nil {
+		objectMap["etag"] = sr.Etag
+	}
+	if sr.ID != nil {
+		objectMap["id"] = sr.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for SecurityRule struct.
@@ -9158,8 +9608,8 @@ type SecurityRuleAssociations struct {
 	EffectiveSecurityRules *[]EffectiveNetworkSecurityRule `json:"effectiveSecurityRules,omitempty"`
 }
 
-// SecurityRuleListResult response for ListSecurityRule API service call. Retrieves all security rules that belongs
-// to a network security group.
+// SecurityRuleListResult response for ListSecurityRule API service call. Retrieves all security rules that
+// belongs to a network security group.
 type SecurityRuleListResult struct {
 	autorest.Response `json:"-"`
 	// Value - The security rules in a network security group.
@@ -9174,20 +9624,37 @@ type SecurityRuleListResultIterator struct {
 	page SecurityRuleListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *SecurityRuleListResultIterator) Next() error {
+func (iter *SecurityRuleListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/SecurityRuleListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *SecurityRuleListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -9209,6 +9676,11 @@ func (iter SecurityRuleListResultIterator) Value() SecurityRule {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the SecurityRuleListResultIterator type.
+func NewSecurityRuleListResultIterator(page SecurityRuleListResultPage) SecurityRuleListResultIterator {
+	return SecurityRuleListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (srlr SecurityRuleListResult) IsEmpty() bool {
 	return srlr.Value == nil || len(*srlr.Value) == 0
@@ -9216,11 +9688,11 @@ func (srlr SecurityRuleListResult) IsEmpty() bool {
 
 // securityRuleListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (srlr SecurityRuleListResult) securityRuleListResultPreparer() (*http.Request, error) {
+func (srlr SecurityRuleListResult) securityRuleListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if srlr.NextLink == nil || len(to.String(srlr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(srlr.NextLink)))
@@ -9228,19 +9700,36 @@ func (srlr SecurityRuleListResult) securityRuleListResultPreparer() (*http.Reque
 
 // SecurityRuleListResultPage contains a page of SecurityRule values.
 type SecurityRuleListResultPage struct {
-	fn   func(SecurityRuleListResult) (SecurityRuleListResult, error)
+	fn   func(context.Context, SecurityRuleListResult) (SecurityRuleListResult, error)
 	srlr SecurityRuleListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *SecurityRuleListResultPage) Next() error {
-	next, err := page.fn(page.srlr)
+func (page *SecurityRuleListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/SecurityRuleListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.srlr)
 	if err != nil {
 		return err
 	}
 	page.srlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *SecurityRuleListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -9261,124 +9750,84 @@ func (page SecurityRuleListResultPage) Values() []SecurityRule {
 	return *page.srlr.Value
 }
 
+// Creates a new instance of the SecurityRuleListResultPage type.
+func NewSecurityRuleListResultPage(getNextPage func(context.Context, SecurityRuleListResult) (SecurityRuleListResult, error)) SecurityRuleListResultPage {
+	return SecurityRuleListResultPage{fn: getNextPage}
+}
+
 // SecurityRulePropertiesFormat ...
 type SecurityRulePropertiesFormat struct {
 	// Description - A description for this rule. Restricted to 140 chars.
 	Description *string `json:"description,omitempty"`
 	// Protocol - Network protocol this rule applies to. Possible values are 'Tcp', 'Udp', and '*'. Possible values include: 'SecurityRuleProtocolTCP', 'SecurityRuleProtocolUDP', 'SecurityRuleProtocolAsterisk'
 	Protocol SecurityRuleProtocol `json:"protocol,omitempty"`
-	// SourcePortRange - The source port or range. Integer or range between 0 and 65535. Asterix '*' can also be used to match all ports.
+	// SourcePortRange - The source port or range. Integer or range between 0 and 65535. Asterisk '*' can also be used to match all ports.
 	SourcePortRange *string `json:"sourcePortRange,omitempty"`
-	// DestinationPortRange - The destination port or range. Integer or range between 0 and 65535. Asterix '*' can also be used to match all ports.
+	// DestinationPortRange - The destination port or range. Integer or range between 0 and 65535. Asterisk '*' can also be used to match all ports.
 	DestinationPortRange *string `json:"destinationPortRange,omitempty"`
-	// SourceAddressPrefix - The CIDR or source IP range. Asterix '*' can also be used to match all source IPs. Default tags such as 'VirtualNetwork', 'AzureLoadBalancer' and 'Internet' can also be used. If this is an ingress rule, specifies where network traffic originates from.
+	// SourceAddressPrefix - The CIDR or source IP range. Asterisk '*' can also be used to match all source IPs. Default tags such as 'VirtualNetwork', 'AzureLoadBalancer' and 'Internet' can also be used. If this is an ingress rule, specifies where network traffic originates from.
 	SourceAddressPrefix *string `json:"sourceAddressPrefix,omitempty"`
-	// DestinationAddressPrefix - The destination address prefix. CIDR or source IP range. Asterix '*' can also be used to match all source IPs. Default tags such as 'VirtualNetwork', 'AzureLoadBalancer' and 'Internet' can also be used.
+	// DestinationAddressPrefix - The destination address prefix. CIDR or source IP range. Asterisk '*' can also be used to match all source IPs. Default tags such as 'VirtualNetwork', 'AzureLoadBalancer' and 'Internet' can also be used.
 	DestinationAddressPrefix *string `json:"destinationAddressPrefix,omitempty"`
 	// Access - The network traffic is allowed or denied. Possible values are: 'Allow' and 'Deny'. Possible values include: 'SecurityRuleAccessAllow', 'SecurityRuleAccessDeny'
 	Access SecurityRuleAccess `json:"access,omitempty"`
 	// Priority - The priority of the rule. The value can be between 100 and 4096. The priority number must be unique for each rule in the collection. The lower the priority number, the higher the priority of the rule.
 	Priority *int32 `json:"priority,omitempty"`
-	// Direction - The direction of the rule. The direction specifies if rule will be evaluated on incoming or outcoming traffic. Possible values are: 'Inbound' and 'Outbound'. Possible values include: 'SecurityRuleDirectionInbound', 'SecurityRuleDirectionOutbound'
+	// Direction - The direction of the rule. The direction specifies if rule will be evaluated on incoming or outgoing traffic. Possible values are: 'Inbound' and 'Outbound'. Possible values include: 'SecurityRuleDirectionInbound', 'SecurityRuleDirectionOutbound'
 	Direction SecurityRuleDirection `json:"direction,omitempty"`
 	// ProvisioningState - The provisioning state of the public IP resource. Possible values are: 'Updating', 'Deleting', and 'Failed'.
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
 
-// SecurityRulesCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// SecurityRulesCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type SecurityRulesCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future SecurityRulesCreateOrUpdateFuture) Result(client SecurityRulesClient) (sr SecurityRule, err error) {
+func (future *SecurityRulesCreateOrUpdateFuture) Result(client SecurityRulesClient) (sr SecurityRule, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.SecurityRulesCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return sr, azure.NewAsyncOpIncompleteError("network.SecurityRulesCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		sr, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.SecurityRulesCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.SecurityRulesCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if sr.Response.Response, err = future.GetResult(sender); err == nil && sr.Response.Response.StatusCode != http.StatusNoContent {
+		sr, err = client.CreateOrUpdateResponder(sr.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.SecurityRulesCreateOrUpdateFuture", "Result", sr.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.SecurityRulesCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	sr, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.SecurityRulesCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// SecurityRulesDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// SecurityRulesDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type SecurityRulesDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future SecurityRulesDeleteFuture) Result(client SecurityRulesClient) (ar autorest.Response, err error) {
+func (future *SecurityRulesDeleteFuture) Result(client SecurityRulesClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.SecurityRulesDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.SecurityRulesDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.SecurityRulesDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.SecurityRulesDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.SecurityRulesDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.SecurityRulesDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -9398,6 +9847,24 @@ type Subnet struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for Subnet.
+func (s Subnet) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if s.SubnetPropertiesFormat != nil {
+		objectMap["properties"] = s.SubnetPropertiesFormat
+	}
+	if s.Name != nil {
+		objectMap["name"] = s.Name
+	}
+	if s.Etag != nil {
+		objectMap["etag"] = s.Etag
+	}
+	if s.ID != nil {
+		objectMap["id"] = s.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for Subnet struct.
@@ -9453,13 +9920,14 @@ func (s *Subnet) UnmarshalJSON(body []byte) error {
 
 // SubnetAssociation network interface and its custom security rules.
 type SubnetAssociation struct {
-	// ID - Subnet ID.
+	// ID - READ-ONLY; Subnet ID.
 	ID *string `json:"id,omitempty"`
 	// SecurityRules - Collection of custom security rules.
 	SecurityRules *[]SecurityRule `json:"securityRules,omitempty"`
 }
 
-// SubnetListResult response for ListSubnets API service callRetrieves all subnet that belongs to a virtual network
+// SubnetListResult response for ListSubnets API service callRetrieves all subnet that belongs to a virtual
+// network
 type SubnetListResult struct {
 	autorest.Response `json:"-"`
 	// Value - The subnets in a virtual network.
@@ -9474,20 +9942,37 @@ type SubnetListResultIterator struct {
 	page SubnetListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *SubnetListResultIterator) Next() error {
+func (iter *SubnetListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/SubnetListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *SubnetListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -9509,6 +9994,11 @@ func (iter SubnetListResultIterator) Value() Subnet {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the SubnetListResultIterator type.
+func NewSubnetListResultIterator(page SubnetListResultPage) SubnetListResultIterator {
+	return SubnetListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (slr SubnetListResult) IsEmpty() bool {
 	return slr.Value == nil || len(*slr.Value) == 0
@@ -9516,11 +10006,11 @@ func (slr SubnetListResult) IsEmpty() bool {
 
 // subnetListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (slr SubnetListResult) subnetListResultPreparer() (*http.Request, error) {
+func (slr SubnetListResult) subnetListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if slr.NextLink == nil || len(to.String(slr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(slr.NextLink)))
@@ -9528,19 +10018,36 @@ func (slr SubnetListResult) subnetListResultPreparer() (*http.Request, error) {
 
 // SubnetListResultPage contains a page of Subnet values.
 type SubnetListResultPage struct {
-	fn  func(SubnetListResult) (SubnetListResult, error)
+	fn  func(context.Context, SubnetListResult) (SubnetListResult, error)
 	slr SubnetListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *SubnetListResultPage) Next() error {
-	next, err := page.fn(page.slr)
+func (page *SubnetListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/SubnetListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.slr)
 	if err != nil {
 		return err
 	}
 	page.slr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *SubnetListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -9561,6 +10068,11 @@ func (page SubnetListResultPage) Values() []Subnet {
 	return *page.slr.Value
 }
 
+// Creates a new instance of the SubnetListResultPage type.
+func NewSubnetListResultPage(getNextPage func(context.Context, SubnetListResult) (SubnetListResult, error)) SubnetListResultPage {
+	return SubnetListResultPage{fn: getNextPage}
+}
+
 // SubnetPropertiesFormat ...
 type SubnetPropertiesFormat struct {
 	// AddressPrefix - The address prefix for the subnet.
@@ -9569,7 +10081,7 @@ type SubnetPropertiesFormat struct {
 	NetworkSecurityGroup *SecurityGroup `json:"networkSecurityGroup,omitempty"`
 	// RouteTable - The reference of the RouteTable resource.
 	RouteTable *RouteTable `json:"routeTable,omitempty"`
-	// IPConfigurations - Gets an array of references to the network interface IP configurations using subnet.
+	// IPConfigurations - READ-ONLY; Gets an array of references to the network interface IP configurations using subnet.
 	IPConfigurations *[]IPConfiguration `json:"ipConfigurations,omitempty"`
 	// ResourceNavigationLinks - Gets an array of references to the external resources using subnet.
 	ResourceNavigationLinks *[]ResourceNavigationLink `json:"resourceNavigationLinks,omitempty"`
@@ -9581,96 +10093,51 @@ type SubnetPropertiesFormat struct {
 // operation.
 type SubnetsCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future SubnetsCreateOrUpdateFuture) Result(client SubnetsClient) (s Subnet, err error) {
+func (future *SubnetsCreateOrUpdateFuture) Result(client SubnetsClient) (s Subnet, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.SubnetsCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return s, azure.NewAsyncOpIncompleteError("network.SubnetsCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		s, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.SubnetsCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.SubnetsCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if s.Response.Response, err = future.GetResult(sender); err == nil && s.Response.Response.StatusCode != http.StatusNoContent {
+		s, err = client.CreateOrUpdateResponder(s.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.SubnetsCreateOrUpdateFuture", "Result", s.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.SubnetsCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	s, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.SubnetsCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// SubnetsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// SubnetsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type SubnetsDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future SubnetsDeleteFuture) Result(client SubnetsClient) (ar autorest.Response, err error) {
+func (future *SubnetsDeleteFuture) Result(client SubnetsClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.SubnetsDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.SubnetsDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.SubnetsDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.SubnetsDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.SubnetsDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.SubnetsDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -9683,11 +10150,11 @@ type SubResource struct {
 // Topology topology of the specified resource group.
 type Topology struct {
 	autorest.Response `json:"-"`
-	// ID - GUID representing the operation id.
+	// ID - READ-ONLY; GUID representing the operation id.
 	ID *string `json:"id,omitempty"`
-	// CreatedDateTime - The datetime when the topology was initially created for the resource group.
+	// CreatedDateTime - READ-ONLY; The datetime when the topology was initially created for the resource group.
 	CreatedDateTime *date.Time `json:"createdDateTime,omitempty"`
-	// LastModified - The datetime when the topology was last modified.
+	// LastModified - READ-ONLY; The datetime when the topology was last modified.
 	LastModified *date.Time          `json:"lastModified,omitempty"`
 	Resources    *[]TopologyResource `json:"resources,omitempty"`
 }
@@ -9739,6 +10206,18 @@ type TroubleshootingParameters struct {
 	// TargetResourceID - The target resource to troubleshoot.
 	TargetResourceID           *string `json:"targetResourceId,omitempty"`
 	*TroubleshootingProperties `json:"properties,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for TroubleshootingParameters.
+func (tp TroubleshootingParameters) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if tp.TargetResourceID != nil {
+		objectMap["targetResourceId"] = tp.TargetResourceID
+	}
+	if tp.TroubleshootingProperties != nil {
+		objectMap["properties"] = tp.TroubleshootingProperties
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for TroubleshootingParameters struct.
@@ -9809,15 +10288,15 @@ type TroubleshootingResult struct {
 
 // TunnelConnectionHealth virtualNetworkGatewayConnection properties
 type TunnelConnectionHealth struct {
-	// Tunnel - Tunnel name.
+	// Tunnel - READ-ONLY; Tunnel name.
 	Tunnel *string `json:"tunnel,omitempty"`
-	// ConnectionStatus - Virtual network Gateway connection status. Possible values include: 'VirtualNetworkGatewayConnectionStatusUnknown', 'VirtualNetworkGatewayConnectionStatusConnecting', 'VirtualNetworkGatewayConnectionStatusConnected', 'VirtualNetworkGatewayConnectionStatusNotConnected'
+	// ConnectionStatus - READ-ONLY; Virtual network Gateway connection status. Possible values include: 'VirtualNetworkGatewayConnectionStatusUnknown', 'VirtualNetworkGatewayConnectionStatusConnecting', 'VirtualNetworkGatewayConnectionStatusConnected', 'VirtualNetworkGatewayConnectionStatusNotConnected'
 	ConnectionStatus VirtualNetworkGatewayConnectionStatus `json:"connectionStatus,omitempty"`
-	// IngressBytesTransferred - The Ingress Bytes Transferred in this connection
+	// IngressBytesTransferred - READ-ONLY; The Ingress Bytes Transferred in this connection
 	IngressBytesTransferred *int64 `json:"ingressBytesTransferred,omitempty"`
-	// EgressBytesTransferred - The Egress Bytes Transferred in this connection
+	// EgressBytesTransferred - READ-ONLY; The Egress Bytes Transferred in this connection
 	EgressBytesTransferred *int64 `json:"egressBytesTransferred,omitempty"`
-	// LastConnectionEstablishedUtcTime - The time at which connection was established in Utc format.
+	// LastConnectionEstablishedUtcTime - READ-ONLY; The time at which connection was established in Utc format.
 	LastConnectionEstablishedUtcTime *string `json:"lastConnectionEstablishedUtcTime,omitempty"`
 }
 
@@ -9856,20 +10335,37 @@ type UsagesListResultIterator struct {
 	page UsagesListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *UsagesListResultIterator) Next() error {
+func (iter *UsagesListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/UsagesListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *UsagesListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -9891,6 +10387,11 @@ func (iter UsagesListResultIterator) Value() Usage {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the UsagesListResultIterator type.
+func NewUsagesListResultIterator(page UsagesListResultPage) UsagesListResultIterator {
+	return UsagesListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (ulr UsagesListResult) IsEmpty() bool {
 	return ulr.Value == nil || len(*ulr.Value) == 0
@@ -9898,11 +10399,11 @@ func (ulr UsagesListResult) IsEmpty() bool {
 
 // usagesListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (ulr UsagesListResult) usagesListResultPreparer() (*http.Request, error) {
+func (ulr UsagesListResult) usagesListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if ulr.NextLink == nil || len(to.String(ulr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(ulr.NextLink)))
@@ -9910,19 +10411,36 @@ func (ulr UsagesListResult) usagesListResultPreparer() (*http.Request, error) {
 
 // UsagesListResultPage contains a page of Usage values.
 type UsagesListResultPage struct {
-	fn  func(UsagesListResult) (UsagesListResult, error)
+	fn  func(context.Context, UsagesListResult) (UsagesListResult, error)
 	ulr UsagesListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *UsagesListResultPage) Next() error {
-	next, err := page.fn(page.ulr)
+func (page *UsagesListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/UsagesListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.ulr)
 	if err != nil {
 		return err
 	}
 	page.ulr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *UsagesListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -9941,6 +10459,11 @@ func (page UsagesListResultPage) Values() []Usage {
 		return nil
 	}
 	return *page.ulr.Value
+}
+
+// Creates a new instance of the UsagesListResultPage type.
+func NewUsagesListResultPage(getNextPage func(context.Context, UsagesListResult) (UsagesListResult, error)) UsagesListResultPage {
+	return UsagesListResultPage{fn: getNextPage}
 }
 
 // VerificationIPFlowParameters parameters that define the IP flow to be verified.
@@ -9980,9 +10503,9 @@ type VirtualNetwork struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -10001,12 +10524,6 @@ func (vn VirtualNetwork) MarshalJSON() ([]byte, error) {
 	}
 	if vn.ID != nil {
 		objectMap["id"] = vn.ID
-	}
-	if vn.Name != nil {
-		objectMap["name"] = vn.Name
-	}
-	if vn.Type != nil {
-		objectMap["type"] = vn.Type
 	}
 	if vn.Location != nil {
 		objectMap["location"] = vn.Location
@@ -10103,9 +10620,9 @@ type VirtualNetworkGateway struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -10124,12 +10641,6 @@ func (vng VirtualNetworkGateway) MarshalJSON() ([]byte, error) {
 	}
 	if vng.ID != nil {
 		objectMap["id"] = vng.ID
-	}
-	if vng.Name != nil {
-		objectMap["name"] = vng.Name
-	}
-	if vng.Type != nil {
-		objectMap["type"] = vng.Type
 	}
 	if vng.Location != nil {
 		objectMap["location"] = vng.Location
@@ -10226,9 +10737,9 @@ type VirtualNetworkGatewayConnection struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -10247,12 +10758,6 @@ func (vngc VirtualNetworkGatewayConnection) MarshalJSON() ([]byte, error) {
 	}
 	if vngc.ID != nil {
 		objectMap["id"] = vngc.ID
-	}
-	if vngc.Name != nil {
-		objectMap["name"] = vngc.Name
-	}
-	if vngc.Type != nil {
-		objectMap["type"] = vngc.Type
 	}
 	if vngc.Location != nil {
 		objectMap["location"] = vngc.Location
@@ -10341,7 +10846,8 @@ func (vngc *VirtualNetworkGatewayConnection) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// VirtualNetworkGatewayConnectionListResult response for the ListVirtualNetworkGatewayConnections API service call
+// VirtualNetworkGatewayConnectionListResult response for the ListVirtualNetworkGatewayConnections API
+// service call
 type VirtualNetworkGatewayConnectionListResult struct {
 	autorest.Response `json:"-"`
 	// Value - Gets a list of VirtualNetworkGatewayConnection resources that exists in a resource group.
@@ -10357,20 +10863,37 @@ type VirtualNetworkGatewayConnectionListResultIterator struct {
 	page VirtualNetworkGatewayConnectionListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *VirtualNetworkGatewayConnectionListResultIterator) Next() error {
+func (iter *VirtualNetworkGatewayConnectionListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/VirtualNetworkGatewayConnectionListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *VirtualNetworkGatewayConnectionListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -10392,6 +10915,11 @@ func (iter VirtualNetworkGatewayConnectionListResultIterator) Value() VirtualNet
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the VirtualNetworkGatewayConnectionListResultIterator type.
+func NewVirtualNetworkGatewayConnectionListResultIterator(page VirtualNetworkGatewayConnectionListResultPage) VirtualNetworkGatewayConnectionListResultIterator {
+	return VirtualNetworkGatewayConnectionListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (vngclr VirtualNetworkGatewayConnectionListResult) IsEmpty() bool {
 	return vngclr.Value == nil || len(*vngclr.Value) == 0
@@ -10399,11 +10927,11 @@ func (vngclr VirtualNetworkGatewayConnectionListResult) IsEmpty() bool {
 
 // virtualNetworkGatewayConnectionListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (vngclr VirtualNetworkGatewayConnectionListResult) virtualNetworkGatewayConnectionListResultPreparer() (*http.Request, error) {
+func (vngclr VirtualNetworkGatewayConnectionListResult) virtualNetworkGatewayConnectionListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if vngclr.NextLink == nil || len(to.String(vngclr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(vngclr.NextLink)))
@@ -10411,19 +10939,36 @@ func (vngclr VirtualNetworkGatewayConnectionListResult) virtualNetworkGatewayCon
 
 // VirtualNetworkGatewayConnectionListResultPage contains a page of VirtualNetworkGatewayConnection values.
 type VirtualNetworkGatewayConnectionListResultPage struct {
-	fn     func(VirtualNetworkGatewayConnectionListResult) (VirtualNetworkGatewayConnectionListResult, error)
+	fn     func(context.Context, VirtualNetworkGatewayConnectionListResult) (VirtualNetworkGatewayConnectionListResult, error)
 	vngclr VirtualNetworkGatewayConnectionListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *VirtualNetworkGatewayConnectionListResultPage) Next() error {
-	next, err := page.fn(page.vngclr)
+func (page *VirtualNetworkGatewayConnectionListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/VirtualNetworkGatewayConnectionListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.vngclr)
 	if err != nil {
 		return err
 	}
 	page.vngclr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *VirtualNetworkGatewayConnectionListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -10444,6 +10989,11 @@ func (page VirtualNetworkGatewayConnectionListResultPage) Values() []VirtualNetw
 	return *page.vngclr.Value
 }
 
+// Creates a new instance of the VirtualNetworkGatewayConnectionListResultPage type.
+func NewVirtualNetworkGatewayConnectionListResultPage(getNextPage func(context.Context, VirtualNetworkGatewayConnectionListResult) (VirtualNetworkGatewayConnectionListResult, error)) VirtualNetworkGatewayConnectionListResultPage {
+	return VirtualNetworkGatewayConnectionListResultPage{fn: getNextPage}
+}
+
 // VirtualNetworkGatewayConnectionPropertiesFormat virtualNetworkGatewayConnection properties
 type VirtualNetworkGatewayConnectionPropertiesFormat struct {
 	// AuthorizationKey - The authorizationKey.
@@ -10451,19 +11001,19 @@ type VirtualNetworkGatewayConnectionPropertiesFormat struct {
 	VirtualNetworkGateway1 *VirtualNetworkGateway `json:"virtualNetworkGateway1,omitempty"`
 	VirtualNetworkGateway2 *VirtualNetworkGateway `json:"virtualNetworkGateway2,omitempty"`
 	LocalNetworkGateway2   *LocalNetworkGateway   `json:"localNetworkGateway2,omitempty"`
-	// ConnectionType - Gateway connection type. Possible values are: 'Ipsec','Vnet2Vnet','ExpressRoute', and 'VPNClient. Possible values include: 'IPsec', 'Vnet2Vnet', 'ExpressRoute', 'VPNClient'
+	// ConnectionType - Gateway connection type. Possible values are: 'IPsec','Vnet2Vnet','ExpressRoute', and 'VPNClient. Possible values include: 'IPsec', 'Vnet2Vnet', 'ExpressRoute', 'VPNClient'
 	ConnectionType VirtualNetworkGatewayConnectionType `json:"connectionType,omitempty"`
 	// RoutingWeight - The routing weight.
 	RoutingWeight *int32 `json:"routingWeight,omitempty"`
 	// SharedKey - The IPSec shared key.
 	SharedKey *string `json:"sharedKey,omitempty"`
-	// ConnectionStatus - Virtual network Gateway connection status. Possible values are 'Unknown', 'Connecting', 'Connected' and 'NotConnected'. Possible values include: 'VirtualNetworkGatewayConnectionStatusUnknown', 'VirtualNetworkGatewayConnectionStatusConnecting', 'VirtualNetworkGatewayConnectionStatusConnected', 'VirtualNetworkGatewayConnectionStatusNotConnected'
+	// ConnectionStatus - READ-ONLY; Virtual network Gateway connection status. Possible values are 'Unknown', 'Connecting', 'Connected' and 'NotConnected'. Possible values include: 'VirtualNetworkGatewayConnectionStatusUnknown', 'VirtualNetworkGatewayConnectionStatusConnecting', 'VirtualNetworkGatewayConnectionStatusConnected', 'VirtualNetworkGatewayConnectionStatusNotConnected'
 	ConnectionStatus VirtualNetworkGatewayConnectionStatus `json:"connectionStatus,omitempty"`
-	// TunnelConnectionStatus - Collection of all tunnels' connection health status.
+	// TunnelConnectionStatus - READ-ONLY; Collection of all tunnels' connection health status.
 	TunnelConnectionStatus *[]TunnelConnectionHealth `json:"tunnelConnectionStatus,omitempty"`
-	// EgressBytesTransferred - The egress bytes transferred in this connection.
+	// EgressBytesTransferred - READ-ONLY; The egress bytes transferred in this connection.
 	EgressBytesTransferred *int64 `json:"egressBytesTransferred,omitempty"`
-	// IngressBytesTransferred - The ingress bytes transferred in this connection.
+	// IngressBytesTransferred - READ-ONLY; The ingress bytes transferred in this connection.
 	IngressBytesTransferred *int64 `json:"ingressBytesTransferred,omitempty"`
 	// Peer - The reference to peerings resource.
 	Peer *SubResource `json:"peer,omitempty"`
@@ -10475,202 +11025,116 @@ type VirtualNetworkGatewayConnectionPropertiesFormat struct {
 	IpsecPolicies *[]IpsecPolicy `json:"ipsecPolicies,omitempty"`
 	// ResourceGUID - The resource GUID property of the VirtualNetworkGatewayConnection resource.
 	ResourceGUID *string `json:"resourceGuid,omitempty"`
-	// ProvisioningState - The provisioning state of the VirtualNetworkGatewayConnection resource. Possible values are: 'Updating', 'Deleting', and 'Failed'.
+	// ProvisioningState - READ-ONLY; The provisioning state of the VirtualNetworkGatewayConnection resource. Possible values are: 'Updating', 'Deleting', and 'Failed'.
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
 
-// VirtualNetworkGatewayConnectionsCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of
-// a long-running operation.
+// VirtualNetworkGatewayConnectionsCreateOrUpdateFuture an abstraction for monitoring and retrieving the
+// results of a long-running operation.
 type VirtualNetworkGatewayConnectionsCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future VirtualNetworkGatewayConnectionsCreateOrUpdateFuture) Result(client VirtualNetworkGatewayConnectionsClient) (vngc VirtualNetworkGatewayConnection, err error) {
+func (future *VirtualNetworkGatewayConnectionsCreateOrUpdateFuture) Result(client VirtualNetworkGatewayConnectionsClient) (vngc VirtualNetworkGatewayConnection, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return vngc, azure.NewAsyncOpIncompleteError("network.VirtualNetworkGatewayConnectionsCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		vngc, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.VirtualNetworkGatewayConnectionsCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if vngc.Response.Response, err = future.GetResult(sender); err == nil && vngc.Response.Response.StatusCode != http.StatusNoContent {
+		vngc, err = client.CreateOrUpdateResponder(vngc.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsCreateOrUpdateFuture", "Result", vngc.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	vngc, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// VirtualNetworkGatewayConnectionsDeleteFuture an abstraction for monitoring and retrieving the results of a
-// long-running operation.
+// VirtualNetworkGatewayConnectionsDeleteFuture an abstraction for monitoring and retrieving the results of
+// a long-running operation.
 type VirtualNetworkGatewayConnectionsDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future VirtualNetworkGatewayConnectionsDeleteFuture) Result(client VirtualNetworkGatewayConnectionsClient) (ar autorest.Response, err error) {
+func (future *VirtualNetworkGatewayConnectionsDeleteFuture) Result(client VirtualNetworkGatewayConnectionsClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.VirtualNetworkGatewayConnectionsDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.VirtualNetworkGatewayConnectionsDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
-// VirtualNetworkGatewayConnectionsResetSharedKeyFuture an abstraction for monitoring and retrieving the results of
-// a long-running operation.
+// VirtualNetworkGatewayConnectionsResetSharedKeyFuture an abstraction for monitoring and retrieving the
+// results of a long-running operation.
 type VirtualNetworkGatewayConnectionsResetSharedKeyFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future VirtualNetworkGatewayConnectionsResetSharedKeyFuture) Result(client VirtualNetworkGatewayConnectionsClient) (crsk ConnectionResetSharedKey, err error) {
+func (future *VirtualNetworkGatewayConnectionsResetSharedKeyFuture) Result(client VirtualNetworkGatewayConnectionsClient) (crsk ConnectionResetSharedKey, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsResetSharedKeyFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return crsk, azure.NewAsyncOpIncompleteError("network.VirtualNetworkGatewayConnectionsResetSharedKeyFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		crsk, err = client.ResetSharedKeyResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsResetSharedKeyFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.VirtualNetworkGatewayConnectionsResetSharedKeyFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if crsk.Response.Response, err = future.GetResult(sender); err == nil && crsk.Response.Response.StatusCode != http.StatusNoContent {
+		crsk, err = client.ResetSharedKeyResponder(crsk.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsResetSharedKeyFuture", "Result", crsk.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsResetSharedKeyFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	crsk, err = client.ResetSharedKeyResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsResetSharedKeyFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// VirtualNetworkGatewayConnectionsSetSharedKeyFuture an abstraction for monitoring and retrieving the results of a
-// long-running operation.
+// VirtualNetworkGatewayConnectionsSetSharedKeyFuture an abstraction for monitoring and retrieving the
+// results of a long-running operation.
 type VirtualNetworkGatewayConnectionsSetSharedKeyFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future VirtualNetworkGatewayConnectionsSetSharedKeyFuture) Result(client VirtualNetworkGatewayConnectionsClient) (csk ConnectionSharedKey, err error) {
+func (future *VirtualNetworkGatewayConnectionsSetSharedKeyFuture) Result(client VirtualNetworkGatewayConnectionsClient) (csk ConnectionSharedKey, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsSetSharedKeyFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return csk, azure.NewAsyncOpIncompleteError("network.VirtualNetworkGatewayConnectionsSetSharedKeyFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		csk, err = client.SetSharedKeyResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsSetSharedKeyFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.VirtualNetworkGatewayConnectionsSetSharedKeyFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if csk.Response.Response, err = future.GetResult(sender); err == nil && csk.Response.Response.StatusCode != http.StatusNoContent {
+		csk, err = client.SetSharedKeyResponder(csk.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsSetSharedKeyFuture", "Result", csk.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsSetSharedKeyFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	csk, err = client.SetSharedKeyResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewayConnectionsSetSharedKeyFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -10684,6 +11148,24 @@ type VirtualNetworkGatewayIPConfiguration struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for VirtualNetworkGatewayIPConfiguration.
+func (vngic VirtualNetworkGatewayIPConfiguration) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if vngic.VirtualNetworkGatewayIPConfigurationPropertiesFormat != nil {
+		objectMap["properties"] = vngic.VirtualNetworkGatewayIPConfigurationPropertiesFormat
+	}
+	if vngic.Name != nil {
+		objectMap["name"] = vngic.Name
+	}
+	if vngic.Etag != nil {
+		objectMap["etag"] = vngic.Etag
+	}
+	if vngic.ID != nil {
+		objectMap["id"] = vngic.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for VirtualNetworkGatewayIPConfiguration struct.
@@ -10745,7 +11227,7 @@ type VirtualNetworkGatewayIPConfigurationPropertiesFormat struct {
 	Subnet *SubResource `json:"subnet,omitempty"`
 	// PublicIPAddress - The reference of the public IP resource.
 	PublicIPAddress *SubResource `json:"publicIPAddress,omitempty"`
-	// ProvisioningState - The provisioning state of the public IP resource. Possible values are: 'Updating', 'Deleting', and 'Failed'.
+	// ProvisioningState - READ-ONLY; The provisioning state of the public IP resource. Possible values are: 'Updating', 'Deleting', and 'Failed'.
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
 
@@ -10758,26 +11240,44 @@ type VirtualNetworkGatewayListResult struct {
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
-// VirtualNetworkGatewayListResultIterator provides access to a complete listing of VirtualNetworkGateway values.
+// VirtualNetworkGatewayListResultIterator provides access to a complete listing of VirtualNetworkGateway
+// values.
 type VirtualNetworkGatewayListResultIterator struct {
 	i    int
 	page VirtualNetworkGatewayListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *VirtualNetworkGatewayListResultIterator) Next() error {
+func (iter *VirtualNetworkGatewayListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/VirtualNetworkGatewayListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *VirtualNetworkGatewayListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -10799,6 +11299,11 @@ func (iter VirtualNetworkGatewayListResultIterator) Value() VirtualNetworkGatewa
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the VirtualNetworkGatewayListResultIterator type.
+func NewVirtualNetworkGatewayListResultIterator(page VirtualNetworkGatewayListResultPage) VirtualNetworkGatewayListResultIterator {
+	return VirtualNetworkGatewayListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (vnglr VirtualNetworkGatewayListResult) IsEmpty() bool {
 	return vnglr.Value == nil || len(*vnglr.Value) == 0
@@ -10806,11 +11311,11 @@ func (vnglr VirtualNetworkGatewayListResult) IsEmpty() bool {
 
 // virtualNetworkGatewayListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (vnglr VirtualNetworkGatewayListResult) virtualNetworkGatewayListResultPreparer() (*http.Request, error) {
+func (vnglr VirtualNetworkGatewayListResult) virtualNetworkGatewayListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if vnglr.NextLink == nil || len(to.String(vnglr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(vnglr.NextLink)))
@@ -10818,19 +11323,36 @@ func (vnglr VirtualNetworkGatewayListResult) virtualNetworkGatewayListResultPrep
 
 // VirtualNetworkGatewayListResultPage contains a page of VirtualNetworkGateway values.
 type VirtualNetworkGatewayListResultPage struct {
-	fn    func(VirtualNetworkGatewayListResult) (VirtualNetworkGatewayListResult, error)
+	fn    func(context.Context, VirtualNetworkGatewayListResult) (VirtualNetworkGatewayListResult, error)
 	vnglr VirtualNetworkGatewayListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *VirtualNetworkGatewayListResultPage) Next() error {
-	next, err := page.fn(page.vnglr)
+func (page *VirtualNetworkGatewayListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/VirtualNetworkGatewayListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.vnglr)
 	if err != nil {
 		return err
 	}
 	page.vnglr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *VirtualNetworkGatewayListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -10849,6 +11371,11 @@ func (page VirtualNetworkGatewayListResultPage) Values() []VirtualNetworkGateway
 		return nil
 	}
 	return *page.vnglr.Value
+}
+
+// Creates a new instance of the VirtualNetworkGatewayListResultPage type.
+func NewVirtualNetworkGatewayListResultPage(getNextPage func(context.Context, VirtualNetworkGatewayListResult) (VirtualNetworkGatewayListResult, error)) VirtualNetworkGatewayListResultPage {
+	return VirtualNetworkGatewayListResultPage{fn: getNextPage}
 }
 
 // VirtualNetworkGatewayPropertiesFormat virtualNetworkGateway properties
@@ -10873,7 +11400,7 @@ type VirtualNetworkGatewayPropertiesFormat struct {
 	BgpSettings *BgpSettings `json:"bgpSettings,omitempty"`
 	// ResourceGUID - The resource GUID property of the VirtualNetworkGateway resource.
 	ResourceGUID *string `json:"resourceGuid,omitempty"`
-	// ProvisioningState - The provisioning state of the VirtualNetworkGateway resource. Possible values are: 'Updating', 'Deleting', and 'Failed'.
+	// ProvisioningState - READ-ONLY; The provisioning state of the VirtualNetworkGateway resource. Possible values are: 'Updating', 'Deleting', and 'Failed'.
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
 
@@ -10881,243 +11408,166 @@ type VirtualNetworkGatewayPropertiesFormat struct {
 // long-running operation.
 type VirtualNetworkGatewaysCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future VirtualNetworkGatewaysCreateOrUpdateFuture) Result(client VirtualNetworkGatewaysClient) (vng VirtualNetworkGateway, err error) {
+func (future *VirtualNetworkGatewaysCreateOrUpdateFuture) Result(client VirtualNetworkGatewaysClient) (vng VirtualNetworkGateway, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return vng, azure.NewAsyncOpIncompleteError("network.VirtualNetworkGatewaysCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		vng, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.VirtualNetworkGatewaysCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if vng.Response.Response, err = future.GetResult(sender); err == nil && vng.Response.Response.StatusCode != http.StatusNoContent {
+		vng, err = client.CreateOrUpdateResponder(vng.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysCreateOrUpdateFuture", "Result", vng.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	vng, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// VirtualNetworkGatewaysDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// VirtualNetworkGatewaysDeleteFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type VirtualNetworkGatewaysDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future VirtualNetworkGatewaysDeleteFuture) Result(client VirtualNetworkGatewaysClient) (ar autorest.Response, err error) {
+func (future *VirtualNetworkGatewaysDeleteFuture) Result(client VirtualNetworkGatewaysClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.VirtualNetworkGatewaysDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.VirtualNetworkGatewaysDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
-// VirtualNetworkGatewaysGetAdvertisedRoutesFuture an abstraction for monitoring and retrieving the results of a
-// long-running operation.
-type VirtualNetworkGatewaysGetAdvertisedRoutesFuture struct {
+// VirtualNetworkGatewaysGeneratevpnclientpackageFuture an abstraction for monitoring and retrieving the
+// results of a long-running operation.
+type VirtualNetworkGatewaysGeneratevpnclientpackageFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future VirtualNetworkGatewaysGetAdvertisedRoutesFuture) Result(client VirtualNetworkGatewaysClient) (grlr GatewayRouteListResult, err error) {
+func (future *VirtualNetworkGatewaysGeneratevpnclientpackageFuture) Result(client VirtualNetworkGatewaysClient) (s String, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysGeneratevpnclientpackageFuture", "Result", future.Response(), "Polling failure")
+		return
+	}
+	if !done {
+		err = azure.NewAsyncOpIncompleteError("network.VirtualNetworkGatewaysGeneratevpnclientpackageFuture")
+		return
+	}
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if s.Response.Response, err = future.GetResult(sender); err == nil && s.Response.Response.StatusCode != http.StatusNoContent {
+		s, err = client.GeneratevpnclientpackageResponder(s.Response.Response)
+		if err != nil {
+			err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysGeneratevpnclientpackageFuture", "Result", s.Response.Response, "Failure responding to request")
+		}
+	}
+	return
+}
+
+// VirtualNetworkGatewaysGetAdvertisedRoutesFuture an abstraction for monitoring and retrieving the results
+// of a long-running operation.
+type VirtualNetworkGatewaysGetAdvertisedRoutesFuture struct {
+	azure.Future
+}
+
+// Result returns the result of the asynchronous operation.
+// If the operation has not completed it will return an error.
+func (future *VirtualNetworkGatewaysGetAdvertisedRoutesFuture) Result(client VirtualNetworkGatewaysClient) (grlr GatewayRouteListResult, err error) {
+	var done bool
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysGetAdvertisedRoutesFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return grlr, azure.NewAsyncOpIncompleteError("network.VirtualNetworkGatewaysGetAdvertisedRoutesFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		grlr, err = client.GetAdvertisedRoutesResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysGetAdvertisedRoutesFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.VirtualNetworkGatewaysGetAdvertisedRoutesFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if grlr.Response.Response, err = future.GetResult(sender); err == nil && grlr.Response.Response.StatusCode != http.StatusNoContent {
+		grlr, err = client.GetAdvertisedRoutesResponder(grlr.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysGetAdvertisedRoutesFuture", "Result", grlr.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysGetAdvertisedRoutesFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	grlr, err = client.GetAdvertisedRoutesResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysGetAdvertisedRoutesFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// VirtualNetworkGatewaysGetBgpPeerStatusFuture an abstraction for monitoring and retrieving the results of a
-// long-running operation.
+// VirtualNetworkGatewaysGetBgpPeerStatusFuture an abstraction for monitoring and retrieving the results of
+// a long-running operation.
 type VirtualNetworkGatewaysGetBgpPeerStatusFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future VirtualNetworkGatewaysGetBgpPeerStatusFuture) Result(client VirtualNetworkGatewaysClient) (bpslr BgpPeerStatusListResult, err error) {
+func (future *VirtualNetworkGatewaysGetBgpPeerStatusFuture) Result(client VirtualNetworkGatewaysClient) (bpslr BgpPeerStatusListResult, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysGetBgpPeerStatusFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return bpslr, azure.NewAsyncOpIncompleteError("network.VirtualNetworkGatewaysGetBgpPeerStatusFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		bpslr, err = client.GetBgpPeerStatusResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysGetBgpPeerStatusFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.VirtualNetworkGatewaysGetBgpPeerStatusFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if bpslr.Response.Response, err = future.GetResult(sender); err == nil && bpslr.Response.Response.StatusCode != http.StatusNoContent {
+		bpslr, err = client.GetBgpPeerStatusResponder(bpslr.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysGetBgpPeerStatusFuture", "Result", bpslr.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysGetBgpPeerStatusFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	bpslr, err = client.GetBgpPeerStatusResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysGetBgpPeerStatusFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// VirtualNetworkGatewaysGetLearnedRoutesFuture an abstraction for monitoring and retrieving the results of a
-// long-running operation.
+// VirtualNetworkGatewaysGetLearnedRoutesFuture an abstraction for monitoring and retrieving the results of
+// a long-running operation.
 type VirtualNetworkGatewaysGetLearnedRoutesFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future VirtualNetworkGatewaysGetLearnedRoutesFuture) Result(client VirtualNetworkGatewaysClient) (grlr GatewayRouteListResult, err error) {
+func (future *VirtualNetworkGatewaysGetLearnedRoutesFuture) Result(client VirtualNetworkGatewaysClient) (grlr GatewayRouteListResult, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysGetLearnedRoutesFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return grlr, azure.NewAsyncOpIncompleteError("network.VirtualNetworkGatewaysGetLearnedRoutesFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		grlr, err = client.GetLearnedRoutesResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysGetLearnedRoutesFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.VirtualNetworkGatewaysGetLearnedRoutesFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if grlr.Response.Response, err = future.GetResult(sender); err == nil && grlr.Response.Response.StatusCode != http.StatusNoContent {
+		grlr, err = client.GetLearnedRoutesResponder(grlr.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysGetLearnedRoutesFuture", "Result", grlr.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysGetLearnedRoutesFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	grlr, err = client.GetLearnedRoutesResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysGetLearnedRoutesFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -11132,51 +11582,31 @@ type VirtualNetworkGatewaySku struct {
 	Capacity *int32 `json:"capacity,omitempty"`
 }
 
-// VirtualNetworkGatewaysResetFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// VirtualNetworkGatewaysResetFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type VirtualNetworkGatewaysResetFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future VirtualNetworkGatewaysResetFuture) Result(client VirtualNetworkGatewaysClient) (vng VirtualNetworkGateway, err error) {
+func (future *VirtualNetworkGatewaysResetFuture) Result(client VirtualNetworkGatewaysClient) (vng VirtualNetworkGateway, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysResetFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return vng, azure.NewAsyncOpIncompleteError("network.VirtualNetworkGatewaysResetFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		vng, err = client.ResetResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysResetFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.VirtualNetworkGatewaysResetFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if vng.Response.Response, err = future.GetResult(sender); err == nil && vng.Response.Response.StatusCode != http.StatusNoContent {
+		vng, err = client.ResetResponder(vng.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysResetFuture", "Result", vng.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysResetFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	vng, err = client.ResetResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysResetFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -11196,20 +11626,37 @@ type VirtualNetworkListResultIterator struct {
 	page VirtualNetworkListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *VirtualNetworkListResultIterator) Next() error {
+func (iter *VirtualNetworkListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/VirtualNetworkListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *VirtualNetworkListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -11231,6 +11678,11 @@ func (iter VirtualNetworkListResultIterator) Value() VirtualNetwork {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the VirtualNetworkListResultIterator type.
+func NewVirtualNetworkListResultIterator(page VirtualNetworkListResultPage) VirtualNetworkListResultIterator {
+	return VirtualNetworkListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (vnlr VirtualNetworkListResult) IsEmpty() bool {
 	return vnlr.Value == nil || len(*vnlr.Value) == 0
@@ -11238,11 +11690,11 @@ func (vnlr VirtualNetworkListResult) IsEmpty() bool {
 
 // virtualNetworkListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (vnlr VirtualNetworkListResult) virtualNetworkListResultPreparer() (*http.Request, error) {
+func (vnlr VirtualNetworkListResult) virtualNetworkListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if vnlr.NextLink == nil || len(to.String(vnlr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(vnlr.NextLink)))
@@ -11250,19 +11702,36 @@ func (vnlr VirtualNetworkListResult) virtualNetworkListResultPreparer() (*http.R
 
 // VirtualNetworkListResultPage contains a page of VirtualNetwork values.
 type VirtualNetworkListResultPage struct {
-	fn   func(VirtualNetworkListResult) (VirtualNetworkListResult, error)
+	fn   func(context.Context, VirtualNetworkListResult) (VirtualNetworkListResult, error)
 	vnlr VirtualNetworkListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *VirtualNetworkListResultPage) Next() error {
-	next, err := page.fn(page.vnlr)
+func (page *VirtualNetworkListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/VirtualNetworkListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.vnlr)
 	if err != nil {
 		return err
 	}
 	page.vnlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *VirtualNetworkListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -11283,35 +11752,58 @@ func (page VirtualNetworkListResultPage) Values() []VirtualNetwork {
 	return *page.vnlr.Value
 }
 
+// Creates a new instance of the VirtualNetworkListResultPage type.
+func NewVirtualNetworkListResultPage(getNextPage func(context.Context, VirtualNetworkListResult) (VirtualNetworkListResult, error)) VirtualNetworkListResultPage {
+	return VirtualNetworkListResultPage{fn: getNextPage}
+}
+
 // VirtualNetworkListUsageResult response for the virtual networks GetUsage API service call.
 type VirtualNetworkListUsageResult struct {
 	autorest.Response `json:"-"`
-	// Value - VirtualNetwork usage stats.
+	// Value - READ-ONLY; VirtualNetwork usage stats.
 	Value *[]VirtualNetworkUsage `json:"value,omitempty"`
 	// NextLink - The URL to get the next set of results.
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
-// VirtualNetworkListUsageResultIterator provides access to a complete listing of VirtualNetworkUsage values.
+// VirtualNetworkListUsageResultIterator provides access to a complete listing of VirtualNetworkUsage
+// values.
 type VirtualNetworkListUsageResultIterator struct {
 	i    int
 	page VirtualNetworkListUsageResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *VirtualNetworkListUsageResultIterator) Next() error {
+func (iter *VirtualNetworkListUsageResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/VirtualNetworkListUsageResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *VirtualNetworkListUsageResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -11333,6 +11825,11 @@ func (iter VirtualNetworkListUsageResultIterator) Value() VirtualNetworkUsage {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the VirtualNetworkListUsageResultIterator type.
+func NewVirtualNetworkListUsageResultIterator(page VirtualNetworkListUsageResultPage) VirtualNetworkListUsageResultIterator {
+	return VirtualNetworkListUsageResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (vnlur VirtualNetworkListUsageResult) IsEmpty() bool {
 	return vnlur.Value == nil || len(*vnlur.Value) == 0
@@ -11340,11 +11837,11 @@ func (vnlur VirtualNetworkListUsageResult) IsEmpty() bool {
 
 // virtualNetworkListUsageResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (vnlur VirtualNetworkListUsageResult) virtualNetworkListUsageResultPreparer() (*http.Request, error) {
+func (vnlur VirtualNetworkListUsageResult) virtualNetworkListUsageResultPreparer(ctx context.Context) (*http.Request, error) {
 	if vnlur.NextLink == nil || len(to.String(vnlur.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(vnlur.NextLink)))
@@ -11352,19 +11849,36 @@ func (vnlur VirtualNetworkListUsageResult) virtualNetworkListUsageResultPreparer
 
 // VirtualNetworkListUsageResultPage contains a page of VirtualNetworkUsage values.
 type VirtualNetworkListUsageResultPage struct {
-	fn    func(VirtualNetworkListUsageResult) (VirtualNetworkListUsageResult, error)
+	fn    func(context.Context, VirtualNetworkListUsageResult) (VirtualNetworkListUsageResult, error)
 	vnlur VirtualNetworkListUsageResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *VirtualNetworkListUsageResultPage) Next() error {
-	next, err := page.fn(page.vnlur)
+func (page *VirtualNetworkListUsageResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/VirtualNetworkListUsageResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.vnlur)
 	if err != nil {
 		return err
 	}
 	page.vnlur = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *VirtualNetworkListUsageResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -11385,6 +11899,11 @@ func (page VirtualNetworkListUsageResultPage) Values() []VirtualNetworkUsage {
 	return *page.vnlur.Value
 }
 
+// Creates a new instance of the VirtualNetworkListUsageResultPage type.
+func NewVirtualNetworkListUsageResultPage(getNextPage func(context.Context, VirtualNetworkListUsageResult) (VirtualNetworkListUsageResult, error)) VirtualNetworkListUsageResultPage {
+	return VirtualNetworkListUsageResultPage{fn: getNextPage}
+}
+
 // VirtualNetworkPeering peerings in a virtual network resource.
 type VirtualNetworkPeering struct {
 	autorest.Response                      `json:"-"`
@@ -11395,6 +11914,24 @@ type VirtualNetworkPeering struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for VirtualNetworkPeering.
+func (vnp VirtualNetworkPeering) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if vnp.VirtualNetworkPeeringPropertiesFormat != nil {
+		objectMap["properties"] = vnp.VirtualNetworkPeeringPropertiesFormat
+	}
+	if vnp.Name != nil {
+		objectMap["name"] = vnp.Name
+	}
+	if vnp.Etag != nil {
+		objectMap["etag"] = vnp.Etag
+	}
+	if vnp.ID != nil {
+		objectMap["id"] = vnp.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for VirtualNetworkPeering struct.
@@ -11448,8 +11985,8 @@ func (vnp *VirtualNetworkPeering) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// VirtualNetworkPeeringListResult response for ListSubnets API service call. Retrieves all subnets that belong to
-// a virtual network.
+// VirtualNetworkPeeringListResult response for ListSubnets API service call. Retrieves all subnets that
+// belong to a virtual network.
 type VirtualNetworkPeeringListResult struct {
 	autorest.Response `json:"-"`
 	// Value - The peerings in a virtual network.
@@ -11458,26 +11995,44 @@ type VirtualNetworkPeeringListResult struct {
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
-// VirtualNetworkPeeringListResultIterator provides access to a complete listing of VirtualNetworkPeering values.
+// VirtualNetworkPeeringListResultIterator provides access to a complete listing of VirtualNetworkPeering
+// values.
 type VirtualNetworkPeeringListResultIterator struct {
 	i    int
 	page VirtualNetworkPeeringListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *VirtualNetworkPeeringListResultIterator) Next() error {
+func (iter *VirtualNetworkPeeringListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/VirtualNetworkPeeringListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *VirtualNetworkPeeringListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -11499,6 +12054,11 @@ func (iter VirtualNetworkPeeringListResultIterator) Value() VirtualNetworkPeerin
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the VirtualNetworkPeeringListResultIterator type.
+func NewVirtualNetworkPeeringListResultIterator(page VirtualNetworkPeeringListResultPage) VirtualNetworkPeeringListResultIterator {
+	return VirtualNetworkPeeringListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (vnplr VirtualNetworkPeeringListResult) IsEmpty() bool {
 	return vnplr.Value == nil || len(*vnplr.Value) == 0
@@ -11506,11 +12066,11 @@ func (vnplr VirtualNetworkPeeringListResult) IsEmpty() bool {
 
 // virtualNetworkPeeringListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (vnplr VirtualNetworkPeeringListResult) virtualNetworkPeeringListResultPreparer() (*http.Request, error) {
+func (vnplr VirtualNetworkPeeringListResult) virtualNetworkPeeringListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if vnplr.NextLink == nil || len(to.String(vnplr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(vnplr.NextLink)))
@@ -11518,19 +12078,36 @@ func (vnplr VirtualNetworkPeeringListResult) virtualNetworkPeeringListResultPrep
 
 // VirtualNetworkPeeringListResultPage contains a page of VirtualNetworkPeering values.
 type VirtualNetworkPeeringListResultPage struct {
-	fn    func(VirtualNetworkPeeringListResult) (VirtualNetworkPeeringListResult, error)
+	fn    func(context.Context, VirtualNetworkPeeringListResult) (VirtualNetworkPeeringListResult, error)
 	vnplr VirtualNetworkPeeringListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *VirtualNetworkPeeringListResultPage) Next() error {
-	next, err := page.fn(page.vnplr)
+func (page *VirtualNetworkPeeringListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/VirtualNetworkPeeringListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.vnplr)
 	if err != nil {
 		return err
 	}
 	page.vnplr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *VirtualNetworkPeeringListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -11549,6 +12126,11 @@ func (page VirtualNetworkPeeringListResultPage) Values() []VirtualNetworkPeering
 		return nil
 	}
 	return *page.vnplr.Value
+}
+
+// Creates a new instance of the VirtualNetworkPeeringListResultPage type.
+func NewVirtualNetworkPeeringListResultPage(getNextPage func(context.Context, VirtualNetworkPeeringListResult) (VirtualNetworkPeeringListResult, error)) VirtualNetworkPeeringListResultPage {
+	return VirtualNetworkPeeringListResultPage{fn: getNextPage}
 }
 
 // VirtualNetworkPeeringPropertiesFormat ...
@@ -11573,97 +12155,51 @@ type VirtualNetworkPeeringPropertiesFormat struct {
 // long-running operation.
 type VirtualNetworkPeeringsCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future VirtualNetworkPeeringsCreateOrUpdateFuture) Result(client VirtualNetworkPeeringsClient) (vnp VirtualNetworkPeering, err error) {
+func (future *VirtualNetworkPeeringsCreateOrUpdateFuture) Result(client VirtualNetworkPeeringsClient) (vnp VirtualNetworkPeering, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworkPeeringsCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return vnp, azure.NewAsyncOpIncompleteError("network.VirtualNetworkPeeringsCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		vnp, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.VirtualNetworkPeeringsCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.VirtualNetworkPeeringsCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if vnp.Response.Response, err = future.GetResult(sender); err == nil && vnp.Response.Response.StatusCode != http.StatusNoContent {
+		vnp, err = client.CreateOrUpdateResponder(vnp.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.VirtualNetworkPeeringsCreateOrUpdateFuture", "Result", vnp.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkPeeringsCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	vnp, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkPeeringsCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// VirtualNetworkPeeringsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// VirtualNetworkPeeringsDeleteFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type VirtualNetworkPeeringsDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future VirtualNetworkPeeringsDeleteFuture) Result(client VirtualNetworkPeeringsClient) (ar autorest.Response, err error) {
+func (future *VirtualNetworkPeeringsDeleteFuture) Result(client VirtualNetworkPeeringsClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworkPeeringsDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.VirtualNetworkPeeringsDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.VirtualNetworkPeeringsDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.VirtualNetworkPeeringsDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkPeeringsDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworkPeeringsDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -11683,51 +12219,31 @@ type VirtualNetworkPropertiesFormat struct {
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
 
-// VirtualNetworksCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// VirtualNetworksCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type VirtualNetworksCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future VirtualNetworksCreateOrUpdateFuture) Result(client VirtualNetworksClient) (vn VirtualNetwork, err error) {
+func (future *VirtualNetworksCreateOrUpdateFuture) Result(client VirtualNetworksClient) (vn VirtualNetwork, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworksCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return vn, azure.NewAsyncOpIncompleteError("network.VirtualNetworksCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		vn, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.VirtualNetworksCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.VirtualNetworksCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if vn.Response.Response, err = future.GetResult(sender); err == nil && vn.Response.Response.StatusCode != http.StatusNoContent {
+		vn, err = client.CreateOrUpdateResponder(vn.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.VirtualNetworksCreateOrUpdateFuture", "Result", vn.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworksCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	vn, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworksCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -11736,70 +12252,44 @@ func (future VirtualNetworksCreateOrUpdateFuture) Result(client VirtualNetworksC
 // operation.
 type VirtualNetworksDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future VirtualNetworksDeleteFuture) Result(client VirtualNetworksClient) (ar autorest.Response, err error) {
+func (future *VirtualNetworksDeleteFuture) Result(client VirtualNetworksClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworksDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.VirtualNetworksDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.VirtualNetworksDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.VirtualNetworksDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworksDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.VirtualNetworksDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
 // VirtualNetworkUsage usage details for subnet.
 type VirtualNetworkUsage struct {
-	// CurrentValue - Indicates number of IPs used from the Subnet.
+	// CurrentValue - READ-ONLY; Indicates number of IPs used from the Subnet.
 	CurrentValue *float64 `json:"currentValue,omitempty"`
-	// ID - Subnet identifier.
+	// ID - READ-ONLY; Subnet identifier.
 	ID *string `json:"id,omitempty"`
-	// Limit - Indicates the size of the subnet.
+	// Limit - READ-ONLY; Indicates the size of the subnet.
 	Limit *float64 `json:"limit,omitempty"`
-	// Name - The name containing common and localized value for usage.
+	// Name - READ-ONLY; The name containing common and localized value for usage.
 	Name *VirtualNetworkUsageName `json:"name,omitempty"`
-	// Unit - Usage units. Returns 'Count'
+	// Unit - READ-ONLY; Usage units. Returns 'Count'
 	Unit *string `json:"unit,omitempty"`
 }
 
 // VirtualNetworkUsageName usage strings container.
 type VirtualNetworkUsageName struct {
-	// LocalizedValue - Localized subnet size and usage string.
+	// LocalizedValue - READ-ONLY; Localized subnet size and usage string.
 	LocalizedValue *string `json:"localizedValue,omitempty"`
-	// Value - Subnet size and usage string.
+	// Value - READ-ONLY; Subnet size and usage string.
 	Value *string `json:"value,omitempty"`
 }
 
@@ -11828,6 +12318,24 @@ type VpnClientRevokedCertificate struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for VpnClientRevokedCertificate.
+func (vcrc VpnClientRevokedCertificate) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if vcrc.VpnClientRevokedCertificatePropertiesFormat != nil {
+		objectMap["properties"] = vcrc.VpnClientRevokedCertificatePropertiesFormat
+	}
+	if vcrc.Name != nil {
+		objectMap["name"] = vcrc.Name
+	}
+	if vcrc.Etag != nil {
+		objectMap["etag"] = vcrc.Etag
+	}
+	if vcrc.ID != nil {
+		objectMap["id"] = vcrc.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for VpnClientRevokedCertificate struct.
@@ -11881,12 +12389,12 @@ func (vcrc *VpnClientRevokedCertificate) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// VpnClientRevokedCertificatePropertiesFormat properties of the revoked VPN client certificate of virtual network
-// gateway.
+// VpnClientRevokedCertificatePropertiesFormat properties of the revoked VPN client certificate of virtual
+// network gateway.
 type VpnClientRevokedCertificatePropertiesFormat struct {
 	// Thumbprint - The revoked VPN client certificate thumbprint.
 	Thumbprint *string `json:"thumbprint,omitempty"`
-	// ProvisioningState - The provisioning state of the VPN client revoked certificate resource. Possible values are: 'Updating', 'Deleting', and 'Failed'.
+	// ProvisioningState - READ-ONLY; The provisioning state of the VPN client revoked certificate resource. Possible values are: 'Updating', 'Deleting', and 'Failed'.
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
 
@@ -11899,6 +12407,24 @@ type VpnClientRootCertificate struct {
 	Etag *string `json:"etag,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for VpnClientRootCertificate.
+func (vcrc VpnClientRootCertificate) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if vcrc.VpnClientRootCertificatePropertiesFormat != nil {
+		objectMap["properties"] = vcrc.VpnClientRootCertificatePropertiesFormat
+	}
+	if vcrc.Name != nil {
+		objectMap["name"] = vcrc.Name
+	}
+	if vcrc.Etag != nil {
+		objectMap["etag"] = vcrc.Etag
+	}
+	if vcrc.ID != nil {
+		objectMap["id"] = vcrc.ID
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for VpnClientRootCertificate struct.
@@ -11956,7 +12482,7 @@ func (vcrc *VpnClientRootCertificate) UnmarshalJSON(body []byte) error {
 type VpnClientRootCertificatePropertiesFormat struct {
 	// PublicCertData - The certificate public data.
 	PublicCertData *string `json:"publicCertData,omitempty"`
-	// ProvisioningState - The provisioning state of the VPN client root certificate resource. Possible values are: 'Updating', 'Deleting', and 'Failed'.
+	// ProvisioningState - READ-ONLY; The provisioning state of the VPN client root certificate resource. Possible values are: 'Updating', 'Deleting', and 'Failed'.
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
 
@@ -11968,9 +12494,9 @@ type Watcher struct {
 	*WatcherPropertiesFormat `json:"properties,omitempty"`
 	// ID - Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -11989,12 +12515,6 @@ func (w Watcher) MarshalJSON() ([]byte, error) {
 	}
 	if w.ID != nil {
 		objectMap["id"] = w.ID
-	}
-	if w.Name != nil {
-		objectMap["name"] = w.Name
-	}
-	if w.Type != nil {
-		objectMap["type"] = w.Type
 	}
 	if w.Location != nil {
 		objectMap["location"] = w.Location
@@ -12091,249 +12611,145 @@ type WatcherListResult struct {
 
 // WatcherPropertiesFormat the network watcher properties.
 type WatcherPropertiesFormat struct {
-	// ProvisioningState - The provisioning state of the resource. Possible values include: 'ProvisioningStateSucceeded', 'ProvisioningStateUpdating', 'ProvisioningStateDeleting', 'ProvisioningStateFailed'
+	// ProvisioningState - READ-ONLY; The provisioning state of the resource. Possible values include: 'ProvisioningStateSucceeded', 'ProvisioningStateUpdating', 'ProvisioningStateDeleting', 'ProvisioningStateFailed'
 	ProvisioningState ProvisioningState `json:"provisioningState,omitempty"`
 }
 
-// WatchersCheckConnectivityFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// WatchersCheckConnectivityFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type WatchersCheckConnectivityFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future WatchersCheckConnectivityFuture) Result(client WatchersClient) (ci ConnectivityInformation, err error) {
+func (future *WatchersCheckConnectivityFuture) Result(client WatchersClient) (ci ConnectivityInformation, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.WatchersCheckConnectivityFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ci, azure.NewAsyncOpIncompleteError("network.WatchersCheckConnectivityFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ci, err = client.CheckConnectivityResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.WatchersCheckConnectivityFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.WatchersCheckConnectivityFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if ci.Response.Response, err = future.GetResult(sender); err == nil && ci.Response.Response.StatusCode != http.StatusNoContent {
+		ci, err = client.CheckConnectivityResponder(ci.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.WatchersCheckConnectivityFuture", "Result", ci.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.WatchersCheckConnectivityFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ci, err = client.CheckConnectivityResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.WatchersCheckConnectivityFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// WatchersDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// WatchersDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type WatchersDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future WatchersDeleteFuture) Result(client WatchersClient) (ar autorest.Response, err error) {
+func (future *WatchersDeleteFuture) Result(client WatchersClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.WatchersDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("network.WatchersDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.WatchersDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.WatchersDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.WatchersDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.WatchersDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
-// WatchersGetFlowLogStatusFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// WatchersGetFlowLogStatusFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type WatchersGetFlowLogStatusFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future WatchersGetFlowLogStatusFuture) Result(client WatchersClient) (fli FlowLogInformation, err error) {
+func (future *WatchersGetFlowLogStatusFuture) Result(client WatchersClient) (fli FlowLogInformation, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.WatchersGetFlowLogStatusFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return fli, azure.NewAsyncOpIncompleteError("network.WatchersGetFlowLogStatusFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		fli, err = client.GetFlowLogStatusResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.WatchersGetFlowLogStatusFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.WatchersGetFlowLogStatusFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if fli.Response.Response, err = future.GetResult(sender); err == nil && fli.Response.Response.StatusCode != http.StatusNoContent {
+		fli, err = client.GetFlowLogStatusResponder(fli.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.WatchersGetFlowLogStatusFuture", "Result", fli.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.WatchersGetFlowLogStatusFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	fli, err = client.GetFlowLogStatusResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.WatchersGetFlowLogStatusFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// WatchersGetNextHopFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// WatchersGetNextHopFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type WatchersGetNextHopFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future WatchersGetNextHopFuture) Result(client WatchersClient) (nhr NextHopResult, err error) {
+func (future *WatchersGetNextHopFuture) Result(client WatchersClient) (nhr NextHopResult, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.WatchersGetNextHopFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return nhr, azure.NewAsyncOpIncompleteError("network.WatchersGetNextHopFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		nhr, err = client.GetNextHopResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.WatchersGetNextHopFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.WatchersGetNextHopFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if nhr.Response.Response, err = future.GetResult(sender); err == nil && nhr.Response.Response.StatusCode != http.StatusNoContent {
+		nhr, err = client.GetNextHopResponder(nhr.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.WatchersGetNextHopFuture", "Result", nhr.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.WatchersGetNextHopFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	nhr, err = client.GetNextHopResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.WatchersGetNextHopFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// WatchersGetTroubleshootingFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// WatchersGetTroubleshootingFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type WatchersGetTroubleshootingFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future WatchersGetTroubleshootingFuture) Result(client WatchersClient) (tr TroubleshootingResult, err error) {
+func (future *WatchersGetTroubleshootingFuture) Result(client WatchersClient) (tr TroubleshootingResult, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.WatchersGetTroubleshootingFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return tr, azure.NewAsyncOpIncompleteError("network.WatchersGetTroubleshootingFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		tr, err = client.GetTroubleshootingResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.WatchersGetTroubleshootingFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.WatchersGetTroubleshootingFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if tr.Response.Response, err = future.GetResult(sender); err == nil && tr.Response.Response.StatusCode != http.StatusNoContent {
+		tr, err = client.GetTroubleshootingResponder(tr.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.WatchersGetTroubleshootingFuture", "Result", tr.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.WatchersGetTroubleshootingFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	tr, err = client.GetTroubleshootingResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.WatchersGetTroubleshootingFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -12342,193 +12758,114 @@ func (future WatchersGetTroubleshootingFuture) Result(client WatchersClient) (tr
 // long-running operation.
 type WatchersGetTroubleshootingResultFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future WatchersGetTroubleshootingResultFuture) Result(client WatchersClient) (tr TroubleshootingResult, err error) {
+func (future *WatchersGetTroubleshootingResultFuture) Result(client WatchersClient) (tr TroubleshootingResult, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.WatchersGetTroubleshootingResultFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return tr, azure.NewAsyncOpIncompleteError("network.WatchersGetTroubleshootingResultFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		tr, err = client.GetTroubleshootingResultResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.WatchersGetTroubleshootingResultFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.WatchersGetTroubleshootingResultFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if tr.Response.Response, err = future.GetResult(sender); err == nil && tr.Response.Response.StatusCode != http.StatusNoContent {
+		tr, err = client.GetTroubleshootingResultResponder(tr.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.WatchersGetTroubleshootingResultFuture", "Result", tr.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.WatchersGetTroubleshootingResultFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	tr, err = client.GetTroubleshootingResultResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.WatchersGetTroubleshootingResultFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// WatchersGetVMSecurityRulesFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// WatchersGetVMSecurityRulesFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type WatchersGetVMSecurityRulesFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future WatchersGetVMSecurityRulesFuture) Result(client WatchersClient) (sgvr SecurityGroupViewResult, err error) {
+func (future *WatchersGetVMSecurityRulesFuture) Result(client WatchersClient) (sgvr SecurityGroupViewResult, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.WatchersGetVMSecurityRulesFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return sgvr, azure.NewAsyncOpIncompleteError("network.WatchersGetVMSecurityRulesFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		sgvr, err = client.GetVMSecurityRulesResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.WatchersGetVMSecurityRulesFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.WatchersGetVMSecurityRulesFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if sgvr.Response.Response, err = future.GetResult(sender); err == nil && sgvr.Response.Response.StatusCode != http.StatusNoContent {
+		sgvr, err = client.GetVMSecurityRulesResponder(sgvr.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.WatchersGetVMSecurityRulesFuture", "Result", sgvr.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.WatchersGetVMSecurityRulesFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	sgvr, err = client.GetVMSecurityRulesResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.WatchersGetVMSecurityRulesFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// WatchersSetFlowLogConfigurationFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// WatchersSetFlowLogConfigurationFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type WatchersSetFlowLogConfigurationFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future WatchersSetFlowLogConfigurationFuture) Result(client WatchersClient) (fli FlowLogInformation, err error) {
+func (future *WatchersSetFlowLogConfigurationFuture) Result(client WatchersClient) (fli FlowLogInformation, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.WatchersSetFlowLogConfigurationFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return fli, azure.NewAsyncOpIncompleteError("network.WatchersSetFlowLogConfigurationFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		fli, err = client.SetFlowLogConfigurationResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.WatchersSetFlowLogConfigurationFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.WatchersSetFlowLogConfigurationFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if fli.Response.Response, err = future.GetResult(sender); err == nil && fli.Response.Response.StatusCode != http.StatusNoContent {
+		fli, err = client.SetFlowLogConfigurationResponder(fli.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.WatchersSetFlowLogConfigurationFuture", "Result", fli.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.WatchersSetFlowLogConfigurationFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	fli, err = client.SetFlowLogConfigurationResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.WatchersSetFlowLogConfigurationFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// WatchersVerifyIPFlowFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// WatchersVerifyIPFlowFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type WatchersVerifyIPFlowFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future WatchersVerifyIPFlowFuture) Result(client WatchersClient) (vifr VerificationIPFlowResult, err error) {
+func (future *WatchersVerifyIPFlowFuture) Result(client WatchersClient) (vifr VerificationIPFlowResult, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.WatchersVerifyIPFlowFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return vifr, azure.NewAsyncOpIncompleteError("network.WatchersVerifyIPFlowFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		vifr, err = client.VerifyIPFlowResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "network.WatchersVerifyIPFlowFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("network.WatchersVerifyIPFlowFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if vifr.Response.Response, err = future.GetResult(sender); err == nil && vifr.Response.Response.StatusCode != http.StatusNoContent {
+		vifr, err = client.VerifyIPFlowResponder(vifr.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "network.WatchersVerifyIPFlowFuture", "Result", vifr.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.WatchersVerifyIPFlowFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	vifr, err = client.VerifyIPFlowResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "network.WatchersVerifyIPFlowFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }

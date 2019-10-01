@@ -21,6 +21,7 @@ import (
 	"context"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -40,12 +41,24 @@ func NewEndpointsClientWithBaseURI(baseURI string, subscriptionID string) Endpoi
 }
 
 // CreateOrUpdate create or update a Traffic Manager endpoint.
-//
-// resourceGroupName is the name of the resource group containing the Traffic Manager endpoint to be created or
-// updated. profileName is the name of the Traffic Manager profile. endpointType is the type of the Traffic Manager
-// endpoint to be created or updated. endpointName is the name of the Traffic Manager endpoint to be created or
-// updated. parameters is the Traffic Manager endpoint parameters supplied to the CreateOrUpdate operation.
+// Parameters:
+// resourceGroupName - the name of the resource group containing the Traffic Manager endpoint to be created or
+// updated.
+// profileName - the name of the Traffic Manager profile.
+// endpointType - the type of the Traffic Manager endpoint to be created or updated.
+// endpointName - the name of the Traffic Manager endpoint to be created or updated.
+// parameters - the Traffic Manager endpoint parameters supplied to the CreateOrUpdate operation.
 func (client EndpointsClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, profileName string, endpointType string, endpointName string, parameters Endpoint) (result Endpoint, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/EndpointsClient.CreateOrUpdate")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.CreateOrUpdatePreparer(ctx, resourceGroupName, profileName, endpointType, endpointName, parameters)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "trafficmanager.EndpointsClient", "CreateOrUpdate", nil, "Failure preparing request")
@@ -83,7 +96,7 @@ func (client EndpointsClient) CreateOrUpdatePreparer(ctx context.Context, resour
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/trafficmanagerprofiles/{profileName}/{endpointType}/{endpointName}", pathParameters),
@@ -95,8 +108,8 @@ func (client EndpointsClient) CreateOrUpdatePreparer(ctx context.Context, resour
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client EndpointsClient) CreateOrUpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateOrUpdateResponder handles the response to the CreateOrUpdate request. The method always
@@ -113,11 +126,22 @@ func (client EndpointsClient) CreateOrUpdateResponder(resp *http.Response) (resu
 }
 
 // Delete deletes a Traffic Manager endpoint.
-//
-// resourceGroupName is the name of the resource group containing the Traffic Manager endpoint to be deleted.
-// profileName is the name of the Traffic Manager profile. endpointType is the type of the Traffic Manager endpoint
-// to be deleted. endpointName is the name of the Traffic Manager endpoint to be deleted.
+// Parameters:
+// resourceGroupName - the name of the resource group containing the Traffic Manager endpoint to be deleted.
+// profileName - the name of the Traffic Manager profile.
+// endpointType - the type of the Traffic Manager endpoint to be deleted.
+// endpointName - the name of the Traffic Manager endpoint to be deleted.
 func (client EndpointsClient) Delete(ctx context.Context, resourceGroupName string, profileName string, endpointType string, endpointName string) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/EndpointsClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeletePreparer(ctx, resourceGroupName, profileName, endpointType, endpointName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "trafficmanager.EndpointsClient", "Delete", nil, "Failure preparing request")
@@ -165,8 +189,8 @@ func (client EndpointsClient) DeletePreparer(ctx context.Context, resourceGroupN
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client EndpointsClient) DeleteSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
@@ -182,11 +206,22 @@ func (client EndpointsClient) DeleteResponder(resp *http.Response) (result autor
 }
 
 // Get gets a Traffic Manager endpoint.
-//
-// resourceGroupName is the name of the resource group containing the Traffic Manager endpoint. profileName is the
-// name of the Traffic Manager profile. endpointType is the type of the Traffic Manager endpoint. endpointName is
-// the name of the Traffic Manager endpoint.
+// Parameters:
+// resourceGroupName - the name of the resource group containing the Traffic Manager endpoint.
+// profileName - the name of the Traffic Manager profile.
+// endpointType - the type of the Traffic Manager endpoint.
+// endpointName - the name of the Traffic Manager endpoint.
 func (client EndpointsClient) Get(ctx context.Context, resourceGroupName string, profileName string, endpointType string, endpointName string) (result Endpoint, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/EndpointsClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, resourceGroupName, profileName, endpointType, endpointName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "trafficmanager.EndpointsClient", "Get", nil, "Failure preparing request")
@@ -234,8 +269,8 @@ func (client EndpointsClient) GetPreparer(ctx context.Context, resourceGroupName
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client EndpointsClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -252,12 +287,23 @@ func (client EndpointsClient) GetResponder(resp *http.Response) (result Endpoint
 }
 
 // Update update a Traffic Manager endpoint.
-//
-// resourceGroupName is the name of the resource group containing the Traffic Manager endpoint to be updated.
-// profileName is the name of the Traffic Manager profile. endpointType is the type of the Traffic Manager endpoint
-// to be updated. endpointName is the name of the Traffic Manager endpoint to be updated. parameters is the Traffic
-// Manager endpoint parameters supplied to the Update operation.
+// Parameters:
+// resourceGroupName - the name of the resource group containing the Traffic Manager endpoint to be updated.
+// profileName - the name of the Traffic Manager profile.
+// endpointType - the type of the Traffic Manager endpoint to be updated.
+// endpointName - the name of the Traffic Manager endpoint to be updated.
+// parameters - the Traffic Manager endpoint parameters supplied to the Update operation.
 func (client EndpointsClient) Update(ctx context.Context, resourceGroupName string, profileName string, endpointType string, endpointName string, parameters Endpoint) (result Endpoint, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/EndpointsClient.Update")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UpdatePreparer(ctx, resourceGroupName, profileName, endpointType, endpointName, parameters)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "trafficmanager.EndpointsClient", "Update", nil, "Failure preparing request")
@@ -295,7 +341,7 @@ func (client EndpointsClient) UpdatePreparer(ctx context.Context, resourceGroupN
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/trafficmanagerprofiles/{profileName}/{endpointType}/{endpointName}", pathParameters),
@@ -307,8 +353,8 @@ func (client EndpointsClient) UpdatePreparer(ctx context.Context, resourceGroupN
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client EndpointsClient) UpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateResponder handles the response to the Update request. The method always

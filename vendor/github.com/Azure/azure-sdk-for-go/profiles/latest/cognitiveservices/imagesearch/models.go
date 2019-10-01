@@ -1,6 +1,6 @@
 // +build go1.9
 
-// Copyright 2018 Microsoft Corporation
+// Copyright 2019 Microsoft Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,26 +22,8 @@ package imagesearch
 import original "github.com/Azure/azure-sdk-for-go/services/cognitiveservices/v1.0/imagesearch"
 
 const (
-	DefaultBaseURI = original.DefaultBaseURI
+	DefaultEndpoint = original.DefaultEndpoint
 )
-
-type BaseClient = original.BaseClient
-
-func New() BaseClient {
-	return original.New()
-}
-func NewWithBaseURI(baseURI string) BaseClient {
-	return original.NewWithBaseURI(baseURI)
-}
-
-type ImagesClient = original.ImagesClient
-
-func NewImagesClient() ImagesClient {
-	return original.NewImagesClient()
-}
-func NewImagesClientWithBaseURI(baseURI string) ImagesClient {
-	return original.NewImagesClientWithBaseURI(baseURI)
-}
 
 type Currency = original.Currency
 
@@ -397,39 +379,47 @@ const (
 
 type AggregateOffer = original.AggregateOffer
 type AggregateRating = original.AggregateRating
-type BasicAnswer = original.BasicAnswer
 type Answer = original.Answer
+type BaseClient = original.BaseClient
+type BasicAnswer = original.BasicAnswer
 type BasicCollectionPage = original.BasicCollectionPage
-type CollectionPage = original.CollectionPage
 type BasicCreativeWork = original.BasicCreativeWork
+type BasicIdentifiable = original.BasicIdentifiable
+type BasicIntangible = original.BasicIntangible
+type BasicMediaObject = original.BasicMediaObject
+type BasicOffer = original.BasicOffer
+type BasicPropertiesItem = original.BasicPropertiesItem
+type BasicRating = original.BasicRating
+type BasicResponse = original.BasicResponse
+type BasicResponseBase = original.BasicResponseBase
+type BasicSearchResultsAnswer = original.BasicSearchResultsAnswer
+type BasicStructuredValue = original.BasicStructuredValue
+type BasicThing = original.BasicThing
+type BasicWebPage = original.BasicWebPage
+type CollectionPage = original.CollectionPage
 type CreativeWork = original.CreativeWork
 type Error = original.Error
 type ErrorResponse = original.ErrorResponse
-type BasicIdentifiable = original.BasicIdentifiable
 type Identifiable = original.Identifiable
 type ImageGallery = original.ImageGallery
 type ImageInsights = original.ImageInsights
 type ImageInsightsImageCaption = original.ImageInsightsImageCaption
 type ImageObject = original.ImageObject
+type ImageTagsModule = original.ImageTagsModule
 type Images = original.Images
+type ImagesClient = original.ImagesClient
 type ImagesImageMetadata = original.ImagesImageMetadata
 type ImagesModule = original.ImagesModule
-type ImageTagsModule = original.ImageTagsModule
 type InsightsTag = original.InsightsTag
-type BasicIntangible = original.BasicIntangible
 type Intangible = original.Intangible
-type BasicMediaObject = original.BasicMediaObject
 type MediaObject = original.MediaObject
 type NormalizedRectangle = original.NormalizedRectangle
-type BasicOffer = original.BasicOffer
 type Offer = original.Offer
 type Organization = original.Organization
 type Person = original.Person
 type PivotSuggestions = original.PivotSuggestions
-type BasicPropertiesItem = original.BasicPropertiesItem
 type PropertiesItem = original.PropertiesItem
 type Query = original.Query
-type BasicRating = original.BasicRating
 type Rating = original.Rating
 type Recipe = original.Recipe
 type RecipesModule = original.RecipesModule
@@ -439,22 +429,73 @@ type RecognizedEntityGroup = original.RecognizedEntityGroup
 type RecognizedEntityRegion = original.RecognizedEntityRegion
 type RelatedCollectionsModule = original.RelatedCollectionsModule
 type RelatedSearchesModule = original.RelatedSearchesModule
-type BasicResponse = original.BasicResponse
 type Response = original.Response
-type BasicResponseBase = original.BasicResponseBase
 type ResponseBase = original.ResponseBase
-type BasicSearchResultsAnswer = original.BasicSearchResultsAnswer
 type SearchResultsAnswer = original.SearchResultsAnswer
-type BasicStructuredValue = original.BasicStructuredValue
 type StructuredValue = original.StructuredValue
-type BasicThing = original.BasicThing
 type Thing = original.Thing
 type TrendingImages = original.TrendingImages
 type TrendingImagesCategory = original.TrendingImagesCategory
 type TrendingImagesTile = original.TrendingImagesTile
-type BasicWebPage = original.BasicWebPage
 type WebPage = original.WebPage
 
+func New() BaseClient {
+	return original.New()
+}
+func NewImagesClient() ImagesClient {
+	return original.NewImagesClient()
+}
+func NewWithoutDefaults(endpoint string) BaseClient {
+	return original.NewWithoutDefaults(endpoint)
+}
+func PossibleCurrencyValues() []Currency {
+	return original.PossibleCurrencyValues()
+}
+func PossibleErrorCodeValues() []ErrorCode {
+	return original.PossibleErrorCodeValues()
+}
+func PossibleErrorSubCodeValues() []ErrorSubCode {
+	return original.PossibleErrorSubCodeValues()
+}
+func PossibleFreshnessValues() []Freshness {
+	return original.PossibleFreshnessValues()
+}
+func PossibleImageAspectValues() []ImageAspect {
+	return original.PossibleImageAspectValues()
+}
+func PossibleImageColorValues() []ImageColor {
+	return original.PossibleImageColorValues()
+}
+func PossibleImageContentValues() []ImageContent {
+	return original.PossibleImageContentValues()
+}
+func PossibleImageCropTypeValues() []ImageCropType {
+	return original.PossibleImageCropTypeValues()
+}
+func PossibleImageInsightModuleValues() []ImageInsightModule {
+	return original.PossibleImageInsightModuleValues()
+}
+func PossibleImageLicenseValues() []ImageLicense {
+	return original.PossibleImageLicenseValues()
+}
+func PossibleImageSizeValues() []ImageSize {
+	return original.PossibleImageSizeValues()
+}
+func PossibleImageTypeValues() []ImageType {
+	return original.PossibleImageTypeValues()
+}
+func PossibleItemAvailabilityValues() []ItemAvailability {
+	return original.PossibleItemAvailabilityValues()
+}
+func PossibleSafeSearchValues() []SafeSearch {
+	return original.PossibleSafeSearchValues()
+}
+func PossibleTypeBasicResponseBaseValues() []TypeBasicResponseBase {
+	return original.PossibleTypeBasicResponseBaseValues()
+}
+func PossibleTypeValues() []Type {
+	return original.PossibleTypeValues()
+}
 func UserAgent() string {
 	return original.UserAgent() + " profiles/latest"
 }

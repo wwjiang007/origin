@@ -18,14 +18,19 @@ package customerinsights
 // Changes may cause incorrect behavior and will be lost if the code is regenerated.
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/go-autorest/tracing"
 	"github.com/shopspring/decimal"
 	"net/http"
 )
+
+// The package's fully qualified name.
+const fqdn = "github.com/Azure/azure-sdk-for-go/services/customerinsights/mgmt/2017-04-26/customerinsights"
 
 // CalculationWindowTypes enumerates the values for calculation window types.
 type CalculationWindowTypes string
@@ -43,6 +48,11 @@ const (
 	Week CalculationWindowTypes = "Week"
 )
 
+// PossibleCalculationWindowTypesValues returns an array of possible values for the CalculationWindowTypes const type.
+func PossibleCalculationWindowTypesValues() []CalculationWindowTypes {
+	return []CalculationWindowTypes{Day, Hour, Lifetime, Month, Week}
+}
+
 // CanonicalPropertyValueType enumerates the values for canonical property value type.
 type CanonicalPropertyValueType string
 
@@ -57,6 +67,11 @@ const (
 	Numeric CanonicalPropertyValueType = "Numeric"
 )
 
+// PossibleCanonicalPropertyValueTypeValues returns an array of possible values for the CanonicalPropertyValueType const type.
+func PossibleCanonicalPropertyValueTypeValues() []CanonicalPropertyValueType {
+	return []CanonicalPropertyValueType{Categorical, DerivedCategorical, DerivedNumeric, Numeric}
+}
+
 // CardinalityTypes enumerates the values for cardinality types.
 type CardinalityTypes string
 
@@ -69,6 +84,11 @@ const (
 	OneToOne CardinalityTypes = "OneToOne"
 )
 
+// PossibleCardinalityTypesValues returns an array of possible values for the CardinalityTypes const type.
+func PossibleCardinalityTypesValues() []CardinalityTypes {
+	return []CardinalityTypes{ManyToMany, OneToMany, OneToOne}
+}
+
 // CompletionOperationTypes enumerates the values for completion operation types.
 type CompletionOperationTypes string
 
@@ -80,6 +100,11 @@ const (
 	// MoveFile ...
 	MoveFile CompletionOperationTypes = "MoveFile"
 )
+
+// PossibleCompletionOperationTypesValues returns an array of possible values for the CompletionOperationTypes const type.
+func PossibleCompletionOperationTypesValues() []CompletionOperationTypes {
+	return []CompletionOperationTypes{DeleteFile, DoNothing, MoveFile}
+}
 
 // ConnectorMappingStates enumerates the values for connector mapping states.
 type ConnectorMappingStates string
@@ -101,6 +126,11 @@ const (
 	Stopped ConnectorMappingStates = "Stopped"
 )
 
+// PossibleConnectorMappingStatesValues returns an array of possible values for the ConnectorMappingStates const type.
+func PossibleConnectorMappingStatesValues() []ConnectorMappingStates {
+	return []ConnectorMappingStates{Created, Creating, Expiring, Failed, Ready, Running, Stopped}
+}
+
 // ConnectorStates enumerates the values for connector states.
 type ConnectorStates string
 
@@ -118,6 +148,11 @@ const (
 	// ConnectorStatesReady ...
 	ConnectorStatesReady ConnectorStates = "Ready"
 )
+
+// PossibleConnectorStatesValues returns an array of possible values for the ConnectorStates const type.
+func PossibleConnectorStatesValues() []ConnectorStates {
+	return []ConnectorStates{ConnectorStatesCreated, ConnectorStatesCreating, ConnectorStatesDeleting, ConnectorStatesExpiring, ConnectorStatesFailed, ConnectorStatesReady}
+}
 
 // ConnectorTypes enumerates the values for connector types.
 type ConnectorTypes string
@@ -137,6 +172,11 @@ const (
 	Salesforce ConnectorTypes = "Salesforce"
 )
 
+// PossibleConnectorTypesValues returns an array of possible values for the ConnectorTypes const type.
+func PossibleConnectorTypesValues() []ConnectorTypes {
+	return []ConnectorTypes{AzureBlob, CRM, ExchangeOnline, None, Outbound, Salesforce}
+}
+
 // DataSourceType enumerates the values for data source type.
 type DataSourceType string
 
@@ -148,6 +188,11 @@ const (
 	// DataSourceTypeSystemDefault ...
 	DataSourceTypeSystemDefault DataSourceType = "SystemDefault"
 )
+
+// PossibleDataSourceTypeValues returns an array of possible values for the DataSourceType const type.
+func PossibleDataSourceTypeValues() []DataSourceType {
+	return []DataSourceType{DataSourceTypeConnector, DataSourceTypeLinkInteraction, DataSourceTypeSystemDefault}
+}
 
 // EntityType enumerates the values for entity type.
 type EntityType string
@@ -163,6 +208,11 @@ const (
 	EntityTypeRelationship EntityType = "Relationship"
 )
 
+// PossibleEntityTypeValues returns an array of possible values for the EntityType const type.
+func PossibleEntityTypeValues() []EntityType {
+	return []EntityType{EntityTypeInteraction, EntityTypeNone, EntityTypeProfile, EntityTypeRelationship}
+}
+
 // EntityTypes enumerates the values for entity types.
 type EntityTypes string
 
@@ -177,6 +227,11 @@ const (
 	EntityTypesRelationship EntityTypes = "Relationship"
 )
 
+// PossibleEntityTypesValues returns an array of possible values for the EntityTypes const type.
+func PossibleEntityTypesValues() []EntityTypes {
+	return []EntityTypes{EntityTypesInteraction, EntityTypesNone, EntityTypesProfile, EntityTypesRelationship}
+}
+
 // ErrorManagementTypes enumerates the values for error management types.
 type ErrorManagementTypes string
 
@@ -188,6 +243,11 @@ const (
 	// StopImport ...
 	StopImport ErrorManagementTypes = "StopImport"
 )
+
+// PossibleErrorManagementTypesValues returns an array of possible values for the ErrorManagementTypes const type.
+func PossibleErrorManagementTypesValues() []ErrorManagementTypes {
+	return []ErrorManagementTypes{RejectAndContinue, RejectUntilLimit, StopImport}
+}
 
 // FrequencyTypes enumerates the values for frequency types.
 type FrequencyTypes string
@@ -205,6 +265,11 @@ const (
 	FrequencyTypesWeek FrequencyTypes = "Week"
 )
 
+// PossibleFrequencyTypesValues returns an array of possible values for the FrequencyTypes const type.
+func PossibleFrequencyTypesValues() []FrequencyTypes {
+	return []FrequencyTypes{FrequencyTypesDay, FrequencyTypesHour, FrequencyTypesMinute, FrequencyTypesMonth, FrequencyTypesWeek}
+}
+
 // InstanceOperationType enumerates the values for instance operation type.
 type InstanceOperationType string
 
@@ -214,6 +279,11 @@ const (
 	// Upsert ...
 	Upsert InstanceOperationType = "Upsert"
 )
+
+// PossibleInstanceOperationTypeValues returns an array of possible values for the InstanceOperationType const type.
+func PossibleInstanceOperationTypeValues() []InstanceOperationType {
+	return []InstanceOperationType{Delete, Upsert}
+}
 
 // KpiFunctions enumerates the values for kpi functions.
 type KpiFunctions string
@@ -237,6 +307,11 @@ const (
 	KpiFunctionsSum KpiFunctions = "Sum"
 )
 
+// PossibleKpiFunctionsValues returns an array of possible values for the KpiFunctions const type.
+func PossibleKpiFunctionsValues() []KpiFunctions {
+	return []KpiFunctions{KpiFunctionsAvg, KpiFunctionsCount, KpiFunctionsCountDistinct, KpiFunctionsLast, KpiFunctionsMax, KpiFunctionsMin, KpiFunctionsNone, KpiFunctionsSum}
+}
+
 // LinkTypes enumerates the values for link types.
 type LinkTypes string
 
@@ -246,6 +321,11 @@ const (
 	// UpdateAlways ...
 	UpdateAlways LinkTypes = "UpdateAlways"
 )
+
+// PossibleLinkTypesValues returns an array of possible values for the LinkTypes const type.
+func PossibleLinkTypesValues() []LinkTypes {
+	return []LinkTypes{CopyIfNull, UpdateAlways}
+}
 
 // PermissionTypes enumerates the values for permission types.
 type PermissionTypes string
@@ -258,6 +338,11 @@ const (
 	// Write ...
 	Write PermissionTypes = "Write"
 )
+
+// PossiblePermissionTypesValues returns an array of possible values for the PermissionTypes const type.
+func PossiblePermissionTypesValues() []PermissionTypes {
+	return []PermissionTypes{Manage, Read, Write}
+}
 
 // PredictionModelLifeCycle enumerates the values for prediction model life cycle.
 type PredictionModelLifeCycle string
@@ -301,6 +386,11 @@ const (
 	PredictionModelLifeCycleTrainingFailed PredictionModelLifeCycle = "TrainingFailed"
 )
 
+// PossiblePredictionModelLifeCycleValues returns an array of possible values for the PredictionModelLifeCycle const type.
+func PossiblePredictionModelLifeCycleValues() []PredictionModelLifeCycle {
+	return []PredictionModelLifeCycle{PredictionModelLifeCycleActive, PredictionModelLifeCycleDeleted, PredictionModelLifeCycleDiscovering, PredictionModelLifeCycleEvaluating, PredictionModelLifeCycleEvaluatingFailed, PredictionModelLifeCycleFailed, PredictionModelLifeCycleFeaturing, PredictionModelLifeCycleFeaturingFailed, PredictionModelLifeCycleHumanIntervention, PredictionModelLifeCycleNew, PredictionModelLifeCyclePendingDiscovering, PredictionModelLifeCyclePendingFeaturing, PredictionModelLifeCyclePendingModelConfirmation, PredictionModelLifeCyclePendingTraining, PredictionModelLifeCycleProvisioning, PredictionModelLifeCycleProvisioningFailed, PredictionModelLifeCycleTraining, PredictionModelLifeCycleTrainingFailed}
+}
+
 // ProvisioningStates enumerates the values for provisioning states.
 type ProvisioningStates string
 
@@ -318,6 +408,11 @@ const (
 	// ProvisioningStatesSucceeded ...
 	ProvisioningStatesSucceeded ProvisioningStates = "Succeeded"
 )
+
+// PossibleProvisioningStatesValues returns an array of possible values for the ProvisioningStates const type.
+func PossibleProvisioningStatesValues() []ProvisioningStates {
+	return []ProvisioningStates{ProvisioningStatesDeleting, ProvisioningStatesExpiring, ProvisioningStatesFailed, ProvisioningStatesHumanIntervention, ProvisioningStatesProvisioning, ProvisioningStatesSucceeded}
+}
 
 // RoleTypes enumerates the values for role types.
 type RoleTypes string
@@ -337,6 +432,11 @@ const (
 	Reader RoleTypes = "Reader"
 )
 
+// PossibleRoleTypesValues returns an array of possible values for the RoleTypes const type.
+func PossibleRoleTypesValues() []RoleTypes {
+	return []RoleTypes{Admin, DataAdmin, DataReader, ManageAdmin, ManageReader, Reader}
+}
+
 // Status enumerates the values for status.
 type Status string
 
@@ -348,6 +448,11 @@ const (
 	// StatusNone ...
 	StatusNone Status = "None"
 )
+
+// PossibleStatusValues returns an array of possible values for the Status const type.
+func PossibleStatusValues() []Status {
+	return []Status{StatusActive, StatusDeleted, StatusNone}
+}
 
 // AssignmentPrincipal the AssignmentPrincipal
 type AssignmentPrincipal struct {
@@ -377,13 +482,13 @@ func (ap AssignmentPrincipal) MarshalJSON() ([]byte, error) {
 // AuthorizationPolicy the authorization policy.
 type AuthorizationPolicy struct {
 	autorest.Response `json:"-"`
-	// PolicyName - Name of the policy.
+	// PolicyName - READ-ONLY; Name of the policy.
 	PolicyName *string `json:"policyName,omitempty"`
 	// Permissions - The permissions associated with the policy.
 	Permissions *[]PermissionTypes `json:"permissions,omitempty"`
-	// PrimaryKey - Primary key assiciated with the policy.
+	// PrimaryKey - Primary key associated with the policy.
 	PrimaryKey *string `json:"primaryKey,omitempty"`
-	// SecondaryKey - Secondary key assiciated with the policy.
+	// SecondaryKey - Secondary key associated with the policy.
 	SecondaryKey *string `json:"secondaryKey,omitempty"`
 }
 
@@ -396,27 +501,44 @@ type AuthorizationPolicyListResult struct {
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
-// AuthorizationPolicyListResultIterator provides access to a complete listing of AuthorizationPolicyResourceFormat
-// values.
+// AuthorizationPolicyListResultIterator provides access to a complete listing of
+// AuthorizationPolicyResourceFormat values.
 type AuthorizationPolicyListResultIterator struct {
 	i    int
 	page AuthorizationPolicyListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *AuthorizationPolicyListResultIterator) Next() error {
+func (iter *AuthorizationPolicyListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AuthorizationPolicyListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *AuthorizationPolicyListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -438,6 +560,11 @@ func (iter AuthorizationPolicyListResultIterator) Value() AuthorizationPolicyRes
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the AuthorizationPolicyListResultIterator type.
+func NewAuthorizationPolicyListResultIterator(page AuthorizationPolicyListResultPage) AuthorizationPolicyListResultIterator {
+	return AuthorizationPolicyListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (aplr AuthorizationPolicyListResult) IsEmpty() bool {
 	return aplr.Value == nil || len(*aplr.Value) == 0
@@ -445,11 +572,11 @@ func (aplr AuthorizationPolicyListResult) IsEmpty() bool {
 
 // authorizationPolicyListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (aplr AuthorizationPolicyListResult) authorizationPolicyListResultPreparer() (*http.Request, error) {
+func (aplr AuthorizationPolicyListResult) authorizationPolicyListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if aplr.NextLink == nil || len(to.String(aplr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(aplr.NextLink)))
@@ -457,19 +584,36 @@ func (aplr AuthorizationPolicyListResult) authorizationPolicyListResultPreparer(
 
 // AuthorizationPolicyListResultPage contains a page of AuthorizationPolicyResourceFormat values.
 type AuthorizationPolicyListResultPage struct {
-	fn   func(AuthorizationPolicyListResult) (AuthorizationPolicyListResult, error)
+	fn   func(context.Context, AuthorizationPolicyListResult) (AuthorizationPolicyListResult, error)
 	aplr AuthorizationPolicyListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *AuthorizationPolicyListResultPage) Next() error {
-	next, err := page.fn(page.aplr)
+func (page *AuthorizationPolicyListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AuthorizationPolicyListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.aplr)
 	if err != nil {
 		return err
 	}
 	page.aplr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *AuthorizationPolicyListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -490,16 +634,30 @@ func (page AuthorizationPolicyListResultPage) Values() []AuthorizationPolicyReso
 	return *page.aplr.Value
 }
 
+// Creates a new instance of the AuthorizationPolicyListResultPage type.
+func NewAuthorizationPolicyListResultPage(getNextPage func(context.Context, AuthorizationPolicyListResult) (AuthorizationPolicyListResult, error)) AuthorizationPolicyListResultPage {
+	return AuthorizationPolicyListResultPage{fn: getNextPage}
+}
+
 // AuthorizationPolicyResourceFormat the authorization policy resource format.
 type AuthorizationPolicyResourceFormat struct {
 	autorest.Response    `json:"-"`
 	*AuthorizationPolicy `json:"properties,omitempty"`
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for AuthorizationPolicyResourceFormat.
+func (aprf AuthorizationPolicyResourceFormat) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if aprf.AuthorizationPolicy != nil {
+		objectMap["properties"] = aprf.AuthorizationPolicy
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for AuthorizationPolicyResourceFormat struct.
@@ -583,7 +741,7 @@ type CanonicalProfileDefinitionPropertiesItem struct {
 
 // Connector properties of connector.
 type Connector struct {
-	// ConnectorID - ID of the connector.
+	// ConnectorID - READ-ONLY; ID of the connector.
 	ConnectorID *int32 `json:"connectorId,omitempty"`
 	// ConnectorName - Name of the connector.
 	ConnectorName *string `json:"connectorName,omitempty"`
@@ -595,13 +753,13 @@ type Connector struct {
 	Description *string `json:"description,omitempty"`
 	// ConnectorProperties - The connector properties.
 	ConnectorProperties map[string]interface{} `json:"connectorProperties"`
-	// Created - The created time.
+	// Created - READ-ONLY; The created time.
 	Created *date.Time `json:"created,omitempty"`
-	// LastModified - The last monified time.
+	// LastModified - READ-ONLY; The last modified time.
 	LastModified *date.Time `json:"lastModified,omitempty"`
-	// State - State of connector. Possible values include: 'ConnectorStatesCreating', 'ConnectorStatesCreated', 'ConnectorStatesReady', 'ConnectorStatesExpiring', 'ConnectorStatesDeleting', 'ConnectorStatesFailed'
+	// State - READ-ONLY; State of connector. Possible values include: 'ConnectorStatesCreating', 'ConnectorStatesCreated', 'ConnectorStatesReady', 'ConnectorStatesExpiring', 'ConnectorStatesDeleting', 'ConnectorStatesFailed'
 	State ConnectorStates `json:"state,omitempty"`
-	// TenantID - The hub name.
+	// TenantID - READ-ONLY; The hub name.
 	TenantID *string `json:"tenantId,omitempty"`
 	// IsInternal - If this is an internal connector.
 	IsInternal *bool `json:"isInternal,omitempty"`
@@ -610,13 +768,12 @@ type Connector struct {
 // MarshalJSON is the custom marshaler for Connector.
 func (c Connector) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
-	if c.ConnectorID != nil {
-		objectMap["connectorId"] = c.ConnectorID
-	}
 	if c.ConnectorName != nil {
 		objectMap["connectorName"] = c.ConnectorName
 	}
-	objectMap["connectorType"] = c.ConnectorType
+	if c.ConnectorType != "" {
+		objectMap["connectorType"] = c.ConnectorType
+	}
 	if c.DisplayName != nil {
 		objectMap["displayName"] = c.DisplayName
 	}
@@ -625,16 +782,6 @@ func (c Connector) MarshalJSON() ([]byte, error) {
 	}
 	if c.ConnectorProperties != nil {
 		objectMap["connectorProperties"] = c.ConnectorProperties
-	}
-	if c.Created != nil {
-		objectMap["created"] = c.Created
-	}
-	if c.LastModified != nil {
-		objectMap["lastModified"] = c.LastModified
-	}
-	objectMap["state"] = c.State
-	if c.TenantID != nil {
-		objectMap["tenantId"] = c.TenantID
 	}
 	if c.IsInternal != nil {
 		objectMap["isInternal"] = c.IsInternal
@@ -657,20 +804,37 @@ type ConnectorListResultIterator struct {
 	page ConnectorListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *ConnectorListResultIterator) Next() error {
+func (iter *ConnectorListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ConnectorListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *ConnectorListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -692,6 +856,11 @@ func (iter ConnectorListResultIterator) Value() ConnectorResourceFormat {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the ConnectorListResultIterator type.
+func NewConnectorListResultIterator(page ConnectorListResultPage) ConnectorListResultIterator {
+	return ConnectorListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (clr ConnectorListResult) IsEmpty() bool {
 	return clr.Value == nil || len(*clr.Value) == 0
@@ -699,11 +868,11 @@ func (clr ConnectorListResult) IsEmpty() bool {
 
 // connectorListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (clr ConnectorListResult) connectorListResultPreparer() (*http.Request, error) {
+func (clr ConnectorListResult) connectorListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if clr.NextLink == nil || len(to.String(clr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(clr.NextLink)))
@@ -711,19 +880,36 @@ func (clr ConnectorListResult) connectorListResultPreparer() (*http.Request, err
 
 // ConnectorListResultPage contains a page of ConnectorResourceFormat values.
 type ConnectorListResultPage struct {
-	fn  func(ConnectorListResult) (ConnectorListResult, error)
+	fn  func(context.Context, ConnectorListResult) (ConnectorListResult, error)
 	clr ConnectorListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *ConnectorListResultPage) Next() error {
-	next, err := page.fn(page.clr)
+func (page *ConnectorListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ConnectorListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.clr)
 	if err != nil {
 		return err
 	}
 	page.clr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *ConnectorListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -744,37 +930,42 @@ func (page ConnectorListResultPage) Values() []ConnectorResourceFormat {
 	return *page.clr.Value
 }
 
+// Creates a new instance of the ConnectorListResultPage type.
+func NewConnectorListResultPage(getNextPage func(context.Context, ConnectorListResult) (ConnectorListResult, error)) ConnectorListResultPage {
+	return ConnectorListResultPage{fn: getNextPage}
+}
+
 // ConnectorMapping the connector mapping definition.
 type ConnectorMapping struct {
-	// ConnectorName - The connector name.
+	// ConnectorName - READ-ONLY; The connector name.
 	ConnectorName *string `json:"connectorName,omitempty"`
 	// ConnectorType - Type of connector. Possible values include: 'None', 'CRM', 'AzureBlob', 'Salesforce', 'ExchangeOnline', 'Outbound'
 	ConnectorType ConnectorTypes `json:"connectorType,omitempty"`
-	// Created - The created time.
+	// Created - READ-ONLY; The created time.
 	Created *date.Time `json:"created,omitempty"`
-	// LastModified - The last monified time.
+	// LastModified - READ-ONLY; The last modified time.
 	LastModified *date.Time `json:"lastModified,omitempty"`
 	// EntityType - Defines which entity type the file should map to. Possible values include: 'EntityTypesNone', 'EntityTypesProfile', 'EntityTypesInteraction', 'EntityTypesRelationship'
 	EntityType EntityTypes `json:"entityType,omitempty"`
 	// EntityTypeName - The mapping entity name.
 	EntityTypeName *string `json:"entityTypeName,omitempty"`
-	// ConnectorMappingName - The connector mapping name
+	// ConnectorMappingName - READ-ONLY; The connector mapping name
 	ConnectorMappingName *string `json:"connectorMappingName,omitempty"`
 	// DisplayName - Display name for the connector mapping.
 	DisplayName *string `json:"displayName,omitempty"`
 	// Description - The description of the connector mapping.
 	Description *string `json:"description,omitempty"`
-	// DataFormatID - The DataFormat ID.
+	// DataFormatID - READ-ONLY; The DataFormat ID.
 	DataFormatID *string `json:"dataFormatId,omitempty"`
 	// MappingProperties - The properties of the mapping.
 	MappingProperties *ConnectorMappingProperties `json:"mappingProperties,omitempty"`
-	// NextRunTime - The next run time based on customer's settings.
+	// NextRunTime - READ-ONLY; The next run time based on customer's settings.
 	NextRunTime *date.Time `json:"nextRunTime,omitempty"`
-	// RunID - The RunId.
+	// RunID - READ-ONLY; The RunId.
 	RunID *string `json:"runId,omitempty"`
-	// State - State of connector mapping. Possible values include: 'Creating', 'Created', 'Failed', 'Ready', 'Running', 'Stopped', 'Expiring'
+	// State - READ-ONLY; State of connector mapping. Possible values include: 'Creating', 'Created', 'Failed', 'Ready', 'Running', 'Stopped', 'Expiring'
 	State ConnectorMappingStates `json:"state,omitempty"`
-	// TenantID - The hub name.
+	// TenantID - READ-ONLY; The hub name.
 	TenantID *string `json:"tenantId,omitempty"`
 }
 
@@ -794,7 +985,7 @@ type ConnectorMappingCompleteOperation struct {
 	DestinationFolder *string `json:"destinationFolder,omitempty"`
 }
 
-// ConnectorMappingErrorManagement the error mangement.
+// ConnectorMappingErrorManagement the error management.
 type ConnectorMappingErrorManagement struct {
 	// ErrorManagementType - The type of error management to use for the mapping. Possible values include: 'RejectAndContinue', 'StopImport', 'RejectUntilLimit'
 	ErrorManagementType ErrorManagementTypes `json:"errorManagementType,omitempty"`
@@ -827,27 +1018,44 @@ type ConnectorMappingListResult struct {
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
-// ConnectorMappingListResultIterator provides access to a complete listing of ConnectorMappingResourceFormat
-// values.
+// ConnectorMappingListResultIterator provides access to a complete listing of
+// ConnectorMappingResourceFormat values.
 type ConnectorMappingListResultIterator struct {
 	i    int
 	page ConnectorMappingListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *ConnectorMappingListResultIterator) Next() error {
+func (iter *ConnectorMappingListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ConnectorMappingListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *ConnectorMappingListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -869,6 +1077,11 @@ func (iter ConnectorMappingListResultIterator) Value() ConnectorMappingResourceF
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the ConnectorMappingListResultIterator type.
+func NewConnectorMappingListResultIterator(page ConnectorMappingListResultPage) ConnectorMappingListResultIterator {
+	return ConnectorMappingListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (cmlr ConnectorMappingListResult) IsEmpty() bool {
 	return cmlr.Value == nil || len(*cmlr.Value) == 0
@@ -876,11 +1089,11 @@ func (cmlr ConnectorMappingListResult) IsEmpty() bool {
 
 // connectorMappingListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (cmlr ConnectorMappingListResult) connectorMappingListResultPreparer() (*http.Request, error) {
+func (cmlr ConnectorMappingListResult) connectorMappingListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if cmlr.NextLink == nil || len(to.String(cmlr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(cmlr.NextLink)))
@@ -888,19 +1101,36 @@ func (cmlr ConnectorMappingListResult) connectorMappingListResultPreparer() (*ht
 
 // ConnectorMappingListResultPage contains a page of ConnectorMappingResourceFormat values.
 type ConnectorMappingListResultPage struct {
-	fn   func(ConnectorMappingListResult) (ConnectorMappingListResult, error)
+	fn   func(context.Context, ConnectorMappingListResult) (ConnectorMappingListResult, error)
 	cmlr ConnectorMappingListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *ConnectorMappingListResultPage) Next() error {
-	next, err := page.fn(page.cmlr)
+func (page *ConnectorMappingListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ConnectorMappingListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.cmlr)
 	if err != nil {
 		return err
 	}
 	page.cmlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *ConnectorMappingListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -919,6 +1149,11 @@ func (page ConnectorMappingListResultPage) Values() []ConnectorMappingResourceFo
 		return nil
 	}
 	return *page.cmlr.Value
+}
+
+// Creates a new instance of the ConnectorMappingListResultPage type.
+func NewConnectorMappingListResultPage(getNextPage func(context.Context, ConnectorMappingListResult) (ConnectorMappingListResult, error)) ConnectorMappingListResultPage {
+	return ConnectorMappingListResultPage{fn: getNextPage}
 }
 
 // ConnectorMappingProperties the connector mapping properties.
@@ -941,16 +1176,25 @@ type ConnectorMappingProperties struct {
 	CompleteOperation *ConnectorMappingCompleteOperation `json:"completeOperation,omitempty"`
 }
 
-// ConnectorMappingResourceFormat the c onnector mapping resource format.
+// ConnectorMappingResourceFormat the connector mapping resource format.
 type ConnectorMappingResourceFormat struct {
 	autorest.Response `json:"-"`
 	*ConnectorMapping `json:"properties,omitempty"`
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for ConnectorMappingResourceFormat.
+func (cmrf ConnectorMappingResourceFormat) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if cmrf.ConnectorMapping != nil {
+		objectMap["properties"] = cmrf.ConnectorMapping
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for ConnectorMappingResourceFormat struct.
@@ -1020,12 +1264,21 @@ type ConnectorMappingStructure struct {
 type ConnectorResourceFormat struct {
 	autorest.Response `json:"-"`
 	*Connector        `json:"properties,omitempty"`
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for ConnectorResourceFormat.
+func (crf ConnectorResourceFormat) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if crf.Connector != nil {
+		objectMap["properties"] = crf.Connector
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for ConnectorResourceFormat struct.
@@ -1079,100 +1332,55 @@ func (crf *ConnectorResourceFormat) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// ConnectorsCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// ConnectorsCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type ConnectorsCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ConnectorsCreateOrUpdateFuture) Result(client ConnectorsClient) (crf ConnectorResourceFormat, err error) {
+func (future *ConnectorsCreateOrUpdateFuture) Result(client ConnectorsClient) (crf ConnectorResourceFormat, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "customerinsights.ConnectorsCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return crf, azure.NewAsyncOpIncompleteError("customerinsights.ConnectorsCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		crf, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "customerinsights.ConnectorsCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("customerinsights.ConnectorsCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if crf.Response.Response, err = future.GetResult(sender); err == nil && crf.Response.Response.StatusCode != http.StatusNoContent {
+		crf, err = client.CreateOrUpdateResponder(crf.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "customerinsights.ConnectorsCreateOrUpdateFuture", "Result", crf.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.ConnectorsCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	crf, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.ConnectorsCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// ConnectorsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// ConnectorsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type ConnectorsDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ConnectorsDeleteFuture) Result(client ConnectorsClient) (ar autorest.Response, err error) {
+func (future *ConnectorsDeleteFuture) Result(client ConnectorsClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "customerinsights.ConnectorsDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("customerinsights.ConnectorsDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "customerinsights.ConnectorsDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("customerinsights.ConnectorsDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.ConnectorsDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.ConnectorsDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -1200,18 +1408,18 @@ type CrmConnectorProperties struct {
 	AccessToken *string `json:"accessToken,omitempty"`
 }
 
-// DataSource data Source is a way for us to know the source of instances. A single type can have data coming in
-// from multiple places. In activities we use this to determine precedence rules.
+// DataSource data Source is a way for us to know the source of instances. A single type can have data
+// coming in from multiple places. In activities we use this to determine precedence rules.
 type DataSource struct {
-	// Name - The data source name
+	// Name - READ-ONLY; The data source name
 	Name *string `json:"name,omitempty"`
-	// DataSourceType - The data source type. Possible values include: 'DataSourceTypeConnector', 'DataSourceTypeLinkInteraction', 'DataSourceTypeSystemDefault'
+	// DataSourceType - READ-ONLY; The data source type. Possible values include: 'DataSourceTypeConnector', 'DataSourceTypeLinkInteraction', 'DataSourceTypeSystemDefault'
 	DataSourceType DataSourceType `json:"dataSourceType,omitempty"`
-	// Status - The data source status. Possible values include: 'StatusNone', 'StatusActive', 'StatusDeleted'
+	// Status - READ-ONLY; The data source status. Possible values include: 'StatusNone', 'StatusActive', 'StatusDeleted'
 	Status Status `json:"status,omitempty"`
-	// ID - The data source ID.
+	// ID - READ-ONLY; The data source ID.
 	ID *int32 `json:"id,omitempty"`
-	// DataSourceReferenceID - The data source reference id.
+	// DataSourceReferenceID - READ-ONLY; The data source reference id.
 	DataSourceReferenceID *string `json:"dataSourceReferenceId,omitempty"`
 }
 
@@ -1220,6 +1428,18 @@ type DataSourcePrecedence struct {
 	*DataSource `json:"dataSource,omitempty"`
 	// Precedence - the precedence value.
 	Precedence *int32 `json:"precedence,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for DataSourcePrecedence.
+func (dsp DataSourcePrecedence) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if dsp.DataSource != nil {
+		objectMap["dataSource"] = dsp.DataSource
+	}
+	if dsp.Precedence != nil {
+		objectMap["precedence"] = dsp.Precedence
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for DataSourcePrecedence struct.
@@ -1261,9 +1481,9 @@ type EnrichingKpi struct {
 	EntityType EntityTypes `json:"entityType,omitempty"`
 	// EntityTypeName - The mapping entity name.
 	EntityTypeName *string `json:"entityTypeName,omitempty"`
-	// TenantID - The hub name.
+	// TenantID - READ-ONLY; The hub name.
 	TenantID *string `json:"tenantId,omitempty"`
-	// KpiName - The KPI name.
+	// KpiName - READ-ONLY; The KPI name.
 	KpiName *string `json:"kpiName,omitempty"`
 	// DisplayName - Localized display name for the KPI.
 	DisplayName map[string]*string `json:"displayName"`
@@ -1283,11 +1503,11 @@ type EnrichingKpi struct {
 	Filter *string `json:"filter,omitempty"`
 	// GroupBy - the group by properties for the KPI.
 	GroupBy *[]string `json:"groupBy,omitempty"`
-	// GroupByMetadata - The KPI GroupByMetadata.
+	// GroupByMetadata - READ-ONLY; The KPI GroupByMetadata.
 	GroupByMetadata *[]KpiGroupByMetadata `json:"groupByMetadata,omitempty"`
-	// ParticipantProfilesMetadata - The participant profiles.
+	// ParticipantProfilesMetadata - READ-ONLY; The participant profiles.
 	ParticipantProfilesMetadata *[]KpiParticipantProfilesMetadata `json:"participantProfilesMetadata,omitempty"`
-	// ProvisioningState - Provisioning state. Possible values include: 'ProvisioningStatesProvisioning', 'ProvisioningStatesSucceeded', 'ProvisioningStatesExpiring', 'ProvisioningStatesDeleting', 'ProvisioningStatesHumanIntervention', 'ProvisioningStatesFailed'
+	// ProvisioningState - READ-ONLY; Provisioning state. Possible values include: 'ProvisioningStatesProvisioning', 'ProvisioningStatesSucceeded', 'ProvisioningStatesExpiring', 'ProvisioningStatesDeleting', 'ProvisioningStatesHumanIntervention', 'ProvisioningStatesFailed'
 	ProvisioningState ProvisioningStates `json:"provisioningState,omitempty"`
 	// ThresHolds - The KPI thresholds.
 	ThresHolds *KpiThresholds `json:"thresHolds,omitempty"`
@@ -1300,15 +1520,11 @@ type EnrichingKpi struct {
 // MarshalJSON is the custom marshaler for EnrichingKpi.
 func (ek EnrichingKpi) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
-	objectMap["entityType"] = ek.EntityType
+	if ek.EntityType != "" {
+		objectMap["entityType"] = ek.EntityType
+	}
 	if ek.EntityTypeName != nil {
 		objectMap["entityTypeName"] = ek.EntityTypeName
-	}
-	if ek.TenantID != nil {
-		objectMap["tenantId"] = ek.TenantID
-	}
-	if ek.KpiName != nil {
-		objectMap["kpiName"] = ek.KpiName
 	}
 	if ek.DisplayName != nil {
 		objectMap["displayName"] = ek.DisplayName
@@ -1316,11 +1532,15 @@ func (ek EnrichingKpi) MarshalJSON() ([]byte, error) {
 	if ek.Description != nil {
 		objectMap["description"] = ek.Description
 	}
-	objectMap["calculationWindow"] = ek.CalculationWindow
+	if ek.CalculationWindow != "" {
+		objectMap["calculationWindow"] = ek.CalculationWindow
+	}
 	if ek.CalculationWindowFieldName != nil {
 		objectMap["calculationWindowFieldName"] = ek.CalculationWindowFieldName
 	}
-	objectMap["function"] = ek.Function
+	if ek.Function != "" {
+		objectMap["function"] = ek.Function
+	}
 	if ek.Expression != nil {
 		objectMap["expression"] = ek.Expression
 	}
@@ -1333,13 +1553,6 @@ func (ek EnrichingKpi) MarshalJSON() ([]byte, error) {
 	if ek.GroupBy != nil {
 		objectMap["groupBy"] = ek.GroupBy
 	}
-	if ek.GroupByMetadata != nil {
-		objectMap["groupByMetadata"] = ek.GroupByMetadata
-	}
-	if ek.ParticipantProfilesMetadata != nil {
-		objectMap["participantProfilesMetadata"] = ek.ParticipantProfilesMetadata
-	}
-	objectMap["provisioningState"] = ek.ProvisioningState
 	if ek.ThresHolds != nil {
 		objectMap["thresHolds"] = ek.ThresHolds
 	}
@@ -1354,7 +1567,7 @@ func (ek EnrichingKpi) MarshalJSON() ([]byte, error) {
 
 // EntityTypeDefinition describes an entity.
 type EntityTypeDefinition struct {
-	// APIEntitySetName - The api entity set name. This becomes the odata entity set name for the entity Type being refered in this object.
+	// APIEntitySetName - The api entity set name. This becomes the odata entity set name for the entity Type being referred in this object.
 	APIEntitySetName *string `json:"apiEntitySetName,omitempty"`
 	// EntityType - Type of entity. Possible values include: 'EntityTypesNone', 'EntityTypesProfile', 'EntityTypesInteraction', 'EntityTypesRelationship'
 	EntityType EntityTypes `json:"entityType,omitempty"`
@@ -1362,13 +1575,13 @@ type EntityTypeDefinition struct {
 	Fields *[]PropertyDefinition `json:"fields,omitempty"`
 	// InstancesCount - The instance count.
 	InstancesCount *int32 `json:"instancesCount,omitempty"`
-	// LastChangedUtc - The last changed time for the type definition.
+	// LastChangedUtc - READ-ONLY; The last changed time for the type definition.
 	LastChangedUtc *date.Time `json:"lastChangedUtc,omitempty"`
-	// ProvisioningState - Provisioning state. Possible values include: 'ProvisioningStatesProvisioning', 'ProvisioningStatesSucceeded', 'ProvisioningStatesExpiring', 'ProvisioningStatesDeleting', 'ProvisioningStatesHumanIntervention', 'ProvisioningStatesFailed'
+	// ProvisioningState - READ-ONLY; Provisioning state. Possible values include: 'ProvisioningStatesProvisioning', 'ProvisioningStatesSucceeded', 'ProvisioningStatesExpiring', 'ProvisioningStatesDeleting', 'ProvisioningStatesHumanIntervention', 'ProvisioningStatesFailed'
 	ProvisioningState ProvisioningStates `json:"provisioningState,omitempty"`
 	// SchemaItemTypeLink - The schema org link. This helps ACI identify and suggest semantic models.
 	SchemaItemTypeLink *string `json:"schemaItemTypeLink,omitempty"`
-	// TenantID - The hub name.
+	// TenantID - READ-ONLY; The hub name.
 	TenantID *string `json:"tenantId,omitempty"`
 	// TimestampFieldName - The timestamp property name. Represents the time when the interaction or profile update happened.
 	TimestampFieldName *string `json:"timestampFieldName,omitempty"`
@@ -1396,22 +1609,17 @@ func (etd EntityTypeDefinition) MarshalJSON() ([]byte, error) {
 	if etd.APIEntitySetName != nil {
 		objectMap["apiEntitySetName"] = etd.APIEntitySetName
 	}
-	objectMap["entityType"] = etd.EntityType
+	if etd.EntityType != "" {
+		objectMap["entityType"] = etd.EntityType
+	}
 	if etd.Fields != nil {
 		objectMap["fields"] = etd.Fields
 	}
 	if etd.InstancesCount != nil {
 		objectMap["instancesCount"] = etd.InstancesCount
 	}
-	if etd.LastChangedUtc != nil {
-		objectMap["lastChangedUtc"] = etd.LastChangedUtc
-	}
-	objectMap["provisioningState"] = etd.ProvisioningState
 	if etd.SchemaItemTypeLink != nil {
 		objectMap["schemaItemTypeLink"] = etd.SchemaItemTypeLink
-	}
-	if etd.TenantID != nil {
-		objectMap["tenantId"] = etd.TenantID
 	}
 	if etd.TimestampFieldName != nil {
 		objectMap["timestampFieldName"] = etd.TimestampFieldName
@@ -1457,11 +1665,11 @@ type GetImageUploadURLInput struct {
 type Hub struct {
 	autorest.Response    `json:"-"`
 	*HubPropertiesFormat `json:"properties,omitempty"`
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -1474,15 +1682,6 @@ func (h Hub) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
 	if h.HubPropertiesFormat != nil {
 		objectMap["properties"] = h.HubPropertiesFormat
-	}
-	if h.ID != nil {
-		objectMap["id"] = h.ID
-	}
-	if h.Name != nil {
-		objectMap["name"] = h.Name
-	}
-	if h.Type != nil {
-		objectMap["type"] = h.Type
 	}
 	if h.Location != nil {
 		objectMap["location"] = h.Location
@@ -1587,20 +1786,37 @@ type HubListResultIterator struct {
 	page HubListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *HubListResultIterator) Next() error {
+func (iter *HubListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/HubListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *HubListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -1622,6 +1838,11 @@ func (iter HubListResultIterator) Value() Hub {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the HubListResultIterator type.
+func NewHubListResultIterator(page HubListResultPage) HubListResultIterator {
+	return HubListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (hlr HubListResult) IsEmpty() bool {
 	return hlr.Value == nil || len(*hlr.Value) == 0
@@ -1629,11 +1850,11 @@ func (hlr HubListResult) IsEmpty() bool {
 
 // hubListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (hlr HubListResult) hubListResultPreparer() (*http.Request, error) {
+func (hlr HubListResult) hubListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if hlr.NextLink == nil || len(to.String(hlr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(hlr.NextLink)))
@@ -1641,19 +1862,36 @@ func (hlr HubListResult) hubListResultPreparer() (*http.Request, error) {
 
 // HubListResultPage contains a page of Hub values.
 type HubListResultPage struct {
-	fn  func(HubListResult) (HubListResult, error)
+	fn  func(context.Context, HubListResult) (HubListResult, error)
 	hlr HubListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *HubListResultPage) Next() error {
-	next, err := page.fn(page.hlr)
+func (page *HubListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/HubListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.hlr)
 	if err != nil {
 		return err
 	}
 	page.hlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *HubListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -1674,13 +1912,18 @@ func (page HubListResultPage) Values() []Hub {
 	return *page.hlr.Value
 }
 
+// Creates a new instance of the HubListResultPage type.
+func NewHubListResultPage(getNextPage func(context.Context, HubListResult) (HubListResult, error)) HubListResultPage {
+	return HubListResultPage{fn: getNextPage}
+}
+
 // HubPropertiesFormat properties of hub.
 type HubPropertiesFormat struct {
-	// APIEndpoint - API endpoint URL of the hub.
+	// APIEndpoint - READ-ONLY; API endpoint URL of the hub.
 	APIEndpoint *string `json:"apiEndpoint,omitempty"`
-	// WebEndpoint - Web endpoint URL of the hub.
+	// WebEndpoint - READ-ONLY; Web endpoint URL of the hub.
 	WebEndpoint *string `json:"webEndpoint,omitempty"`
-	// ProvisioningState - Provisioning state of the hub.
+	// ProvisioningState - READ-ONLY; Provisioning state of the hub.
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 	// TenantFeatures - The bit flags for enabled hub features. Bit 0 is set to 1 indicates graph is enabled, or disabled if set to 0. Bit 1 is set to 1 indicates the hub is disabled, or enabled if set to 0.
 	TenantFeatures *int32 `json:"tenantFeatures,omitempty"`
@@ -1691,48 +1934,22 @@ type HubPropertiesFormat struct {
 // HubsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
 type HubsDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future HubsDeleteFuture) Result(client HubsClient) (ar autorest.Response, err error) {
+func (future *HubsDeleteFuture) Result(client HubsClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "customerinsights.HubsDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("customerinsights.HubsDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "customerinsights.HubsDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("customerinsights.HubsDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.HubsDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.HubsDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -1762,20 +1979,37 @@ type InteractionListResultIterator struct {
 	page InteractionListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *InteractionListResultIterator) Next() error {
+func (iter *InteractionListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/InteractionListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *InteractionListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -1797,6 +2031,11 @@ func (iter InteractionListResultIterator) Value() InteractionResourceFormat {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the InteractionListResultIterator type.
+func NewInteractionListResultIterator(page InteractionListResultPage) InteractionListResultIterator {
+	return InteractionListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (ilr InteractionListResult) IsEmpty() bool {
 	return ilr.Value == nil || len(*ilr.Value) == 0
@@ -1804,11 +2043,11 @@ func (ilr InteractionListResult) IsEmpty() bool {
 
 // interactionListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (ilr InteractionListResult) interactionListResultPreparer() (*http.Request, error) {
+func (ilr InteractionListResult) interactionListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if ilr.NextLink == nil || len(to.String(ilr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(ilr.NextLink)))
@@ -1816,19 +2055,36 @@ func (ilr InteractionListResult) interactionListResultPreparer() (*http.Request,
 
 // InteractionListResultPage contains a page of InteractionResourceFormat values.
 type InteractionListResultPage struct {
-	fn  func(InteractionListResult) (InteractionListResult, error)
+	fn  func(context.Context, InteractionListResult) (InteractionListResult, error)
 	ilr InteractionListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *InteractionListResultPage) Next() error {
-	next, err := page.fn(page.ilr)
+func (page *InteractionListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/InteractionListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.ilr)
 	if err != nil {
 		return err
 	}
 	page.ilr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *InteractionListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -1849,16 +2105,30 @@ func (page InteractionListResultPage) Values() []InteractionResourceFormat {
 	return *page.ilr.Value
 }
 
+// Creates a new instance of the InteractionListResultPage type.
+func NewInteractionListResultPage(getNextPage func(context.Context, InteractionListResult) (InteractionListResult, error)) InteractionListResultPage {
+	return InteractionListResultPage{fn: getNextPage}
+}
+
 // InteractionResourceFormat the interaction resource format.
 type InteractionResourceFormat struct {
 	autorest.Response          `json:"-"`
 	*InteractionTypeDefinition `json:"properties,omitempty"`
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for InteractionResourceFormat.
+func (irf InteractionResourceFormat) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if irf.InteractionTypeDefinition != nil {
+		objectMap["properties"] = irf.InteractionTypeDefinition
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for InteractionResourceFormat struct.
@@ -1912,51 +2182,31 @@ func (irf *InteractionResourceFormat) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// InteractionsCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// InteractionsCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type InteractionsCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future InteractionsCreateOrUpdateFuture) Result(client InteractionsClient) (irf InteractionResourceFormat, err error) {
+func (future *InteractionsCreateOrUpdateFuture) Result(client InteractionsClient) (irf InteractionResourceFormat, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "customerinsights.InteractionsCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return irf, azure.NewAsyncOpIncompleteError("customerinsights.InteractionsCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		irf, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "customerinsights.InteractionsCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("customerinsights.InteractionsCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if irf.Response.Response, err = future.GetResult(sender); err == nil && irf.Response.Response.StatusCode != http.StatusNoContent {
+		irf, err = client.CreateOrUpdateResponder(irf.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "customerinsights.InteractionsCreateOrUpdateFuture", "Result", irf.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.InteractionsCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	irf, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.InteractionsCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -1969,13 +2219,13 @@ type InteractionTypeDefinition struct {
 	ParticipantProfiles *[]Participant `json:"participantProfiles,omitempty"`
 	// PrimaryParticipantProfilePropertyName - The primary participant property name for an interaction ,This is used to logically represent the agent of the interaction, Specify the participant name here from ParticipantName.
 	PrimaryParticipantProfilePropertyName *string `json:"primaryParticipantProfilePropertyName,omitempty"`
-	// DataSourcePrecedenceRules - This is specific to interactions modeled as activities. Data sources are used to determine where data is stored and also in precedence rules.
+	// DataSourcePrecedenceRules - READ-ONLY; This is specific to interactions modeled as activities. Data sources are used to determine where data is stored and also in precedence rules.
 	DataSourcePrecedenceRules *[]DataSourcePrecedence `json:"dataSourcePrecedenceRules,omitempty"`
 	// DataSource - Default data source is specifically used in cases where data source is not specified in an instance.
 	*DataSource `json:"defaultDataSource,omitempty"`
 	// IsActivity - An interaction can be tagged as an activity only during create. This enables the interaction to be editable and can enable merging of properties from multiple data sources based on precedence, which is defined at a link level.
 	IsActivity *bool `json:"isActivity,omitempty"`
-	// APIEntitySetName - The api entity set name. This becomes the odata entity set name for the entity Type being refered in this object.
+	// APIEntitySetName - The api entity set name. This becomes the odata entity set name for the entity Type being referred in this object.
 	APIEntitySetName *string `json:"apiEntitySetName,omitempty"`
 	// EntityType - Type of entity. Possible values include: 'EntityTypesNone', 'EntityTypesProfile', 'EntityTypesInteraction', 'EntityTypesRelationship'
 	EntityType EntityTypes `json:"entityType,omitempty"`
@@ -1983,13 +2233,13 @@ type InteractionTypeDefinition struct {
 	Fields *[]PropertyDefinition `json:"fields,omitempty"`
 	// InstancesCount - The instance count.
 	InstancesCount *int32 `json:"instancesCount,omitempty"`
-	// LastChangedUtc - The last changed time for the type definition.
+	// LastChangedUtc - READ-ONLY; The last changed time for the type definition.
 	LastChangedUtc *date.Time `json:"lastChangedUtc,omitempty"`
-	// ProvisioningState - Provisioning state. Possible values include: 'ProvisioningStatesProvisioning', 'ProvisioningStatesSucceeded', 'ProvisioningStatesExpiring', 'ProvisioningStatesDeleting', 'ProvisioningStatesHumanIntervention', 'ProvisioningStatesFailed'
+	// ProvisioningState - READ-ONLY; Provisioning state. Possible values include: 'ProvisioningStatesProvisioning', 'ProvisioningStatesSucceeded', 'ProvisioningStatesExpiring', 'ProvisioningStatesDeleting', 'ProvisioningStatesHumanIntervention', 'ProvisioningStatesFailed'
 	ProvisioningState ProvisioningStates `json:"provisioningState,omitempty"`
 	// SchemaItemTypeLink - The schema org link. This helps ACI identify and suggest semantic models.
 	SchemaItemTypeLink *string `json:"schemaItemTypeLink,omitempty"`
-	// TenantID - The hub name.
+	// TenantID - READ-ONLY; The hub name.
 	TenantID *string `json:"tenantId,omitempty"`
 	// TimestampFieldName - The timestamp property name. Represents the time when the interaction or profile update happened.
 	TimestampFieldName *string `json:"timestampFieldName,omitempty"`
@@ -2023,9 +2273,6 @@ func (itd InteractionTypeDefinition) MarshalJSON() ([]byte, error) {
 	if itd.PrimaryParticipantProfilePropertyName != nil {
 		objectMap["primaryParticipantProfilePropertyName"] = itd.PrimaryParticipantProfilePropertyName
 	}
-	if itd.DataSourcePrecedenceRules != nil {
-		objectMap["dataSourcePrecedenceRules"] = itd.DataSourcePrecedenceRules
-	}
 	if itd.DataSource != nil {
 		objectMap["defaultDataSource"] = itd.DataSource
 	}
@@ -2035,22 +2282,17 @@ func (itd InteractionTypeDefinition) MarshalJSON() ([]byte, error) {
 	if itd.APIEntitySetName != nil {
 		objectMap["apiEntitySetName"] = itd.APIEntitySetName
 	}
-	objectMap["entityType"] = itd.EntityType
+	if itd.EntityType != "" {
+		objectMap["entityType"] = itd.EntityType
+	}
 	if itd.Fields != nil {
 		objectMap["fields"] = itd.Fields
 	}
 	if itd.InstancesCount != nil {
 		objectMap["instancesCount"] = itd.InstancesCount
 	}
-	if itd.LastChangedUtc != nil {
-		objectMap["lastChangedUtc"] = itd.LastChangedUtc
-	}
-	objectMap["provisioningState"] = itd.ProvisioningState
 	if itd.SchemaItemTypeLink != nil {
 		objectMap["schemaItemTypeLink"] = itd.SchemaItemTypeLink
-	}
-	if itd.TenantID != nil {
-		objectMap["tenantId"] = itd.TenantID
 	}
 	if itd.TimestampFieldName != nil {
 		objectMap["timestampFieldName"] = itd.TimestampFieldName
@@ -2312,50 +2554,31 @@ type KpiAlias struct {
 	Expression *string `json:"expression,omitempty"`
 }
 
-// KpiCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// KpiCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type KpiCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future KpiCreateOrUpdateFuture) Result(client KpiClient) (krf KpiResourceFormat, err error) {
+func (future *KpiCreateOrUpdateFuture) Result(client KpiClient) (krf KpiResourceFormat, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "customerinsights.KpiCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return krf, azure.NewAsyncOpIncompleteError("customerinsights.KpiCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		krf, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "customerinsights.KpiCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("customerinsights.KpiCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if krf.Response.Response, err = future.GetResult(sender); err == nil && krf.Response.Response.StatusCode != http.StatusNoContent {
+		krf, err = client.CreateOrUpdateResponder(krf.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "customerinsights.KpiCreateOrUpdateFuture", "Result", krf.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.KpiCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	krf, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.KpiCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -2366,9 +2589,9 @@ type KpiDefinition struct {
 	EntityType EntityTypes `json:"entityType,omitempty"`
 	// EntityTypeName - The mapping entity name.
 	EntityTypeName *string `json:"entityTypeName,omitempty"`
-	// TenantID - The hub name.
+	// TenantID - READ-ONLY; The hub name.
 	TenantID *string `json:"tenantId,omitempty"`
-	// KpiName - The KPI name.
+	// KpiName - READ-ONLY; The KPI name.
 	KpiName *string `json:"kpiName,omitempty"`
 	// DisplayName - Localized display name for the KPI.
 	DisplayName map[string]*string `json:"displayName"`
@@ -2388,11 +2611,11 @@ type KpiDefinition struct {
 	Filter *string `json:"filter,omitempty"`
 	// GroupBy - the group by properties for the KPI.
 	GroupBy *[]string `json:"groupBy,omitempty"`
-	// GroupByMetadata - The KPI GroupByMetadata.
+	// GroupByMetadata - READ-ONLY; The KPI GroupByMetadata.
 	GroupByMetadata *[]KpiGroupByMetadata `json:"groupByMetadata,omitempty"`
-	// ParticipantProfilesMetadata - The participant profiles.
+	// ParticipantProfilesMetadata - READ-ONLY; The participant profiles.
 	ParticipantProfilesMetadata *[]KpiParticipantProfilesMetadata `json:"participantProfilesMetadata,omitempty"`
-	// ProvisioningState - Provisioning state. Possible values include: 'ProvisioningStatesProvisioning', 'ProvisioningStatesSucceeded', 'ProvisioningStatesExpiring', 'ProvisioningStatesDeleting', 'ProvisioningStatesHumanIntervention', 'ProvisioningStatesFailed'
+	// ProvisioningState - READ-ONLY; Provisioning state. Possible values include: 'ProvisioningStatesProvisioning', 'ProvisioningStatesSucceeded', 'ProvisioningStatesExpiring', 'ProvisioningStatesDeleting', 'ProvisioningStatesHumanIntervention', 'ProvisioningStatesFailed'
 	ProvisioningState ProvisioningStates `json:"provisioningState,omitempty"`
 	// ThresHolds - The KPI thresholds.
 	ThresHolds *KpiThresholds `json:"thresHolds,omitempty"`
@@ -2405,15 +2628,11 @@ type KpiDefinition struct {
 // MarshalJSON is the custom marshaler for KpiDefinition.
 func (kd KpiDefinition) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
-	objectMap["entityType"] = kd.EntityType
+	if kd.EntityType != "" {
+		objectMap["entityType"] = kd.EntityType
+	}
 	if kd.EntityTypeName != nil {
 		objectMap["entityTypeName"] = kd.EntityTypeName
-	}
-	if kd.TenantID != nil {
-		objectMap["tenantId"] = kd.TenantID
-	}
-	if kd.KpiName != nil {
-		objectMap["kpiName"] = kd.KpiName
 	}
 	if kd.DisplayName != nil {
 		objectMap["displayName"] = kd.DisplayName
@@ -2421,11 +2640,15 @@ func (kd KpiDefinition) MarshalJSON() ([]byte, error) {
 	if kd.Description != nil {
 		objectMap["description"] = kd.Description
 	}
-	objectMap["calculationWindow"] = kd.CalculationWindow
+	if kd.CalculationWindow != "" {
+		objectMap["calculationWindow"] = kd.CalculationWindow
+	}
 	if kd.CalculationWindowFieldName != nil {
 		objectMap["calculationWindowFieldName"] = kd.CalculationWindowFieldName
 	}
-	objectMap["function"] = kd.Function
+	if kd.Function != "" {
+		objectMap["function"] = kd.Function
+	}
 	if kd.Expression != nil {
 		objectMap["expression"] = kd.Expression
 	}
@@ -2438,13 +2661,6 @@ func (kd KpiDefinition) MarshalJSON() ([]byte, error) {
 	if kd.GroupBy != nil {
 		objectMap["groupBy"] = kd.GroupBy
 	}
-	if kd.GroupByMetadata != nil {
-		objectMap["groupByMetadata"] = kd.GroupByMetadata
-	}
-	if kd.ParticipantProfilesMetadata != nil {
-		objectMap["participantProfilesMetadata"] = kd.ParticipantProfilesMetadata
-	}
-	objectMap["provisioningState"] = kd.ProvisioningState
 	if kd.ThresHolds != nil {
 		objectMap["thresHolds"] = kd.ThresHolds
 	}
@@ -2460,48 +2676,22 @@ func (kd KpiDefinition) MarshalJSON() ([]byte, error) {
 // KpiDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
 type KpiDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future KpiDeleteFuture) Result(client KpiClient) (ar autorest.Response, err error) {
+func (future *KpiDeleteFuture) Result(client KpiClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "customerinsights.KpiDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("customerinsights.KpiDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "customerinsights.KpiDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("customerinsights.KpiDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.KpiDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.KpiDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -2553,20 +2743,37 @@ type KpiListResultIterator struct {
 	page KpiListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *KpiListResultIterator) Next() error {
+func (iter *KpiListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/KpiListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *KpiListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -2588,6 +2795,11 @@ func (iter KpiListResultIterator) Value() KpiResourceFormat {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the KpiListResultIterator type.
+func NewKpiListResultIterator(page KpiListResultPage) KpiListResultIterator {
+	return KpiListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (klr KpiListResult) IsEmpty() bool {
 	return klr.Value == nil || len(*klr.Value) == 0
@@ -2595,11 +2807,11 @@ func (klr KpiListResult) IsEmpty() bool {
 
 // kpiListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (klr KpiListResult) kpiListResultPreparer() (*http.Request, error) {
+func (klr KpiListResult) kpiListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if klr.NextLink == nil || len(to.String(klr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(klr.NextLink)))
@@ -2607,19 +2819,36 @@ func (klr KpiListResult) kpiListResultPreparer() (*http.Request, error) {
 
 // KpiListResultPage contains a page of KpiResourceFormat values.
 type KpiListResultPage struct {
-	fn  func(KpiListResult) (KpiListResult, error)
+	fn  func(context.Context, KpiListResult) (KpiListResult, error)
 	klr KpiListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *KpiListResultPage) Next() error {
-	next, err := page.fn(page.klr)
+func (page *KpiListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/KpiListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.klr)
 	if err != nil {
 		return err
 	}
 	page.klr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *KpiListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -2640,6 +2869,11 @@ func (page KpiListResultPage) Values() []KpiResourceFormat {
 	return *page.klr.Value
 }
 
+// Creates a new instance of the KpiListResultPage type.
+func NewKpiListResultPage(getNextPage func(context.Context, KpiListResult) (KpiListResult, error)) KpiListResultPage {
+	return KpiListResultPage{fn: getNextPage}
+}
+
 // KpiParticipantProfilesMetadata the KPI participant profile metadata.
 type KpiParticipantProfilesMetadata struct {
 	// TypeName - Name of the type.
@@ -2650,12 +2884,21 @@ type KpiParticipantProfilesMetadata struct {
 type KpiResourceFormat struct {
 	autorest.Response `json:"-"`
 	*KpiDefinition    `json:"properties,omitempty"`
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for KpiResourceFormat.
+func (krf KpiResourceFormat) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if krf.KpiDefinition != nil {
+		objectMap["properties"] = krf.KpiDefinition
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for KpiResourceFormat struct.
@@ -2721,9 +2964,9 @@ type KpiThresholds struct {
 
 // LinkDefinition the definition of Link.
 type LinkDefinition struct {
-	// TenantID - The hub name.
+	// TenantID - READ-ONLY; The hub name.
 	TenantID *string `json:"tenantId,omitempty"`
-	// LinkName - The link name.
+	// LinkName - READ-ONLY; The link name.
 	LinkName *string `json:"linkName,omitempty"`
 	// SourceEntityType - Type of source entity. Possible values include: 'EntityTypeNone', 'EntityTypeProfile', 'EntityTypeInteraction', 'EntityTypeRelationship'
 	SourceEntityType EntityType `json:"sourceEntityType,omitempty"`
@@ -2741,9 +2984,9 @@ type LinkDefinition struct {
 	Mappings *[]TypePropertiesMapping `json:"mappings,omitempty"`
 	// ParticipantPropertyReferences - The properties that represent the participating profile.
 	ParticipantPropertyReferences *[]ParticipantPropertyReference `json:"participantPropertyReferences,omitempty"`
-	// ProvisioningState - Provisioning state. Possible values include: 'ProvisioningStatesProvisioning', 'ProvisioningStatesSucceeded', 'ProvisioningStatesExpiring', 'ProvisioningStatesDeleting', 'ProvisioningStatesHumanIntervention', 'ProvisioningStatesFailed'
+	// ProvisioningState - READ-ONLY; Provisioning state. Possible values include: 'ProvisioningStatesProvisioning', 'ProvisioningStatesSucceeded', 'ProvisioningStatesExpiring', 'ProvisioningStatesDeleting', 'ProvisioningStatesHumanIntervention', 'ProvisioningStatesFailed'
 	ProvisioningState ProvisioningStates `json:"provisioningState,omitempty"`
-	// ReferenceOnly - Indicating whether the link is reference only link. This flag is ingored if the Mappings are defined. If the mappings are not defined and it is set to true, links processing will not create or update profiles.
+	// ReferenceOnly - Indicating whether the link is reference only link. This flag is ignored if the Mappings are defined. If the mappings are not defined and it is set to true, links processing will not create or update profiles.
 	ReferenceOnly *bool `json:"referenceOnly,omitempty"`
 	// OperationType - Determines whether this link is supposed to create or delete instances if Link is NOT Reference Only. Possible values include: 'Upsert', 'Delete'
 	OperationType InstanceOperationType `json:"operationType,omitempty"`
@@ -2752,14 +2995,12 @@ type LinkDefinition struct {
 // MarshalJSON is the custom marshaler for LinkDefinition.
 func (ld LinkDefinition) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
-	if ld.TenantID != nil {
-		objectMap["tenantId"] = ld.TenantID
+	if ld.SourceEntityType != "" {
+		objectMap["sourceEntityType"] = ld.SourceEntityType
 	}
-	if ld.LinkName != nil {
-		objectMap["linkName"] = ld.LinkName
+	if ld.TargetEntityType != "" {
+		objectMap["targetEntityType"] = ld.TargetEntityType
 	}
-	objectMap["sourceEntityType"] = ld.SourceEntityType
-	objectMap["targetEntityType"] = ld.TargetEntityType
 	if ld.SourceEntityTypeName != nil {
 		objectMap["sourceEntityTypeName"] = ld.SourceEntityTypeName
 	}
@@ -2778,11 +3019,12 @@ func (ld LinkDefinition) MarshalJSON() ([]byte, error) {
 	if ld.ParticipantPropertyReferences != nil {
 		objectMap["participantPropertyReferences"] = ld.ParticipantPropertyReferences
 	}
-	objectMap["provisioningState"] = ld.ProvisioningState
 	if ld.ReferenceOnly != nil {
 		objectMap["referenceOnly"] = ld.ReferenceOnly
 	}
-	objectMap["operationType"] = ld.OperationType
+	if ld.OperationType != "" {
+		objectMap["operationType"] = ld.OperationType
+	}
 	return json.Marshal(objectMap)
 }
 
@@ -2801,20 +3043,37 @@ type LinkListResultIterator struct {
 	page LinkListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *LinkListResultIterator) Next() error {
+func (iter *LinkListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/LinkListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *LinkListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -2836,6 +3095,11 @@ func (iter LinkListResultIterator) Value() LinkResourceFormat {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the LinkListResultIterator type.
+func NewLinkListResultIterator(page LinkListResultPage) LinkListResultIterator {
+	return LinkListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (llr LinkListResult) IsEmpty() bool {
 	return llr.Value == nil || len(*llr.Value) == 0
@@ -2843,11 +3107,11 @@ func (llr LinkListResult) IsEmpty() bool {
 
 // linkListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (llr LinkListResult) linkListResultPreparer() (*http.Request, error) {
+func (llr LinkListResult) linkListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if llr.NextLink == nil || len(to.String(llr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(llr.NextLink)))
@@ -2855,19 +3119,36 @@ func (llr LinkListResult) linkListResultPreparer() (*http.Request, error) {
 
 // LinkListResultPage contains a page of LinkResourceFormat values.
 type LinkListResultPage struct {
-	fn  func(LinkListResult) (LinkListResult, error)
+	fn  func(context.Context, LinkListResult) (LinkListResult, error)
 	llr LinkListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *LinkListResultPage) Next() error {
-	next, err := page.fn(page.llr)
+func (page *LinkListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/LinkListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.llr)
 	if err != nil {
 		return err
 	}
 	page.llr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *LinkListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -2888,16 +3169,30 @@ func (page LinkListResultPage) Values() []LinkResourceFormat {
 	return *page.llr.Value
 }
 
+// Creates a new instance of the LinkListResultPage type.
+func NewLinkListResultPage(getNextPage func(context.Context, LinkListResult) (LinkListResult, error)) LinkListResultPage {
+	return LinkListResultPage{fn: getNextPage}
+}
+
 // LinkResourceFormat the link resource format.
 type LinkResourceFormat struct {
 	autorest.Response `json:"-"`
 	*LinkDefinition   `json:"properties,omitempty"`
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for LinkResourceFormat.
+func (lrf LinkResourceFormat) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if lrf.LinkDefinition != nil {
+		objectMap["properties"] = lrf.LinkDefinition
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for LinkResourceFormat struct.
@@ -2951,50 +3246,31 @@ func (lrf *LinkResourceFormat) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// LinksCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// LinksCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type LinksCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future LinksCreateOrUpdateFuture) Result(client LinksClient) (lrf LinkResourceFormat, err error) {
+func (future *LinksCreateOrUpdateFuture) Result(client LinksClient) (lrf LinkResourceFormat, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "customerinsights.LinksCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return lrf, azure.NewAsyncOpIncompleteError("customerinsights.LinksCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		lrf, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "customerinsights.LinksCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("customerinsights.LinksCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if lrf.Response.Response, err = future.GetResult(sender); err == nil && lrf.Response.Response.StatusCode != http.StatusNoContent {
+		lrf, err = client.CreateOrUpdateResponder(lrf.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "customerinsights.LinksCreateOrUpdateFuture", "Result", lrf.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.LinksCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	lrf, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.LinksCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -3052,7 +3328,7 @@ func (mdb MetadataDefinitionBase) MarshalJSON() ([]byte, error) {
 
 // Operation a Customer Insights REST API operation
 type Operation struct {
-	// Name - Operation name: {provider}/{resource}/{operation}
+	// Name - READ-ONLY; Operation name: {provider}/{resource}/{operation}
 	Name *string `json:"name,omitempty"`
 	// Display - The object that represents the operation.
 	Display *OperationDisplay `json:"display,omitempty"`
@@ -3060,21 +3336,21 @@ type Operation struct {
 
 // OperationDisplay the object that represents the operation.
 type OperationDisplay struct {
-	// Provider - Service provider: Microsoft.CustomerInsights
+	// Provider - READ-ONLY; Service provider: Microsoft.CustomerInsights
 	Provider *string `json:"provider,omitempty"`
-	// Resource - Resource on which the operation is performed: Invoice, etc.
+	// Resource - READ-ONLY; Resource on which the operation is performed: Invoice, etc.
 	Resource *string `json:"resource,omitempty"`
-	// Operation - Operation type: Read, write, delete, etc.
+	// Operation - READ-ONLY; Operation type: Read, write, delete, etc.
 	Operation *string `json:"operation,omitempty"`
 }
 
-// OperationListResult result of the request to list Customer Insights operations. It contains a list of operations
-// and a URL link to get the next set of results.
+// OperationListResult result of the request to list Customer Insights operations. It contains a list of
+// operations and a URL link to get the next set of results.
 type OperationListResult struct {
 	autorest.Response `json:"-"`
-	// Value - List of Customer Insights operations supported by the Microsoft.CustomerInsights resource provider.
+	// Value - READ-ONLY; List of Customer Insights operations supported by the Microsoft.CustomerInsights resource provider.
 	Value *[]Operation `json:"value,omitempty"`
-	// NextLink - URL to get the next set of operation list results if there are any.
+	// NextLink - READ-ONLY; URL to get the next set of operation list results if there are any.
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
@@ -3084,20 +3360,37 @@ type OperationListResultIterator struct {
 	page OperationListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *OperationListResultIterator) Next() error {
+func (iter *OperationListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OperationListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *OperationListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -3119,6 +3412,11 @@ func (iter OperationListResultIterator) Value() Operation {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the OperationListResultIterator type.
+func NewOperationListResultIterator(page OperationListResultPage) OperationListResultIterator {
+	return OperationListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (olr OperationListResult) IsEmpty() bool {
 	return olr.Value == nil || len(*olr.Value) == 0
@@ -3126,11 +3424,11 @@ func (olr OperationListResult) IsEmpty() bool {
 
 // operationListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (olr OperationListResult) operationListResultPreparer() (*http.Request, error) {
+func (olr OperationListResult) operationListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if olr.NextLink == nil || len(to.String(olr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(olr.NextLink)))
@@ -3138,19 +3436,36 @@ func (olr OperationListResult) operationListResultPreparer() (*http.Request, err
 
 // OperationListResultPage contains a page of Operation values.
 type OperationListResultPage struct {
-	fn  func(OperationListResult) (OperationListResult, error)
+	fn  func(context.Context, OperationListResult) (OperationListResult, error)
 	olr OperationListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *OperationListResultPage) Next() error {
-	next, err := page.fn(page.olr)
+func (page *OperationListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OperationListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.olr)
 	if err != nil {
 		return err
 	}
 	page.olr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *OperationListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -3169,6 +3484,11 @@ func (page OperationListResultPage) Values() []Operation {
 		return nil
 	}
 	return *page.olr.Value
+}
+
+// Creates a new instance of the OperationListResultPage type.
+func NewOperationListResultPage(getNextPage func(context.Context, OperationListResult) (OperationListResult, error)) OperationListResultPage {
+	return OperationListResultPage{fn: getNextPage}
 }
 
 // Participant describes a profile type participating in an interaction.
@@ -3245,13 +3565,13 @@ type Prediction struct {
 	PositiveOutcomeExpression *string `json:"positiveOutcomeExpression,omitempty"`
 	// PrimaryProfileType - Primary profile type.
 	PrimaryProfileType *string `json:"primaryProfileType,omitempty"`
-	// ProvisioningState - Provisioning state. Possible values include: 'ProvisioningStatesProvisioning', 'ProvisioningStatesSucceeded', 'ProvisioningStatesExpiring', 'ProvisioningStatesDeleting', 'ProvisioningStatesHumanIntervention', 'ProvisioningStatesFailed'
+	// ProvisioningState - READ-ONLY; Provisioning state. Possible values include: 'ProvisioningStatesProvisioning', 'ProvisioningStatesSucceeded', 'ProvisioningStatesExpiring', 'ProvisioningStatesDeleting', 'ProvisioningStatesHumanIntervention', 'ProvisioningStatesFailed'
 	ProvisioningState ProvisioningStates `json:"provisioningState,omitempty"`
 	// PredictionName - Name of the prediction.
 	PredictionName *string `json:"predictionName,omitempty"`
 	// ScopeExpression - Scope expression.
 	ScopeExpression *string `json:"scopeExpression,omitempty"`
-	// TenantID - The hub name.
+	// TenantID - READ-ONLY; The hub name.
 	TenantID *string `json:"tenantId,omitempty"`
 	// AutoAnalyze - Whether do auto analyze.
 	AutoAnalyze *bool `json:"autoAnalyze,omitempty"`
@@ -3261,7 +3581,7 @@ type Prediction struct {
 	ScoreLabel *string `json:"scoreLabel,omitempty"`
 	// Grades - The prediction grades.
 	Grades *[]PredictionGradesItem `json:"grades,omitempty"`
-	// SystemGeneratedEntities - System generated entities.
+	// SystemGeneratedEntities - READ-ONLY; System generated entities.
 	SystemGeneratedEntities *PredictionSystemGeneratedEntities `json:"systemGeneratedEntities,omitempty"`
 }
 
@@ -3292,15 +3612,11 @@ func (p Prediction) MarshalJSON() ([]byte, error) {
 	if p.PrimaryProfileType != nil {
 		objectMap["primaryProfileType"] = p.PrimaryProfileType
 	}
-	objectMap["provisioningState"] = p.ProvisioningState
 	if p.PredictionName != nil {
 		objectMap["predictionName"] = p.PredictionName
 	}
 	if p.ScopeExpression != nil {
 		objectMap["scopeExpression"] = p.ScopeExpression
-	}
-	if p.TenantID != nil {
-		objectMap["tenantId"] = p.TenantID
 	}
 	if p.AutoAnalyze != nil {
 		objectMap["autoAnalyze"] = p.AutoAnalyze
@@ -3313,9 +3629,6 @@ func (p Prediction) MarshalJSON() ([]byte, error) {
 	}
 	if p.Grades != nil {
 		objectMap["grades"] = p.Grades
-	}
-	if p.SystemGeneratedEntities != nil {
-		objectMap["systemGeneratedEntities"] = p.SystemGeneratedEntities
 	}
 	return json.Marshal(objectMap)
 }
@@ -3369,20 +3682,37 @@ type PredictionListResultIterator struct {
 	page PredictionListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *PredictionListResultIterator) Next() error {
+func (iter *PredictionListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/PredictionListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *PredictionListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -3404,6 +3734,11 @@ func (iter PredictionListResultIterator) Value() PredictionResourceFormat {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the PredictionListResultIterator type.
+func NewPredictionListResultIterator(page PredictionListResultPage) PredictionListResultIterator {
+	return PredictionListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (plr PredictionListResult) IsEmpty() bool {
 	return plr.Value == nil || len(*plr.Value) == 0
@@ -3411,11 +3746,11 @@ func (plr PredictionListResult) IsEmpty() bool {
 
 // predictionListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (plr PredictionListResult) predictionListResultPreparer() (*http.Request, error) {
+func (plr PredictionListResult) predictionListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if plr.NextLink == nil || len(to.String(plr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(plr.NextLink)))
@@ -3423,19 +3758,36 @@ func (plr PredictionListResult) predictionListResultPreparer() (*http.Request, e
 
 // PredictionListResultPage contains a page of PredictionResourceFormat values.
 type PredictionListResultPage struct {
-	fn  func(PredictionListResult) (PredictionListResult, error)
+	fn  func(context.Context, PredictionListResult) (PredictionListResult, error)
 	plr PredictionListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *PredictionListResultPage) Next() error {
-	next, err := page.fn(page.plr)
+func (page *PredictionListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/PredictionListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.plr)
 	if err != nil {
 		return err
 	}
 	page.plr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *PredictionListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -3456,6 +3808,11 @@ func (page PredictionListResultPage) Values() []PredictionResourceFormat {
 	return *page.plr.Value
 }
 
+// Creates a new instance of the PredictionListResultPage type.
+func NewPredictionListResultPage(getNextPage func(context.Context, PredictionListResult) (PredictionListResult, error)) PredictionListResultPage {
+	return PredictionListResultPage{fn: getNextPage}
+}
+
 // PredictionMappings definition of the link mapping of prediction.
 type PredictionMappings struct {
 	// Score - The score of the link mapping.
@@ -3469,27 +3826,27 @@ type PredictionMappings struct {
 // PredictionModelStatus the prediction model status.
 type PredictionModelStatus struct {
 	autorest.Response `json:"-"`
-	// TenantID - The hub name.
+	// TenantID - READ-ONLY; The hub name.
 	TenantID *string `json:"tenantId,omitempty"`
-	// PredictionName - The prediction name.
+	// PredictionName - READ-ONLY; The prediction name.
 	PredictionName *string `json:"predictionName,omitempty"`
-	// PredictionGUIDID - The prediction GUID ID.
+	// PredictionGUIDID - READ-ONLY; The prediction GUID ID.
 	PredictionGUIDID *string `json:"predictionGuidId,omitempty"`
 	// Status - Prediction model life cycle.  When prediction is in PendingModelConfirmation status, it is allowed to update the status to PendingFeaturing or Active through API. Possible values include: 'PredictionModelLifeCycleNew', 'PredictionModelLifeCycleProvisioning', 'PredictionModelLifeCycleProvisioningFailed', 'PredictionModelLifeCyclePendingDiscovering', 'PredictionModelLifeCycleDiscovering', 'PredictionModelLifeCyclePendingFeaturing', 'PredictionModelLifeCycleFeaturing', 'PredictionModelLifeCycleFeaturingFailed', 'PredictionModelLifeCyclePendingTraining', 'PredictionModelLifeCycleTraining', 'PredictionModelLifeCycleTrainingFailed', 'PredictionModelLifeCycleEvaluating', 'PredictionModelLifeCycleEvaluatingFailed', 'PredictionModelLifeCyclePendingModelConfirmation', 'PredictionModelLifeCycleActive', 'PredictionModelLifeCycleDeleted', 'PredictionModelLifeCycleHumanIntervention', 'PredictionModelLifeCycleFailed'
 	Status PredictionModelLifeCycle `json:"status,omitempty"`
-	// Message - The model status message.
+	// Message - READ-ONLY; The model status message.
 	Message *string `json:"message,omitempty"`
-	// TrainingSetCount - Count of the training set.
+	// TrainingSetCount - READ-ONLY; Count of the training set.
 	TrainingSetCount *int32 `json:"trainingSetCount,omitempty"`
-	// TestSetCount - Count of the test set.
+	// TestSetCount - READ-ONLY; Count of the test set.
 	TestSetCount *int32 `json:"testSetCount,omitempty"`
-	// ValidationSetCount - Count of the validation set.
+	// ValidationSetCount - READ-ONLY; Count of the validation set.
 	ValidationSetCount *int32 `json:"validationSetCount,omitempty"`
-	// TrainingAccuracy - The training accuracy.
+	// TrainingAccuracy - READ-ONLY; The training accuracy.
 	TrainingAccuracy *int32 `json:"trainingAccuracy,omitempty"`
-	// SignalsUsed - The singnas used.
+	// SignalsUsed - READ-ONLY; The signals used.
 	SignalsUsed *int32 `json:"signalsUsed,omitempty"`
-	// ModelVersion - Version of the model.
+	// ModelVersion - READ-ONLY; Version of the model.
 	ModelVersion *string `json:"modelVersion,omitempty"`
 }
 
@@ -3497,12 +3854,21 @@ type PredictionModelStatus struct {
 type PredictionResourceFormat struct {
 	autorest.Response `json:"-"`
 	*Prediction       `json:"properties,omitempty"`
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for PredictionResourceFormat.
+func (prf PredictionResourceFormat) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if prf.Prediction != nil {
+		objectMap["properties"] = prf.Prediction
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for PredictionResourceFormat struct.
@@ -3556,100 +3922,55 @@ func (prf *PredictionResourceFormat) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// PredictionsCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// PredictionsCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type PredictionsCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future PredictionsCreateOrUpdateFuture) Result(client PredictionsClient) (prf PredictionResourceFormat, err error) {
+func (future *PredictionsCreateOrUpdateFuture) Result(client PredictionsClient) (prf PredictionResourceFormat, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "customerinsights.PredictionsCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return prf, azure.NewAsyncOpIncompleteError("customerinsights.PredictionsCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		prf, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "customerinsights.PredictionsCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("customerinsights.PredictionsCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if prf.Response.Response, err = future.GetResult(sender); err == nil && prf.Response.Response.StatusCode != http.StatusNoContent {
+		prf, err = client.CreateOrUpdateResponder(prf.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "customerinsights.PredictionsCreateOrUpdateFuture", "Result", prf.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.PredictionsCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	prf, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.PredictionsCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// PredictionsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// PredictionsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type PredictionsDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future PredictionsDeleteFuture) Result(client PredictionsClient) (ar autorest.Response, err error) {
+func (future *PredictionsDeleteFuture) Result(client PredictionsClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "customerinsights.PredictionsDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("customerinsights.PredictionsDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "customerinsights.PredictionsDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("customerinsights.PredictionsDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.PredictionsDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.PredictionsDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -3681,15 +4002,15 @@ func (pGe PredictionSystemGeneratedEntities) MarshalJSON() ([]byte, error) {
 // PredictionTrainingResults the training results of the prediction.
 type PredictionTrainingResults struct {
 	autorest.Response `json:"-"`
-	// TenantID - The hub name.
+	// TenantID - READ-ONLY; The hub name.
 	TenantID *string `json:"tenantId,omitempty"`
-	// ScoreName - Score name.
+	// ScoreName - READ-ONLY; Score name.
 	ScoreName *string `json:"scoreName,omitempty"`
-	// PredictionDistribution - Prediction distribution.
+	// PredictionDistribution - READ-ONLY; Prediction distribution.
 	PredictionDistribution *PredictionDistributionDefinition `json:"predictionDistribution,omitempty"`
-	// CanonicalProfiles - Canonical profiles.
+	// CanonicalProfiles - READ-ONLY; Canonical profiles.
 	CanonicalProfiles *[]CanonicalProfileDefinition `json:"canonicalProfiles,omitempty"`
-	// PrimaryProfileInstanceCount - Instance count of the primary profile.
+	// PrimaryProfileInstanceCount - READ-ONLY; Instance count of the primary profile.
 	PrimaryProfileInstanceCount *int64 `json:"primaryProfileInstanceCount,omitempty"`
 }
 
@@ -3728,20 +4049,37 @@ type ProfileListResultIterator struct {
 	page ProfileListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *ProfileListResultIterator) Next() error {
+func (iter *ProfileListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProfileListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *ProfileListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -3763,6 +4101,11 @@ func (iter ProfileListResultIterator) Value() ProfileResourceFormat {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the ProfileListResultIterator type.
+func NewProfileListResultIterator(page ProfileListResultPage) ProfileListResultIterator {
+	return ProfileListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (plr ProfileListResult) IsEmpty() bool {
 	return plr.Value == nil || len(*plr.Value) == 0
@@ -3770,11 +4113,11 @@ func (plr ProfileListResult) IsEmpty() bool {
 
 // profileListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (plr ProfileListResult) profileListResultPreparer() (*http.Request, error) {
+func (plr ProfileListResult) profileListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if plr.NextLink == nil || len(to.String(plr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(plr.NextLink)))
@@ -3782,19 +4125,36 @@ func (plr ProfileListResult) profileListResultPreparer() (*http.Request, error) 
 
 // ProfileListResultPage contains a page of ProfileResourceFormat values.
 type ProfileListResultPage struct {
-	fn  func(ProfileListResult) (ProfileListResult, error)
+	fn  func(context.Context, ProfileListResult) (ProfileListResult, error)
 	plr ProfileListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *ProfileListResultPage) Next() error {
-	next, err := page.fn(page.plr)
+func (page *ProfileListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProfileListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.plr)
 	if err != nil {
 		return err
 	}
 	page.plr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *ProfileListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -3815,16 +4175,30 @@ func (page ProfileListResultPage) Values() []ProfileResourceFormat {
 	return *page.plr.Value
 }
 
+// Creates a new instance of the ProfileListResultPage type.
+func NewProfileListResultPage(getNextPage func(context.Context, ProfileListResult) (ProfileListResult, error)) ProfileListResultPage {
+	return ProfileListResultPage{fn: getNextPage}
+}
+
 // ProfileResourceFormat the profile resource format.
 type ProfileResourceFormat struct {
 	autorest.Response      `json:"-"`
 	*ProfileTypeDefinition `json:"properties,omitempty"`
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for ProfileResourceFormat.
+func (prf ProfileResourceFormat) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if prf.ProfileTypeDefinition != nil {
+		objectMap["properties"] = prf.ProfileTypeDefinition
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for ProfileResourceFormat struct.
@@ -3882,96 +4256,51 @@ func (prf *ProfileResourceFormat) UnmarshalJSON(body []byte) error {
 // operation.
 type ProfilesCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ProfilesCreateOrUpdateFuture) Result(client ProfilesClient) (prf ProfileResourceFormat, err error) {
+func (future *ProfilesCreateOrUpdateFuture) Result(client ProfilesClient) (prf ProfileResourceFormat, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "customerinsights.ProfilesCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return prf, azure.NewAsyncOpIncompleteError("customerinsights.ProfilesCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		prf, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "customerinsights.ProfilesCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("customerinsights.ProfilesCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if prf.Response.Response, err = future.GetResult(sender); err == nil && prf.Response.Response.StatusCode != http.StatusNoContent {
+		prf, err = client.CreateOrUpdateResponder(prf.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "customerinsights.ProfilesCreateOrUpdateFuture", "Result", prf.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.ProfilesCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	prf, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.ProfilesCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// ProfilesDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// ProfilesDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type ProfilesDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ProfilesDeleteFuture) Result(client ProfilesClient) (ar autorest.Response, err error) {
+func (future *ProfilesDeleteFuture) Result(client ProfilesClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "customerinsights.ProfilesDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("customerinsights.ProfilesDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "customerinsights.ProfilesDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("customerinsights.ProfilesDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.ProfilesDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.ProfilesDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -3979,7 +4308,7 @@ func (future ProfilesDeleteFuture) Result(client ProfilesClient) (ar autorest.Re
 type ProfileTypeDefinition struct {
 	// StrongIds - The strong IDs.
 	StrongIds *[]StrongID `json:"strongIds,omitempty"`
-	// APIEntitySetName - The api entity set name. This becomes the odata entity set name for the entity Type being refered in this object.
+	// APIEntitySetName - The api entity set name. This becomes the odata entity set name for the entity Type being referred in this object.
 	APIEntitySetName *string `json:"apiEntitySetName,omitempty"`
 	// EntityType - Type of entity. Possible values include: 'EntityTypesNone', 'EntityTypesProfile', 'EntityTypesInteraction', 'EntityTypesRelationship'
 	EntityType EntityTypes `json:"entityType,omitempty"`
@@ -3987,13 +4316,13 @@ type ProfileTypeDefinition struct {
 	Fields *[]PropertyDefinition `json:"fields,omitempty"`
 	// InstancesCount - The instance count.
 	InstancesCount *int32 `json:"instancesCount,omitempty"`
-	// LastChangedUtc - The last changed time for the type definition.
+	// LastChangedUtc - READ-ONLY; The last changed time for the type definition.
 	LastChangedUtc *date.Time `json:"lastChangedUtc,omitempty"`
-	// ProvisioningState - Provisioning state. Possible values include: 'ProvisioningStatesProvisioning', 'ProvisioningStatesSucceeded', 'ProvisioningStatesExpiring', 'ProvisioningStatesDeleting', 'ProvisioningStatesHumanIntervention', 'ProvisioningStatesFailed'
+	// ProvisioningState - READ-ONLY; Provisioning state. Possible values include: 'ProvisioningStatesProvisioning', 'ProvisioningStatesSucceeded', 'ProvisioningStatesExpiring', 'ProvisioningStatesDeleting', 'ProvisioningStatesHumanIntervention', 'ProvisioningStatesFailed'
 	ProvisioningState ProvisioningStates `json:"provisioningState,omitempty"`
 	// SchemaItemTypeLink - The schema org link. This helps ACI identify and suggest semantic models.
 	SchemaItemTypeLink *string `json:"schemaItemTypeLink,omitempty"`
-	// TenantID - The hub name.
+	// TenantID - READ-ONLY; The hub name.
 	TenantID *string `json:"tenantId,omitempty"`
 	// TimestampFieldName - The timestamp property name. Represents the time when the interaction or profile update happened.
 	TimestampFieldName *string `json:"timestampFieldName,omitempty"`
@@ -4024,22 +4353,17 @@ func (ptd ProfileTypeDefinition) MarshalJSON() ([]byte, error) {
 	if ptd.APIEntitySetName != nil {
 		objectMap["apiEntitySetName"] = ptd.APIEntitySetName
 	}
-	objectMap["entityType"] = ptd.EntityType
+	if ptd.EntityType != "" {
+		objectMap["entityType"] = ptd.EntityType
+	}
 	if ptd.Fields != nil {
 		objectMap["fields"] = ptd.Fields
 	}
 	if ptd.InstancesCount != nil {
 		objectMap["instancesCount"] = ptd.InstancesCount
 	}
-	if ptd.LastChangedUtc != nil {
-		objectMap["lastChangedUtc"] = ptd.LastChangedUtc
-	}
-	objectMap["provisioningState"] = ptd.ProvisioningState
 	if ptd.SchemaItemTypeLink != nil {
 		objectMap["schemaItemTypeLink"] = ptd.SchemaItemTypeLink
-	}
-	if ptd.TenantID != nil {
-		objectMap["tenantId"] = ptd.TenantID
 	}
 	if ptd.TimestampFieldName != nil {
 		objectMap["timestampFieldName"] = ptd.TimestampFieldName
@@ -4093,7 +4417,7 @@ type PropertyDefinition struct {
 	IsLocalizedString *bool `json:"isLocalizedString,omitempty"`
 	// IsName - Whether the property is a name or a part of name.
 	IsName *bool `json:"isName,omitempty"`
-	// IsRequired - Whether property value is required on instances, IsRequired field only for Intercation. Profile Instance will not check for required field.
+	// IsRequired - Whether property value is required on instances, IsRequired field only for Interaction. Profile Instance will not check for required field.
 	IsRequired *bool `json:"isRequired,omitempty"`
 	// PropertyID - The ID associated with the property.
 	PropertyID *string `json:"propertyId,omitempty"`
@@ -4103,17 +4427,17 @@ type PropertyDefinition struct {
 	MaxLength *int32 `json:"maxLength,omitempty"`
 	// IsAvailableInGraph - Whether property is available in graph or not.
 	IsAvailableInGraph *bool `json:"isAvailableInGraph,omitempty"`
-	// DataSourcePrecedenceRules - This is specific to interactions modeled as activities. Data sources are used to determine where data is stored and also in precedence rules.
+	// DataSourcePrecedenceRules - READ-ONLY; This is specific to interactions modeled as activities. Data sources are used to determine where data is stored and also in precedence rules.
 	DataSourcePrecedenceRules *[]DataSourcePrecedence `json:"dataSourcePrecedenceRules,omitempty"`
 }
 
 // ProxyResource common properties of proxy resource.
 type ProxyResource struct {
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 }
 
@@ -4133,22 +4457,24 @@ type RelationshipDefinition struct {
 	LookupMappings *[]RelationshipTypeMapping `json:"lookupMappings,omitempty"`
 	// ProfileType - Profile type.
 	ProfileType *string `json:"profileType,omitempty"`
-	// ProvisioningState - Provisioning state. Possible values include: 'ProvisioningStatesProvisioning', 'ProvisioningStatesSucceeded', 'ProvisioningStatesExpiring', 'ProvisioningStatesDeleting', 'ProvisioningStatesHumanIntervention', 'ProvisioningStatesFailed'
+	// ProvisioningState - READ-ONLY; Provisioning state. Possible values include: 'ProvisioningStatesProvisioning', 'ProvisioningStatesSucceeded', 'ProvisioningStatesExpiring', 'ProvisioningStatesDeleting', 'ProvisioningStatesHumanIntervention', 'ProvisioningStatesFailed'
 	ProvisioningState ProvisioningStates `json:"provisioningState,omitempty"`
-	// RelationshipName - The Relationship name.
+	// RelationshipName - READ-ONLY; The Relationship name.
 	RelationshipName *string `json:"relationshipName,omitempty"`
 	// RelatedProfileType - Related profile being referenced.
 	RelatedProfileType *string `json:"relatedProfileType,omitempty"`
-	// RelationshipGUIDID - The relationship guid id.
+	// RelationshipGUIDID - READ-ONLY; The relationship guid id.
 	RelationshipGUIDID *string `json:"relationshipGuidId,omitempty"`
-	// TenantID - The hub name.
+	// TenantID - READ-ONLY; The hub name.
 	TenantID *string `json:"tenantId,omitempty"`
 }
 
 // MarshalJSON is the custom marshaler for RelationshipDefinition.
 func (rd RelationshipDefinition) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
-	objectMap["cardinality"] = rd.Cardinality
+	if rd.Cardinality != "" {
+		objectMap["cardinality"] = rd.Cardinality
+	}
 	if rd.DisplayName != nil {
 		objectMap["displayName"] = rd.DisplayName
 	}
@@ -4167,18 +4493,8 @@ func (rd RelationshipDefinition) MarshalJSON() ([]byte, error) {
 	if rd.ProfileType != nil {
 		objectMap["profileType"] = rd.ProfileType
 	}
-	objectMap["provisioningState"] = rd.ProvisioningState
-	if rd.RelationshipName != nil {
-		objectMap["relationshipName"] = rd.RelationshipName
-	}
 	if rd.RelatedProfileType != nil {
 		objectMap["relatedProfileType"] = rd.RelatedProfileType
-	}
-	if rd.RelationshipGUIDID != nil {
-		objectMap["relationshipGuidId"] = rd.RelationshipGUIDID
-	}
-	if rd.TenantID != nil {
-		objectMap["tenantId"] = rd.TenantID
 	}
 	return json.Marshal(objectMap)
 }
@@ -4191,21 +4507,21 @@ type RelationshipLinkDefinition struct {
 	Description map[string]*string `json:"description"`
 	// InteractionType - The InteractionType associated with the Relationship Link.
 	InteractionType *string `json:"interactionType,omitempty"`
-	// LinkName - The name of the Relationship Link.
+	// LinkName - READ-ONLY; The name of the Relationship Link.
 	LinkName *string `json:"linkName,omitempty"`
 	// Mappings - The mappings between Interaction and Relationship fields.
 	Mappings *[]RelationshipLinkFieldMapping `json:"mappings,omitempty"`
 	// ProfilePropertyReferences - The property references for the Profile of the Relationship.
 	ProfilePropertyReferences *[]ParticipantProfilePropertyReference `json:"profilePropertyReferences,omitempty"`
-	// ProvisioningState - Provisioning state. Possible values include: 'ProvisioningStatesProvisioning', 'ProvisioningStatesSucceeded', 'ProvisioningStatesExpiring', 'ProvisioningStatesDeleting', 'ProvisioningStatesHumanIntervention', 'ProvisioningStatesFailed'
+	// ProvisioningState - READ-ONLY; Provisioning state. Possible values include: 'ProvisioningStatesProvisioning', 'ProvisioningStatesSucceeded', 'ProvisioningStatesExpiring', 'ProvisioningStatesDeleting', 'ProvisioningStatesHumanIntervention', 'ProvisioningStatesFailed'
 	ProvisioningState ProvisioningStates `json:"provisioningState,omitempty"`
 	// RelatedProfilePropertyReferences - The property references for the Related Profile of the Relationship.
 	RelatedProfilePropertyReferences *[]ParticipantProfilePropertyReference `json:"relatedProfilePropertyReferences,omitempty"`
 	// RelationshipName - The Relationship associated with the Link.
 	RelationshipName *string `json:"relationshipName,omitempty"`
-	// RelationshipGUIDID - The relationship guid id.
+	// RelationshipGUIDID - READ-ONLY; The relationship guid id.
 	RelationshipGUIDID *string `json:"relationshipGuidId,omitempty"`
-	// TenantID - The hub name.
+	// TenantID - READ-ONLY; The hub name.
 	TenantID *string `json:"tenantId,omitempty"`
 }
 
@@ -4221,27 +4537,17 @@ func (rld RelationshipLinkDefinition) MarshalJSON() ([]byte, error) {
 	if rld.InteractionType != nil {
 		objectMap["interactionType"] = rld.InteractionType
 	}
-	if rld.LinkName != nil {
-		objectMap["linkName"] = rld.LinkName
-	}
 	if rld.Mappings != nil {
 		objectMap["mappings"] = rld.Mappings
 	}
 	if rld.ProfilePropertyReferences != nil {
 		objectMap["profilePropertyReferences"] = rld.ProfilePropertyReferences
 	}
-	objectMap["provisioningState"] = rld.ProvisioningState
 	if rld.RelatedProfilePropertyReferences != nil {
 		objectMap["relatedProfilePropertyReferences"] = rld.RelatedProfilePropertyReferences
 	}
 	if rld.RelationshipName != nil {
 		objectMap["relationshipName"] = rld.RelationshipName
-	}
-	if rld.RelationshipGUIDID != nil {
-		objectMap["relationshipGuidId"] = rld.RelationshipGUIDID
-	}
-	if rld.TenantID != nil {
-		objectMap["tenantId"] = rld.TenantID
 	}
 	return json.Marshal(objectMap)
 }
@@ -4265,27 +4571,44 @@ type RelationshipLinkListResult struct {
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
-// RelationshipLinkListResultIterator provides access to a complete listing of RelationshipLinkResourceFormat
-// values.
+// RelationshipLinkListResultIterator provides access to a complete listing of
+// RelationshipLinkResourceFormat values.
 type RelationshipLinkListResultIterator struct {
 	i    int
 	page RelationshipLinkListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *RelationshipLinkListResultIterator) Next() error {
+func (iter *RelationshipLinkListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RelationshipLinkListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *RelationshipLinkListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -4307,6 +4630,11 @@ func (iter RelationshipLinkListResultIterator) Value() RelationshipLinkResourceF
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the RelationshipLinkListResultIterator type.
+func NewRelationshipLinkListResultIterator(page RelationshipLinkListResultPage) RelationshipLinkListResultIterator {
+	return RelationshipLinkListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (rllr RelationshipLinkListResult) IsEmpty() bool {
 	return rllr.Value == nil || len(*rllr.Value) == 0
@@ -4314,11 +4642,11 @@ func (rllr RelationshipLinkListResult) IsEmpty() bool {
 
 // relationshipLinkListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (rllr RelationshipLinkListResult) relationshipLinkListResultPreparer() (*http.Request, error) {
+func (rllr RelationshipLinkListResult) relationshipLinkListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if rllr.NextLink == nil || len(to.String(rllr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(rllr.NextLink)))
@@ -4326,19 +4654,36 @@ func (rllr RelationshipLinkListResult) relationshipLinkListResultPreparer() (*ht
 
 // RelationshipLinkListResultPage contains a page of RelationshipLinkResourceFormat values.
 type RelationshipLinkListResultPage struct {
-	fn   func(RelationshipLinkListResult) (RelationshipLinkListResult, error)
+	fn   func(context.Context, RelationshipLinkListResult) (RelationshipLinkListResult, error)
 	rllr RelationshipLinkListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *RelationshipLinkListResultPage) Next() error {
-	next, err := page.fn(page.rllr)
+func (page *RelationshipLinkListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RelationshipLinkListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.rllr)
 	if err != nil {
 		return err
 	}
 	page.rllr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *RelationshipLinkListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -4359,16 +4704,30 @@ func (page RelationshipLinkListResultPage) Values() []RelationshipLinkResourceFo
 	return *page.rllr.Value
 }
 
+// Creates a new instance of the RelationshipLinkListResultPage type.
+func NewRelationshipLinkListResultPage(getNextPage func(context.Context, RelationshipLinkListResult) (RelationshipLinkListResult, error)) RelationshipLinkListResultPage {
+	return RelationshipLinkListResultPage{fn: getNextPage}
+}
+
 // RelationshipLinkResourceFormat the relationship link resource format.
 type RelationshipLinkResourceFormat struct {
 	autorest.Response           `json:"-"`
 	*RelationshipLinkDefinition `json:"properties,omitempty"`
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for RelationshipLinkResourceFormat.
+func (rlrf RelationshipLinkResourceFormat) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if rlrf.RelationshipLinkDefinition != nil {
+		objectMap["properties"] = rlrf.RelationshipLinkDefinition
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for RelationshipLinkResourceFormat struct.
@@ -4422,51 +4781,31 @@ func (rlrf *RelationshipLinkResourceFormat) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// RelationshipLinksCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// RelationshipLinksCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type RelationshipLinksCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future RelationshipLinksCreateOrUpdateFuture) Result(client RelationshipLinksClient) (rlrf RelationshipLinkResourceFormat, err error) {
+func (future *RelationshipLinksCreateOrUpdateFuture) Result(client RelationshipLinksClient) (rlrf RelationshipLinkResourceFormat, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "customerinsights.RelationshipLinksCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return rlrf, azure.NewAsyncOpIncompleteError("customerinsights.RelationshipLinksCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		rlrf, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "customerinsights.RelationshipLinksCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("customerinsights.RelationshipLinksCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if rlrf.Response.Response, err = future.GetResult(sender); err == nil && rlrf.Response.Response.StatusCode != http.StatusNoContent {
+		rlrf, err = client.CreateOrUpdateResponder(rlrf.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "customerinsights.RelationshipLinksCreateOrUpdateFuture", "Result", rlrf.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.RelationshipLinksCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	rlrf, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.RelationshipLinksCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -4475,48 +4814,22 @@ func (future RelationshipLinksCreateOrUpdateFuture) Result(client RelationshipLi
 // operation.
 type RelationshipLinksDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future RelationshipLinksDeleteFuture) Result(client RelationshipLinksClient) (ar autorest.Response, err error) {
+func (future *RelationshipLinksDeleteFuture) Result(client RelationshipLinksClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "customerinsights.RelationshipLinksDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("customerinsights.RelationshipLinksDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "customerinsights.RelationshipLinksDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("customerinsights.RelationshipLinksDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.RelationshipLinksDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.RelationshipLinksDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -4529,26 +4842,44 @@ type RelationshipListResult struct {
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
-// RelationshipListResultIterator provides access to a complete listing of RelationshipResourceFormat values.
+// RelationshipListResultIterator provides access to a complete listing of RelationshipResourceFormat
+// values.
 type RelationshipListResultIterator struct {
 	i    int
 	page RelationshipListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *RelationshipListResultIterator) Next() error {
+func (iter *RelationshipListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RelationshipListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *RelationshipListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -4570,6 +4901,11 @@ func (iter RelationshipListResultIterator) Value() RelationshipResourceFormat {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the RelationshipListResultIterator type.
+func NewRelationshipListResultIterator(page RelationshipListResultPage) RelationshipListResultIterator {
+	return RelationshipListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (rlr RelationshipListResult) IsEmpty() bool {
 	return rlr.Value == nil || len(*rlr.Value) == 0
@@ -4577,11 +4913,11 @@ func (rlr RelationshipListResult) IsEmpty() bool {
 
 // relationshipListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (rlr RelationshipListResult) relationshipListResultPreparer() (*http.Request, error) {
+func (rlr RelationshipListResult) relationshipListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if rlr.NextLink == nil || len(to.String(rlr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(rlr.NextLink)))
@@ -4589,19 +4925,36 @@ func (rlr RelationshipListResult) relationshipListResultPreparer() (*http.Reques
 
 // RelationshipListResultPage contains a page of RelationshipResourceFormat values.
 type RelationshipListResultPage struct {
-	fn  func(RelationshipListResult) (RelationshipListResult, error)
+	fn  func(context.Context, RelationshipListResult) (RelationshipListResult, error)
 	rlr RelationshipListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *RelationshipListResultPage) Next() error {
-	next, err := page.fn(page.rlr)
+func (page *RelationshipListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RelationshipListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.rlr)
 	if err != nil {
 		return err
 	}
 	page.rlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *RelationshipListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -4622,16 +4975,30 @@ func (page RelationshipListResultPage) Values() []RelationshipResourceFormat {
 	return *page.rlr.Value
 }
 
+// Creates a new instance of the RelationshipListResultPage type.
+func NewRelationshipListResultPage(getNextPage func(context.Context, RelationshipListResult) (RelationshipListResult, error)) RelationshipListResultPage {
+	return RelationshipListResultPage{fn: getNextPage}
+}
+
 // RelationshipResourceFormat the relationship resource format.
 type RelationshipResourceFormat struct {
 	autorest.Response       `json:"-"`
 	*RelationshipDefinition `json:"properties,omitempty"`
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for RelationshipResourceFormat.
+func (rrf RelationshipResourceFormat) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if rrf.RelationshipDefinition != nil {
+		objectMap["properties"] = rrf.RelationshipDefinition
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for RelationshipResourceFormat struct.
@@ -4685,114 +5052,69 @@ func (rrf *RelationshipResourceFormat) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// RelationshipsCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// RelationshipsCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type RelationshipsCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future RelationshipsCreateOrUpdateFuture) Result(client RelationshipsClient) (rrf RelationshipResourceFormat, err error) {
+func (future *RelationshipsCreateOrUpdateFuture) Result(client RelationshipsClient) (rrf RelationshipResourceFormat, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "customerinsights.RelationshipsCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return rrf, azure.NewAsyncOpIncompleteError("customerinsights.RelationshipsCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		rrf, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "customerinsights.RelationshipsCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("customerinsights.RelationshipsCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if rrf.Response.Response, err = future.GetResult(sender); err == nil && rrf.Response.Response.StatusCode != http.StatusNoContent {
+		rrf, err = client.CreateOrUpdateResponder(rrf.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "customerinsights.RelationshipsCreateOrUpdateFuture", "Result", rrf.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.RelationshipsCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	rrf, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.RelationshipsCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// RelationshipsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// RelationshipsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type RelationshipsDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future RelationshipsDeleteFuture) Result(client RelationshipsClient) (ar autorest.Response, err error) {
+func (future *RelationshipsDeleteFuture) Result(client RelationshipsClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "customerinsights.RelationshipsDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("customerinsights.RelationshipsDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "customerinsights.RelationshipsDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("customerinsights.RelationshipsDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.RelationshipsDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.RelationshipsDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
 // RelationshipsLookup the definition of suggested relationship for the type.
 type RelationshipsLookup struct {
-	// ProfileName - The relationship profile.
+	// ProfileName - READ-ONLY; The relationship profile.
 	ProfileName *string `json:"profileName,omitempty"`
-	// ProfilePropertyReferences - The property references for the profile type.
+	// ProfilePropertyReferences - READ-ONLY; The property references for the profile type.
 	ProfilePropertyReferences *[]ParticipantProfilePropertyReference `json:"profilePropertyReferences,omitempty"`
-	// RelatedProfileName - The related profile.
+	// RelatedProfileName - READ-ONLY; The related profile.
 	RelatedProfileName *string `json:"relatedProfileName,omitempty"`
-	// RelatedProfilePropertyReferences - The property references for the related profile type.
+	// RelatedProfilePropertyReferences - READ-ONLY; The property references for the related profile type.
 	RelatedProfilePropertyReferences *[]ParticipantProfilePropertyReference `json:"relatedProfilePropertyReferences,omitempty"`
-	// ExistingRelationshipName - The name of existing Relationship.
+	// ExistingRelationshipName - READ-ONLY; The name of existing Relationship.
 	ExistingRelationshipName *string `json:"existingRelationshipName,omitempty"`
 }
 
@@ -4812,11 +5134,11 @@ type RelationshipTypeMapping struct {
 
 // Resource common properties of Azure resource.
 type Resource struct {
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -4827,15 +5149,6 @@ type Resource struct {
 // MarshalJSON is the custom marshaler for Resource.
 func (r Resource) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
-	if r.ID != nil {
-		objectMap["id"] = r.ID
-	}
-	if r.Name != nil {
-		objectMap["name"] = r.Name
-	}
-	if r.Type != nil {
-		objectMap["type"] = r.Type
-	}
 	if r.Location != nil {
 		objectMap["location"] = r.Location
 	}
@@ -4863,15 +5176,15 @@ type Role struct {
 
 // RoleAssignment the Role Assignment definition.
 type RoleAssignment struct {
-	// TenantID - The hub name.
+	// TenantID - READ-ONLY; The hub name.
 	TenantID *string `json:"tenantId,omitempty"`
-	// AssignmentName - The name of the metadata object.
+	// AssignmentName - READ-ONLY; The name of the metadata object.
 	AssignmentName *string `json:"assignmentName,omitempty"`
 	// DisplayName - Localized display names for the metadata.
 	DisplayName map[string]*string `json:"displayName"`
 	// Description - Localized description for the metadata.
 	Description map[string]*string `json:"description"`
-	// ProvisioningState - Provisioning state. Possible values include: 'ProvisioningStatesProvisioning', 'ProvisioningStatesSucceeded', 'ProvisioningStatesExpiring', 'ProvisioningStatesDeleting', 'ProvisioningStatesHumanIntervention', 'ProvisioningStatesFailed'
+	// ProvisioningState - READ-ONLY; Provisioning state. Possible values include: 'ProvisioningStatesProvisioning', 'ProvisioningStatesSucceeded', 'ProvisioningStatesExpiring', 'ProvisioningStatesDeleting', 'ProvisioningStatesHumanIntervention', 'ProvisioningStatesFailed'
 	ProvisioningState ProvisioningStates `json:"provisioningState,omitempty"`
 	// Role - Type of roles. Possible values include: 'Admin', 'Reader', 'ManageAdmin', 'ManageReader', 'DataAdmin', 'DataReader'
 	Role RoleTypes `json:"role,omitempty"`
@@ -4908,20 +5221,15 @@ type RoleAssignment struct {
 // MarshalJSON is the custom marshaler for RoleAssignment.
 func (ra RoleAssignment) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
-	if ra.TenantID != nil {
-		objectMap["tenantId"] = ra.TenantID
-	}
-	if ra.AssignmentName != nil {
-		objectMap["assignmentName"] = ra.AssignmentName
-	}
 	if ra.DisplayName != nil {
 		objectMap["displayName"] = ra.DisplayName
 	}
 	if ra.Description != nil {
 		objectMap["description"] = ra.Description
 	}
-	objectMap["provisioningState"] = ra.ProvisioningState
-	objectMap["role"] = ra.Role
+	if ra.Role != "" {
+		objectMap["role"] = ra.Role
+	}
 	if ra.Principals != nil {
 		objectMap["principals"] = ra.Principals
 	}
@@ -4976,26 +5284,44 @@ type RoleAssignmentListResult struct {
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
-// RoleAssignmentListResultIterator provides access to a complete listing of RoleAssignmentResourceFormat values.
+// RoleAssignmentListResultIterator provides access to a complete listing of RoleAssignmentResourceFormat
+// values.
 type RoleAssignmentListResultIterator struct {
 	i    int
 	page RoleAssignmentListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *RoleAssignmentListResultIterator) Next() error {
+func (iter *RoleAssignmentListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RoleAssignmentListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *RoleAssignmentListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -5017,6 +5343,11 @@ func (iter RoleAssignmentListResultIterator) Value() RoleAssignmentResourceForma
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the RoleAssignmentListResultIterator type.
+func NewRoleAssignmentListResultIterator(page RoleAssignmentListResultPage) RoleAssignmentListResultIterator {
+	return RoleAssignmentListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (ralr RoleAssignmentListResult) IsEmpty() bool {
 	return ralr.Value == nil || len(*ralr.Value) == 0
@@ -5024,11 +5355,11 @@ func (ralr RoleAssignmentListResult) IsEmpty() bool {
 
 // roleAssignmentListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (ralr RoleAssignmentListResult) roleAssignmentListResultPreparer() (*http.Request, error) {
+func (ralr RoleAssignmentListResult) roleAssignmentListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if ralr.NextLink == nil || len(to.String(ralr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(ralr.NextLink)))
@@ -5036,19 +5367,36 @@ func (ralr RoleAssignmentListResult) roleAssignmentListResultPreparer() (*http.R
 
 // RoleAssignmentListResultPage contains a page of RoleAssignmentResourceFormat values.
 type RoleAssignmentListResultPage struct {
-	fn   func(RoleAssignmentListResult) (RoleAssignmentListResult, error)
+	fn   func(context.Context, RoleAssignmentListResult) (RoleAssignmentListResult, error)
 	ralr RoleAssignmentListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *RoleAssignmentListResultPage) Next() error {
-	next, err := page.fn(page.ralr)
+func (page *RoleAssignmentListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RoleAssignmentListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.ralr)
 	if err != nil {
 		return err
 	}
 	page.ralr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *RoleAssignmentListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -5069,16 +5417,30 @@ func (page RoleAssignmentListResultPage) Values() []RoleAssignmentResourceFormat
 	return *page.ralr.Value
 }
 
+// Creates a new instance of the RoleAssignmentListResultPage type.
+func NewRoleAssignmentListResultPage(getNextPage func(context.Context, RoleAssignmentListResult) (RoleAssignmentListResult, error)) RoleAssignmentListResultPage {
+	return RoleAssignmentListResultPage{fn: getNextPage}
+}
+
 // RoleAssignmentResourceFormat the Role Assignment resource format.
 type RoleAssignmentResourceFormat struct {
 	autorest.Response `json:"-"`
 	*RoleAssignment   `json:"properties,omitempty"`
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for RoleAssignmentResourceFormat.
+func (rarf RoleAssignmentResourceFormat) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if rarf.RoleAssignment != nil {
+		objectMap["properties"] = rarf.RoleAssignment
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for RoleAssignmentResourceFormat struct.
@@ -5132,51 +5494,31 @@ func (rarf *RoleAssignmentResourceFormat) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// RoleAssignmentsCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// RoleAssignmentsCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type RoleAssignmentsCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future RoleAssignmentsCreateOrUpdateFuture) Result(client RoleAssignmentsClient) (rarf RoleAssignmentResourceFormat, err error) {
+func (future *RoleAssignmentsCreateOrUpdateFuture) Result(client RoleAssignmentsClient) (rarf RoleAssignmentResourceFormat, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "customerinsights.RoleAssignmentsCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return rarf, azure.NewAsyncOpIncompleteError("customerinsights.RoleAssignmentsCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		rarf, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "customerinsights.RoleAssignmentsCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("customerinsights.RoleAssignmentsCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if rarf.Response.Response, err = future.GetResult(sender); err == nil && rarf.Response.Response.StatusCode != http.StatusNoContent {
+		rarf, err = client.CreateOrUpdateResponder(rarf.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "customerinsights.RoleAssignmentsCreateOrUpdateFuture", "Result", rarf.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.RoleAssignmentsCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	rarf, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "customerinsights.RoleAssignmentsCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -5196,20 +5538,37 @@ type RoleListResultIterator struct {
 	page RoleListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *RoleListResultIterator) Next() error {
+func (iter *RoleListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RoleListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *RoleListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -5231,6 +5590,11 @@ func (iter RoleListResultIterator) Value() RoleResourceFormat {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the RoleListResultIterator type.
+func NewRoleListResultIterator(page RoleListResultPage) RoleListResultIterator {
+	return RoleListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (rlr RoleListResult) IsEmpty() bool {
 	return rlr.Value == nil || len(*rlr.Value) == 0
@@ -5238,11 +5602,11 @@ func (rlr RoleListResult) IsEmpty() bool {
 
 // roleListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (rlr RoleListResult) roleListResultPreparer() (*http.Request, error) {
+func (rlr RoleListResult) roleListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if rlr.NextLink == nil || len(to.String(rlr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(rlr.NextLink)))
@@ -5250,19 +5614,36 @@ func (rlr RoleListResult) roleListResultPreparer() (*http.Request, error) {
 
 // RoleListResultPage contains a page of RoleResourceFormat values.
 type RoleListResultPage struct {
-	fn  func(RoleListResult) (RoleListResult, error)
+	fn  func(context.Context, RoleListResult) (RoleListResult, error)
 	rlr RoleListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *RoleListResultPage) Next() error {
-	next, err := page.fn(page.rlr)
+func (page *RoleListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RoleListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.rlr)
 	if err != nil {
 		return err
 	}
 	page.rlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *RoleListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -5283,15 +5664,29 @@ func (page RoleListResultPage) Values() []RoleResourceFormat {
 	return *page.rlr.Value
 }
 
+// Creates a new instance of the RoleListResultPage type.
+func NewRoleListResultPage(getNextPage func(context.Context, RoleListResult) (RoleListResult, error)) RoleListResultPage {
+	return RoleListResultPage{fn: getNextPage}
+}
+
 // RoleResourceFormat the role resource format.
 type RoleResourceFormat struct {
 	*Role `json:"properties,omitempty"`
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for RoleResourceFormat.
+func (rrf RoleResourceFormat) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if rrf.Role != nil {
+		objectMap["properties"] = rrf.Role
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for RoleResourceFormat struct.
@@ -5406,9 +5801,9 @@ func (si StrongID) MarshalJSON() ([]byte, error) {
 // SuggestRelationshipLinksResponse the response of suggest relationship links operation.
 type SuggestRelationshipLinksResponse struct {
 	autorest.Response `json:"-"`
-	// InteractionName - The interaction name.
+	// InteractionName - READ-ONLY; The interaction name.
 	InteractionName *string `json:"interactionName,omitempty"`
-	// SuggestedRelationships - Suggested relationships for the type.
+	// SuggestedRelationships - READ-ONLY; Suggested relationships for the type.
 	SuggestedRelationships *[]RelationshipsLookup `json:"suggestedRelationships,omitempty"`
 }
 
@@ -5424,45 +5819,33 @@ type TypePropertiesMapping struct {
 
 // View the view in Customer 360 web application.
 type View struct {
-	// ViewName - Name of the view.
+	// ViewName - READ-ONLY; Name of the view.
 	ViewName *string `json:"viewName,omitempty"`
 	// UserID - the user ID.
 	UserID *string `json:"userId,omitempty"`
-	// TenantID - the hub name.
+	// TenantID - READ-ONLY; the hub name.
 	TenantID *string `json:"tenantId,omitempty"`
 	// DisplayName - Localized display name for the view.
 	DisplayName map[string]*string `json:"displayName"`
 	// Definition - View definition.
 	Definition *string `json:"definition,omitempty"`
-	// Changed - Date time when view was last modified.
+	// Changed - READ-ONLY; Date time when view was last modified.
 	Changed *date.Time `json:"changed,omitempty"`
-	// Created - Date time when view was created.
+	// Created - READ-ONLY; Date time when view was created.
 	Created *date.Time `json:"created,omitempty"`
 }
 
 // MarshalJSON is the custom marshaler for View.
 func (vVar View) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
-	if vVar.ViewName != nil {
-		objectMap["viewName"] = vVar.ViewName
-	}
 	if vVar.UserID != nil {
 		objectMap["userId"] = vVar.UserID
-	}
-	if vVar.TenantID != nil {
-		objectMap["tenantId"] = vVar.TenantID
 	}
 	if vVar.DisplayName != nil {
 		objectMap["displayName"] = vVar.DisplayName
 	}
 	if vVar.Definition != nil {
 		objectMap["definition"] = vVar.Definition
-	}
-	if vVar.Changed != nil {
-		objectMap["changed"] = vVar.Changed
-	}
-	if vVar.Created != nil {
-		objectMap["created"] = vVar.Created
 	}
 	return json.Marshal(objectMap)
 }
@@ -5482,20 +5865,37 @@ type ViewListResultIterator struct {
 	page ViewListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *ViewListResultIterator) Next() error {
+func (iter *ViewListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ViewListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *ViewListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -5517,6 +5917,11 @@ func (iter ViewListResultIterator) Value() ViewResourceFormat {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the ViewListResultIterator type.
+func NewViewListResultIterator(page ViewListResultPage) ViewListResultIterator {
+	return ViewListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (vlr ViewListResult) IsEmpty() bool {
 	return vlr.Value == nil || len(*vlr.Value) == 0
@@ -5524,11 +5929,11 @@ func (vlr ViewListResult) IsEmpty() bool {
 
 // viewListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (vlr ViewListResult) viewListResultPreparer() (*http.Request, error) {
+func (vlr ViewListResult) viewListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if vlr.NextLink == nil || len(to.String(vlr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(vlr.NextLink)))
@@ -5536,19 +5941,36 @@ func (vlr ViewListResult) viewListResultPreparer() (*http.Request, error) {
 
 // ViewListResultPage contains a page of ViewResourceFormat values.
 type ViewListResultPage struct {
-	fn  func(ViewListResult) (ViewListResult, error)
+	fn  func(context.Context, ViewListResult) (ViewListResult, error)
 	vlr ViewListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *ViewListResultPage) Next() error {
-	next, err := page.fn(page.vlr)
+func (page *ViewListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ViewListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.vlr)
 	if err != nil {
 		return err
 	}
 	page.vlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *ViewListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -5569,16 +5991,30 @@ func (page ViewListResultPage) Values() []ViewResourceFormat {
 	return *page.vlr.Value
 }
 
+// Creates a new instance of the ViewListResultPage type.
+func NewViewListResultPage(getNextPage func(context.Context, ViewListResult) (ViewListResult, error)) ViewListResultPage {
+	return ViewListResultPage{fn: getNextPage}
+}
+
 // ViewResourceFormat the view resource format.
 type ViewResourceFormat struct {
 	autorest.Response `json:"-"`
 	*View             `json:"properties,omitempty"`
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for ViewResourceFormat.
+func (vrf ViewResourceFormat) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if vrf.View != nil {
+		objectMap["properties"] = vrf.View
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for ViewResourceFormat struct.
@@ -5634,7 +6070,7 @@ func (vrf *ViewResourceFormat) UnmarshalJSON(body []byte) error {
 
 // WidgetType definition of WidgetType.
 type WidgetType struct {
-	// WidgetTypeName - Name of the widget type.
+	// WidgetTypeName - READ-ONLY; Name of the widget type.
 	WidgetTypeName *string `json:"widgetTypeName,omitempty"`
 	// Definition - Definition for widget type.
 	Definition *string `json:"definition,omitempty"`
@@ -5644,22 +6080,19 @@ type WidgetType struct {
 	DisplayName map[string]*string `json:"displayName"`
 	// ImageURL - The image URL.
 	ImageURL *string `json:"imageUrl,omitempty"`
-	// TenantID - The hub name.
+	// TenantID - READ-ONLY; The hub name.
 	TenantID *string `json:"tenantId,omitempty"`
 	// WidgetVersion - The widget version.
 	WidgetVersion *string `json:"widgetVersion,omitempty"`
-	// Changed - Date time when widget type was last modified.
+	// Changed - READ-ONLY; Date time when widget type was last modified.
 	Changed *date.Time `json:"changed,omitempty"`
-	// Created - Date time when widget type was created.
+	// Created - READ-ONLY; Date time when widget type was created.
 	Created *date.Time `json:"created,omitempty"`
 }
 
 // MarshalJSON is the custom marshaler for WidgetType.
 func (wt WidgetType) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
-	if wt.WidgetTypeName != nil {
-		objectMap["widgetTypeName"] = wt.WidgetTypeName
-	}
 	if wt.Definition != nil {
 		objectMap["definition"] = wt.Definition
 	}
@@ -5672,17 +6105,8 @@ func (wt WidgetType) MarshalJSON() ([]byte, error) {
 	if wt.ImageURL != nil {
 		objectMap["imageUrl"] = wt.ImageURL
 	}
-	if wt.TenantID != nil {
-		objectMap["tenantId"] = wt.TenantID
-	}
 	if wt.WidgetVersion != nil {
 		objectMap["widgetVersion"] = wt.WidgetVersion
-	}
-	if wt.Changed != nil {
-		objectMap["changed"] = wt.Changed
-	}
-	if wt.Created != nil {
-		objectMap["created"] = wt.Created
 	}
 	return json.Marshal(objectMap)
 }
@@ -5702,20 +6126,37 @@ type WidgetTypeListResultIterator struct {
 	page WidgetTypeListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *WidgetTypeListResultIterator) Next() error {
+func (iter *WidgetTypeListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/WidgetTypeListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *WidgetTypeListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -5737,6 +6178,11 @@ func (iter WidgetTypeListResultIterator) Value() WidgetTypeResourceFormat {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the WidgetTypeListResultIterator type.
+func NewWidgetTypeListResultIterator(page WidgetTypeListResultPage) WidgetTypeListResultIterator {
+	return WidgetTypeListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (wtlr WidgetTypeListResult) IsEmpty() bool {
 	return wtlr.Value == nil || len(*wtlr.Value) == 0
@@ -5744,11 +6190,11 @@ func (wtlr WidgetTypeListResult) IsEmpty() bool {
 
 // widgetTypeListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (wtlr WidgetTypeListResult) widgetTypeListResultPreparer() (*http.Request, error) {
+func (wtlr WidgetTypeListResult) widgetTypeListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if wtlr.NextLink == nil || len(to.String(wtlr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(wtlr.NextLink)))
@@ -5756,19 +6202,36 @@ func (wtlr WidgetTypeListResult) widgetTypeListResultPreparer() (*http.Request, 
 
 // WidgetTypeListResultPage contains a page of WidgetTypeResourceFormat values.
 type WidgetTypeListResultPage struct {
-	fn   func(WidgetTypeListResult) (WidgetTypeListResult, error)
+	fn   func(context.Context, WidgetTypeListResult) (WidgetTypeListResult, error)
 	wtlr WidgetTypeListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *WidgetTypeListResultPage) Next() error {
-	next, err := page.fn(page.wtlr)
+func (page *WidgetTypeListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/WidgetTypeListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.wtlr)
 	if err != nil {
 		return err
 	}
 	page.wtlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *WidgetTypeListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -5789,16 +6252,30 @@ func (page WidgetTypeListResultPage) Values() []WidgetTypeResourceFormat {
 	return *page.wtlr.Value
 }
 
+// Creates a new instance of the WidgetTypeListResultPage type.
+func NewWidgetTypeListResultPage(getNextPage func(context.Context, WidgetTypeListResult) (WidgetTypeListResult, error)) WidgetTypeListResultPage {
+	return WidgetTypeListResultPage{fn: getNextPage}
+}
+
 // WidgetTypeResourceFormat the WidgetTypeResourceFormat
 type WidgetTypeResourceFormat struct {
 	autorest.Response `json:"-"`
 	*WidgetType       `json:"properties,omitempty"`
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for WidgetTypeResourceFormat.
+func (wtrf WidgetTypeResourceFormat) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if wtrf.WidgetType != nil {
+		objectMap["properties"] = wtrf.WidgetType
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for WidgetTypeResourceFormat struct.

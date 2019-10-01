@@ -18,13 +18,18 @@ package notificationhubs
 // Changes may cause incorrect behavior and will be lost if the code is regenerated.
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
+
+// The package's fully qualified name.
+const fqdn = "github.com/Azure/azure-sdk-for-go/services/notificationhubs/mgmt/2016-03-01/notificationhubs"
 
 // AccessRights enumerates the values for access rights.
 type AccessRights string
@@ -38,6 +43,11 @@ const (
 	Send AccessRights = "Send"
 )
 
+// PossibleAccessRightsValues returns an array of possible values for the AccessRights const type.
+func PossibleAccessRightsValues() []AccessRights {
+	return []AccessRights{Listen, Manage, Send}
+}
+
 // NamespaceType enumerates the values for namespace type.
 type NamespaceType string
 
@@ -47,6 +57,11 @@ const (
 	// NotificationHub ...
 	NotificationHub NamespaceType = "NotificationHub"
 )
+
+// PossibleNamespaceTypeValues returns an array of possible values for the NamespaceType const type.
+func PossibleNamespaceTypeValues() []NamespaceType {
+	return []NamespaceType{Messaging, NotificationHub}
+}
 
 // SkuName enumerates the values for sku name.
 type SkuName string
@@ -60,10 +75,24 @@ const (
 	Standard SkuName = "Standard"
 )
 
+// PossibleSkuNameValues returns an array of possible values for the SkuName const type.
+func PossibleSkuNameValues() []SkuName {
+	return []SkuName{Basic, Free, Standard}
+}
+
 // AdmCredential description of a NotificationHub AdmCredential.
 type AdmCredential struct {
 	// AdmCredentialProperties - Properties of NotificationHub AdmCredential.
 	*AdmCredentialProperties `json:"properties,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for AdmCredential.
+func (ac AdmCredential) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if ac.AdmCredentialProperties != nil {
+		objectMap["properties"] = ac.AdmCredentialProperties
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for AdmCredential struct.
@@ -106,6 +135,15 @@ type ApnsCredential struct {
 	*ApnsCredentialProperties `json:"properties,omitempty"`
 }
 
+// MarshalJSON is the custom marshaler for ApnsCredential.
+func (ac ApnsCredential) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if ac.ApnsCredentialProperties != nil {
+		objectMap["properties"] = ac.ApnsCredentialProperties
+	}
+	return json.Marshal(objectMap)
+}
+
 // UnmarshalJSON is the custom unmarshaler for ApnsCredential struct.
 func (ac *ApnsCredential) UnmarshalJSON(body []byte) error {
 	var m map[string]*json.RawMessage
@@ -138,7 +176,7 @@ type ApnsCredentialProperties struct {
 	CertificateKey *string `json:"certificateKey,omitempty"`
 	// Endpoint - The endpoint of this credential.
 	Endpoint *string `json:"endpoint,omitempty"`
-	// Thumbprint - The Apns certificate Thumbprint
+	// Thumbprint - The APNS certificate Thumbprint
 	Thumbprint *string `json:"thumbprint,omitempty"`
 }
 
@@ -146,6 +184,15 @@ type ApnsCredentialProperties struct {
 type BaiduCredential struct {
 	// BaiduCredentialProperties - Properties of NotificationHub BaiduCredential.
 	*BaiduCredentialProperties `json:"properties,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for BaiduCredential.
+func (bc BaiduCredential) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if bc.BaiduCredentialProperties != nil {
+		objectMap["properties"] = bc.BaiduCredentialProperties
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for BaiduCredential struct.
@@ -185,11 +232,11 @@ type BaiduCredentialProperties struct {
 // CheckAvailabilityParameters parameters supplied to the Check Name Availability for Namespace and
 // NotificationHubs.
 type CheckAvailabilityParameters struct {
-	// ID - Resource Id
+	// ID - READ-ONLY; Resource Id
 	ID *string `json:"id,omitempty"`
 	// Name - Resource name
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type
+	// Type - READ-ONLY; Resource type
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location
 	Location *string `json:"location,omitempty"`
@@ -204,14 +251,8 @@ type CheckAvailabilityParameters struct {
 // MarshalJSON is the custom marshaler for CheckAvailabilityParameters.
 func (capVar CheckAvailabilityParameters) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
-	if capVar.ID != nil {
-		objectMap["id"] = capVar.ID
-	}
 	if capVar.Name != nil {
 		objectMap["name"] = capVar.Name
-	}
-	if capVar.Type != nil {
-		objectMap["type"] = capVar.Type
 	}
 	if capVar.Location != nil {
 		objectMap["location"] = capVar.Location
@@ -228,16 +269,16 @@ func (capVar CheckAvailabilityParameters) MarshalJSON() ([]byte, error) {
 	return json.Marshal(objectMap)
 }
 
-// CheckAvailabilityResult description of a CheckAvailibility resource.
+// CheckAvailabilityResult description of a CheckAvailability resource.
 type CheckAvailabilityResult struct {
 	autorest.Response `json:"-"`
 	// IsAvailiable - True if the name is available and can be used to create new Namespace/NotificationHub. Otherwise false.
 	IsAvailiable *bool `json:"isAvailiable,omitempty"`
-	// ID - Resource Id
+	// ID - READ-ONLY; Resource Id
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name
+	// Name - READ-ONLY; Resource name
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type
+	// Type - READ-ONLY; Resource type
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location
 	Location *string `json:"location,omitempty"`
@@ -252,15 +293,6 @@ func (car CheckAvailabilityResult) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
 	if car.IsAvailiable != nil {
 		objectMap["isAvailiable"] = car.IsAvailiable
-	}
-	if car.ID != nil {
-		objectMap["id"] = car.ID
-	}
-	if car.Name != nil {
-		objectMap["name"] = car.Name
-	}
-	if car.Type != nil {
-		objectMap["type"] = car.Type
 	}
 	if car.Location != nil {
 		objectMap["location"] = car.Location
@@ -278,11 +310,11 @@ func (car CheckAvailabilityResult) MarshalJSON() ([]byte, error) {
 type CreateOrUpdateParameters struct {
 	// Properties - Properties of the NotificationHub.
 	*Properties `json:"properties,omitempty"`
-	// ID - Resource Id
+	// ID - READ-ONLY; Resource Id
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name
+	// Name - READ-ONLY; Resource name
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type
+	// Type - READ-ONLY; Resource type
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location
 	Location *string `json:"location,omitempty"`
@@ -297,15 +329,6 @@ func (coup CreateOrUpdateParameters) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
 	if coup.Properties != nil {
 		objectMap["properties"] = coup.Properties
-	}
-	if coup.ID != nil {
-		objectMap["id"] = coup.ID
-	}
-	if coup.Name != nil {
-		objectMap["name"] = coup.Name
-	}
-	if coup.Type != nil {
-		objectMap["type"] = coup.Type
 	}
 	if coup.Location != nil {
 		objectMap["location"] = coup.Location
@@ -403,6 +426,15 @@ type GcmCredential struct {
 	*GcmCredentialProperties `json:"properties,omitempty"`
 }
 
+// MarshalJSON is the custom marshaler for GcmCredential.
+func (gc GcmCredential) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if gc.GcmCredentialProperties != nil {
+		objectMap["properties"] = gc.GcmCredentialProperties
+	}
+	return json.Marshal(objectMap)
+}
+
 // UnmarshalJSON is the custom unmarshaler for GcmCredential struct.
 func (gc *GcmCredential) UnmarshalJSON(body []byte) error {
 	var m map[string]*json.RawMessage
@@ -450,20 +482,37 @@ type ListResultIterator struct {
 	page ListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *ListResultIterator) Next() error {
+func (iter *ListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *ListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -485,6 +534,11 @@ func (iter ListResultIterator) Value() ResourceType {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the ListResultIterator type.
+func NewListResultIterator(page ListResultPage) ListResultIterator {
+	return ListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (lr ListResult) IsEmpty() bool {
 	return lr.Value == nil || len(*lr.Value) == 0
@@ -492,11 +546,11 @@ func (lr ListResult) IsEmpty() bool {
 
 // listResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (lr ListResult) listResultPreparer() (*http.Request, error) {
+func (lr ListResult) listResultPreparer(ctx context.Context) (*http.Request, error) {
 	if lr.NextLink == nil || len(to.String(lr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(lr.NextLink)))
@@ -504,19 +558,36 @@ func (lr ListResult) listResultPreparer() (*http.Request, error) {
 
 // ListResultPage contains a page of ResourceType values.
 type ListResultPage struct {
-	fn func(ListResult) (ListResult, error)
+	fn func(context.Context, ListResult) (ListResult, error)
 	lr ListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *ListResultPage) Next() error {
-	next, err := page.fn(page.lr)
+func (page *ListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.lr)
 	if err != nil {
 		return err
 	}
 	page.lr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *ListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -537,10 +608,24 @@ func (page ListResultPage) Values() []ResourceType {
 	return *page.lr.Value
 }
 
+// Creates a new instance of the ListResultPage type.
+func NewListResultPage(getNextPage func(context.Context, ListResult) (ListResult, error)) ListResultPage {
+	return ListResultPage{fn: getNextPage}
+}
+
 // MpnsCredential description of a NotificationHub MpnsCredential.
 type MpnsCredential struct {
 	// MpnsCredentialProperties - Properties of NotificationHub MpnsCredential.
 	*MpnsCredentialProperties `json:"properties,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for MpnsCredential.
+func (mc MpnsCredential) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if mc.MpnsCredentialProperties != nil {
+		objectMap["properties"] = mc.MpnsCredentialProperties
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for MpnsCredential struct.
@@ -573,7 +658,7 @@ type MpnsCredentialProperties struct {
 	MpnsCertificate *string `json:"mpnsCertificate,omitempty"`
 	// CertificateKey - The certificate key for this credential.
 	CertificateKey *string `json:"certificateKey,omitempty"`
-	// Thumbprint - The Mpns certificate Thumbprint
+	// Thumbprint - The MPNS certificate Thumbprint
 	Thumbprint *string `json:"thumbprint,omitempty"`
 }
 
@@ -581,11 +666,11 @@ type MpnsCredentialProperties struct {
 type NamespaceCreateOrUpdateParameters struct {
 	// NamespaceProperties - Properties of the Namespace.
 	*NamespaceProperties `json:"properties,omitempty"`
-	// ID - Resource Id
+	// ID - READ-ONLY; Resource Id
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name
+	// Name - READ-ONLY; Resource name
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type
+	// Type - READ-ONLY; Resource type
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location
 	Location *string `json:"location,omitempty"`
@@ -600,15 +685,6 @@ func (ncoup NamespaceCreateOrUpdateParameters) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
 	if ncoup.NamespaceProperties != nil {
 		objectMap["properties"] = ncoup.NamespaceProperties
-	}
-	if ncoup.ID != nil {
-		objectMap["id"] = ncoup.ID
-	}
-	if ncoup.Name != nil {
-		objectMap["name"] = ncoup.Name
-	}
-	if ncoup.Type != nil {
-		objectMap["type"] = ncoup.Type
 	}
 	if ncoup.Location != nil {
 		objectMap["location"] = ncoup.Location
@@ -715,20 +791,37 @@ type NamespaceListResultIterator struct {
 	page NamespaceListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *NamespaceListResultIterator) Next() error {
+func (iter *NamespaceListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/NamespaceListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *NamespaceListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -750,6 +843,11 @@ func (iter NamespaceListResultIterator) Value() NamespaceResource {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the NamespaceListResultIterator type.
+func NewNamespaceListResultIterator(page NamespaceListResultPage) NamespaceListResultIterator {
+	return NamespaceListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (nlr NamespaceListResult) IsEmpty() bool {
 	return nlr.Value == nil || len(*nlr.Value) == 0
@@ -757,11 +855,11 @@ func (nlr NamespaceListResult) IsEmpty() bool {
 
 // namespaceListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (nlr NamespaceListResult) namespaceListResultPreparer() (*http.Request, error) {
+func (nlr NamespaceListResult) namespaceListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if nlr.NextLink == nil || len(to.String(nlr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(nlr.NextLink)))
@@ -769,19 +867,36 @@ func (nlr NamespaceListResult) namespaceListResultPreparer() (*http.Request, err
 
 // NamespaceListResultPage contains a page of NamespaceResource values.
 type NamespaceListResultPage struct {
-	fn  func(NamespaceListResult) (NamespaceListResult, error)
+	fn  func(context.Context, NamespaceListResult) (NamespaceListResult, error)
 	nlr NamespaceListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *NamespaceListResultPage) Next() error {
-	next, err := page.fn(page.nlr)
+func (page *NamespaceListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/NamespaceListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.nlr)
 	if err != nil {
 		return err
 	}
 	page.nlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *NamespaceListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -800,6 +915,11 @@ func (page NamespaceListResultPage) Values() []NamespaceResource {
 		return nil
 	}
 	return *page.nlr.Value
+}
+
+// Creates a new instance of the NamespaceListResultPage type.
+func NewNamespaceListResultPage(getNextPage func(context.Context, NamespaceListResult) (NamespaceListResult, error)) NamespaceListResultPage {
+	return NamespaceListResultPage{fn: getNextPage}
 }
 
 // NamespacePatchParameters parameters supplied to the Patch Namespace operation.
@@ -828,7 +948,7 @@ type NamespaceProperties struct {
 	Name *string `json:"name,omitempty"`
 	// ProvisioningState - Provisioning state of the Namespace.
 	ProvisioningState *string `json:"provisioningState,omitempty"`
-	// Region - Specifies the targeted region in which the namespace should be created. It can be any of the following values: Australia EastAustralia SoutheastCentral USEast USEast US 2West USNorth Central USSouth Central USEast AsiaSoutheast AsiaBrazil SouthJapan EastJapan WestNorth EuropeWest Europe
+	// Region - Specifies the targeted region in which the namespace should be created. It can be any of the following values: Australia East, Australia Southeast, Central US, East US, East US 2, West US, North Central US, South Central US, East Asia, Southeast Asia, Brazil South, Japan East, Japan West, North Europe, West Europe
 	Region *string `json:"region,omitempty"`
 	// Status - Status of the namespace. It can be any of these values:1 = Created/Active2 = Creating3 = Suspended4 = Deleting
 	Status *string `json:"status,omitempty"`
@@ -853,11 +973,11 @@ type NamespaceResource struct {
 	autorest.Response `json:"-"`
 	// NamespaceProperties - Properties of the Namespace.
 	*NamespaceProperties `json:"properties,omitempty"`
-	// ID - Resource Id
+	// ID - READ-ONLY; Resource Id
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name
+	// Name - READ-ONLY; Resource name
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type
+	// Type - READ-ONLY; Resource type
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location
 	Location *string `json:"location,omitempty"`
@@ -872,15 +992,6 @@ func (nr NamespaceResource) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
 	if nr.NamespaceProperties != nil {
 		objectMap["properties"] = nr.NamespaceProperties
-	}
-	if nr.ID != nil {
-		objectMap["id"] = nr.ID
-	}
-	if nr.Name != nil {
-		objectMap["name"] = nr.Name
-	}
-	if nr.Type != nil {
-		objectMap["type"] = nr.Type
 	}
 	if nr.Location != nil {
 		objectMap["location"] = nr.Location
@@ -972,51 +1083,26 @@ func (nr *NamespaceResource) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// NamespacesDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// NamespacesDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type NamespacesDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future NamespacesDeleteFuture) Result(client NamespacesClient) (ar autorest.Response, err error) {
+func (future *NamespacesDeleteFuture) Result(client NamespacesClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "notificationhubs.NamespacesDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("notificationhubs.NamespacesDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "notificationhubs.NamespacesDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("notificationhubs.NamespacesDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "notificationhubs.NamespacesDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "notificationhubs.NamespacesDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -1041,11 +1127,11 @@ type PnsCredentialsResource struct {
 	autorest.Response `json:"-"`
 	// PnsCredentialsProperties - NotificationHub PNS Credentials.
 	*PnsCredentialsProperties `json:"properties,omitempty"`
-	// ID - Resource Id
+	// ID - READ-ONLY; Resource Id
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name
+	// Name - READ-ONLY; Resource name
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type
+	// Type - READ-ONLY; Resource type
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location
 	Location *string `json:"location,omitempty"`
@@ -1060,15 +1146,6 @@ func (pcr PnsCredentialsResource) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
 	if pcr.PnsCredentialsProperties != nil {
 		objectMap["properties"] = pcr.PnsCredentialsProperties
-	}
-	if pcr.ID != nil {
-		objectMap["id"] = pcr.ID
-	}
-	if pcr.Name != nil {
-		objectMap["name"] = pcr.Name
-	}
-	if pcr.Type != nil {
-		objectMap["type"] = pcr.Type
 	}
 	if pcr.Location != nil {
 		objectMap["location"] = pcr.Location
@@ -1190,11 +1267,11 @@ type Properties struct {
 
 // Resource ...
 type Resource struct {
-	// ID - Resource Id
+	// ID - READ-ONLY; Resource Id
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name
+	// Name - READ-ONLY; Resource name
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type
+	// Type - READ-ONLY; Resource type
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location
 	Location *string `json:"location,omitempty"`
@@ -1207,15 +1284,6 @@ type Resource struct {
 // MarshalJSON is the custom marshaler for Resource.
 func (r Resource) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
-	if r.ID != nil {
-		objectMap["id"] = r.ID
-	}
-	if r.Name != nil {
-		objectMap["name"] = r.Name
-	}
-	if r.Type != nil {
-		objectMap["type"] = r.Type
-	}
 	if r.Location != nil {
 		objectMap["location"] = r.Location
 	}
@@ -1248,11 +1316,11 @@ type ResourceType struct {
 	autorest.Response `json:"-"`
 	// Properties - Properties of the NotificationHub.
 	*Properties `json:"properties,omitempty"`
-	// ID - Resource Id
+	// ID - READ-ONLY; Resource Id
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name
+	// Name - READ-ONLY; Resource name
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type
+	// Type - READ-ONLY; Resource type
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location
 	Location *string `json:"location,omitempty"`
@@ -1267,15 +1335,6 @@ func (rt ResourceType) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
 	if rt.Properties != nil {
 		objectMap["properties"] = rt.Properties
-	}
-	if rt.ID != nil {
-		objectMap["id"] = rt.ID
-	}
-	if rt.Name != nil {
-		objectMap["name"] = rt.Name
-	}
-	if rt.Type != nil {
-		objectMap["type"] = rt.Type
 	}
 	if rt.Location != nil {
 		objectMap["location"] = rt.Location
@@ -1367,16 +1426,16 @@ func (rt *ResourceType) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// SharedAccessAuthorizationRuleCreateOrUpdateParameters parameters supplied to the CreateOrUpdate Namespace
-// AuthorizationRules.
+// SharedAccessAuthorizationRuleCreateOrUpdateParameters parameters supplied to the CreateOrUpdate
+// Namespace AuthorizationRules.
 type SharedAccessAuthorizationRuleCreateOrUpdateParameters struct {
 	// Properties - Properties of the Namespace AuthorizationRules.
 	Properties *SharedAccessAuthorizationRuleProperties `json:"properties,omitempty"`
-	// ID - Resource Id
+	// ID - READ-ONLY; Resource Id
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name
+	// Name - READ-ONLY; Resource name
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type
+	// Type - READ-ONLY; Resource type
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location
 	Location *string `json:"location,omitempty"`
@@ -1391,15 +1450,6 @@ func (saarcoup SharedAccessAuthorizationRuleCreateOrUpdateParameters) MarshalJSO
 	objectMap := make(map[string]interface{})
 	if saarcoup.Properties != nil {
 		objectMap["properties"] = saarcoup.Properties
-	}
-	if saarcoup.ID != nil {
-		objectMap["id"] = saarcoup.ID
-	}
-	if saarcoup.Name != nil {
-		objectMap["name"] = saarcoup.Name
-	}
-	if saarcoup.Type != nil {
-		objectMap["type"] = saarcoup.Type
 	}
 	if saarcoup.Location != nil {
 		objectMap["location"] = saarcoup.Location
@@ -1429,20 +1479,37 @@ type SharedAccessAuthorizationRuleListResultIterator struct {
 	page SharedAccessAuthorizationRuleListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *SharedAccessAuthorizationRuleListResultIterator) Next() error {
+func (iter *SharedAccessAuthorizationRuleListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/SharedAccessAuthorizationRuleListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *SharedAccessAuthorizationRuleListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -1464,6 +1531,11 @@ func (iter SharedAccessAuthorizationRuleListResultIterator) Value() SharedAccess
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the SharedAccessAuthorizationRuleListResultIterator type.
+func NewSharedAccessAuthorizationRuleListResultIterator(page SharedAccessAuthorizationRuleListResultPage) SharedAccessAuthorizationRuleListResultIterator {
+	return SharedAccessAuthorizationRuleListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (saarlr SharedAccessAuthorizationRuleListResult) IsEmpty() bool {
 	return saarlr.Value == nil || len(*saarlr.Value) == 0
@@ -1471,31 +1543,49 @@ func (saarlr SharedAccessAuthorizationRuleListResult) IsEmpty() bool {
 
 // sharedAccessAuthorizationRuleListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (saarlr SharedAccessAuthorizationRuleListResult) sharedAccessAuthorizationRuleListResultPreparer() (*http.Request, error) {
+func (saarlr SharedAccessAuthorizationRuleListResult) sharedAccessAuthorizationRuleListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if saarlr.NextLink == nil || len(to.String(saarlr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(saarlr.NextLink)))
 }
 
-// SharedAccessAuthorizationRuleListResultPage contains a page of SharedAccessAuthorizationRuleResource values.
+// SharedAccessAuthorizationRuleListResultPage contains a page of SharedAccessAuthorizationRuleResource
+// values.
 type SharedAccessAuthorizationRuleListResultPage struct {
-	fn     func(SharedAccessAuthorizationRuleListResult) (SharedAccessAuthorizationRuleListResult, error)
+	fn     func(context.Context, SharedAccessAuthorizationRuleListResult) (SharedAccessAuthorizationRuleListResult, error)
 	saarlr SharedAccessAuthorizationRuleListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *SharedAccessAuthorizationRuleListResultPage) Next() error {
-	next, err := page.fn(page.saarlr)
+func (page *SharedAccessAuthorizationRuleListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/SharedAccessAuthorizationRuleListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.saarlr)
 	if err != nil {
 		return err
 	}
 	page.saarlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *SharedAccessAuthorizationRuleListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -1516,6 +1606,11 @@ func (page SharedAccessAuthorizationRuleListResultPage) Values() []SharedAccessA
 	return *page.saarlr.Value
 }
 
+// Creates a new instance of the SharedAccessAuthorizationRuleListResultPage type.
+func NewSharedAccessAuthorizationRuleListResultPage(getNextPage func(context.Context, SharedAccessAuthorizationRuleListResult) (SharedAccessAuthorizationRuleListResult, error)) SharedAccessAuthorizationRuleListResultPage {
+	return SharedAccessAuthorizationRuleListResultPage{fn: getNextPage}
+}
+
 // SharedAccessAuthorizationRuleProperties sharedAccessAuthorizationRule properties.
 type SharedAccessAuthorizationRuleProperties struct {
 	// Rights - The rights associated with the rule.
@@ -1525,13 +1620,13 @@ type SharedAccessAuthorizationRuleProperties struct {
 // SharedAccessAuthorizationRuleResource description of a Namespace AuthorizationRules.
 type SharedAccessAuthorizationRuleResource struct {
 	autorest.Response `json:"-"`
-	// SharedAccessAuthorizationRuleProperties - Pproperties of the Namespace AuthorizationRule.
+	// SharedAccessAuthorizationRuleProperties - Properties of the Namespace AuthorizationRule.
 	*SharedAccessAuthorizationRuleProperties `json:"properties,omitempty"`
-	// ID - Resource Id
+	// ID - READ-ONLY; Resource Id
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name
+	// Name - READ-ONLY; Resource name
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type
+	// Type - READ-ONLY; Resource type
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location
 	Location *string `json:"location,omitempty"`
@@ -1546,15 +1641,6 @@ func (saarr SharedAccessAuthorizationRuleResource) MarshalJSON() ([]byte, error)
 	objectMap := make(map[string]interface{})
 	if saarr.SharedAccessAuthorizationRuleProperties != nil {
 		objectMap["properties"] = saarr.SharedAccessAuthorizationRuleProperties
-	}
-	if saarr.ID != nil {
-		objectMap["id"] = saarr.ID
-	}
-	if saarr.Name != nil {
-		objectMap["name"] = saarr.Name
-	}
-	if saarr.Type != nil {
-		objectMap["type"] = saarr.Type
 	}
 	if saarr.Location != nil {
 		objectMap["location"] = saarr.Location
@@ -1670,6 +1756,15 @@ type SubResource struct {
 type WnsCredential struct {
 	// WnsCredentialProperties - Properties of NotificationHub WnsCredential.
 	*WnsCredentialProperties `json:"properties,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for WnsCredential.
+func (wc WnsCredential) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if wc.WnsCredentialProperties != nil {
+		objectMap["properties"] = wc.WnsCredentialProperties
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for WnsCredential struct.

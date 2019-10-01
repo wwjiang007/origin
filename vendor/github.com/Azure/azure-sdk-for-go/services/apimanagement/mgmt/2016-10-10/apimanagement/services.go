@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -42,9 +43,20 @@ func NewServicesClientWithBaseURI(baseURI string, subscriptionID string) Service
 
 // ApplyNetworkConfigurationUpdates updates the Microsoft.ApiManagement resource running in the Virtual network to pick
 // the updated network settings.
-//
-// resourceGroupName is the name of the resource group. serviceName is the name of the API Management service.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// serviceName - the name of the API Management service.
 func (client ServicesClient) ApplyNetworkConfigurationUpdates(ctx context.Context, resourceGroupName string, serviceName string) (result ServicesApplyNetworkConfigurationUpdatesFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServicesClient.ApplyNetworkConfigurationUpdates")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: serviceName,
 			Constraints: []validation.Constraint{{Target: "serviceName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -92,15 +104,13 @@ func (client ServicesClient) ApplyNetworkConfigurationUpdatesPreparer(ctx contex
 // ApplyNetworkConfigurationUpdatesSender sends the ApplyNetworkConfigurationUpdates request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServicesClient) ApplyNetworkConfigurationUpdatesSender(req *http.Request) (future ServicesApplyNetworkConfigurationUpdatesFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -119,10 +129,21 @@ func (client ServicesClient) ApplyNetworkConfigurationUpdatesResponder(resp *htt
 
 // Backup creates a backup of the API Management service to the given Azure Storage Account. This is long running
 // operation and could take several minutes to complete.
-//
-// resourceGroupName is the name of the resource group. serviceName is the name of the API Management service.
-// parameters is parameters supplied to the ApiManagementServices_Backup operation.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// serviceName - the name of the API Management service.
+// parameters - parameters supplied to the ApiManagementServices_Backup operation.
 func (client ServicesClient) Backup(ctx context.Context, resourceGroupName string, serviceName string, parameters ServiceBackupRestoreParameters) (result ServicesBackupFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServicesClient.Backup")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: serviceName,
 			Constraints: []validation.Constraint{{Target: "serviceName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -165,7 +186,7 @@ func (client ServicesClient) BackupPreparer(ctx context.Context, resourceGroupNa
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ApiManagement/service/{serviceName}/backup", pathParameters),
@@ -177,15 +198,13 @@ func (client ServicesClient) BackupPreparer(ctx context.Context, resourceGroupNa
 // BackupSender sends the Backup request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServicesClient) BackupSender(req *http.Request) (future ServicesBackupFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -203,9 +222,19 @@ func (client ServicesClient) BackupResponder(resp *http.Response) (result Servic
 }
 
 // CheckNameAvailability checks availability and correctness of a name for an API Management service.
-//
-// parameters is parameters supplied to the CheckNameAvailability operation.
+// Parameters:
+// parameters - parameters supplied to the CheckNameAvailability operation.
 func (client ServicesClient) CheckNameAvailability(ctx context.Context, parameters ServiceCheckNameAvailabilityParameters) (result ServiceNameAvailabilityResult, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServicesClient.CheckNameAvailability")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameters,
 			Constraints: []validation.Constraint{{Target: "parameters.Name", Name: validation.Null, Rule: true, Chain: nil}}}}); err != nil {
@@ -245,7 +274,7 @@ func (client ServicesClient) CheckNameAvailabilityPreparer(ctx context.Context, 
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/providers/Microsoft.ApiManagement/checkNameAvailability", pathParameters),
@@ -257,8 +286,8 @@ func (client ServicesClient) CheckNameAvailabilityPreparer(ctx context.Context, 
 // CheckNameAvailabilitySender sends the CheckNameAvailability request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServicesClient) CheckNameAvailabilitySender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CheckNameAvailabilityResponder handles the response to the CheckNameAvailability request. The method always
@@ -276,10 +305,21 @@ func (client ServicesClient) CheckNameAvailabilityResponder(resp *http.Response)
 
 // CreateOrUpdate creates or updates an API Management service. This is long running operation and could take several
 // minutes to complete.
-//
-// resourceGroupName is the name of the resource group. serviceName is the name of the API Management service.
-// parameters is parameters supplied to the CreateOrUpdate API Management service operation.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// serviceName - the name of the API Management service.
+// parameters - parameters supplied to the CreateOrUpdate API Management service operation.
 func (client ServicesClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, serviceName string, parameters ServiceResource) (result ServiceResource, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServicesClient.CreateOrUpdate")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: serviceName,
 			Constraints: []validation.Constraint{{Target: "serviceName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -333,8 +373,9 @@ func (client ServicesClient) CreateOrUpdatePreparer(ctx context.Context, resourc
 		"api-version": APIVersion,
 	}
 
+	parameters.Etag = nil
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ApiManagement/service/{serviceName}", pathParameters),
@@ -346,8 +387,8 @@ func (client ServicesClient) CreateOrUpdatePreparer(ctx context.Context, resourc
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServicesClient) CreateOrUpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateOrUpdateResponder handles the response to the CreateOrUpdate request. The method always
@@ -364,9 +405,20 @@ func (client ServicesClient) CreateOrUpdateResponder(resp *http.Response) (resul
 }
 
 // Delete deletes an existing API Management service.
-//
-// resourceGroupName is the name of the resource group. serviceName is the name of the API Management service.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// serviceName - the name of the API Management service.
 func (client ServicesClient) Delete(ctx context.Context, resourceGroupName string, serviceName string) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServicesClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: serviceName,
 			Constraints: []validation.Constraint{{Target: "serviceName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -420,8 +472,8 @@ func (client ServicesClient) DeletePreparer(ctx context.Context, resourceGroupNa
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServicesClient) DeleteSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
@@ -437,9 +489,20 @@ func (client ServicesClient) DeleteResponder(resp *http.Response) (result autore
 }
 
 // Get gets an API Management service resource description.
-//
-// resourceGroupName is the name of the resource group. serviceName is the name of the API Management service.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// serviceName - the name of the API Management service.
 func (client ServicesClient) Get(ctx context.Context, resourceGroupName string, serviceName string) (result ServiceResource, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServicesClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: serviceName,
 			Constraints: []validation.Constraint{{Target: "serviceName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -493,8 +556,8 @@ func (client ServicesClient) GetPreparer(ctx context.Context, resourceGroupName 
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServicesClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -511,9 +574,20 @@ func (client ServicesClient) GetResponder(resp *http.Response) (result ServiceRe
 }
 
 // GetSsoToken gets the Single-Sign-On token for the API Management Service which is valid for 5 Minutes.
-//
-// resourceGroupName is the name of the resource group. serviceName is the name of the API Management service.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// serviceName - the name of the API Management service.
 func (client ServicesClient) GetSsoToken(ctx context.Context, resourceGroupName string, serviceName string) (result ServiceGetSsoTokenResult, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServicesClient.GetSsoToken")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: serviceName,
 			Constraints: []validation.Constraint{{Target: "serviceName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -567,8 +641,8 @@ func (client ServicesClient) GetSsoTokenPreparer(ctx context.Context, resourceGr
 // GetSsoTokenSender sends the GetSsoToken request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServicesClient) GetSsoTokenSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetSsoTokenResponder handles the response to the GetSsoToken request. The method always
@@ -586,6 +660,16 @@ func (client ServicesClient) GetSsoTokenResponder(resp *http.Response) (result S
 
 // List lists all API Management services within an Azure subscription.
 func (client ServicesClient) List(ctx context.Context) (result ServiceListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServicesClient.List")
+		defer func() {
+			sc := -1
+			if result.slr.Response.Response != nil {
+				sc = result.slr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listNextResults
 	req, err := client.ListPreparer(ctx)
 	if err != nil {
@@ -630,8 +714,8 @@ func (client ServicesClient) ListPreparer(ctx context.Context) (*http.Request, e
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServicesClient) ListSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -648,8 +732,8 @@ func (client ServicesClient) ListResponder(resp *http.Response) (result ServiceL
 }
 
 // listNextResults retrieves the next set of results, if any.
-func (client ServicesClient) listNextResults(lastResults ServiceListResult) (result ServiceListResult, err error) {
-	req, err := lastResults.serviceListResultPreparer()
+func (client ServicesClient) listNextResults(ctx context.Context, lastResults ServiceListResult) (result ServiceListResult, err error) {
+	req, err := lastResults.serviceListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "apimanagement.ServicesClient", "listNextResults", nil, "Failure preparing next results request")
 	}
@@ -670,14 +754,34 @@ func (client ServicesClient) listNextResults(lastResults ServiceListResult) (res
 
 // ListComplete enumerates all values, automatically crossing page boundaries as required.
 func (client ServicesClient) ListComplete(ctx context.Context) (result ServiceListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServicesClient.List")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.List(ctx)
 	return
 }
 
 // ListByResourceGroup list all API Management services within a resource group.
-//
-// resourceGroupName is the name of the resource group.
+// Parameters:
+// resourceGroupName - the name of the resource group.
 func (client ServicesClient) ListByResourceGroup(ctx context.Context, resourceGroupName string) (result ServiceListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServicesClient.ListByResourceGroup")
+		defer func() {
+			sc := -1
+			if result.slr.Response.Response != nil {
+				sc = result.slr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listByResourceGroupNextResults
 	req, err := client.ListByResourceGroupPreparer(ctx, resourceGroupName)
 	if err != nil {
@@ -723,8 +827,8 @@ func (client ServicesClient) ListByResourceGroupPreparer(ctx context.Context, re
 // ListByResourceGroupSender sends the ListByResourceGroup request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServicesClient) ListByResourceGroupSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByResourceGroupResponder handles the response to the ListByResourceGroup request. The method always
@@ -741,8 +845,8 @@ func (client ServicesClient) ListByResourceGroupResponder(resp *http.Response) (
 }
 
 // listByResourceGroupNextResults retrieves the next set of results, if any.
-func (client ServicesClient) listByResourceGroupNextResults(lastResults ServiceListResult) (result ServiceListResult, err error) {
-	req, err := lastResults.serviceListResultPreparer()
+func (client ServicesClient) listByResourceGroupNextResults(ctx context.Context, lastResults ServiceListResult) (result ServiceListResult, err error) {
+	req, err := lastResults.serviceListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "apimanagement.ServicesClient", "listByResourceGroupNextResults", nil, "Failure preparing next results request")
 	}
@@ -763,6 +867,16 @@ func (client ServicesClient) listByResourceGroupNextResults(lastResults ServiceL
 
 // ListByResourceGroupComplete enumerates all values, automatically crossing page boundaries as required.
 func (client ServicesClient) ListByResourceGroupComplete(ctx context.Context, resourceGroupName string) (result ServiceListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServicesClient.ListByResourceGroup")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListByResourceGroup(ctx, resourceGroupName)
 	return
 }
@@ -770,10 +884,21 @@ func (client ServicesClient) ListByResourceGroupComplete(ctx context.Context, re
 // ManageDeployments manages deployments of an API Management service. This operation can be used to do the following:
 // Change SKU, Change SKU Units, Change Service Tier (Developer/Standard/Premium) and Manage VPN Configuration. This is
 // a long running operation and can take several minutes to complete.
-//
-// resourceGroupName is the name of the resource group. serviceName is the name of the API Management service.
-// parameters is parameters supplied to the ManageDeployments operation.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// serviceName - the name of the API Management service.
+// parameters - parameters supplied to the ManageDeployments operation.
 func (client ServicesClient) ManageDeployments(ctx context.Context, resourceGroupName string, serviceName string, parameters ServiceManageDeploymentsParameters) (result ServicesManageDeploymentsFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServicesClient.ManageDeployments")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: serviceName,
 			Constraints: []validation.Constraint{{Target: "serviceName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -817,7 +942,7 @@ func (client ServicesClient) ManageDeploymentsPreparer(ctx context.Context, reso
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ApiManagement/service/{serviceName}/managedeployments", pathParameters),
@@ -829,15 +954,13 @@ func (client ServicesClient) ManageDeploymentsPreparer(ctx context.Context, reso
 // ManageDeploymentsSender sends the ManageDeployments request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServicesClient) ManageDeploymentsSender(req *http.Request) (future ServicesManageDeploymentsFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -856,10 +979,21 @@ func (client ServicesClient) ManageDeploymentsResponder(resp *http.Response) (re
 
 // Restore restores a backup of an API Management service created using the ApiManagementServices_Backup operation on
 // the current service. This is a long running operation and could take several minutes to complete.
-//
-// resourceGroupName is the name of the resource group. serviceName is the name of the API Management service.
-// parameters is parameters supplied to the Restore API Management service from backup operation.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// serviceName - the name of the API Management service.
+// parameters - parameters supplied to the Restore API Management service from backup operation.
 func (client ServicesClient) Restore(ctx context.Context, resourceGroupName string, serviceName string, parameters ServiceBackupRestoreParameters) (result ServicesRestoreFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServicesClient.Restore")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: serviceName,
 			Constraints: []validation.Constraint{{Target: "serviceName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -902,7 +1036,7 @@ func (client ServicesClient) RestorePreparer(ctx context.Context, resourceGroupN
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ApiManagement/service/{serviceName}/restore", pathParameters),
@@ -914,15 +1048,13 @@ func (client ServicesClient) RestorePreparer(ctx context.Context, resourceGroupN
 // RestoreSender sends the Restore request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServicesClient) RestoreSender(req *http.Request) (future ServicesRestoreFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -940,10 +1072,21 @@ func (client ServicesClient) RestoreResponder(resp *http.Response) (result Servi
 }
 
 // Update updates an existing API Management service.
-//
-// resourceGroupName is the name of the resource group. serviceName is the name of the API Management service.
-// parameters is parameters supplied to the CreateOrUpdate API Management service operation.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// serviceName - the name of the API Management service.
+// parameters - parameters supplied to the CreateOrUpdate API Management service operation.
 func (client ServicesClient) Update(ctx context.Context, resourceGroupName string, serviceName string, parameters ServiceUpdateParameters) (result ServicesUpdateFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServicesClient.Update")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: serviceName,
 			Constraints: []validation.Constraint{{Target: "serviceName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -981,7 +1124,7 @@ func (client ServicesClient) UpdatePreparer(ctx context.Context, resourceGroupNa
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ApiManagement/service/{serviceName}", pathParameters),
@@ -993,15 +1136,13 @@ func (client ServicesClient) UpdatePreparer(ctx context.Context, resourceGroupNa
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServicesClient) UpdateSender(req *http.Request) (future ServicesUpdateFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -1021,10 +1162,21 @@ func (client ServicesClient) UpdateResponder(resp *http.Response) (result Servic
 // UpdateHostname creates, updates, or deletes the custom hostnames for an API Management service. The custom hostname
 // can be applied to the Proxy and Portal endpoint. This is a long running operation and could take several minutes to
 // complete.
-//
-// resourceGroupName is the name of the resource group. serviceName is the name of the API Management service.
-// parameters is parameters supplied to the UpdateHostname operation.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// serviceName - the name of the API Management service.
+// parameters - parameters supplied to the UpdateHostname operation.
 func (client ServicesClient) UpdateHostname(ctx context.Context, resourceGroupName string, serviceName string, parameters ServiceUpdateHostnameParameters) (result ServicesUpdateHostnameFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServicesClient.UpdateHostname")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: serviceName,
 			Constraints: []validation.Constraint{{Target: "serviceName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -1062,7 +1214,7 @@ func (client ServicesClient) UpdateHostnamePreparer(ctx context.Context, resourc
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ApiManagement/service/{serviceName}/updatehostname", pathParameters),
@@ -1074,15 +1226,13 @@ func (client ServicesClient) UpdateHostnamePreparer(ctx context.Context, resourc
 // UpdateHostnameSender sends the UpdateHostname request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServicesClient) UpdateHostnameSender(req *http.Request) (future ServicesUpdateHostnameFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -1100,10 +1250,21 @@ func (client ServicesClient) UpdateHostnameResponder(resp *http.Response) (resul
 }
 
 // UploadCertificate upload Custom Domain SSL certificate for an API Management service.
-//
-// resourceGroupName is the name of the resource group. serviceName is the name of the API Management service.
-// parameters is parameters supplied to the Upload SSL certificate for an API Management service operation.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// serviceName - the name of the API Management service.
+// parameters - parameters supplied to the Upload SSL certificate for an API Management service operation.
 func (client ServicesClient) UploadCertificate(ctx context.Context, resourceGroupName string, serviceName string, parameters ServiceUploadCertificateParameters) (result CertificateInformation, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServicesClient.UploadCertificate")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: serviceName,
 			Constraints: []validation.Constraint{{Target: "serviceName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -1150,7 +1311,7 @@ func (client ServicesClient) UploadCertificatePreparer(ctx context.Context, reso
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ApiManagement/service/{serviceName}/uploadcertificate", pathParameters),
@@ -1162,8 +1323,8 @@ func (client ServicesClient) UploadCertificatePreparer(ctx context.Context, reso
 // UploadCertificateSender sends the UploadCertificate request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServicesClient) UploadCertificateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UploadCertificateResponder handles the response to the UploadCertificate request. The method always

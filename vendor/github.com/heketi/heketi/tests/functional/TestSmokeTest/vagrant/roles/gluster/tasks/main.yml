@@ -1,8 +1,13 @@
-- name: install glusterfs
-  yum: name={{ item }} state=present
-  with_items:
-    - glusterfs-server
-    - glusterfs-client
+- name: install glusterfs, gluster-block
+  yum:
+    name:
+      - glusterfs-server
+      - glusterfs-client
+      - gluster-block
+    state: present
 
-- name: start glusterd
-  service: name=glusterd state=started enabled=yes
+- name: start glusterd, gluster-blockd
+  service: name={{ item }} state=started enabled=yes
+  with_items:
+    - glusterd
+    - gluster-blockd

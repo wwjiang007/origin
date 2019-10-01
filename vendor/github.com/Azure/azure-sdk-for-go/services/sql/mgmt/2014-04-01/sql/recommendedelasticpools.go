@@ -21,6 +21,7 @@ import (
 	"context"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -41,12 +42,23 @@ func NewRecommendedElasticPoolsClientWithBaseURI(baseURI string, subscriptionID 
 	return RecommendedElasticPoolsClient{NewWithBaseURI(baseURI, subscriptionID)}
 }
 
-// Get gets a recommented elastic pool.
-//
-// resourceGroupName is the name of the resource group that contains the resource. You can obtain this value from
-// the Azure Resource Manager API or the portal. serverName is the name of the server. recommendedElasticPoolName
-// is the name of the recommended elastic pool to be retrieved.
+// Get gets a recommended elastic pool.
+// Parameters:
+// resourceGroupName - the name of the resource group that contains the resource. You can obtain this value
+// from the Azure Resource Manager API or the portal.
+// serverName - the name of the server.
+// recommendedElasticPoolName - the name of the recommended elastic pool to be retrieved.
 func (client RecommendedElasticPoolsClient) Get(ctx context.Context, resourceGroupName string, serverName string, recommendedElasticPoolName string) (result RecommendedElasticPool, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RecommendedElasticPoolsClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, resourceGroupName, serverName, recommendedElasticPoolName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "sql.RecommendedElasticPoolsClient", "Get", nil, "Failure preparing request")
@@ -93,8 +105,8 @@ func (client RecommendedElasticPoolsClient) GetPreparer(ctx context.Context, res
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client RecommendedElasticPoolsClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -111,10 +123,21 @@ func (client RecommendedElasticPoolsClient) GetResponder(resp *http.Response) (r
 }
 
 // ListByServer returns recommended elastic pools.
-//
-// resourceGroupName is the name of the resource group that contains the resource. You can obtain this value from
-// the Azure Resource Manager API or the portal. serverName is the name of the server.
+// Parameters:
+// resourceGroupName - the name of the resource group that contains the resource. You can obtain this value
+// from the Azure Resource Manager API or the portal.
+// serverName - the name of the server.
 func (client RecommendedElasticPoolsClient) ListByServer(ctx context.Context, resourceGroupName string, serverName string) (result RecommendedElasticPoolListResult, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RecommendedElasticPoolsClient.ListByServer")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.ListByServerPreparer(ctx, resourceGroupName, serverName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "sql.RecommendedElasticPoolsClient", "ListByServer", nil, "Failure preparing request")
@@ -160,8 +183,8 @@ func (client RecommendedElasticPoolsClient) ListByServerPreparer(ctx context.Con
 // ListByServerSender sends the ListByServer request. The method will close the
 // http.Response Body if it receives an error.
 func (client RecommendedElasticPoolsClient) ListByServerSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByServerResponder handles the response to the ListByServer request. The method always
@@ -177,12 +200,23 @@ func (client RecommendedElasticPoolsClient) ListByServerResponder(resp *http.Res
 	return
 }
 
-// ListMetrics returns recommented elastic pool metrics.
-//
-// resourceGroupName is the name of the resource group that contains the resource. You can obtain this value from
-// the Azure Resource Manager API or the portal. serverName is the name of the server. recommendedElasticPoolName
-// is the name of the recommended elastic pool to be retrieved.
+// ListMetrics returns recommended elastic pool metrics.
+// Parameters:
+// resourceGroupName - the name of the resource group that contains the resource. You can obtain this value
+// from the Azure Resource Manager API or the portal.
+// serverName - the name of the server.
+// recommendedElasticPoolName - the name of the recommended elastic pool to be retrieved.
 func (client RecommendedElasticPoolsClient) ListMetrics(ctx context.Context, resourceGroupName string, serverName string, recommendedElasticPoolName string) (result RecommendedElasticPoolListMetricsResult, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RecommendedElasticPoolsClient.ListMetrics")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.ListMetricsPreparer(ctx, resourceGroupName, serverName, recommendedElasticPoolName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "sql.RecommendedElasticPoolsClient", "ListMetrics", nil, "Failure preparing request")
@@ -229,8 +263,8 @@ func (client RecommendedElasticPoolsClient) ListMetricsPreparer(ctx context.Cont
 // ListMetricsSender sends the ListMetrics request. The method will close the
 // http.Response Body if it receives an error.
 func (client RecommendedElasticPoolsClient) ListMetricsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListMetricsResponder handles the response to the ListMetrics request. The method always

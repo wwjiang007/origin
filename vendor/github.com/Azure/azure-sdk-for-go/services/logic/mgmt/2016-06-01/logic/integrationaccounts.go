@@ -21,6 +21,8 @@ import (
 	"context"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -40,10 +42,21 @@ func NewIntegrationAccountsClientWithBaseURI(baseURI string, subscriptionID stri
 }
 
 // CreateOrUpdate creates or updates an integration account.
-//
-// resourceGroupName is the resource group name. integrationAccountName is the integration account name.
-// integrationAccount is the integration account.
+// Parameters:
+// resourceGroupName - the resource group name.
+// integrationAccountName - the integration account name.
+// integrationAccount - the integration account.
 func (client IntegrationAccountsClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, integrationAccountName string, integrationAccount IntegrationAccount) (result IntegrationAccount, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/IntegrationAccountsClient.CreateOrUpdate")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.CreateOrUpdatePreparer(ctx, resourceGroupName, integrationAccountName, integrationAccount)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "logic.IntegrationAccountsClient", "CreateOrUpdate", nil, "Failure preparing request")
@@ -79,7 +92,7 @@ func (client IntegrationAccountsClient) CreateOrUpdatePreparer(ctx context.Conte
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Logic/integrationAccounts/{integrationAccountName}", pathParameters),
@@ -91,8 +104,8 @@ func (client IntegrationAccountsClient) CreateOrUpdatePreparer(ctx context.Conte
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client IntegrationAccountsClient) CreateOrUpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateOrUpdateResponder handles the response to the CreateOrUpdate request. The method always
@@ -109,9 +122,20 @@ func (client IntegrationAccountsClient) CreateOrUpdateResponder(resp *http.Respo
 }
 
 // Delete deletes an integration account.
-//
-// resourceGroupName is the resource group name. integrationAccountName is the integration account name.
+// Parameters:
+// resourceGroupName - the resource group name.
+// integrationAccountName - the integration account name.
 func (client IntegrationAccountsClient) Delete(ctx context.Context, resourceGroupName string, integrationAccountName string) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/IntegrationAccountsClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeletePreparer(ctx, resourceGroupName, integrationAccountName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "logic.IntegrationAccountsClient", "Delete", nil, "Failure preparing request")
@@ -157,8 +181,8 @@ func (client IntegrationAccountsClient) DeletePreparer(ctx context.Context, reso
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client IntegrationAccountsClient) DeleteSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
@@ -174,9 +198,20 @@ func (client IntegrationAccountsClient) DeleteResponder(resp *http.Response) (re
 }
 
 // Get gets an integration account.
-//
-// resourceGroupName is the resource group name. integrationAccountName is the integration account name.
+// Parameters:
+// resourceGroupName - the resource group name.
+// integrationAccountName - the integration account name.
 func (client IntegrationAccountsClient) Get(ctx context.Context, resourceGroupName string, integrationAccountName string) (result IntegrationAccount, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/IntegrationAccountsClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, resourceGroupName, integrationAccountName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "logic.IntegrationAccountsClient", "Get", nil, "Failure preparing request")
@@ -222,8 +257,8 @@ func (client IntegrationAccountsClient) GetPreparer(ctx context.Context, resourc
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client IntegrationAccountsClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -240,10 +275,21 @@ func (client IntegrationAccountsClient) GetResponder(resp *http.Response) (resul
 }
 
 // GetCallbackURL gets the integration account callback URL.
-//
-// resourceGroupName is the resource group name. integrationAccountName is the integration account name. parameters
-// is the callback URL parameters.
+// Parameters:
+// resourceGroupName - the resource group name.
+// integrationAccountName - the integration account name.
+// parameters - the callback URL parameters.
 func (client IntegrationAccountsClient) GetCallbackURL(ctx context.Context, resourceGroupName string, integrationAccountName string, parameters GetCallbackURLParameters) (result CallbackURL, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/IntegrationAccountsClient.GetCallbackURL")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetCallbackURLPreparer(ctx, resourceGroupName, integrationAccountName, parameters)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "logic.IntegrationAccountsClient", "GetCallbackURL", nil, "Failure preparing request")
@@ -279,7 +325,7 @@ func (client IntegrationAccountsClient) GetCallbackURLPreparer(ctx context.Conte
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Logic/integrationAccounts/{integrationAccountName}/listCallbackUrl", pathParameters),
@@ -291,8 +337,8 @@ func (client IntegrationAccountsClient) GetCallbackURLPreparer(ctx context.Conte
 // GetCallbackURLSender sends the GetCallbackURL request. The method will close the
 // http.Response Body if it receives an error.
 func (client IntegrationAccountsClient) GetCallbackURLSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetCallbackURLResponder handles the response to the GetCallbackURL request. The method always
@@ -309,9 +355,20 @@ func (client IntegrationAccountsClient) GetCallbackURLResponder(resp *http.Respo
 }
 
 // ListByResourceGroup gets a list of integration accounts by resource group.
-//
-// resourceGroupName is the resource group name. top is the number of items to be included in the result.
+// Parameters:
+// resourceGroupName - the resource group name.
+// top - the number of items to be included in the result.
 func (client IntegrationAccountsClient) ListByResourceGroup(ctx context.Context, resourceGroupName string, top *int32) (result IntegrationAccountListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/IntegrationAccountsClient.ListByResourceGroup")
+		defer func() {
+			sc := -1
+			if result.ialr.Response.Response != nil {
+				sc = result.ialr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listByResourceGroupNextResults
 	req, err := client.ListByResourceGroupPreparer(ctx, resourceGroupName, top)
 	if err != nil {
@@ -360,8 +417,8 @@ func (client IntegrationAccountsClient) ListByResourceGroupPreparer(ctx context.
 // ListByResourceGroupSender sends the ListByResourceGroup request. The method will close the
 // http.Response Body if it receives an error.
 func (client IntegrationAccountsClient) ListByResourceGroupSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByResourceGroupResponder handles the response to the ListByResourceGroup request. The method always
@@ -378,8 +435,8 @@ func (client IntegrationAccountsClient) ListByResourceGroupResponder(resp *http.
 }
 
 // listByResourceGroupNextResults retrieves the next set of results, if any.
-func (client IntegrationAccountsClient) listByResourceGroupNextResults(lastResults IntegrationAccountListResult) (result IntegrationAccountListResult, err error) {
-	req, err := lastResults.integrationAccountListResultPreparer()
+func (client IntegrationAccountsClient) listByResourceGroupNextResults(ctx context.Context, lastResults IntegrationAccountListResult) (result IntegrationAccountListResult, err error) {
+	req, err := lastResults.integrationAccountListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "logic.IntegrationAccountsClient", "listByResourceGroupNextResults", nil, "Failure preparing next results request")
 	}
@@ -400,14 +457,34 @@ func (client IntegrationAccountsClient) listByResourceGroupNextResults(lastResul
 
 // ListByResourceGroupComplete enumerates all values, automatically crossing page boundaries as required.
 func (client IntegrationAccountsClient) ListByResourceGroupComplete(ctx context.Context, resourceGroupName string, top *int32) (result IntegrationAccountListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/IntegrationAccountsClient.ListByResourceGroup")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListByResourceGroup(ctx, resourceGroupName, top)
 	return
 }
 
 // ListBySubscription gets a list of integration accounts by subscription.
-//
-// top is the number of items to be included in the result.
+// Parameters:
+// top - the number of items to be included in the result.
 func (client IntegrationAccountsClient) ListBySubscription(ctx context.Context, top *int32) (result IntegrationAccountListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/IntegrationAccountsClient.ListBySubscription")
+		defer func() {
+			sc := -1
+			if result.ialr.Response.Response != nil {
+				sc = result.ialr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listBySubscriptionNextResults
 	req, err := client.ListBySubscriptionPreparer(ctx, top)
 	if err != nil {
@@ -455,8 +532,8 @@ func (client IntegrationAccountsClient) ListBySubscriptionPreparer(ctx context.C
 // ListBySubscriptionSender sends the ListBySubscription request. The method will close the
 // http.Response Body if it receives an error.
 func (client IntegrationAccountsClient) ListBySubscriptionSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListBySubscriptionResponder handles the response to the ListBySubscription request. The method always
@@ -473,8 +550,8 @@ func (client IntegrationAccountsClient) ListBySubscriptionResponder(resp *http.R
 }
 
 // listBySubscriptionNextResults retrieves the next set of results, if any.
-func (client IntegrationAccountsClient) listBySubscriptionNextResults(lastResults IntegrationAccountListResult) (result IntegrationAccountListResult, err error) {
-	req, err := lastResults.integrationAccountListResultPreparer()
+func (client IntegrationAccountsClient) listBySubscriptionNextResults(ctx context.Context, lastResults IntegrationAccountListResult) (result IntegrationAccountListResult, err error) {
+	req, err := lastResults.integrationAccountListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "logic.IntegrationAccountsClient", "listBySubscriptionNextResults", nil, "Failure preparing next results request")
 	}
@@ -495,15 +572,288 @@ func (client IntegrationAccountsClient) listBySubscriptionNextResults(lastResult
 
 // ListBySubscriptionComplete enumerates all values, automatically crossing page boundaries as required.
 func (client IntegrationAccountsClient) ListBySubscriptionComplete(ctx context.Context, top *int32) (result IntegrationAccountListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/IntegrationAccountsClient.ListBySubscription")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListBySubscription(ctx, top)
 	return
 }
 
+// ListKeyVaultKeys gets the integration account's Key Vault keys.
+// Parameters:
+// resourceGroupName - the resource group name.
+// integrationAccountName - the integration account name.
+// listKeyVaultKeys - the key vault parameters.
+func (client IntegrationAccountsClient) ListKeyVaultKeys(ctx context.Context, resourceGroupName string, integrationAccountName string, listKeyVaultKeys ListKeyVaultKeysDefinition) (result KeyVaultKeyCollection, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/IntegrationAccountsClient.ListKeyVaultKeys")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	if err := validation.Validate([]validation.Validation{
+		{TargetValue: listKeyVaultKeys,
+			Constraints: []validation.Constraint{{Target: "listKeyVaultKeys.KeyVault", Name: validation.Null, Rule: true, Chain: nil}}}}); err != nil {
+		return result, validation.NewError("logic.IntegrationAccountsClient", "ListKeyVaultKeys", err.Error())
+	}
+
+	req, err := client.ListKeyVaultKeysPreparer(ctx, resourceGroupName, integrationAccountName, listKeyVaultKeys)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "logic.IntegrationAccountsClient", "ListKeyVaultKeys", nil, "Failure preparing request")
+		return
+	}
+
+	resp, err := client.ListKeyVaultKeysSender(req)
+	if err != nil {
+		result.Response = autorest.Response{Response: resp}
+		err = autorest.NewErrorWithError(err, "logic.IntegrationAccountsClient", "ListKeyVaultKeys", resp, "Failure sending request")
+		return
+	}
+
+	result, err = client.ListKeyVaultKeysResponder(resp)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "logic.IntegrationAccountsClient", "ListKeyVaultKeys", resp, "Failure responding to request")
+	}
+
+	return
+}
+
+// ListKeyVaultKeysPreparer prepares the ListKeyVaultKeys request.
+func (client IntegrationAccountsClient) ListKeyVaultKeysPreparer(ctx context.Context, resourceGroupName string, integrationAccountName string, listKeyVaultKeys ListKeyVaultKeysDefinition) (*http.Request, error) {
+	pathParameters := map[string]interface{}{
+		"integrationAccountName": autorest.Encode("path", integrationAccountName),
+		"resourceGroupName":      autorest.Encode("path", resourceGroupName),
+		"subscriptionId":         autorest.Encode("path", client.SubscriptionID),
+	}
+
+	const APIVersion = "2016-06-01"
+	queryParameters := map[string]interface{}{
+		"api-version": APIVersion,
+	}
+
+	preparer := autorest.CreatePreparer(
+		autorest.AsContentType("application/json; charset=utf-8"),
+		autorest.AsPost(),
+		autorest.WithBaseURL(client.BaseURI),
+		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Logic/integrationAccounts/{integrationAccountName}/listKeyVaultKeys", pathParameters),
+		autorest.WithJSON(listKeyVaultKeys),
+		autorest.WithQueryParameters(queryParameters))
+	return preparer.Prepare((&http.Request{}).WithContext(ctx))
+}
+
+// ListKeyVaultKeysSender sends the ListKeyVaultKeys request. The method will close the
+// http.Response Body if it receives an error.
+func (client IntegrationAccountsClient) ListKeyVaultKeysSender(req *http.Request) (*http.Response, error) {
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
+}
+
+// ListKeyVaultKeysResponder handles the response to the ListKeyVaultKeys request. The method always
+// closes the http.Response Body.
+func (client IntegrationAccountsClient) ListKeyVaultKeysResponder(resp *http.Response) (result KeyVaultKeyCollection, err error) {
+	err = autorest.Respond(
+		resp,
+		client.ByInspecting(),
+		azure.WithErrorUnlessStatusCode(http.StatusOK),
+		autorest.ByUnmarshallingJSON(&result),
+		autorest.ByClosing())
+	result.Response = autorest.Response{Response: resp}
+	return
+}
+
+// LogTrackingEvents logs the integration account's tracking events.
+// Parameters:
+// resourceGroupName - the resource group name.
+// integrationAccountName - the integration account name.
+// logTrackingEvents - the callback URL parameters.
+func (client IntegrationAccountsClient) LogTrackingEvents(ctx context.Context, resourceGroupName string, integrationAccountName string, logTrackingEvents TrackingEventsDefinition) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/IntegrationAccountsClient.LogTrackingEvents")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	if err := validation.Validate([]validation.Validation{
+		{TargetValue: logTrackingEvents,
+			Constraints: []validation.Constraint{{Target: "logTrackingEvents.SourceType", Name: validation.Null, Rule: true, Chain: nil},
+				{Target: "logTrackingEvents.Events", Name: validation.Null, Rule: true, Chain: nil}}}}); err != nil {
+		return result, validation.NewError("logic.IntegrationAccountsClient", "LogTrackingEvents", err.Error())
+	}
+
+	req, err := client.LogTrackingEventsPreparer(ctx, resourceGroupName, integrationAccountName, logTrackingEvents)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "logic.IntegrationAccountsClient", "LogTrackingEvents", nil, "Failure preparing request")
+		return
+	}
+
+	resp, err := client.LogTrackingEventsSender(req)
+	if err != nil {
+		result.Response = resp
+		err = autorest.NewErrorWithError(err, "logic.IntegrationAccountsClient", "LogTrackingEvents", resp, "Failure sending request")
+		return
+	}
+
+	result, err = client.LogTrackingEventsResponder(resp)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "logic.IntegrationAccountsClient", "LogTrackingEvents", resp, "Failure responding to request")
+	}
+
+	return
+}
+
+// LogTrackingEventsPreparer prepares the LogTrackingEvents request.
+func (client IntegrationAccountsClient) LogTrackingEventsPreparer(ctx context.Context, resourceGroupName string, integrationAccountName string, logTrackingEvents TrackingEventsDefinition) (*http.Request, error) {
+	pathParameters := map[string]interface{}{
+		"integrationAccountName": autorest.Encode("path", integrationAccountName),
+		"resourceGroupName":      autorest.Encode("path", resourceGroupName),
+		"subscriptionId":         autorest.Encode("path", client.SubscriptionID),
+	}
+
+	const APIVersion = "2016-06-01"
+	queryParameters := map[string]interface{}{
+		"api-version": APIVersion,
+	}
+
+	preparer := autorest.CreatePreparer(
+		autorest.AsContentType("application/json; charset=utf-8"),
+		autorest.AsPost(),
+		autorest.WithBaseURL(client.BaseURI),
+		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Logic/integrationAccounts/{integrationAccountName}/logTrackingEvents", pathParameters),
+		autorest.WithJSON(logTrackingEvents),
+		autorest.WithQueryParameters(queryParameters))
+	return preparer.Prepare((&http.Request{}).WithContext(ctx))
+}
+
+// LogTrackingEventsSender sends the LogTrackingEvents request. The method will close the
+// http.Response Body if it receives an error.
+func (client IntegrationAccountsClient) LogTrackingEventsSender(req *http.Request) (*http.Response, error) {
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
+}
+
+// LogTrackingEventsResponder handles the response to the LogTrackingEvents request. The method always
+// closes the http.Response Body.
+func (client IntegrationAccountsClient) LogTrackingEventsResponder(resp *http.Response) (result autorest.Response, err error) {
+	err = autorest.Respond(
+		resp,
+		client.ByInspecting(),
+		azure.WithErrorUnlessStatusCode(http.StatusOK),
+		autorest.ByClosing())
+	result.Response = resp
+	return
+}
+
+// RegenerateAccessKey regenerates the integration account access key.
+// Parameters:
+// resourceGroupName - the resource group name.
+// integrationAccountName - the integration account name.
+// regenerateAccessKey - the access key type.
+func (client IntegrationAccountsClient) RegenerateAccessKey(ctx context.Context, resourceGroupName string, integrationAccountName string, regenerateAccessKey RegenerateActionParameter) (result IntegrationAccount, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/IntegrationAccountsClient.RegenerateAccessKey")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	req, err := client.RegenerateAccessKeyPreparer(ctx, resourceGroupName, integrationAccountName, regenerateAccessKey)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "logic.IntegrationAccountsClient", "RegenerateAccessKey", nil, "Failure preparing request")
+		return
+	}
+
+	resp, err := client.RegenerateAccessKeySender(req)
+	if err != nil {
+		result.Response = autorest.Response{Response: resp}
+		err = autorest.NewErrorWithError(err, "logic.IntegrationAccountsClient", "RegenerateAccessKey", resp, "Failure sending request")
+		return
+	}
+
+	result, err = client.RegenerateAccessKeyResponder(resp)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "logic.IntegrationAccountsClient", "RegenerateAccessKey", resp, "Failure responding to request")
+	}
+
+	return
+}
+
+// RegenerateAccessKeyPreparer prepares the RegenerateAccessKey request.
+func (client IntegrationAccountsClient) RegenerateAccessKeyPreparer(ctx context.Context, resourceGroupName string, integrationAccountName string, regenerateAccessKey RegenerateActionParameter) (*http.Request, error) {
+	pathParameters := map[string]interface{}{
+		"integrationAccountName": autorest.Encode("path", integrationAccountName),
+		"resourceGroupName":      autorest.Encode("path", resourceGroupName),
+		"subscriptionId":         autorest.Encode("path", client.SubscriptionID),
+	}
+
+	const APIVersion = "2016-06-01"
+	queryParameters := map[string]interface{}{
+		"api-version": APIVersion,
+	}
+
+	preparer := autorest.CreatePreparer(
+		autorest.AsContentType("application/json; charset=utf-8"),
+		autorest.AsPost(),
+		autorest.WithBaseURL(client.BaseURI),
+		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Logic/integrationAccounts/{integrationAccountName}/regenerateAccessKey", pathParameters),
+		autorest.WithJSON(regenerateAccessKey),
+		autorest.WithQueryParameters(queryParameters))
+	return preparer.Prepare((&http.Request{}).WithContext(ctx))
+}
+
+// RegenerateAccessKeySender sends the RegenerateAccessKey request. The method will close the
+// http.Response Body if it receives an error.
+func (client IntegrationAccountsClient) RegenerateAccessKeySender(req *http.Request) (*http.Response, error) {
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
+}
+
+// RegenerateAccessKeyResponder handles the response to the RegenerateAccessKey request. The method always
+// closes the http.Response Body.
+func (client IntegrationAccountsClient) RegenerateAccessKeyResponder(resp *http.Response) (result IntegrationAccount, err error) {
+	err = autorest.Respond(
+		resp,
+		client.ByInspecting(),
+		azure.WithErrorUnlessStatusCode(http.StatusOK),
+		autorest.ByUnmarshallingJSON(&result),
+		autorest.ByClosing())
+	result.Response = autorest.Response{Response: resp}
+	return
+}
+
 // Update updates an integration account.
-//
-// resourceGroupName is the resource group name. integrationAccountName is the integration account name.
-// integrationAccount is the integration account.
+// Parameters:
+// resourceGroupName - the resource group name.
+// integrationAccountName - the integration account name.
+// integrationAccount - the integration account.
 func (client IntegrationAccountsClient) Update(ctx context.Context, resourceGroupName string, integrationAccountName string, integrationAccount IntegrationAccount) (result IntegrationAccount, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/IntegrationAccountsClient.Update")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UpdatePreparer(ctx, resourceGroupName, integrationAccountName, integrationAccount)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "logic.IntegrationAccountsClient", "Update", nil, "Failure preparing request")
@@ -539,7 +889,7 @@ func (client IntegrationAccountsClient) UpdatePreparer(ctx context.Context, reso
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Logic/integrationAccounts/{integrationAccountName}", pathParameters),
@@ -551,8 +901,8 @@ func (client IntegrationAccountsClient) UpdatePreparer(ctx context.Context, reso
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client IntegrationAccountsClient) UpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateResponder handles the response to the Update request. The method always

@@ -18,12 +18,17 @@ package batch
 // Changes may cause incorrect behavior and will be lost if the code is regenerated.
 
 import (
+	"context"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/go-autorest/tracing"
 	"io"
 	"net/http"
 )
+
+// The package's fully qualified name.
+const fqdn = "github.com/Azure/azure-sdk-for-go/services/batch/2018-03-01.6.1/batch"
 
 // AccessScope enumerates the values for access scope.
 type AccessScope string
@@ -147,13 +152,13 @@ func PossibleCertificateStoreLocationValues() []CertificateStoreLocation {
 type CertificateVisibility string
 
 const (
-	// CertificateVisibilityRemoteUser The certificate should be visibile to the user accounts under which
-	// users remotely access the node.
+	// CertificateVisibilityRemoteUser The certificate should be visible to the user accounts under which users
+	// remotely access the node.
 	CertificateVisibilityRemoteUser CertificateVisibility = "remoteuser"
 	// CertificateVisibilityStartTask The certificate should be visible to the user account under which the
 	// start task is run.
 	CertificateVisibilityStartTask CertificateVisibility = "starttask"
-	// CertificateVisibilityTask The certificate should be visibile to the user accounts under which job tasks
+	// CertificateVisibilityTask The certificate should be visible to the user accounts under which job tasks
 	// are run.
 	CertificateVisibilityTask CertificateVisibility = "task"
 )
@@ -267,7 +272,7 @@ const (
 	// Offline The node is not currently running a task, and scheduling of new tasks to the node is disabled.
 	Offline ComputeNodeState = "offline"
 	// Preempted The low-priority node has been preempted. Tasks which were running on the node when it was
-	// pre-empted will be rescheduled when another node becomes available.
+	// preempted will be rescheduled when another node becomes available.
 	Preempted ComputeNodeState = "preempted"
 	// Rebooting The node is rebooting.
 	Rebooting ComputeNodeState = "rebooting"
@@ -796,20 +801,37 @@ type AccountListNodeAgentSkusResultIterator struct {
 	page AccountListNodeAgentSkusResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *AccountListNodeAgentSkusResultIterator) Next() error {
+func (iter *AccountListNodeAgentSkusResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AccountListNodeAgentSkusResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *AccountListNodeAgentSkusResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -831,6 +853,11 @@ func (iter AccountListNodeAgentSkusResultIterator) Value() NodeAgentSku {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the AccountListNodeAgentSkusResultIterator type.
+func NewAccountListNodeAgentSkusResultIterator(page AccountListNodeAgentSkusResultPage) AccountListNodeAgentSkusResultIterator {
+	return AccountListNodeAgentSkusResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (alnasr AccountListNodeAgentSkusResult) IsEmpty() bool {
 	return alnasr.Value == nil || len(*alnasr.Value) == 0
@@ -838,11 +865,11 @@ func (alnasr AccountListNodeAgentSkusResult) IsEmpty() bool {
 
 // accountListNodeAgentSkusResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (alnasr AccountListNodeAgentSkusResult) accountListNodeAgentSkusResultPreparer() (*http.Request, error) {
+func (alnasr AccountListNodeAgentSkusResult) accountListNodeAgentSkusResultPreparer(ctx context.Context) (*http.Request, error) {
 	if alnasr.OdataNextLink == nil || len(to.String(alnasr.OdataNextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(alnasr.OdataNextLink)))
@@ -850,19 +877,36 @@ func (alnasr AccountListNodeAgentSkusResult) accountListNodeAgentSkusResultPrepa
 
 // AccountListNodeAgentSkusResultPage contains a page of NodeAgentSku values.
 type AccountListNodeAgentSkusResultPage struct {
-	fn     func(AccountListNodeAgentSkusResult) (AccountListNodeAgentSkusResult, error)
+	fn     func(context.Context, AccountListNodeAgentSkusResult) (AccountListNodeAgentSkusResult, error)
 	alnasr AccountListNodeAgentSkusResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *AccountListNodeAgentSkusResultPage) Next() error {
-	next, err := page.fn(page.alnasr)
+func (page *AccountListNodeAgentSkusResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AccountListNodeAgentSkusResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.alnasr)
 	if err != nil {
 		return err
 	}
 	page.alnasr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *AccountListNodeAgentSkusResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -881,6 +925,11 @@ func (page AccountListNodeAgentSkusResultPage) Values() []NodeAgentSku {
 		return nil
 	}
 	return *page.alnasr.Value
+}
+
+// Creates a new instance of the AccountListNodeAgentSkusResultPage type.
+func NewAccountListNodeAgentSkusResultPage(getNextPage func(context.Context, AccountListNodeAgentSkusResult) (AccountListNodeAgentSkusResult, error)) AccountListNodeAgentSkusResultPage {
+	return AccountListNodeAgentSkusResultPage{fn: getNextPage}
 }
 
 // AffinityInformation ...
@@ -902,20 +951,37 @@ type ApplicationListResultIterator struct {
 	page ApplicationListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *ApplicationListResultIterator) Next() error {
+func (iter *ApplicationListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ApplicationListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *ApplicationListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -937,6 +1003,11 @@ func (iter ApplicationListResultIterator) Value() ApplicationSummary {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the ApplicationListResultIterator type.
+func NewApplicationListResultIterator(page ApplicationListResultPage) ApplicationListResultIterator {
+	return ApplicationListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (alr ApplicationListResult) IsEmpty() bool {
 	return alr.Value == nil || len(*alr.Value) == 0
@@ -944,11 +1015,11 @@ func (alr ApplicationListResult) IsEmpty() bool {
 
 // applicationListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (alr ApplicationListResult) applicationListResultPreparer() (*http.Request, error) {
+func (alr ApplicationListResult) applicationListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if alr.OdataNextLink == nil || len(to.String(alr.OdataNextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(alr.OdataNextLink)))
@@ -956,19 +1027,36 @@ func (alr ApplicationListResult) applicationListResultPreparer() (*http.Request,
 
 // ApplicationListResultPage contains a page of ApplicationSummary values.
 type ApplicationListResultPage struct {
-	fn  func(ApplicationListResult) (ApplicationListResult, error)
+	fn  func(context.Context, ApplicationListResult) (ApplicationListResult, error)
 	alr ApplicationListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *ApplicationListResultPage) Next() error {
-	next, err := page.fn(page.alr)
+func (page *ApplicationListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ApplicationListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.alr)
 	if err != nil {
 		return err
 	}
 	page.alr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *ApplicationListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -987,6 +1075,11 @@ func (page ApplicationListResultPage) Values() []ApplicationSummary {
 		return nil
 	}
 	return *page.alr.Value
+}
+
+// Creates a new instance of the ApplicationListResultPage type.
+func NewApplicationListResultPage(getNextPage func(context.Context, ApplicationListResult) (ApplicationListResult, error)) ApplicationListResultPage {
+	return ApplicationListResultPage{fn: getNextPage}
 }
 
 // ApplicationPackageReference ...
@@ -1045,8 +1138,8 @@ type AutoUserSpecification struct {
 	ElevationLevel ElevationLevel `json:"elevationLevel,omitempty"`
 }
 
-// Certificate a certificate that can be installed on compute nodes and can be used to authenticate operations on
-// the machine.
+// Certificate a certificate that can be installed on compute nodes and can be used to authenticate
+// operations on the machine.
 type Certificate struct {
 	autorest.Response   `json:"-"`
 	Thumbprint          *string `json:"thumbprint,omitempty"`
@@ -1088,20 +1181,37 @@ type CertificateListResultIterator struct {
 	page CertificateListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *CertificateListResultIterator) Next() error {
+func (iter *CertificateListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/CertificateListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *CertificateListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -1123,6 +1233,11 @@ func (iter CertificateListResultIterator) Value() Certificate {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the CertificateListResultIterator type.
+func NewCertificateListResultIterator(page CertificateListResultPage) CertificateListResultIterator {
+	return CertificateListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (clr CertificateListResult) IsEmpty() bool {
 	return clr.Value == nil || len(*clr.Value) == 0
@@ -1130,11 +1245,11 @@ func (clr CertificateListResult) IsEmpty() bool {
 
 // certificateListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (clr CertificateListResult) certificateListResultPreparer() (*http.Request, error) {
+func (clr CertificateListResult) certificateListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if clr.OdataNextLink == nil || len(to.String(clr.OdataNextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(clr.OdataNextLink)))
@@ -1142,19 +1257,36 @@ func (clr CertificateListResult) certificateListResultPreparer() (*http.Request,
 
 // CertificateListResultPage contains a page of Certificate values.
 type CertificateListResultPage struct {
-	fn  func(CertificateListResult) (CertificateListResult, error)
+	fn  func(context.Context, CertificateListResult) (CertificateListResult, error)
 	clr CertificateListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *CertificateListResultPage) Next() error {
-	next, err := page.fn(page.clr)
+func (page *CertificateListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/CertificateListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.clr)
 	if err != nil {
 		return err
 	}
 	page.clr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *CertificateListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -1173,6 +1305,11 @@ func (page CertificateListResultPage) Values() []Certificate {
 		return nil
 	}
 	return *page.clr.Value
+}
+
+// Creates a new instance of the CertificateListResultPage type.
+func NewCertificateListResultPage(getNextPage func(context.Context, CertificateListResult) (CertificateListResult, error)) CertificateListResultPage {
+	return CertificateListResultPage{fn: getNextPage}
 }
 
 // CertificateReference ...
@@ -1242,20 +1379,37 @@ type CloudJobListPreparationAndReleaseTaskStatusResultIterator struct {
 	page CloudJobListPreparationAndReleaseTaskStatusResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *CloudJobListPreparationAndReleaseTaskStatusResultIterator) Next() error {
+func (iter *CloudJobListPreparationAndReleaseTaskStatusResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/CloudJobListPreparationAndReleaseTaskStatusResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *CloudJobListPreparationAndReleaseTaskStatusResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -1277,6 +1431,11 @@ func (iter CloudJobListPreparationAndReleaseTaskStatusResultIterator) Value() Jo
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the CloudJobListPreparationAndReleaseTaskStatusResultIterator type.
+func NewCloudJobListPreparationAndReleaseTaskStatusResultIterator(page CloudJobListPreparationAndReleaseTaskStatusResultPage) CloudJobListPreparationAndReleaseTaskStatusResultIterator {
+	return CloudJobListPreparationAndReleaseTaskStatusResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (cjlpartsr CloudJobListPreparationAndReleaseTaskStatusResult) IsEmpty() bool {
 	return cjlpartsr.Value == nil || len(*cjlpartsr.Value) == 0
@@ -1284,11 +1443,11 @@ func (cjlpartsr CloudJobListPreparationAndReleaseTaskStatusResult) IsEmpty() boo
 
 // cloudJobListPreparationAndReleaseTaskStatusResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (cjlpartsr CloudJobListPreparationAndReleaseTaskStatusResult) cloudJobListPreparationAndReleaseTaskStatusResultPreparer() (*http.Request, error) {
+func (cjlpartsr CloudJobListPreparationAndReleaseTaskStatusResult) cloudJobListPreparationAndReleaseTaskStatusResultPreparer(ctx context.Context) (*http.Request, error) {
 	if cjlpartsr.OdataNextLink == nil || len(to.String(cjlpartsr.OdataNextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(cjlpartsr.OdataNextLink)))
@@ -1297,19 +1456,36 @@ func (cjlpartsr CloudJobListPreparationAndReleaseTaskStatusResult) cloudJobListP
 // CloudJobListPreparationAndReleaseTaskStatusResultPage contains a page of
 // JobPreparationAndReleaseTaskExecutionInformation values.
 type CloudJobListPreparationAndReleaseTaskStatusResultPage struct {
-	fn        func(CloudJobListPreparationAndReleaseTaskStatusResult) (CloudJobListPreparationAndReleaseTaskStatusResult, error)
+	fn        func(context.Context, CloudJobListPreparationAndReleaseTaskStatusResult) (CloudJobListPreparationAndReleaseTaskStatusResult, error)
 	cjlpartsr CloudJobListPreparationAndReleaseTaskStatusResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *CloudJobListPreparationAndReleaseTaskStatusResultPage) Next() error {
-	next, err := page.fn(page.cjlpartsr)
+func (page *CloudJobListPreparationAndReleaseTaskStatusResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/CloudJobListPreparationAndReleaseTaskStatusResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.cjlpartsr)
 	if err != nil {
 		return err
 	}
 	page.cjlpartsr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *CloudJobListPreparationAndReleaseTaskStatusResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -1330,6 +1506,11 @@ func (page CloudJobListPreparationAndReleaseTaskStatusResultPage) Values() []Job
 	return *page.cjlpartsr.Value
 }
 
+// Creates a new instance of the CloudJobListPreparationAndReleaseTaskStatusResultPage type.
+func NewCloudJobListPreparationAndReleaseTaskStatusResultPage(getNextPage func(context.Context, CloudJobListPreparationAndReleaseTaskStatusResult) (CloudJobListPreparationAndReleaseTaskStatusResult, error)) CloudJobListPreparationAndReleaseTaskStatusResultPage {
+	return CloudJobListPreparationAndReleaseTaskStatusResultPage{fn: getNextPage}
+}
+
 // CloudJobListResult ...
 type CloudJobListResult struct {
 	autorest.Response `json:"-"`
@@ -1343,20 +1524,37 @@ type CloudJobListResultIterator struct {
 	page CloudJobListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *CloudJobListResultIterator) Next() error {
+func (iter *CloudJobListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/CloudJobListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *CloudJobListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -1378,6 +1576,11 @@ func (iter CloudJobListResultIterator) Value() CloudJob {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the CloudJobListResultIterator type.
+func NewCloudJobListResultIterator(page CloudJobListResultPage) CloudJobListResultIterator {
+	return CloudJobListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (cjlr CloudJobListResult) IsEmpty() bool {
 	return cjlr.Value == nil || len(*cjlr.Value) == 0
@@ -1385,11 +1588,11 @@ func (cjlr CloudJobListResult) IsEmpty() bool {
 
 // cloudJobListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (cjlr CloudJobListResult) cloudJobListResultPreparer() (*http.Request, error) {
+func (cjlr CloudJobListResult) cloudJobListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if cjlr.OdataNextLink == nil || len(to.String(cjlr.OdataNextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(cjlr.OdataNextLink)))
@@ -1397,19 +1600,36 @@ func (cjlr CloudJobListResult) cloudJobListResultPreparer() (*http.Request, erro
 
 // CloudJobListResultPage contains a page of CloudJob values.
 type CloudJobListResultPage struct {
-	fn   func(CloudJobListResult) (CloudJobListResult, error)
+	fn   func(context.Context, CloudJobListResult) (CloudJobListResult, error)
 	cjlr CloudJobListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *CloudJobListResultPage) Next() error {
-	next, err := page.fn(page.cjlr)
+func (page *CloudJobListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/CloudJobListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.cjlr)
 	if err != nil {
 		return err
 	}
 	page.cjlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *CloudJobListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -1428,6 +1648,11 @@ func (page CloudJobListResultPage) Values() []CloudJob {
 		return nil
 	}
 	return *page.cjlr.Value
+}
+
+// Creates a new instance of the CloudJobListResultPage type.
+func NewCloudJobListResultPage(getNextPage func(context.Context, CloudJobListResult) (CloudJobListResult, error)) CloudJobListResultPage {
+	return CloudJobListResultPage{fn: getNextPage}
 }
 
 // CloudJobSchedule ...
@@ -1469,20 +1694,37 @@ type CloudJobScheduleListResultIterator struct {
 	page CloudJobScheduleListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *CloudJobScheduleListResultIterator) Next() error {
+func (iter *CloudJobScheduleListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/CloudJobScheduleListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *CloudJobScheduleListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -1504,6 +1746,11 @@ func (iter CloudJobScheduleListResultIterator) Value() CloudJobSchedule {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the CloudJobScheduleListResultIterator type.
+func NewCloudJobScheduleListResultIterator(page CloudJobScheduleListResultPage) CloudJobScheduleListResultIterator {
+	return CloudJobScheduleListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (cjslr CloudJobScheduleListResult) IsEmpty() bool {
 	return cjslr.Value == nil || len(*cjslr.Value) == 0
@@ -1511,11 +1758,11 @@ func (cjslr CloudJobScheduleListResult) IsEmpty() bool {
 
 // cloudJobScheduleListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (cjslr CloudJobScheduleListResult) cloudJobScheduleListResultPreparer() (*http.Request, error) {
+func (cjslr CloudJobScheduleListResult) cloudJobScheduleListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if cjslr.OdataNextLink == nil || len(to.String(cjslr.OdataNextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(cjslr.OdataNextLink)))
@@ -1523,19 +1770,36 @@ func (cjslr CloudJobScheduleListResult) cloudJobScheduleListResultPreparer() (*h
 
 // CloudJobScheduleListResultPage contains a page of CloudJobSchedule values.
 type CloudJobScheduleListResultPage struct {
-	fn    func(CloudJobScheduleListResult) (CloudJobScheduleListResult, error)
+	fn    func(context.Context, CloudJobScheduleListResult) (CloudJobScheduleListResult, error)
 	cjslr CloudJobScheduleListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *CloudJobScheduleListResultPage) Next() error {
-	next, err := page.fn(page.cjslr)
+func (page *CloudJobScheduleListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/CloudJobScheduleListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.cjslr)
 	if err != nil {
 		return err
 	}
 	page.cjslr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *CloudJobScheduleListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -1554,6 +1818,11 @@ func (page CloudJobScheduleListResultPage) Values() []CloudJobSchedule {
 		return nil
 	}
 	return *page.cjslr.Value
+}
+
+// Creates a new instance of the CloudJobScheduleListResultPage type.
+func NewCloudJobScheduleListResultPage(getNextPage func(context.Context, CloudJobScheduleListResult) (CloudJobScheduleListResult, error)) CloudJobScheduleListResultPage {
+	return CloudJobScheduleListResultPage{fn: getNextPage}
 }
 
 // CloudPool ...
@@ -1575,7 +1844,7 @@ type CloudPool struct {
 	// AllocationState - Possible values include: 'Steady', 'Resizing', 'Stopping'
 	AllocationState               AllocationState `json:"allocationState,omitempty"`
 	AllocationStateTransitionTime *date.Time      `json:"allocationStateTransitionTime,omitempty"`
-	// VMSize - For information about available sizes of virtual machines for Cloud Services pools (pools created with cloudServiceConfiguration), see Sizes for Cloud Services (http://azure.microsoft.com/documentation/articles/cloud-services-sizes-specs/). Batch supports all Cloud Services VM sizes except ExtraSmall, A1V2 and A2V2. For information about available VM sizes for pools using images from the Virtual Machines Marketplace (pools created with virtualMachineConfiguration) see Sizes for Virtual Machines (Linux) (https://azure.microsoft.com/documentation/articles/virtual-machines-linux-sizes/) or Sizes for Virtual Machines (Windows) (https://azure.microsoft.com/documentation/articles/virtual-machines-windows-sizes/). Batch supports all Azure VM sizes except STANDARD_A0 and those with premium storage (STANDARD_GS, STANDARD_DS, and STANDARD_DSV2 series).
+	// VMSize - For information about available sizes of virtual machines for Cloud Services pools (pools created with cloudServiceConfiguration), see Sizes for Cloud Services (https://azure.microsoft.com/documentation/articles/cloud-services-sizes-specs/). Batch supports all Cloud Services VM sizes except ExtraSmall, A1V2 and A2V2. For information about available VM sizes for pools using images from the Virtual Machines Marketplace (pools created with virtualMachineConfiguration) see Sizes for Virtual Machines (Linux) (https://azure.microsoft.com/documentation/articles/virtual-machines-linux-sizes/) or Sizes for Virtual Machines (Windows) (https://azure.microsoft.com/documentation/articles/virtual-machines-windows-sizes/). Batch supports all Azure VM sizes except STANDARD_A0 and those with premium storage (STANDARD_GS, STANDARD_DS, and STANDARD_DSV2 series).
 	VMSize *string `json:"vmSize,omitempty"`
 	// CloudServiceConfiguration - This property and virtualMachineConfiguration are mutually exclusive and one of the properties must be specified. This property cannot be specified if the Batch account was created with its poolAllocationMode property set to 'UserSubscription'.
 	CloudServiceConfiguration *CloudServiceConfiguration `json:"cloudServiceConfiguration,omitempty"`
@@ -1627,20 +1896,37 @@ type CloudPoolListResultIterator struct {
 	page CloudPoolListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *CloudPoolListResultIterator) Next() error {
+func (iter *CloudPoolListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/CloudPoolListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *CloudPoolListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -1662,6 +1948,11 @@ func (iter CloudPoolListResultIterator) Value() CloudPool {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the CloudPoolListResultIterator type.
+func NewCloudPoolListResultIterator(page CloudPoolListResultPage) CloudPoolListResultIterator {
+	return CloudPoolListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (cplr CloudPoolListResult) IsEmpty() bool {
 	return cplr.Value == nil || len(*cplr.Value) == 0
@@ -1669,11 +1960,11 @@ func (cplr CloudPoolListResult) IsEmpty() bool {
 
 // cloudPoolListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (cplr CloudPoolListResult) cloudPoolListResultPreparer() (*http.Request, error) {
+func (cplr CloudPoolListResult) cloudPoolListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if cplr.OdataNextLink == nil || len(to.String(cplr.OdataNextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(cplr.OdataNextLink)))
@@ -1681,19 +1972,36 @@ func (cplr CloudPoolListResult) cloudPoolListResultPreparer() (*http.Request, er
 
 // CloudPoolListResultPage contains a page of CloudPool values.
 type CloudPoolListResultPage struct {
-	fn   func(CloudPoolListResult) (CloudPoolListResult, error)
+	fn   func(context.Context, CloudPoolListResult) (CloudPoolListResult, error)
 	cplr CloudPoolListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *CloudPoolListResultPage) Next() error {
-	next, err := page.fn(page.cplr)
+func (page *CloudPoolListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/CloudPoolListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.cplr)
 	if err != nil {
 		return err
 	}
 	page.cplr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *CloudPoolListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -1714,17 +2022,28 @@ func (page CloudPoolListResultPage) Values() []CloudPool {
 	return *page.cplr.Value
 }
 
+// Creates a new instance of the CloudPoolListResultPage type.
+func NewCloudPoolListResultPage(getNextPage func(context.Context, CloudPoolListResult) (CloudPoolListResult, error)) CloudPoolListResultPage {
+	return CloudPoolListResultPage{fn: getNextPage}
+}
+
 // CloudServiceConfiguration ...
 type CloudServiceConfiguration struct {
 	// OsFamily - Possible values are: 2 - OS Family 2, equivalent to Windows Server 2008 R2 SP1. 3 - OS Family 3, equivalent to Windows Server 2012. 4 - OS Family 4, equivalent to Windows Server 2012 R2. 5 - OS Family 5, equivalent to Windows Server 2016. For more information, see Azure Guest OS Releases (https://azure.microsoft.com/documentation/articles/cloud-services-guestos-update-matrix/#releases).
 	OsFamily *string `json:"osFamily,omitempty"`
 	// TargetOSVersion - The default value is * which specifies the latest operating system version for the specified OS family.
 	TargetOSVersion *string `json:"targetOSVersion,omitempty"`
-	// CurrentOSVersion - This may differ from targetOSVersion if the pool state is Upgrading. In this case some virtual machines may be on the targetOSVersion and some may be on the currentOSVersion during the upgrade process. Once all virtual machines have upgraded, currentOSVersion is updated to be the same as targetOSVersion.
+	// CurrentOSVersion - READ-ONLY; This may differ from targetOSVersion if the pool state is Upgrading. In this case some virtual machines may be on the targetOSVersion and some may be on the currentOSVersion during the upgrade process. Once all virtual machines have upgraded, currentOSVersion is updated to be the same as targetOSVersion.
 	CurrentOSVersion *string `json:"currentOSVersion,omitempty"`
 }
 
-// CloudTask ...
+// CloudTask batch will retry tasks when a recovery operation is triggered on a compute node. Examples of
+// recovery operations include (but are not limited to) when an unhealthy compute node is rebooted or a
+// compute node disappeared due to host failure. Retries due to recovery operations are independent of and
+// are not counted against the maxTaskRetryCount. Even if the maxTaskRetryCount is 0, an internal retry due
+// to a recovery operation may occur. Because of this, all tasks should be idempotent. This means tasks
+// need to tolerate being interrupted and restarted without causing any corruption or duplicate data. The
+// best practice for long running tasks is to use some form of checkpointing.
 type CloudTask struct {
 	autorest.Response `json:"-"`
 	// ID - The ID can contain any combination of alphanumeric characters including hyphens and underscores, and cannot contain more than 64 characters.
@@ -1745,11 +2064,11 @@ type CloudTask struct {
 	PreviousState TaskState `json:"previousState,omitempty"`
 	// PreviousStateTransitionTime - This property is not set if the task is in its initial Active state.
 	PreviousStateTransitionTime *date.Time `json:"previousStateTransitionTime,omitempty"`
-	// CommandLine - For multi-instance tasks, the command line is executed as the primary task, after the primary task and all subtasks have finished executing the coordination command line. The command line does not run under a shell, and therefore cannot take advantage of shell features such as environment variable expansion. If you want to take advantage of such features, you should invoke the shell in the command line, for example using "cmd /c MyCommand" in Windows or "/bin/sh -c MyCommand" in Linux.
+	// CommandLine - For multi-instance tasks, the command line is executed as the primary task, after the primary task and all subtasks have finished executing the coordination command line. The command line does not run under a shell, and therefore cannot take advantage of shell features such as environment variable expansion. If you want to take advantage of such features, you should invoke the shell in the command line, for example using "cmd /c MyCommand" in Windows or "/bin/sh -c MyCommand" in Linux. If the command line refers to file paths, it should use a relative path (relative to the task working directory), or use the Batch provided environment variable (https://docs.microsoft.com/en-us/azure/batch/batch-compute-node-environment-variables).
 	CommandLine *string `json:"commandLine,omitempty"`
 	// ContainerSettings - If the pool that will run this task has containerConfiguration set, this must be set as well. If the pool that will run this task doesn't have containerConfiguration set, this must not be set. When this is specified, all directories recursively below the AZ_BATCH_NODE_ROOT_DIR (the root of Azure Batch directories on the node) are mapped into the container, all task environment variables are mapped into the container, and the task command line is executed in the container.
 	ContainerSettings *TaskContainerSettings `json:"containerSettings,omitempty"`
-	// ResourceFiles - For multi-instance tasks, the resource files will only be downloaded to the compute node on which the primary task is executed.
+	// ResourceFiles - For multi-instance tasks, the resource files will only be downloaded to the compute node on which the primary task is executed. There is a maximum size for the list of resource files.  When the max size is exceeded, the request will fail and the response error code will be RequestEntityTooLarge. If this occurs, the collection of ResourceFiles must be reduced in size. This can be achieved using .zip files, Application Packages, or Docker Containers.
 	ResourceFiles *[]ResourceFile `json:"resourceFiles,omitempty"`
 	// OutputFiles - For multi-instance tasks, the files will only be uploaded from the compute node on which the primary task is executed.
 	OutputFiles         *[]OutputFile         `json:"outputFiles,omitempty"`
@@ -1783,20 +2102,37 @@ type CloudTaskListResultIterator struct {
 	page CloudTaskListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *CloudTaskListResultIterator) Next() error {
+func (iter *CloudTaskListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/CloudTaskListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *CloudTaskListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -1818,6 +2154,11 @@ func (iter CloudTaskListResultIterator) Value() CloudTask {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the CloudTaskListResultIterator type.
+func NewCloudTaskListResultIterator(page CloudTaskListResultPage) CloudTaskListResultIterator {
+	return CloudTaskListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (ctlr CloudTaskListResult) IsEmpty() bool {
 	return ctlr.Value == nil || len(*ctlr.Value) == 0
@@ -1825,11 +2166,11 @@ func (ctlr CloudTaskListResult) IsEmpty() bool {
 
 // cloudTaskListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (ctlr CloudTaskListResult) cloudTaskListResultPreparer() (*http.Request, error) {
+func (ctlr CloudTaskListResult) cloudTaskListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if ctlr.OdataNextLink == nil || len(to.String(ctlr.OdataNextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(ctlr.OdataNextLink)))
@@ -1837,19 +2178,36 @@ func (ctlr CloudTaskListResult) cloudTaskListResultPreparer() (*http.Request, er
 
 // CloudTaskListResultPage contains a page of CloudTask values.
 type CloudTaskListResultPage struct {
-	fn   func(CloudTaskListResult) (CloudTaskListResult, error)
+	fn   func(context.Context, CloudTaskListResult) (CloudTaskListResult, error)
 	ctlr CloudTaskListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *CloudTaskListResultPage) Next() error {
-	next, err := page.fn(page.ctlr)
+func (page *CloudTaskListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/CloudTaskListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.ctlr)
 	if err != nil {
 		return err
 	}
 	page.ctlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *CloudTaskListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -1870,6 +2228,11 @@ func (page CloudTaskListResultPage) Values() []CloudTask {
 	return *page.ctlr.Value
 }
 
+// Creates a new instance of the CloudTaskListResultPage type.
+func NewCloudTaskListResultPage(getNextPage func(context.Context, CloudTaskListResult) (CloudTaskListResult, error)) CloudTaskListResultPage {
+	return CloudTaskListResultPage{fn: getNextPage}
+}
+
 // CloudTaskListSubtasksResult ...
 type CloudTaskListSubtasksResult struct {
 	autorest.Response `json:"-"`
@@ -1882,7 +2245,7 @@ type ComputeNode struct {
 	// ID - Every node that is added to a pool is assigned a unique ID. Whenever a node is removed from a pool, all of its local files are deleted, and the ID is reclaimed and could be reused for new nodes.
 	ID  *string `json:"id,omitempty"`
 	URL *string `json:"url,omitempty"`
-	// State - The low-priority node has been preempted. Tasks which were running on the node when it was pre-empted will be rescheduled when another node becomes available. Possible values include: 'Idle', 'Rebooting', 'Reimaging', 'Running', 'Unusable', 'Creating', 'Starting', 'WaitingForStartTask', 'StartTaskFailed', 'Unknown', 'LeavingPool', 'Offline', 'Preempted'
+	// State - The low-priority node has been preempted. Tasks which were running on the node when it was preempted will be rescheduled when another node becomes available. Possible values include: 'Idle', 'Rebooting', 'Reimaging', 'Running', 'Unusable', 'Creating', 'Starting', 'WaitingForStartTask', 'StartTaskFailed', 'Unknown', 'LeavingPool', 'Offline', 'Preempted'
 	State ComputeNodeState `json:"state,omitempty"`
 	// SchedulingState - Possible values include: 'Enabled', 'Disabled'
 	SchedulingState     SchedulingState `json:"schedulingState,omitempty"`
@@ -1894,7 +2257,7 @@ type ComputeNode struct {
 	IPAddress *string `json:"ipAddress,omitempty"`
 	// AffinityID - Note that this is just a soft affinity. If the target node is busy or unavailable at the time the task is scheduled, then the task will be scheduled elsewhere.
 	AffinityID *string `json:"affinityId,omitempty"`
-	// VMSize - For information about available sizes of virtual machines for Cloud Services pools (pools created with cloudServiceConfiguration), see Sizes for Cloud Services (http://azure.microsoft.com/documentation/articles/cloud-services-sizes-specs/). Batch supports all Cloud Services VM sizes except ExtraSmall, A1V2 and A2V2. For information about available VM sizes for pools using images from the Virtual Machines Marketplace (pools created with virtualMachineConfiguration) see Sizes for Virtual Machines (Linux) (https://azure.microsoft.com/documentation/articles/virtual-machines-linux-sizes/) or Sizes for Virtual Machines (Windows) (https://azure.microsoft.com/documentation/articles/virtual-machines-windows-sizes/). Batch supports all Azure VM sizes except STANDARD_A0 and those with premium storage (STANDARD_GS, STANDARD_DS, and STANDARD_DSV2 series).
+	// VMSize - For information about available sizes of virtual machines for Cloud Services pools (pools created with cloudServiceConfiguration), see Sizes for Cloud Services (https://azure.microsoft.com/documentation/articles/cloud-services-sizes-specs/). Batch supports all Cloud Services VM sizes except ExtraSmall, A1V2 and A2V2. For information about available VM sizes for pools using images from the Virtual Machines Marketplace (pools created with virtualMachineConfiguration) see Sizes for Virtual Machines (Linux) (https://azure.microsoft.com/documentation/articles/virtual-machines-linux-sizes/) or Sizes for Virtual Machines (Windows) (https://azure.microsoft.com/documentation/articles/virtual-machines-windows-sizes/). Batch supports all Azure VM sizes except STANDARD_A0 and those with premium storage (STANDARD_GS, STANDARD_DS, and STANDARD_DSV2 series).
 	VMSize              *string `json:"vmSize,omitempty"`
 	TotalTasksRun       *int32  `json:"totalTasksRun,omitempty"`
 	RunningTasksCount   *int32  `json:"runningTasksCount,omitempty"`
@@ -1952,20 +2315,37 @@ type ComputeNodeListResultIterator struct {
 	page ComputeNodeListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *ComputeNodeListResultIterator) Next() error {
+func (iter *ComputeNodeListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ComputeNodeListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *ComputeNodeListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -1987,6 +2367,11 @@ func (iter ComputeNodeListResultIterator) Value() ComputeNode {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the ComputeNodeListResultIterator type.
+func NewComputeNodeListResultIterator(page ComputeNodeListResultPage) ComputeNodeListResultIterator {
+	return ComputeNodeListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (cnlr ComputeNodeListResult) IsEmpty() bool {
 	return cnlr.Value == nil || len(*cnlr.Value) == 0
@@ -1994,11 +2379,11 @@ func (cnlr ComputeNodeListResult) IsEmpty() bool {
 
 // computeNodeListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (cnlr ComputeNodeListResult) computeNodeListResultPreparer() (*http.Request, error) {
+func (cnlr ComputeNodeListResult) computeNodeListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if cnlr.OdataNextLink == nil || len(to.String(cnlr.OdataNextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(cnlr.OdataNextLink)))
@@ -2006,19 +2391,36 @@ func (cnlr ComputeNodeListResult) computeNodeListResultPreparer() (*http.Request
 
 // ComputeNodeListResultPage contains a page of ComputeNode values.
 type ComputeNodeListResultPage struct {
-	fn   func(ComputeNodeListResult) (ComputeNodeListResult, error)
+	fn   func(context.Context, ComputeNodeListResult) (ComputeNodeListResult, error)
 	cnlr ComputeNodeListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *ComputeNodeListResultPage) Next() error {
-	next, err := page.fn(page.cnlr)
+func (page *ComputeNodeListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ComputeNodeListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.cnlr)
 	if err != nil {
 		return err
 	}
 	page.cnlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *ComputeNodeListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -2037,6 +2439,11 @@ func (page ComputeNodeListResultPage) Values() []ComputeNode {
 		return nil
 	}
 	return *page.cnlr.Value
+}
+
+// Creates a new instance of the ComputeNodeListResultPage type.
+func NewComputeNodeListResultPage(getNextPage func(context.Context, ComputeNodeListResult) (ComputeNodeListResult, error)) ComputeNodeListResultPage {
+	return ComputeNodeListResultPage{fn: getNextPage}
 }
 
 // ComputeNodeUser ...
@@ -2133,13 +2540,13 @@ type ExitConditions struct {
 	PreProcessingError *ExitOptions            `json:"preProcessingError,omitempty"`
 	// FileUploadError - If the task exited with an exit code that was specified via exitCodes or exitCodeRanges, and then encountered a file upload error, then the action specified by the exit code takes precedence.
 	FileUploadError *ExitOptions `json:"fileUploadError,omitempty"`
-	// Default - This value is used if the task exits with any nonzero exit code not listed in the exitCodes or exitCodeRanges collection, with a pre-processing error if the preProcessingError property is not present, or with a file upload error if the fileUploadError property is not present. If you want non-default behaviour on exit code 0, you must list it explicitly using the exitCodes or exitCodeRanges collection.
+	// Default - This value is used if the task exits with any nonzero exit code not listed in the exitCodes or exitCodeRanges collection, with a pre-processing error if the preProcessingError property is not present, or with a file upload error if the fileUploadError property is not present. If you want non-default behavior on exit code 0, you must list it explicitly using the exitCodes or exitCodeRanges collection.
 	Default *ExitOptions `json:"default,omitempty"`
 }
 
 // ExitOptions ...
 type ExitOptions struct {
-	// JobAction - The default is none for exit code 0 and terminate for all other exit conditions. If the job's onTaskFailed property is noaction, then specifying this property returns an error and the add task request fails with an invalid property value error; if you are calling the REST API directly, the HTTP status code is 400 (Bad Request). Possible values include: 'JobActionNone', 'JobActionDisable', 'JobActionTerminate'
+	// JobAction - The default is none for exit code 0 and terminate for all other exit conditions. If the job's onTaskFailed property is noAction, then specifying this property returns an error and the add task request fails with an invalid property value error; if you are calling the REST API directly, the HTTP status code is 400 (Bad Request). Possible values include: 'JobActionNone', 'JobActionDisable', 'JobActionTerminate'
 	JobAction JobAction `json:"jobAction,omitempty"`
 	// DependencyAction - The default is 'satisfy' for exit code 0, and 'block' for all other exit conditions. If the job's usesTaskDependencies property is set to false, then specifying the dependencyAction property returns an error and the add task request fails with an invalid property value error; if you are calling the REST API directly, the HTTP status code is 400  (Bad Request). Possible values include: 'Satisfy', 'Block'
 	DependencyAction DependencyAction `json:"dependencyAction,omitempty"`
@@ -2253,25 +2660,33 @@ type JobExecutionInformation struct {
 	TerminateReason *string `json:"terminateReason,omitempty"`
 }
 
-// JobManagerTask the Job Manager task is automatically started when the job is created. The Batch service tries to
-// schedule the Job Manager task before any other tasks in the job. When shrinking a pool, the Batch service tries
-// to preserve compute nodes where Job Manager tasks are running for as long as possible (that is, nodes running
-// 'normal' tasks are removed before nodes running Job Manager tasks). When a Job Manager task fails and needs to
-// be restarted, the system tries to schedule it at the highest priority. If there are no idle nodes available, the
-// system may terminate one of the running tasks in the pool and return it to the queue in order to make room for
-// the Job Manager task to restart. Note that a Job Manager task in one job does not have priority over tasks in
-// other jobs. Across jobs, only job level priorities are observed. For example, if a Job Manager in a priority 0
-// job needs to be restarted, it will not displace tasks of a priority 1 job.
+// JobManagerTask the Job Manager task is automatically started when the job is created. The Batch service
+// tries to schedule the Job Manager task before any other tasks in the job. When shrinking a pool, the
+// Batch service tries to preserve compute nodes where Job Manager tasks are running for as long as
+// possible (that is, nodes running 'normal' tasks are removed before nodes running Job Manager tasks).
+// When a Job Manager task fails and needs to be restarted, the system tries to schedule it at the highest
+// priority. If there are no idle nodes available, the system may terminate one of the running tasks in the
+// pool and return it to the queue in order to make room for the Job Manager task to restart. Note that a
+// Job Manager task in one job does not have priority over tasks in other jobs. Across jobs, only job level
+// priorities are observed. For example, if a Job Manager in a priority 0 job needs to be restarted, it
+// will not displace tasks of a priority 1 job. Batch will retry tasks when a recovery operation is
+// triggered on a compute node. Examples of recovery operations include (but are not limited to) when an
+// unhealthy compute node is rebooted or a compute node disappeared due to host failure. Retries due to
+// recovery operations are independent of and are not counted against the maxTaskRetryCount. Even if the
+// maxTaskRetryCount is 0, an internal retry due to a recovery operation may occur. Because of this, all
+// tasks should be idempotent. This means tasks need to tolerate being interrupted and restarted without
+// causing any corruption or duplicate data. The best practice for long running tasks is to use some form
+// of checkpointing.
 type JobManagerTask struct {
 	// ID - The ID can contain any combination of alphanumeric characters including hyphens and underscores and cannot contain more than 64 characters.
 	ID *string `json:"id,omitempty"`
 	// DisplayName - It need not be unique and can contain any Unicode characters up to a maximum length of 1024.
 	DisplayName *string `json:"displayName,omitempty"`
-	// CommandLine - The command line does not run under a shell, and therefore cannot take advantage of shell features such as environment variable expansion. If you want to take advantage of such features, you should invoke the shell in the command line, for example using "cmd /c MyCommand" in Windows or "/bin/sh -c MyCommand" in Linux.
+	// CommandLine - The command line does not run under a shell, and therefore cannot take advantage of shell features such as environment variable expansion. If you want to take advantage of such features, you should invoke the shell in the command line, for example using "cmd /c MyCommand" in Windows or "/bin/sh -c MyCommand" in Linux. If the command line refers to file paths, it should use a relative path (relative to the task working directory), or use the Batch provided environment variable (https://docs.microsoft.com/en-us/azure/batch/batch-compute-node-environment-variables).
 	CommandLine *string `json:"commandLine,omitempty"`
 	// ContainerSettings - If the pool that will run this task has containerConfiguration set, this must be set as well. If the pool that will run this task doesn't have containerConfiguration set, this must not be set. When this is specified, all directories recursively below the AZ_BATCH_NODE_ROOT_DIR (the root of Azure Batch directories on the node) are mapped into the container, all task environment variables are mapped into the container, and the task command line is executed in the container.
 	ContainerSettings *TaskContainerSettings `json:"containerSettings,omitempty"`
-	// ResourceFiles - Files listed under this element are located in the task's working directory.
+	// ResourceFiles - Files listed under this element are located in the task's working directory. There is a maximum size for the list of resource files.  When the max size is exceeded, the request will fail and the response error code will be RequestEntityTooLarge. If this occurs, the collection of ResourceFiles must be reduced in size. This can be achieved using .zip files, Application Packages, or Docker Containers.
 	ResourceFiles *[]ResourceFile `json:"resourceFiles,omitempty"`
 	// OutputFiles - For multi-instance tasks, the files will only be uploaded from the compute node on which the primary task is executed.
 	OutputFiles         *[]OutputFile         `json:"outputFiles,omitempty"`
@@ -2287,7 +2702,7 @@ type JobManagerTask struct {
 	ApplicationPackageReferences *[]ApplicationPackageReference `json:"applicationPackageReferences,omitempty"`
 	// AuthenticationTokenSettings - If this property is set, the Batch service provides the task with an authentication token which can be used to authenticate Batch service operations without requiring an account access key. The token is provided via the AZ_BATCH_AUTHENTICATION_TOKEN environment variable. The operations that the task can carry out using the token depend on the settings. For example, a task can request job permissions in order to add other tasks to the job, or check the status of the job or of other tasks under the job.
 	AuthenticationTokenSettings *AuthenticationTokenSettings `json:"authenticationTokenSettings,omitempty"`
-	// AllowLowPriorityNode - The default value is false.
+	// AllowLowPriorityNode - The default value is true.
 	AllowLowPriorityNode *bool `json:"allowLowPriorityNode,omitempty"`
 }
 
@@ -2315,32 +2730,40 @@ type JobPreparationAndReleaseTaskExecutionInformation struct {
 	JobReleaseTaskExecutionInfo *JobReleaseTaskExecutionInformation `json:"jobReleaseTaskExecutionInfo,omitempty"`
 }
 
-// JobPreparationTask you can use Job Preparation to prepare a compute node to run tasks for the job. Activities
-// commonly performed in Job Preparation include: Downloading common resource files used by all the tasks in the
-// job. The Job Preparation task can download these common resource files to the shared location on the compute
-// node. (AZ_BATCH_NODE_ROOT_DIR\shared), or starting a local service on the compute node so that all tasks of that
-// job can communicate with it. If the Job Preparation task fails (that is, exhausts its retry count before exiting
-// with exit code 0), Batch will not run tasks of this job on the compute node. The node remains ineligible to run
-// tasks of this job until it is reimaged. The node remains active and can be used for other jobs. The Job
-// Preparation task can run multiple times on the same compute node. Therefore, you should write the Job
-// Preparation task to handle re-execution. If the compute node is rebooted, the Job Preparation task is run again
-// on the node before scheduling any other task of the job, if rerunOnNodeRebootAfterSuccess is true or if the Job
-// Preparation task did not previously complete. If the compute node is reimaged, the Job Preparation task is run
-// again before scheduling any task of the job.
+// JobPreparationTask you can use Job Preparation to prepare a compute node to run tasks for the job.
+// Activities commonly performed in Job Preparation include: Downloading common resource files used by all
+// the tasks in the job. The Job Preparation task can download these common resource files to the shared
+// location on the compute node. (AZ_BATCH_NODE_ROOT_DIR\shared), or starting a local service on the
+// compute node so that all tasks of that job can communicate with it. If the Job Preparation task fails
+// (that is, exhausts its retry count before exiting with exit code 0), Batch will not run tasks of this
+// job on the compute node. The node remains ineligible to run tasks of this job until it is reimaged. The
+// node remains active and can be used for other jobs. The Job Preparation task can run multiple times on
+// the same compute node. Therefore, you should write the Job Preparation task to handle re-execution. If
+// the compute node is rebooted, the Job Preparation task is run again on the node before scheduling any
+// other task of the job, if rerunOnNodeRebootAfterSuccess is true or if the Job Preparation task did not
+// previously complete. If the compute node is reimaged, the Job Preparation task is run again before
+// scheduling any task of the job. Batch will retry tasks when a recovery operation is triggered on a
+// compute node. Examples of recovery operations include (but are not limited to) when an unhealthy compute
+// node is rebooted or a compute node disappeared due to host failure. Retries due to recovery operations
+// are independent of and are not counted against the maxTaskRetryCount. Even if the maxTaskRetryCount is
+// 0, an internal retry due to a recovery operation may occur. Because of this, all tasks should be
+// idempotent. This means tasks need to tolerate being interrupted and restarted without causing any
+// corruption or duplicate data. The best practice for long running tasks is to use some form of
+// checkpointing.
 type JobPreparationTask struct {
 	// ID - The ID can contain any combination of alphanumeric characters including hyphens and underscores and cannot contain more than 64 characters. If you do not specify this property, the Batch service assigns a default value of 'jobpreparation'. No other task in the job can have the same ID as the Job Preparation task. If you try to submit a task with the same id, the Batch service rejects the request with error code TaskIdSameAsJobPreparationTask; if you are calling the REST API directly, the HTTP status code is 409 (Conflict).
 	ID *string `json:"id,omitempty"`
-	// CommandLine - The command line does not run under a shell, and therefore cannot take advantage of shell features such as environment variable expansion. If you want to take advantage of such features, you should invoke the shell in the command line, for example using "cmd /c MyCommand" in Windows or "/bin/sh -c MyCommand" in Linux.
+	// CommandLine - The command line does not run under a shell, and therefore cannot take advantage of shell features such as environment variable expansion. If you want to take advantage of such features, you should invoke the shell in the command line, for example using "cmd /c MyCommand" in Windows or "/bin/sh -c MyCommand" in Linux. If the command line refers to file paths, it should use a relative path (relative to the task working directory), or use the Batch provided environment variable (https://docs.microsoft.com/en-us/azure/batch/batch-compute-node-environment-variables).
 	CommandLine *string `json:"commandLine,omitempty"`
 	// ContainerSettings - When this is specified, all directories recursively below the AZ_BATCH_NODE_ROOT_DIR (the root of Azure Batch directories on the node) are mapped into the container, all task environment variables are mapped into the container, and the task command line is executed in the container.
 	ContainerSettings *TaskContainerSettings `json:"containerSettings,omitempty"`
-	// ResourceFiles - Files listed under this element are located in the task's working directory.
+	// ResourceFiles - Files listed under this element are located in the task's working directory.  There is a maximum size for the list of resource files.  When the max size is exceeded, the request will fail and the response error code will be RequestEntityTooLarge. If this occurs, the collection of ResourceFiles must be reduced in size. This can be achieved using .zip files, Application Packages, or Docker Containers.
 	ResourceFiles       *[]ResourceFile       `json:"resourceFiles,omitempty"`
 	EnvironmentSettings *[]EnvironmentSetting `json:"environmentSettings,omitempty"`
 	Constraints         *TaskConstraints      `json:"constraints,omitempty"`
 	// WaitForSuccess - If true and the Job Preparation task fails on a compute node, the Batch service retries the Job Preparation task up to its maximum retry count (as specified in the constraints element). If the task has still not completed successfully after all retries, then the Batch service will not schedule tasks of the job to the compute node. The compute node remains active and eligible to run tasks of other jobs. If false, the Batch service will not wait for the Job Preparation task to complete. In this case, other tasks of the job can start executing on the compute node while the Job Preparation task is still running; and even if the Job Preparation task fails, new tasks will continue to be scheduled on the node. The default value is true.
 	WaitForSuccess *bool `json:"waitForSuccess,omitempty"`
-	// UserIdentity - If omitted, the task runs as a non-administrative user unique to the task on Windows nodes, or a a non-administrative user unique to the pool on Linux nodes.
+	// UserIdentity - If omitted, the task runs as a non-administrative user unique to the task on Windows nodes, or a non-administrative user unique to the pool on Linux nodes.
 	UserIdentity *UserIdentity `json:"userIdentity,omitempty"`
 	// RerunOnNodeRebootAfterSuccess - The Job Preparation task is always rerun if a compute node is reimaged, or if the Job Preparation task did not complete (e.g. because the reboot occurred while the task was running). Therefore, you should always write a Job Preparation task to be idempotent and to behave correctly if run multiple times. The default value is true.
 	RerunOnNodeRebootAfterSuccess *bool `json:"rerunOnNodeRebootAfterSuccess,omitempty"`
@@ -2370,21 +2793,22 @@ type JobPreparationTaskExecutionInformation struct {
 	Result TaskExecutionResult `json:"result,omitempty"`
 }
 
-// JobReleaseTask the Job Release task runs when the job ends, because of one of the following: The user calls the
-// Terminate Job API, or the Delete Job API while the job is still active, the job's maximum wall clock time
-// constraint is reached, and the job is still active, or the job's Job Manager task completed, and the job is
-// configured to terminate when the Job Manager completes. The Job Release task runs on each compute node where
-// tasks of the job have run and the Job Preparation task ran and completed. If you reimage a compute node after it
-// has run the Job Preparation task, and the job ends without any further tasks of the job running on that compute
-// node (and hence the Job Preparation task does not re-run), then the Job Release task does not run on that node.
-// If a compute node reboots while the Job Release task is still running, the Job Release task runs again when the
-// compute node starts up. The job is not marked as complete until all Job Release tasks have completed. The Job
-// Release task runs in the background. It does not occupy a scheduling slot; that is, it does not count towards
-// the maxTasksPerNode limit specified on the pool.
+// JobReleaseTask the Job Release task runs when the job ends, because of one of the following: The user
+// calls the Terminate Job API, or the Delete Job API while the job is still active, the job's maximum wall
+// clock time constraint is reached, and the job is still active, or the job's Job Manager task completed,
+// and the job is configured to terminate when the Job Manager completes. The Job Release task runs on each
+// compute node where tasks of the job have run and the Job Preparation task ran and completed. If you
+// reimage a compute node after it has run the Job Preparation task, and the job ends without any further
+// tasks of the job running on that compute node (and hence the Job Preparation task does not re-run), then
+// the Job Release task does not run on that node. If a compute node reboots while the Job Release task is
+// still running, the Job Release task runs again when the compute node starts up. The job is not marked as
+// complete until all Job Release tasks have completed. The Job Release task runs in the background. It
+// does not occupy a scheduling slot; that is, it does not count towards the maxTasksPerNode limit
+// specified on the pool.
 type JobReleaseTask struct {
 	// ID - The ID can contain any combination of alphanumeric characters including hyphens and underscores and cannot contain more than 64 characters. If you do not specify this property, the Batch service assigns a default value of 'jobrelease'. No other task in the job can have the same ID as the Job Release task. If you try to submit a task with the same id, the Batch service rejects the request with error code TaskIdSameAsJobReleaseTask; if you are calling the REST API directly, the HTTP status code is 409 (Conflict).
 	ID *string `json:"id,omitempty"`
-	// CommandLine - The command line does not run under a shell, and therefore cannot take advantage of shell features such as environment variable expansion. If you want to take advantage of such features, you should invoke the shell in the command line, for example using "cmd /c MyCommand" in Windows or "/bin/sh -c MyCommand" in Linux.
+	// CommandLine - The command line does not run under a shell, and therefore cannot take advantage of shell features such as environment variable expansion. If you want to take advantage of such features, you should invoke the shell in the command line, for example using "cmd /c MyCommand" in Windows or "/bin/sh -c MyCommand" in Linux. If the command line refers to file paths, it should use a relative path (relative to the task working directory), or use the Batch provided environment variable (https://docs.microsoft.com/en-us/azure/batch/batch-compute-node-environment-variables).
 	CommandLine *string `json:"commandLine,omitempty"`
 	// ContainerSettings - When this is specified, all directories recursively below the AZ_BATCH_NODE_ROOT_DIR (the root of Azure Batch directories on the node) are mapped into the container, all task environment variables are mapped into the container, and the task command line is executed in the container.
 	ContainerSettings *TaskContainerSettings `json:"containerSettings,omitempty"`
@@ -2566,8 +2990,8 @@ type LinuxUserConfiguration struct {
 	SSHPrivateKey *string `json:"sshPrivateKey,omitempty"`
 }
 
-// MetadataItem the Batch service does not assign any meaning to this metadata; it is solely for the use of user
-// code.
+// MetadataItem the Batch service does not assign any meaning to this metadata; it is solely for the use of
+// user code.
 type MetadataItem struct {
 	Name  *string `json:"name,omitempty"`
 	Value *string `json:"value,omitempty"`
@@ -2579,7 +3003,7 @@ type MultiInstanceSettings struct {
 	NumberOfInstances *int32 `json:"numberOfInstances,omitempty"`
 	// CoordinationCommandLine - A typical coordination command line launches a background service and verifies that the service is ready to process inter-node messages.
 	CoordinationCommandLine *string `json:"coordinationCommandLine,omitempty"`
-	// CommonResourceFiles - The difference between common resource files and task resource files is that common resource files are downloaded for all subtasks including the primary, whereas task resource files are downloaded only for the primary. Also note that these resource files are not downloaded to the task working directory, but instead are downloaded to the task root directory (one directory above the working directory).
+	// CommonResourceFiles - The difference between common resource files and task resource files is that common resource files are downloaded for all subtasks including the primary, whereas task resource files are downloaded only for the primary. Also note that these resource files are not downloaded to the task working directory, but instead are downloaded to the task root directory (one directory above the working directory).  There is a maximum size for the list of resource files.  When the max size is exceeded, the request will fail and the response error code will be RequestEntityTooLarge. If this occurs, the collection of ResourceFiles must be reduced in size. This can be achieved using .zip files, Application Packages, or Docker Containers.
 	CommonResourceFiles *[]ResourceFile `json:"commonResourceFiles,omitempty"`
 }
 
@@ -2608,8 +3032,8 @@ type NetworkSecurityGroupRule struct {
 }
 
 // NodeAgentSku the Batch node agent is a program that runs on each node in the pool, and provides the
-// command-and-control interface between the node and the Batch service. There are different implementations of the
-// node agent, known as SKUs, for different operating systems.
+// command-and-control interface between the node and the Batch service. There are different
+// implementations of the node agent, known as SKUs, for different operating systems.
 type NodeAgentSku struct {
 	ID *string `json:"id,omitempty"`
 	// VerifiedImageReferences - This collection is not exhaustive (the node agent may be compatible with other images).
@@ -2629,6 +3053,7 @@ type NodeCounts struct {
 	Running             *int32 `json:"running,omitempty"`
 	Starting            *int32 `json:"starting,omitempty"`
 	StartTaskFailed     *int32 `json:"startTaskFailed,omitempty"`
+	LeavingPool         *int32 `json:"leavingPool,omitempty"`
 	Unknown             *int32 `json:"unknown,omitempty"`
 	Unusable            *int32 `json:"unusable,omitempty"`
 	WaitingForStartTask *int32 `json:"waitingForStartTask,omitempty"`
@@ -2662,20 +3087,37 @@ type NodeFileListResultIterator struct {
 	page NodeFileListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *NodeFileListResultIterator) Next() error {
+func (iter *NodeFileListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/NodeFileListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *NodeFileListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -2697,6 +3139,11 @@ func (iter NodeFileListResultIterator) Value() NodeFile {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the NodeFileListResultIterator type.
+func NewNodeFileListResultIterator(page NodeFileListResultPage) NodeFileListResultIterator {
+	return NodeFileListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (nflr NodeFileListResult) IsEmpty() bool {
 	return nflr.Value == nil || len(*nflr.Value) == 0
@@ -2704,11 +3151,11 @@ func (nflr NodeFileListResult) IsEmpty() bool {
 
 // nodeFileListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (nflr NodeFileListResult) nodeFileListResultPreparer() (*http.Request, error) {
+func (nflr NodeFileListResult) nodeFileListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if nflr.OdataNextLink == nil || len(to.String(nflr.OdataNextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(nflr.OdataNextLink)))
@@ -2716,19 +3163,36 @@ func (nflr NodeFileListResult) nodeFileListResultPreparer() (*http.Request, erro
 
 // NodeFileListResultPage contains a page of NodeFile values.
 type NodeFileListResultPage struct {
-	fn   func(NodeFileListResult) (NodeFileListResult, error)
+	fn   func(context.Context, NodeFileListResult) (NodeFileListResult, error)
 	nflr NodeFileListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *NodeFileListResultPage) Next() error {
-	next, err := page.fn(page.nflr)
+func (page *NodeFileListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/NodeFileListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.nflr)
 	if err != nil {
 		return err
 	}
 	page.nflr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *NodeFileListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -2747,6 +3211,11 @@ func (page NodeFileListResultPage) Values() []NodeFile {
 		return nil
 	}
 	return *page.nflr.Value
+}
+
+// Creates a new instance of the NodeFileListResultPage type.
+func NewNodeFileListResultPage(getNextPage func(context.Context, NodeFileListResult) (NodeFileListResult, error)) NodeFileListResultPage {
+	return NodeFileListResultPage{fn: getNextPage}
 }
 
 // NodeRebootParameter ...
@@ -2819,7 +3288,7 @@ type PoolAddParameter struct {
 	ID *string `json:"id,omitempty"`
 	// DisplayName - The display name need not be unique and can contain any Unicode characters up to a maximum length of 1024.
 	DisplayName *string `json:"displayName,omitempty"`
-	// VMSize - For information about available sizes of virtual machines for Cloud Services pools (pools created with cloudServiceConfiguration), see Sizes for Cloud Services (http://azure.microsoft.com/documentation/articles/cloud-services-sizes-specs/). Batch supports all Cloud Services VM sizes except ExtraSmall, A1V2 and A2V2. For information about available VM sizes for pools using images from the Virtual Machines Marketplace (pools created with virtualMachineConfiguration) see Sizes for Virtual Machines (Linux) (https://azure.microsoft.com/documentation/articles/virtual-machines-linux-sizes/) or Sizes for Virtual Machines (Windows) (https://azure.microsoft.com/documentation/articles/virtual-machines-windows-sizes/). Batch supports all Azure VM sizes except STANDARD_A0 and those with premium storage (STANDARD_GS, STANDARD_DS, and STANDARD_DSV2 series).
+	// VMSize - For information about available sizes of virtual machines for Cloud Services pools (pools created with cloudServiceConfiguration), see Sizes for Cloud Services (https://azure.microsoft.com/documentation/articles/cloud-services-sizes-specs/). Batch supports all Cloud Services VM sizes except ExtraSmall, A1V2 and A2V2. For information about available VM sizes for pools using images from the Virtual Machines Marketplace (pools created with virtualMachineConfiguration) see Sizes for Virtual Machines (Linux) (https://azure.microsoft.com/documentation/articles/virtual-machines-linux-sizes/) or Sizes for Virtual Machines (Windows) (https://azure.microsoft.com/documentation/articles/virtual-machines-windows-sizes/). Batch supports all Azure VM sizes except STANDARD_A0 and those with premium storage (STANDARD_GS, STANDARD_DS, and STANDARD_DSV2 series).
 	VMSize *string `json:"vmSize,omitempty"`
 	// CloudServiceConfiguration - This property and virtualMachineConfiguration are mutually exclusive and one of the properties must be specified. This property cannot be specified if the Batch account was created with its poolAllocationMode property set to 'UserSubscription'.
 	CloudServiceConfiguration *CloudServiceConfiguration `json:"cloudServiceConfiguration,omitempty"`
@@ -2896,20 +3365,37 @@ type PoolListUsageMetricsResultIterator struct {
 	page PoolListUsageMetricsResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *PoolListUsageMetricsResultIterator) Next() error {
+func (iter *PoolListUsageMetricsResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/PoolListUsageMetricsResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *PoolListUsageMetricsResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -2931,6 +3417,11 @@ func (iter PoolListUsageMetricsResultIterator) Value() PoolUsageMetrics {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the PoolListUsageMetricsResultIterator type.
+func NewPoolListUsageMetricsResultIterator(page PoolListUsageMetricsResultPage) PoolListUsageMetricsResultIterator {
+	return PoolListUsageMetricsResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (plumr PoolListUsageMetricsResult) IsEmpty() bool {
 	return plumr.Value == nil || len(*plumr.Value) == 0
@@ -2938,11 +3429,11 @@ func (plumr PoolListUsageMetricsResult) IsEmpty() bool {
 
 // poolListUsageMetricsResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (plumr PoolListUsageMetricsResult) poolListUsageMetricsResultPreparer() (*http.Request, error) {
+func (plumr PoolListUsageMetricsResult) poolListUsageMetricsResultPreparer(ctx context.Context) (*http.Request, error) {
 	if plumr.OdataNextLink == nil || len(to.String(plumr.OdataNextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(plumr.OdataNextLink)))
@@ -2950,19 +3441,36 @@ func (plumr PoolListUsageMetricsResult) poolListUsageMetricsResultPreparer() (*h
 
 // PoolListUsageMetricsResultPage contains a page of PoolUsageMetrics values.
 type PoolListUsageMetricsResultPage struct {
-	fn    func(PoolListUsageMetricsResult) (PoolListUsageMetricsResult, error)
+	fn    func(context.Context, PoolListUsageMetricsResult) (PoolListUsageMetricsResult, error)
 	plumr PoolListUsageMetricsResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *PoolListUsageMetricsResultPage) Next() error {
-	next, err := page.fn(page.plumr)
+func (page *PoolListUsageMetricsResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/PoolListUsageMetricsResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.plumr)
 	if err != nil {
 		return err
 	}
 	page.plumr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *PoolListUsageMetricsResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -2981,6 +3489,11 @@ func (page PoolListUsageMetricsResultPage) Values() []PoolUsageMetrics {
 		return nil
 	}
 	return *page.plumr.Value
+}
+
+// Creates a new instance of the PoolListUsageMetricsResultPage type.
+func NewPoolListUsageMetricsResultPage(getNextPage func(context.Context, PoolListUsageMetricsResult) (PoolListUsageMetricsResult, error)) PoolListUsageMetricsResultPage {
+	return PoolListUsageMetricsResultPage{fn: getNextPage}
 }
 
 // PoolNodeCounts ...
@@ -3004,20 +3517,37 @@ type PoolNodeCountsListResultIterator struct {
 	page PoolNodeCountsListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *PoolNodeCountsListResultIterator) Next() error {
+func (iter *PoolNodeCountsListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/PoolNodeCountsListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *PoolNodeCountsListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -3039,6 +3569,11 @@ func (iter PoolNodeCountsListResultIterator) Value() PoolNodeCounts {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the PoolNodeCountsListResultIterator type.
+func NewPoolNodeCountsListResultIterator(page PoolNodeCountsListResultPage) PoolNodeCountsListResultIterator {
+	return PoolNodeCountsListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (pnclr PoolNodeCountsListResult) IsEmpty() bool {
 	return pnclr.Value == nil || len(*pnclr.Value) == 0
@@ -3046,11 +3581,11 @@ func (pnclr PoolNodeCountsListResult) IsEmpty() bool {
 
 // poolNodeCountsListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (pnclr PoolNodeCountsListResult) poolNodeCountsListResultPreparer() (*http.Request, error) {
+func (pnclr PoolNodeCountsListResult) poolNodeCountsListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if pnclr.OdataNextLink == nil || len(to.String(pnclr.OdataNextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(pnclr.OdataNextLink)))
@@ -3058,19 +3593,36 @@ func (pnclr PoolNodeCountsListResult) poolNodeCountsListResultPreparer() (*http.
 
 // PoolNodeCountsListResultPage contains a page of PoolNodeCounts values.
 type PoolNodeCountsListResultPage struct {
-	fn    func(PoolNodeCountsListResult) (PoolNodeCountsListResult, error)
+	fn    func(context.Context, PoolNodeCountsListResult) (PoolNodeCountsListResult, error)
 	pnclr PoolNodeCountsListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *PoolNodeCountsListResultPage) Next() error {
-	next, err := page.fn(page.pnclr)
+func (page *PoolNodeCountsListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/PoolNodeCountsListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.pnclr)
 	if err != nil {
 		return err
 	}
 	page.pnclr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *PoolNodeCountsListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -3089,6 +3641,11 @@ func (page PoolNodeCountsListResultPage) Values() []PoolNodeCounts {
 		return nil
 	}
 	return *page.pnclr.Value
+}
+
+// Creates a new instance of the PoolNodeCountsListResultPage type.
+func NewPoolNodeCountsListResultPage(getNextPage func(context.Context, PoolNodeCountsListResult) (PoolNodeCountsListResult, error)) PoolNodeCountsListResultPage {
+	return PoolNodeCountsListResultPage{fn: getNextPage}
 }
 
 // PoolPatchParameter ...
@@ -3117,7 +3674,7 @@ type PoolResizeParameter struct {
 type PoolSpecification struct {
 	// DisplayName - The display name need not be unique and can contain any Unicode characters up to a maximum length of 1024.
 	DisplayName *string `json:"displayName,omitempty"`
-	// VMSize - For information about available sizes of virtual machines for Cloud Services pools (pools created with cloudServiceConfiguration), see Sizes for Cloud Services (http://azure.microsoft.com/documentation/articles/cloud-services-sizes-specs/). Batch supports all Cloud Services VM sizes except ExtraSmall, A1V2 and A2V2. For information about available VM sizes for pools using images from the Virtual Machines Marketplace (pools created with virtualMachineConfiguration) see Sizes for Virtual Machines (Linux) (https://azure.microsoft.com/documentation/articles/virtual-machines-linux-sizes/) or Sizes for Virtual Machines (Windows) (https://azure.microsoft.com/documentation/articles/virtual-machines-windows-sizes/). Batch supports all Azure VM sizes except STANDARD_A0 and those with premium storage (STANDARD_GS, STANDARD_DS, and STANDARD_DSV2 series).
+	// VMSize - For information about available sizes of virtual machines for Cloud Services pools (pools created with cloudServiceConfiguration), see Sizes for Cloud Services (https://azure.microsoft.com/documentation/articles/cloud-services-sizes-specs/). Batch supports all Cloud Services VM sizes except ExtraSmall, A1V2 and A2V2. For information about available VM sizes for pools using images from the Virtual Machines Marketplace (pools created with virtualMachineConfiguration) see Sizes for Virtual Machines (Linux) (https://azure.microsoft.com/documentation/articles/virtual-machines-linux-sizes/) or Sizes for Virtual Machines (Windows) (https://azure.microsoft.com/documentation/articles/virtual-machines-windows-sizes/). Batch supports all Azure VM sizes except STANDARD_A0 and those with premium storage (STANDARD_GS, STANDARD_DS, and STANDARD_DSV2 series).
 	VMSize *string `json:"vmSize,omitempty"`
 	// CloudServiceConfiguration - This property must be specified if the pool needs to be created with Azure PaaS VMs. This property and virtualMachineConfiguration are mutually exclusive and one of the properties must be specified. If neither is specified then the Batch service returns an error; if you are calling the REST API directly, the HTTP status code is 400 (Bad Request). This property cannot be specified if the Batch account was created with its poolAllocationMode property set to 'UserSubscription'.
 	CloudServiceConfiguration *CloudServiceConfiguration `json:"cloudServiceConfiguration,omitempty"`
@@ -3248,9 +3805,15 @@ type Schedule struct {
 	RecurrenceInterval *string `json:"recurrenceInterval,omitempty"`
 }
 
-// StartTask ...
+// StartTask batch will retry tasks when a recovery operation is triggered on a compute node. Examples of
+// recovery operations include (but are not limited to) when an unhealthy compute node is rebooted or a
+// compute node disappeared due to host failure. Retries due to recovery operations are independent of and
+// are not counted against the maxTaskRetryCount. Even if the maxTaskRetryCount is 0, an internal retry due
+// to a recovery operation may occur. Because of this, all tasks should be idempotent. This means tasks
+// need to tolerate being interrupted and restarted without causing any corruption or duplicate data. The
+// best practice for long running tasks is to use some form of checkpointing.
 type StartTask struct {
-	// CommandLine - The command line does not run under a shell, and therefore cannot take advantage of shell features such as environment variable expansion. If you want to take advantage of such features, you should invoke the shell in the command line, for example using "cmd /c MyCommand" in Windows or "/bin/sh -c MyCommand" in Linux.
+	// CommandLine - The command line does not run under a shell, and therefore cannot take advantage of shell features such as environment variable expansion. If you want to take advantage of such features, you should invoke the shell in the command line, for example using "cmd /c MyCommand" in Windows or "/bin/sh -c MyCommand" in Linux. If the command line refers to file paths, it should use a relative path (relative to the task working directory), or use the Batch provided environment variable (https://docs.microsoft.com/en-us/azure/batch/batch-compute-node-environment-variables).
 	CommandLine *string `json:"commandLine,omitempty"`
 	// ContainerSettings - When this is specified, all directories recursively below the AZ_BATCH_NODE_ROOT_DIR (the root of Azure Batch directories on the node) are mapped into the container, all task environment variables are mapped into the container, and the task command line is executed in the container.
 	ContainerSettings *TaskContainerSettings `json:"containerSettings,omitempty"`
@@ -3313,7 +3876,7 @@ type SubtaskInformation struct {
 
 // TaskAddCollectionParameter ...
 type TaskAddCollectionParameter struct {
-	// Value - The total serialized size of this collection must be less than 4MB. If it is greater than 4MB (for example if each task has 100's of resource files or environment variables), the request will fail with code 'RequestBodyTooLarge' and should be retried again with fewer tasks.
+	// Value - The total serialized size of this collection must be less than 1MB. If it is greater than 1MB (for example if each task has 100's of resource files or environment variables), the request will fail with code 'RequestBodyTooLarge' and should be retried again with fewer tasks.
 	Value *[]TaskAddParameter `json:"value,omitempty"`
 }
 
@@ -3323,19 +3886,25 @@ type TaskAddCollectionResult struct {
 	Value             *[]TaskAddResult `json:"value,omitempty"`
 }
 
-// TaskAddParameter ...
+// TaskAddParameter batch will retry tasks when a recovery operation is triggered on a compute node.
+// Examples of recovery operations include (but are not limited to) when an unhealthy compute node is
+// rebooted or a compute node disappeared due to host failure. Retries due to recovery operations are
+// independent of and are not counted against the maxTaskRetryCount. Even if the maxTaskRetryCount is 0, an
+// internal retry due to a recovery operation may occur. Because of this, all tasks should be idempotent.
+// This means tasks need to tolerate being interrupted and restarted without causing any corruption or
+// duplicate data. The best practice for long running tasks is to use some form of checkpointing.
 type TaskAddParameter struct {
 	// ID - The ID can contain any combination of alphanumeric characters including hyphens and underscores, and cannot contain more than 64 characters. The ID is case-preserving and case-insensitive (that is, you may not have two IDs within a job that differ only by case).
 	ID *string `json:"id,omitempty"`
 	// DisplayName - The display name need not be unique and can contain any Unicode characters up to a maximum length of 1024.
 	DisplayName *string `json:"displayName,omitempty"`
-	// CommandLine - For multi-instance tasks, the command line is executed as the primary task, after the primary task and all subtasks have finished executing the coordination command line. The command line does not run under a shell, and therefore cannot take advantage of shell features such as environment variable expansion. If you want to take advantage of such features, you should invoke the shell in the command line, for example using "cmd /c MyCommand" in Windows or "/bin/sh -c MyCommand" in Linux.
+	// CommandLine - For multi-instance tasks, the command line is executed as the primary task, after the primary task and all subtasks have finished executing the coordination command line. The command line does not run under a shell, and therefore cannot take advantage of shell features such as environment variable expansion. If you want to take advantage of such features, you should invoke the shell in the command line, for example using "cmd /c MyCommand" in Windows or "/bin/sh -c MyCommand" in Linux. If the command line refers to file paths, it should use a relative path (relative to the task working directory), or use the Batch provided environment variable (https://docs.microsoft.com/en-us/azure/batch/batch-compute-node-environment-variables).
 	CommandLine *string `json:"commandLine,omitempty"`
 	// ContainerSettings - If the pool that will run this task has containerConfiguration set, this must be set as well. If the pool that will run this task doesn't have containerConfiguration set, this must not be set. When this is specified, all directories recursively below the AZ_BATCH_NODE_ROOT_DIR (the root of Azure Batch directories on the node) are mapped into the container, all task environment variables are mapped into the container, and the task command line is executed in the container.
 	ContainerSettings *TaskContainerSettings `json:"containerSettings,omitempty"`
 	// ExitConditions - How the Batch service should respond when the task completes.
 	ExitConditions *ExitConditions `json:"exitConditions,omitempty"`
-	// ResourceFiles - For multi-instance tasks, the resource files will only be downloaded to the compute node on which the primary task is executed.
+	// ResourceFiles - For multi-instance tasks, the resource files will only be downloaded to the compute node on which the primary task is executed. There is a maximum size for the list of resource files.  When the max size is exceeded, the request will fail and the response error code will be RequestEntityTooLarge. If this occurs, the collection of ResourceFiles must be reduced in size. This can be achieved using .zip files, Application Packages, or Docker Containers.
 	ResourceFiles *[]ResourceFile `json:"resourceFiles,omitempty"`
 	// OutputFiles - For multi-instance tasks, the files will only be uploaded from the compute node on which the primary task is executed.
 	OutputFiles         *[]OutputFile         `json:"outputFiles,omitempty"`
@@ -3372,7 +3941,7 @@ type TaskConstraints struct {
 	MaxWallClockTime *string `json:"maxWallClockTime,omitempty"`
 	// RetentionTime - The default is infinite, i.e. the task directory will be retained until the compute node is removed or reimaged.
 	RetentionTime *string `json:"retentionTime,omitempty"`
-	// MaxTaskRetryCount - Note that this value specifically controls the number of retries. The Batch service will try the task once, and may then retry up to this limit. For example, if the maximum retry count is 3, Batch tries the task up to 4 times (one initial try and 3 retries). If the maximum retry count is 0, the Batch service does not retry the task. If the maximum retry count is -1, the Batch service retries the task without limit.
+	// MaxTaskRetryCount - Note that this value specifically controls the number of retries for the task executable due to a nonzero exit code. The Batch service will try the task once, and may then retry up to this limit. For example, if the maximum retry count is 3, Batch tries the task up to 4 times (one initial try and 3 retries). If the maximum retry count is 0, the Batch service does not retry the task after the first attempt. If the maximum retry count is -1, the Batch service retries the task without limit. Resource files and application packages are only downloaded again if the task is retried on a new compute node.
 	MaxTaskRetryCount *int32 `json:"maxTaskRetryCount,omitempty"`
 }
 
@@ -3447,8 +4016,8 @@ type TaskFailureInformation struct {
 	Details  *[]NameValuePair `json:"details,omitempty"`
 }
 
-// TaskIDRange the start and end of the range are inclusive. For example, if a range has start 9 and end 12, then
-// it represents tasks '9', '10', '11' and '12'.
+// TaskIDRange the start and end of the range are inclusive. For example, if a range has start 9 and end
+// 12, then it represents tasks '9', '10', '11' and '12'.
 type TaskIDRange struct {
 	Start *int32 `json:"start,omitempty"`
 	End   *int32 `json:"end,omitempty"`
@@ -3528,7 +4097,9 @@ type UserAccount struct {
 	LinuxUserConfiguration *LinuxUserConfiguration `json:"linuxUserConfiguration,omitempty"`
 }
 
-// UserIdentity specify either the userName or autoUser property, but not both.
+// UserIdentity specify either the userName or autoUser property, but not both. On
+// CloudServiceConfiguration pools, this user is logged in with the INTERACTIVE flag. On Windows
+// VirtualMachineConfiguration pools, this user is logged in with the BATCH flag.
 type UserIdentity struct {
 	// UserName - The userName and autoUser properties are mutually exclusive; you must specify one but not both.
 	UserName *string `json:"username,omitempty"`

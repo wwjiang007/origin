@@ -16,6 +16,7 @@ package untyped
 
 import (
 	"io"
+	"net/http"
 	"sort"
 	"testing"
 
@@ -29,6 +30,10 @@ import (
 
 func stubAutenticator() runtime.Authenticator {
 	return runtime.AuthenticatorFunc(func(_ interface{}) (bool, interface{}, error) { return false, nil, nil })
+}
+
+func stubAuthorizer() runtime.Authorizer {
+	return runtime.AuthorizerFunc(func(_ *http.Request, _ interface{}) error { return nil })
 }
 
 type stubConsumer struct {
@@ -57,13 +62,15 @@ func (s *stubOperationHandler) Handle(params interface{}) (interface{}, error) {
 }
 
 func TestUntypedAPIRegistrations(t *testing.T) {
-	api := NewAPI(new(loads.Document))
+	api := NewAPI(new(loads.Document)).WithJSONDefaults()
 
 	api.RegisterConsumer("application/yada", new(stubConsumer))
 	api.RegisterProducer("application/yada-2", new(stubProducer))
 	api.RegisterOperation("get", "/{someId}", new(stubOperationHandler))
 	api.RegisterAuth("basic", stubAutenticator())
+	api.RegisterAuthorizer(stubAuthorizer())
 
+	assert.NotNil(t, api.authorizer)
 	assert.NotEmpty(t, api.authenticators)
 
 	_, ok := api.authenticators["basic"]
@@ -78,6 +85,9 @@ func TestUntypedAPIRegistrations(t *testing.T) {
 	assert.True(t, ok)
 	_, ok = api.operations["GET"]["/{someId}"]
 	assert.True(t, ok)
+
+	authorizer := api.Authorizer()
+	assert.NotNil(t, authorizer)
 
 	h, ok := api.OperationHandlerFor("get", "/{someId}")
 	assert.True(t, ok)
@@ -117,7 +127,6 @@ func TestUntypedAppValidation(t *testing.T) {
         "security": [
           {"basic":[]}
         ],
-        "operationId": "someOperation",
         "parameters": [
           {
             "name": "skip",
@@ -162,7 +171,6 @@ func TestUntypedAppValidation(t *testing.T) {
 	        "security": [
 	          {"basic":[]}
 	        ],
-	  			"operationId": "someOperation",
 	  			"parameters": [
 	  				{
 				  		"name": "skip",
@@ -239,15 +247,15 @@ func TestUntypedAppValidation(t *testing.T) {
 	api2.RegisterProducer("application/x-yaml", new(stubProducer))
 
 	expected := []string{"application/x-yaml"}
-	sort.Sort(sort.StringSlice(expected))
+	sort.Strings(expected)
 	consumes := analyzed.ConsumesFor(analyzed.AllPaths()["/"].Get)
-	sort.Sort(sort.StringSlice(consumes))
+	sort.Strings(consumes)
 	assert.Equal(t, expected, consumes)
 	consumers := api1.ConsumersFor(consumes)
 	assert.Len(t, consumers, 1)
 
 	produces := analyzed.ProducesFor(analyzed.AllPaths()["/"].Get)
-	sort.Sort(sort.StringSlice(produces))
+	sort.Strings(produces)
 	assert.Equal(t, expected, produces)
 	producers := api1.ProducersFor(produces)
 	assert.Len(t, producers, 1)

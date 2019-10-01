@@ -21,6 +21,7 @@ import (
 	"context"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -40,11 +41,22 @@ func NewSecurityRulesClientWithBaseURI(baseURI string, subscriptionID string) Se
 }
 
 // CreateOrUpdate creates or updates a security rule in the specified network security group.
-//
-// resourceGroupName is the name of the resource group. networkSecurityGroupName is the name of the network
-// security group. securityRuleName is the name of the security rule. securityRuleParameters is parameters supplied
-// to the create or update network security rule operation.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// networkSecurityGroupName - the name of the network security group.
+// securityRuleName - the name of the security rule.
+// securityRuleParameters - parameters supplied to the create or update network security rule operation.
 func (client SecurityRulesClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, networkSecurityGroupName string, securityRuleName string, securityRuleParameters SecurityRule) (result SecurityRulesCreateOrUpdateFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/SecurityRulesClient.CreateOrUpdate")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.CreateOrUpdatePreparer(ctx, resourceGroupName, networkSecurityGroupName, securityRuleName, securityRuleParameters)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.SecurityRulesClient", "CreateOrUpdate", nil, "Failure preparing request")
@@ -75,7 +87,7 @@ func (client SecurityRulesClient) CreateOrUpdatePreparer(ctx context.Context, re
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/networkSecurityGroups/{networkSecurityGroupName}/securityRules/{securityRuleName}", pathParameters),
@@ -87,15 +99,13 @@ func (client SecurityRulesClient) CreateOrUpdatePreparer(ctx context.Context, re
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client SecurityRulesClient) CreateOrUpdateSender(req *http.Request) (future SecurityRulesCreateOrUpdateFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusCreated))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -113,10 +123,21 @@ func (client SecurityRulesClient) CreateOrUpdateResponder(resp *http.Response) (
 }
 
 // Delete deletes the specified network security rule.
-//
-// resourceGroupName is the name of the resource group. networkSecurityGroupName is the name of the network
-// security group. securityRuleName is the name of the security rule.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// networkSecurityGroupName - the name of the network security group.
+// securityRuleName - the name of the security rule.
 func (client SecurityRulesClient) Delete(ctx context.Context, resourceGroupName string, networkSecurityGroupName string, securityRuleName string) (result SecurityRulesDeleteFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/SecurityRulesClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeletePreparer(ctx, resourceGroupName, networkSecurityGroupName, securityRuleName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.SecurityRulesClient", "Delete", nil, "Failure preparing request")
@@ -157,15 +178,13 @@ func (client SecurityRulesClient) DeletePreparer(ctx context.Context, resourceGr
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client SecurityRulesClient) DeleteSender(req *http.Request) (future SecurityRulesDeleteFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -182,10 +201,21 @@ func (client SecurityRulesClient) DeleteResponder(resp *http.Response) (result a
 }
 
 // Get get the specified network security rule.
-//
-// resourceGroupName is the name of the resource group. networkSecurityGroupName is the name of the network
-// security group. securityRuleName is the name of the security rule.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// networkSecurityGroupName - the name of the network security group.
+// securityRuleName - the name of the security rule.
 func (client SecurityRulesClient) Get(ctx context.Context, resourceGroupName string, networkSecurityGroupName string, securityRuleName string) (result SecurityRule, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/SecurityRulesClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, resourceGroupName, networkSecurityGroupName, securityRuleName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.SecurityRulesClient", "Get", nil, "Failure preparing request")
@@ -232,8 +262,8 @@ func (client SecurityRulesClient) GetPreparer(ctx context.Context, resourceGroup
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client SecurityRulesClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -250,10 +280,20 @@ func (client SecurityRulesClient) GetResponder(resp *http.Response) (result Secu
 }
 
 // List gets all security rules in a network security group.
-//
-// resourceGroupName is the name of the resource group. networkSecurityGroupName is the name of the network
-// security group.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// networkSecurityGroupName - the name of the network security group.
 func (client SecurityRulesClient) List(ctx context.Context, resourceGroupName string, networkSecurityGroupName string) (result SecurityRuleListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/SecurityRulesClient.List")
+		defer func() {
+			sc := -1
+			if result.srlr.Response.Response != nil {
+				sc = result.srlr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listNextResults
 	req, err := client.ListPreparer(ctx, resourceGroupName, networkSecurityGroupName)
 	if err != nil {
@@ -300,8 +340,8 @@ func (client SecurityRulesClient) ListPreparer(ctx context.Context, resourceGrou
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client SecurityRulesClient) ListSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -318,8 +358,8 @@ func (client SecurityRulesClient) ListResponder(resp *http.Response) (result Sec
 }
 
 // listNextResults retrieves the next set of results, if any.
-func (client SecurityRulesClient) listNextResults(lastResults SecurityRuleListResult) (result SecurityRuleListResult, err error) {
-	req, err := lastResults.securityRuleListResultPreparer()
+func (client SecurityRulesClient) listNextResults(ctx context.Context, lastResults SecurityRuleListResult) (result SecurityRuleListResult, err error) {
+	req, err := lastResults.securityRuleListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network.SecurityRulesClient", "listNextResults", nil, "Failure preparing next results request")
 	}
@@ -340,6 +380,16 @@ func (client SecurityRulesClient) listNextResults(lastResults SecurityRuleListRe
 
 // ListComplete enumerates all values, automatically crossing page boundaries as required.
 func (client SecurityRulesClient) ListComplete(ctx context.Context, resourceGroupName string, networkSecurityGroupName string) (result SecurityRuleListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/SecurityRulesClient.List")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.List(ctx, resourceGroupName, networkSecurityGroupName)
 	return
 }

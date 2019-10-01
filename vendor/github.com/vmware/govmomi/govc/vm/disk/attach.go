@@ -19,6 +19,8 @@ package disk
 import (
 	"context"
 	"flag"
+	"fmt"
+	"strings"
 
 	"github.com/vmware/govmomi/govc/cli"
 	"github.com/vmware/govmomi/govc/flags"
@@ -33,6 +35,8 @@ type attach struct {
 	link       bool
 	disk       string
 	controller string
+	mode       string
+	sharing    string
 }
 
 func init() {
@@ -49,6 +53,8 @@ func (cmd *attach) Register(ctx context.Context, f *flag.FlagSet) {
 	f.BoolVar(&cmd.link, "link", true, "Link specified disk")
 	f.StringVar(&cmd.controller, "controller", "", "Disk controller")
 	f.StringVar(&cmd.disk, "disk", "", "Disk path name")
+	f.StringVar(&cmd.mode, "mode", "", fmt.Sprintf("Disk mode (%s)", strings.Join(vdmTypes, "|")))
+	f.StringVar(&cmd.sharing, "sharing", "", fmt.Sprintf("Sharing (%s)", strings.Join(sharing, "|")))
 }
 
 func (cmd *attach) Process(ctx context.Context) error {
@@ -59,6 +65,15 @@ func (cmd *attach) Process(ctx context.Context) error {
 		return err
 	}
 	return nil
+}
+
+func (cmd *attach) Description() string {
+	return `Attach existing disk to VM.
+
+Examples:
+  govc vm.disk.attach -vm $name -disk $name/disk1.vmdk
+  govc vm.disk.attach -vm $name -disk $name/shared.vmdk -link=false -sharing sharingMultiWriter
+  govc device.remove -vm $name -keep disk-* # detach disk(s)`
 }
 
 func (cmd *attach) Run(ctx context.Context, f *flag.FlagSet) error {
@@ -88,6 +103,11 @@ func (cmd *attach) Run(ctx context.Context, f *flag.FlagSet) error {
 
 	disk := devices.CreateDisk(controller, ds.Reference(), ds.Path(cmd.disk))
 	backing := disk.Backing.(*types.VirtualDiskFlatVer2BackingInfo)
+	backing.Sharing = cmd.sharing
+
+	if len(cmd.mode) != 0 {
+		backing.DiskMode = cmd.mode
+	}
 
 	if cmd.link {
 		if cmd.persist {

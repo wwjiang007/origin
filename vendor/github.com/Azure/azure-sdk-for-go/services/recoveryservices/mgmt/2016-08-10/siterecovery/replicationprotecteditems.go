@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -41,11 +42,22 @@ func NewReplicationProtectedItemsClientWithBaseURI(baseURI string, subscriptionI
 }
 
 // ApplyRecoveryPoint the operation to change the recovery point of a failed over replication protected item.
-//
-// fabricName is the ARM fabric name. protectionContainerName is the protection container name.
-// replicatedProtectedItemName is the replicated protected item's name. applyRecoveryPointInput is the
-// ApplyRecoveryPointInput.
+// Parameters:
+// fabricName - the ARM fabric name.
+// protectionContainerName - the protection container name.
+// replicatedProtectedItemName - the replicated protected item's name.
+// applyRecoveryPointInput - the ApplyRecoveryPointInput.
 func (client ReplicationProtectedItemsClient) ApplyRecoveryPoint(ctx context.Context, fabricName string, protectionContainerName string, replicatedProtectedItemName string, applyRecoveryPointInput ApplyRecoveryPointInput) (result ReplicationProtectedItemsApplyRecoveryPointFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationProtectedItemsClient.ApplyRecoveryPoint")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.ApplyRecoveryPointPreparer(ctx, fabricName, protectionContainerName, replicatedProtectedItemName, applyRecoveryPointInput)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationProtectedItemsClient", "ApplyRecoveryPoint", nil, "Failure preparing request")
@@ -78,7 +90,7 @@ func (client ReplicationProtectedItemsClient) ApplyRecoveryPointPreparer(ctx con
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/Subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.RecoveryServices/vaults/{resourceName}/replicationFabrics/{fabricName}/replicationProtectionContainers/{protectionContainerName}/replicationProtectedItems/{replicatedProtectedItemName}/applyRecoveryPoint", pathParameters),
@@ -90,15 +102,13 @@ func (client ReplicationProtectedItemsClient) ApplyRecoveryPointPreparer(ctx con
 // ApplyRecoveryPointSender sends the ApplyRecoveryPoint request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationProtectedItemsClient) ApplyRecoveryPointSender(req *http.Request) (future ReplicationProtectedItemsApplyRecoveryPointFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -116,10 +126,22 @@ func (client ReplicationProtectedItemsClient) ApplyRecoveryPointResponder(resp *
 }
 
 // Create the operation to create an ASR replication protected item (Enable replication).
-//
-// fabricName is name of the fabric. protectionContainerName is protection container name.
-// replicatedProtectedItemName is a name for the replication protected item. input is enable Protection Input.
+// Parameters:
+// fabricName - name of the fabric.
+// protectionContainerName - protection container name.
+// replicatedProtectedItemName - a name for the replication protected item.
+// input - enable Protection Input.
 func (client ReplicationProtectedItemsClient) Create(ctx context.Context, fabricName string, protectionContainerName string, replicatedProtectedItemName string, input EnableProtectionInput) (result ReplicationProtectedItemsCreateFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationProtectedItemsClient.Create")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.CreatePreparer(ctx, fabricName, protectionContainerName, replicatedProtectedItemName, input)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationProtectedItemsClient", "Create", nil, "Failure preparing request")
@@ -152,7 +174,7 @@ func (client ReplicationProtectedItemsClient) CreatePreparer(ctx context.Context
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/Subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.RecoveryServices/vaults/{resourceName}/replicationFabrics/{fabricName}/replicationProtectionContainers/{protectionContainerName}/replicationProtectedItems/{replicatedProtectedItemName}", pathParameters),
@@ -164,15 +186,13 @@ func (client ReplicationProtectedItemsClient) CreatePreparer(ctx context.Context
 // CreateSender sends the Create request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationProtectedItemsClient) CreateSender(req *http.Request) (future ReplicationProtectedItemsCreateFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -190,10 +210,22 @@ func (client ReplicationProtectedItemsClient) CreateResponder(resp *http.Respons
 }
 
 // Delete the operation to disable replication on a replication protected item. This will also remove the item.
-//
-// fabricName is fabric name. protectionContainerName is protection container name. replicatedProtectedItemName is
-// replication protected item name. disableProtectionInput is disable protection input.
+// Parameters:
+// fabricName - fabric name.
+// protectionContainerName - protection container name.
+// replicatedProtectedItemName - replication protected item name.
+// disableProtectionInput - disable protection input.
 func (client ReplicationProtectedItemsClient) Delete(ctx context.Context, fabricName string, protectionContainerName string, replicatedProtectedItemName string, disableProtectionInput DisableProtectionInput) (result ReplicationProtectedItemsDeleteFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationProtectedItemsClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeletePreparer(ctx, fabricName, protectionContainerName, replicatedProtectedItemName, disableProtectionInput)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationProtectedItemsClient", "Delete", nil, "Failure preparing request")
@@ -226,7 +258,7 @@ func (client ReplicationProtectedItemsClient) DeletePreparer(ctx context.Context
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/Subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.RecoveryServices/vaults/{resourceName}/replicationFabrics/{fabricName}/replicationProtectionContainers/{protectionContainerName}/replicationProtectedItems/{replicatedProtectedItemName}/remove", pathParameters),
@@ -238,15 +270,13 @@ func (client ReplicationProtectedItemsClient) DeletePreparer(ctx context.Context
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationProtectedItemsClient) DeleteSender(req *http.Request) (future ReplicationProtectedItemsDeleteFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -263,10 +293,21 @@ func (client ReplicationProtectedItemsClient) DeleteResponder(resp *http.Respons
 }
 
 // FailoverCommit operation to commit the failover of the replication protected item.
-//
-// fabricName is unique fabric name. protectionContainerName is protection container name.
-// replicatedProtectedItemName is replication protected item name.
+// Parameters:
+// fabricName - unique fabric name.
+// protectionContainerName - protection container name.
+// replicatedProtectedItemName - replication protected item name.
 func (client ReplicationProtectedItemsClient) FailoverCommit(ctx context.Context, fabricName string, protectionContainerName string, replicatedProtectedItemName string) (result ReplicationProtectedItemsFailoverCommitFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationProtectedItemsClient.FailoverCommit")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.FailoverCommitPreparer(ctx, fabricName, protectionContainerName, replicatedProtectedItemName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationProtectedItemsClient", "FailoverCommit", nil, "Failure preparing request")
@@ -309,15 +350,13 @@ func (client ReplicationProtectedItemsClient) FailoverCommitPreparer(ctx context
 // FailoverCommitSender sends the FailoverCommit request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationProtectedItemsClient) FailoverCommitSender(req *http.Request) (future ReplicationProtectedItemsFailoverCommitFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -335,10 +374,21 @@ func (client ReplicationProtectedItemsClient) FailoverCommitResponder(resp *http
 }
 
 // Get gets the details of an ASR replication protected item.
-//
-// fabricName is fabric unique name. protectionContainerName is protection container name.
-// replicatedProtectedItemName is replication protected item name.
+// Parameters:
+// fabricName - fabric unique name.
+// protectionContainerName - protection container name.
+// replicatedProtectedItemName - replication protected item name.
 func (client ReplicationProtectedItemsClient) Get(ctx context.Context, fabricName string, protectionContainerName string, replicatedProtectedItemName string) (result ReplicationProtectedItem, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationProtectedItemsClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, fabricName, protectionContainerName, replicatedProtectedItemName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationProtectedItemsClient", "Get", nil, "Failure preparing request")
@@ -387,8 +437,8 @@ func (client ReplicationProtectedItemsClient) GetPreparer(ctx context.Context, f
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationProtectedItemsClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -405,10 +455,20 @@ func (client ReplicationProtectedItemsClient) GetResponder(resp *http.Response) 
 }
 
 // List gets the list of ASR replication protected items in the vault.
-//
-// skipToken is the pagination token. Possible values: "FabricId" or "FabricId_CloudId" or null filter is oData
-// filter options.
+// Parameters:
+// skipToken - the pagination token. Possible values: "FabricId" or "FabricId_CloudId" or null
+// filter - oData filter options.
 func (client ReplicationProtectedItemsClient) List(ctx context.Context, skipToken string, filter string) (result ReplicationProtectedItemCollectionPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationProtectedItemsClient.List")
+		defer func() {
+			sc := -1
+			if result.rpic.Response.Response != nil {
+				sc = result.rpic.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listNextResults
 	req, err := client.ListPreparer(ctx, skipToken, filter)
 	if err != nil {
@@ -461,8 +521,8 @@ func (client ReplicationProtectedItemsClient) ListPreparer(ctx context.Context, 
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationProtectedItemsClient) ListSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -479,8 +539,8 @@ func (client ReplicationProtectedItemsClient) ListResponder(resp *http.Response)
 }
 
 // listNextResults retrieves the next set of results, if any.
-func (client ReplicationProtectedItemsClient) listNextResults(lastResults ReplicationProtectedItemCollection) (result ReplicationProtectedItemCollection, err error) {
-	req, err := lastResults.replicationProtectedItemCollectionPreparer()
+func (client ReplicationProtectedItemsClient) listNextResults(ctx context.Context, lastResults ReplicationProtectedItemCollection) (result ReplicationProtectedItemCollection, err error) {
+	req, err := lastResults.replicationProtectedItemCollectionPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "siterecovery.ReplicationProtectedItemsClient", "listNextResults", nil, "Failure preparing next results request")
 	}
@@ -501,14 +561,35 @@ func (client ReplicationProtectedItemsClient) listNextResults(lastResults Replic
 
 // ListComplete enumerates all values, automatically crossing page boundaries as required.
 func (client ReplicationProtectedItemsClient) ListComplete(ctx context.Context, skipToken string, filter string) (result ReplicationProtectedItemCollectionIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationProtectedItemsClient.List")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.List(ctx, skipToken, filter)
 	return
 }
 
 // ListByReplicationProtectionContainers gets the list of ASR replication protected items in the protection container.
-//
-// fabricName is fabric name. protectionContainerName is protection container name.
+// Parameters:
+// fabricName - fabric name.
+// protectionContainerName - protection container name.
 func (client ReplicationProtectedItemsClient) ListByReplicationProtectionContainers(ctx context.Context, fabricName string, protectionContainerName string) (result ReplicationProtectedItemCollectionPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationProtectedItemsClient.ListByReplicationProtectionContainers")
+		defer func() {
+			sc := -1
+			if result.rpic.Response.Response != nil {
+				sc = result.rpic.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listByReplicationProtectionContainersNextResults
 	req, err := client.ListByReplicationProtectionContainersPreparer(ctx, fabricName, protectionContainerName)
 	if err != nil {
@@ -557,8 +638,8 @@ func (client ReplicationProtectedItemsClient) ListByReplicationProtectionContain
 // ListByReplicationProtectionContainersSender sends the ListByReplicationProtectionContainers request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationProtectedItemsClient) ListByReplicationProtectionContainersSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByReplicationProtectionContainersResponder handles the response to the ListByReplicationProtectionContainers request. The method always
@@ -575,8 +656,8 @@ func (client ReplicationProtectedItemsClient) ListByReplicationProtectionContain
 }
 
 // listByReplicationProtectionContainersNextResults retrieves the next set of results, if any.
-func (client ReplicationProtectedItemsClient) listByReplicationProtectionContainersNextResults(lastResults ReplicationProtectedItemCollection) (result ReplicationProtectedItemCollection, err error) {
-	req, err := lastResults.replicationProtectedItemCollectionPreparer()
+func (client ReplicationProtectedItemsClient) listByReplicationProtectionContainersNextResults(ctx context.Context, lastResults ReplicationProtectedItemCollection) (result ReplicationProtectedItemCollection, err error) {
+	req, err := lastResults.replicationProtectedItemCollectionPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "siterecovery.ReplicationProtectedItemsClient", "listByReplicationProtectionContainersNextResults", nil, "Failure preparing next results request")
 	}
@@ -597,15 +678,37 @@ func (client ReplicationProtectedItemsClient) listByReplicationProtectionContain
 
 // ListByReplicationProtectionContainersComplete enumerates all values, automatically crossing page boundaries as required.
 func (client ReplicationProtectedItemsClient) ListByReplicationProtectionContainersComplete(ctx context.Context, fabricName string, protectionContainerName string) (result ReplicationProtectedItemCollectionIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationProtectedItemsClient.ListByReplicationProtectionContainers")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListByReplicationProtectionContainers(ctx, fabricName, protectionContainerName)
 	return
 }
 
 // PlannedFailover operation to initiate a planned failover of the replication protected item.
-//
-// fabricName is unique fabric name. protectionContainerName is protection container name.
-// replicatedProtectedItemName is replication protected item name. failoverInput is disable protection input.
+// Parameters:
+// fabricName - unique fabric name.
+// protectionContainerName - protection container name.
+// replicatedProtectedItemName - replication protected item name.
+// failoverInput - disable protection input.
 func (client ReplicationProtectedItemsClient) PlannedFailover(ctx context.Context, fabricName string, protectionContainerName string, replicatedProtectedItemName string, failoverInput PlannedFailoverInput) (result ReplicationProtectedItemsPlannedFailoverFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationProtectedItemsClient.PlannedFailover")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.PlannedFailoverPreparer(ctx, fabricName, protectionContainerName, replicatedProtectedItemName, failoverInput)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationProtectedItemsClient", "PlannedFailover", nil, "Failure preparing request")
@@ -638,7 +741,7 @@ func (client ReplicationProtectedItemsClient) PlannedFailoverPreparer(ctx contex
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/Subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.RecoveryServices/vaults/{resourceName}/replicationFabrics/{fabricName}/replicationProtectionContainers/{protectionContainerName}/replicationProtectedItems/{replicatedProtectedItemName}/plannedFailover", pathParameters),
@@ -650,15 +753,13 @@ func (client ReplicationProtectedItemsClient) PlannedFailoverPreparer(ctx contex
 // PlannedFailoverSender sends the PlannedFailover request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationProtectedItemsClient) PlannedFailoverSender(req *http.Request) (future ReplicationProtectedItemsPlannedFailoverFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -678,10 +779,21 @@ func (client ReplicationProtectedItemsClient) PlannedFailoverResponder(resp *htt
 // Purge the operation to delete or purge a replication protected item. This operation will force delete the
 // replication protected item. Use the remove operation on replication protected item to perform a clean disable
 // replication for the item.
-//
-// fabricName is fabric name. protectionContainerName is protection container name. replicatedProtectedItemName is
-// replication protected item name.
+// Parameters:
+// fabricName - fabric name.
+// protectionContainerName - protection container name.
+// replicatedProtectedItemName - replication protected item name.
 func (client ReplicationProtectedItemsClient) Purge(ctx context.Context, fabricName string, protectionContainerName string, replicatedProtectedItemName string) (result ReplicationProtectedItemsPurgeFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationProtectedItemsClient.Purge")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.PurgePreparer(ctx, fabricName, protectionContainerName, replicatedProtectedItemName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationProtectedItemsClient", "Purge", nil, "Failure preparing request")
@@ -724,15 +836,13 @@ func (client ReplicationProtectedItemsClient) PurgePreparer(ctx context.Context,
 // PurgeSender sends the Purge request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationProtectedItemsClient) PurgeSender(req *http.Request) (future ReplicationProtectedItemsPurgeFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -750,10 +860,21 @@ func (client ReplicationProtectedItemsClient) PurgeResponder(resp *http.Response
 
 // RepairReplication the operation to start resynchronize/repair replication for a replication protected item requiring
 // resynchronization.
-//
-// fabricName is the name of the fabric. protectionContainerName is the name of the container.
-// replicatedProtectedItemName is the name of the replication protected item.
+// Parameters:
+// fabricName - the name of the fabric.
+// protectionContainerName - the name of the container.
+// replicatedProtectedItemName - the name of the replication protected item.
 func (client ReplicationProtectedItemsClient) RepairReplication(ctx context.Context, fabricName string, protectionContainerName string, replicatedProtectedItemName string) (result ReplicationProtectedItemsRepairReplicationFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationProtectedItemsClient.RepairReplication")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.RepairReplicationPreparer(ctx, fabricName, protectionContainerName, replicatedProtectedItemName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationProtectedItemsClient", "RepairReplication", nil, "Failure preparing request")
@@ -796,15 +917,13 @@ func (client ReplicationProtectedItemsClient) RepairReplicationPreparer(ctx cont
 // RepairReplicationSender sends the RepairReplication request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationProtectedItemsClient) RepairReplicationSender(req *http.Request) (future ReplicationProtectedItemsRepairReplicationFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -822,10 +941,22 @@ func (client ReplicationProtectedItemsClient) RepairReplicationResponder(resp *h
 }
 
 // Reprotect operation to reprotect or reverse replicate a failed over replication protected item.
-//
-// fabricName is unique fabric name. protectionContainerName is protection container name.
-// replicatedProtectedItemName is replication protected item name. rrInput is disable protection input.
+// Parameters:
+// fabricName - unique fabric name.
+// protectionContainerName - protection container name.
+// replicatedProtectedItemName - replication protected item name.
+// rrInput - disable protection input.
 func (client ReplicationProtectedItemsClient) Reprotect(ctx context.Context, fabricName string, protectionContainerName string, replicatedProtectedItemName string, rrInput ReverseReplicationInput) (result ReplicationProtectedItemsReprotectFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationProtectedItemsClient.Reprotect")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.ReprotectPreparer(ctx, fabricName, protectionContainerName, replicatedProtectedItemName, rrInput)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationProtectedItemsClient", "Reprotect", nil, "Failure preparing request")
@@ -858,7 +989,7 @@ func (client ReplicationProtectedItemsClient) ReprotectPreparer(ctx context.Cont
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/Subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.RecoveryServices/vaults/{resourceName}/replicationFabrics/{fabricName}/replicationProtectionContainers/{protectionContainerName}/replicationProtectedItems/{replicatedProtectedItemName}/reProtect", pathParameters),
@@ -870,15 +1001,13 @@ func (client ReplicationProtectedItemsClient) ReprotectPreparer(ctx context.Cont
 // ReprotectSender sends the Reprotect request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationProtectedItemsClient) ReprotectSender(req *http.Request) (future ReplicationProtectedItemsReprotectFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -896,10 +1025,22 @@ func (client ReplicationProtectedItemsClient) ReprotectResponder(resp *http.Resp
 }
 
 // TestFailover operation to perform a test failover of the replication protected item.
-//
-// fabricName is unique fabric name. protectionContainerName is protection container name.
-// replicatedProtectedItemName is replication protected item name. failoverInput is test failover input.
+// Parameters:
+// fabricName - unique fabric name.
+// protectionContainerName - protection container name.
+// replicatedProtectedItemName - replication protected item name.
+// failoverInput - test failover input.
 func (client ReplicationProtectedItemsClient) TestFailover(ctx context.Context, fabricName string, protectionContainerName string, replicatedProtectedItemName string, failoverInput TestFailoverInput) (result ReplicationProtectedItemsTestFailoverFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationProtectedItemsClient.TestFailover")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.TestFailoverPreparer(ctx, fabricName, protectionContainerName, replicatedProtectedItemName, failoverInput)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationProtectedItemsClient", "TestFailover", nil, "Failure preparing request")
@@ -932,7 +1073,7 @@ func (client ReplicationProtectedItemsClient) TestFailoverPreparer(ctx context.C
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/Subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.RecoveryServices/vaults/{resourceName}/replicationFabrics/{fabricName}/replicationProtectionContainers/{protectionContainerName}/replicationProtectedItems/{replicatedProtectedItemName}/testFailover", pathParameters),
@@ -944,15 +1085,13 @@ func (client ReplicationProtectedItemsClient) TestFailoverPreparer(ctx context.C
 // TestFailoverSender sends the TestFailover request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationProtectedItemsClient) TestFailoverSender(req *http.Request) (future ReplicationProtectedItemsTestFailoverFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -970,10 +1109,22 @@ func (client ReplicationProtectedItemsClient) TestFailoverResponder(resp *http.R
 }
 
 // TestFailoverCleanup operation to clean up the test failover of a replication protected item.
-//
-// fabricName is unique fabric name. protectionContainerName is protection container name.
-// replicatedProtectedItemName is replication protected item name. cleanupInput is test failover cleanup input.
+// Parameters:
+// fabricName - unique fabric name.
+// protectionContainerName - protection container name.
+// replicatedProtectedItemName - replication protected item name.
+// cleanupInput - test failover cleanup input.
 func (client ReplicationProtectedItemsClient) TestFailoverCleanup(ctx context.Context, fabricName string, protectionContainerName string, replicatedProtectedItemName string, cleanupInput TestFailoverCleanupInput) (result ReplicationProtectedItemsTestFailoverCleanupFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationProtectedItemsClient.TestFailoverCleanup")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: cleanupInput,
 			Constraints: []validation.Constraint{{Target: "cleanupInput.Properties", Name: validation.Null, Rule: true, Chain: nil}}}}); err != nil {
@@ -1012,7 +1163,7 @@ func (client ReplicationProtectedItemsClient) TestFailoverCleanupPreparer(ctx co
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/Subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.RecoveryServices/vaults/{resourceName}/replicationFabrics/{fabricName}/replicationProtectionContainers/{protectionContainerName}/replicationProtectedItems/{replicatedProtectedItemName}/testFailoverCleanup", pathParameters),
@@ -1024,15 +1175,13 @@ func (client ReplicationProtectedItemsClient) TestFailoverCleanupPreparer(ctx co
 // TestFailoverCleanupSender sends the TestFailoverCleanup request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationProtectedItemsClient) TestFailoverCleanupSender(req *http.Request) (future ReplicationProtectedItemsTestFailoverCleanupFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -1050,10 +1199,22 @@ func (client ReplicationProtectedItemsClient) TestFailoverCleanupResponder(resp 
 }
 
 // UnplannedFailover operation to initiate a failover of the replication protected item.
-//
-// fabricName is unique fabric name. protectionContainerName is protection container name.
-// replicatedProtectedItemName is replication protected item name. failoverInput is disable protection input.
+// Parameters:
+// fabricName - unique fabric name.
+// protectionContainerName - protection container name.
+// replicatedProtectedItemName - replication protected item name.
+// failoverInput - disable protection input.
 func (client ReplicationProtectedItemsClient) UnplannedFailover(ctx context.Context, fabricName string, protectionContainerName string, replicatedProtectedItemName string, failoverInput UnplannedFailoverInput) (result ReplicationProtectedItemsUnplannedFailoverFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationProtectedItemsClient.UnplannedFailover")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UnplannedFailoverPreparer(ctx, fabricName, protectionContainerName, replicatedProtectedItemName, failoverInput)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationProtectedItemsClient", "UnplannedFailover", nil, "Failure preparing request")
@@ -1086,7 +1247,7 @@ func (client ReplicationProtectedItemsClient) UnplannedFailoverPreparer(ctx cont
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/Subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.RecoveryServices/vaults/{resourceName}/replicationFabrics/{fabricName}/replicationProtectionContainers/{protectionContainerName}/replicationProtectedItems/{replicatedProtectedItemName}/unplannedFailover", pathParameters),
@@ -1098,15 +1259,13 @@ func (client ReplicationProtectedItemsClient) UnplannedFailoverPreparer(ctx cont
 // UnplannedFailoverSender sends the UnplannedFailover request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationProtectedItemsClient) UnplannedFailoverSender(req *http.Request) (future ReplicationProtectedItemsUnplannedFailoverFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -1124,10 +1283,22 @@ func (client ReplicationProtectedItemsClient) UnplannedFailoverResponder(resp *h
 }
 
 // Update the operation to update the recovery settings of an ASR replication protected item.
-//
-// fabricName is fabric name. protectionContainerName is protection container name. replicatedProtectedItemName is
-// replication protected item name. updateProtectionInput is update protection input.
+// Parameters:
+// fabricName - fabric name.
+// protectionContainerName - protection container name.
+// replicatedProtectedItemName - replication protected item name.
+// updateProtectionInput - update protection input.
 func (client ReplicationProtectedItemsClient) Update(ctx context.Context, fabricName string, protectionContainerName string, replicatedProtectedItemName string, updateProtectionInput UpdateReplicationProtectedItemInput) (result ReplicationProtectedItemsUpdateFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationProtectedItemsClient.Update")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UpdatePreparer(ctx, fabricName, protectionContainerName, replicatedProtectedItemName, updateProtectionInput)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationProtectedItemsClient", "Update", nil, "Failure preparing request")
@@ -1160,7 +1331,7 @@ func (client ReplicationProtectedItemsClient) UpdatePreparer(ctx context.Context
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/Subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.RecoveryServices/vaults/{resourceName}/replicationFabrics/{fabricName}/replicationProtectionContainers/{protectionContainerName}/replicationProtectedItems/{replicatedProtectedItemName}", pathParameters),
@@ -1172,15 +1343,13 @@ func (client ReplicationProtectedItemsClient) UpdatePreparer(ctx context.Context
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationProtectedItemsClient) UpdateSender(req *http.Request) (future ReplicationProtectedItemsUpdateFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -1199,12 +1368,22 @@ func (client ReplicationProtectedItemsClient) UpdateResponder(resp *http.Respons
 
 // UpdateMobilityService the operation to update(push update) the installed mobility service software on a replication
 // protected item to the latest available version.
-//
-// fabricName is the name of the fabric containing the protected item. protectionContainerName is the name of the
-// container containing the protected item. replicationProtectedItemName is the name of the protected item on which
-// the agent is to be updated. updateMobilityServiceRequest is request to update the mobility service on the
-// protected item.
+// Parameters:
+// fabricName - the name of the fabric containing the protected item.
+// protectionContainerName - the name of the container containing the protected item.
+// replicationProtectedItemName - the name of the protected item on which the agent is to be updated.
+// updateMobilityServiceRequest - request to update the mobility service on the protected item.
 func (client ReplicationProtectedItemsClient) UpdateMobilityService(ctx context.Context, fabricName string, protectionContainerName string, replicationProtectedItemName string, updateMobilityServiceRequest UpdateMobilityServiceRequest) (result ReplicationProtectedItemsUpdateMobilityServiceFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationProtectedItemsClient.UpdateMobilityService")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UpdateMobilityServicePreparer(ctx, fabricName, protectionContainerName, replicationProtectedItemName, updateMobilityServiceRequest)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationProtectedItemsClient", "UpdateMobilityService", nil, "Failure preparing request")
@@ -1237,7 +1416,7 @@ func (client ReplicationProtectedItemsClient) UpdateMobilityServicePreparer(ctx 
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/Subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.RecoveryServices/vaults/{resourceName}/replicationFabrics/{fabricName}/replicationProtectionContainers/{protectionContainerName}/replicationProtectedItems/{replicationProtectedItemName}/updateMobilityService", pathParameters),
@@ -1249,15 +1428,13 @@ func (client ReplicationProtectedItemsClient) UpdateMobilityServicePreparer(ctx 
 // UpdateMobilityServiceSender sends the UpdateMobilityService request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationProtectedItemsClient) UpdateMobilityServiceSender(req *http.Request) (future ReplicationProtectedItemsUpdateMobilityServiceFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 

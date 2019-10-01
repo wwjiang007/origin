@@ -1,20 +1,31 @@
 package resourcemerge
 
 import (
-	"github.com/golang/glog"
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"reflect"
+
+	"k8s.io/klog"
+	"sigs.k8s.io/yaml"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	kyaml "k8s.io/apimachinery/pkg/util/yaml"
-
-	"reflect"
 )
 
 // MergeConfigMap takes a configmap, the target key, special overlay funcs a list of config configs to overlay on top of each other
 // It returns the resultant configmap and a bool indicating if any changes were made to the configmap
 func MergeConfigMap(configMap *corev1.ConfigMap, configKey string, specialCases map[string]MergeFunc, configYAMLs ...[]byte) (*corev1.ConfigMap, bool, error) {
-	configBytes, err := MergeProcessConfig(specialCases, configYAMLs...)
+	return MergePrunedConfigMap(nil, configMap, configKey, specialCases, configYAMLs...)
+}
+
+// MergePrunedConfigMap takes a configmap, the target key, special overlay funcs a list of config configs to overlay on top of each other
+// It returns the resultant configmap and a bool indicating if any changes were made to the configmap.
+// It roundtrips the config through the given schema.
+func MergePrunedConfigMap(schema runtime.Object, configMap *corev1.ConfigMap, configKey string, specialCases map[string]MergeFunc, configYAMLs ...[]byte) (*corev1.ConfigMap, bool, error) {
+	configBytes, err := MergePrunedProcessConfig(schema, specialCases, configYAMLs...)
 	if err != nil {
 		return nil, false, err
 	}
@@ -36,40 +47,88 @@ func MergeProcessConfig(specialCases map[string]MergeFunc, configYAMLs ...[]byte
 	for _, currConfigYAML := range configYAMLs[1:] {
 		prevConfigJSON, err := kyaml.ToJSON(currentConfigYAML)
 		if err != nil {
-			glog.Warning(err)
+			klog.Warning(err)
 			// maybe it's just json
 			prevConfigJSON = currentConfigYAML
 		}
-		prevConfigObj, err := runtime.Decode(unstructured.UnstructuredJSONScheme, prevConfigJSON)
-		if err != nil {
+		prevConfig := map[string]interface{}{}
+		if err := json.NewDecoder(bytes.NewBuffer(prevConfigJSON)).Decode(&prevConfig); err != nil {
 			return nil, err
 		}
-		prevConfig := prevConfigObj.(*unstructured.Unstructured)
 
 		if len(currConfigYAML) > 0 {
 			currConfigJSON, err := kyaml.ToJSON(currConfigYAML)
 			if err != nil {
-				glog.Warning(err)
+				klog.Warning(err)
 				// maybe it's just json
 				currConfigJSON = currConfigYAML
 			}
-			currConfigObj, err := runtime.Decode(unstructured.UnstructuredJSONScheme, currConfigJSON)
-			if err != nil {
+			currConfig := map[string]interface{}{}
+			if err := json.NewDecoder(bytes.NewBuffer(currConfigJSON)).Decode(&currConfig); err != nil {
 				return nil, err
 			}
-			currConfig := currConfigObj.(*unstructured.Unstructured)
-			if err := mergeConfig(prevConfig.Object, currConfig.Object, "", specialCases); err != nil {
+
+			// protected against mismatched typemeta
+			prevAPIVersion, _, _ := unstructured.NestedString(prevConfig, "apiVersion")
+			prevKind, _, _ := unstructured.NestedString(prevConfig, "kind")
+			currAPIVersion, _, _ := unstructured.NestedString(currConfig, "apiVersion")
+			currKind, _, _ := unstructured.NestedString(currConfig, "kind")
+			currGVKSet := len(currAPIVersion) > 0 || len(currKind) > 0
+			gvkMismatched := currAPIVersion != prevAPIVersion || currKind != prevKind
+			if currGVKSet && gvkMismatched {
+				return nil, fmt.Errorf("%v/%v does not equal %v/%v", currAPIVersion, currKind, prevAPIVersion, prevKind)
+			}
+
+			if err := mergeConfig(prevConfig, currConfig, "", specialCases); err != nil {
 				return nil, err
 			}
 		}
 
-		currentConfigYAML, err = runtime.Encode(unstructured.UnstructuredJSONScheme, prevConfig)
+		currentConfigYAML, err = runtime.Encode(unstructured.UnstructuredJSONScheme, &unstructured.Unstructured{Object: prevConfig})
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	return currentConfigYAML, nil
+}
+
+// MergePrunedProcessConfig merges a series of config yaml files together with each later one overlaying all previous.
+// The result is roundtripped through the given schema if it is non-nil.
+func MergePrunedProcessConfig(schema runtime.Object, specialCases map[string]MergeFunc, configYAMLs ...[]byte) ([]byte, error) {
+	bs, err := MergeProcessConfig(specialCases, configYAMLs...)
+	if err != nil {
+		return nil, err
+	}
+
+	if schema == nil {
+		return bs, nil
+	}
+
+	// roundtrip through the schema
+	typed := schema.DeepCopyObject()
+	if err := yaml.Unmarshal(bs, typed); err != nil {
+		return nil, err
+	}
+	typedBytes, err := json.Marshal(typed)
+	if err != nil {
+		return nil, err
+	}
+	var untypedJSON map[string]interface{}
+	if err := json.Unmarshal(typedBytes, &untypedJSON); err != nil {
+		return nil, err
+	}
+
+	// and intersect output with input because we cannot rely on omitempty in the schema
+	inputBytes, err := yaml.YAMLToJSON(bs)
+	if err != nil {
+		return nil, err
+	}
+	var inputJSON map[string]interface{}
+	if err := json.Unmarshal(inputBytes, &inputJSON); err != nil {
+		return nil, err
+	}
+	return json.Marshal(intersectJSON(inputJSON, untypedJSON))
 }
 
 type MergeFunc func(dst, src interface{}, currentPath string) (interface{}, error)
@@ -118,4 +177,54 @@ func mergeConfig(curr, additional map[string]interface{}, currentPath string, sp
 	}
 
 	return nil
+}
+
+// jsonIntersection returns the intersection of both JSON object,
+// preferring the values of the first argument.
+func intersectJSON(x1, x2 map[string]interface{}) map[string]interface{} {
+	if x1 == nil || x2 == nil {
+		return nil
+	}
+	ret := map[string]interface{}{}
+	for k, v1 := range x1 {
+		v2, ok := x2[k]
+		if !ok {
+			continue
+		}
+		ret[k] = intersectValue(v1, v2)
+	}
+	return ret
+}
+
+func intersectArray(x1, x2 []interface{}) []interface{} {
+	if x1 == nil || x2 == nil {
+		return nil
+	}
+	ret := make([]interface{}, 0, len(x1))
+	for i := range x1 {
+		if i >= len(x2) {
+			break
+		}
+		ret = append(ret, intersectValue(x1[i], x2[i]))
+	}
+	return ret
+}
+
+func intersectValue(x1, x2 interface{}) interface{} {
+	switch x1 := x1.(type) {
+	case map[string]interface{}:
+		x2, ok := x2.(map[string]interface{})
+		if !ok {
+			return x1
+		}
+		return intersectJSON(x1, x2)
+	case []interface{}:
+		x2, ok := x2.([]interface{})
+		if !ok {
+			return x1
+		}
+		return intersectArray(x1, x2)
+	default:
+		return x1
+	}
 }

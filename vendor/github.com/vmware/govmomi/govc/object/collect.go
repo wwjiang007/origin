@@ -26,6 +26,7 @@ import (
 	"reflect"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/vmware/govmomi/govc/cli"
 	"github.com/vmware/govmomi/govc/flags"
@@ -47,6 +48,7 @@ type collect struct {
 	dump   bool
 	n      int
 	kind   kinds
+	wait   time.Duration
 
 	filter property.Filter
 	obj    string
@@ -65,6 +67,7 @@ func (cmd *collect) Register(ctx context.Context, f *flag.FlagSet) {
 	f.StringVar(&cmd.raw, "R", "", "Raw XML encoded CreateFilter request")
 	f.IntVar(&cmd.n, "n", 0, "Wait for N property updates")
 	f.Var(&cmd.kind, "type", "Resource type.  If specified, MOID is used for a container view root")
+	f.DurationVar(&cmd.wait, "wait", 0, "Max wait time for updates")
 }
 
 func (cmd *collect) Usage() string {
@@ -95,7 +98,10 @@ Examples:
   govc object.collect -json -n=-1 EventManager:ha-eventmgr latestEvent | jq .
   govc object.collect -json -s $(govc object.collect -s - content.perfManager) description.counterType | jq .
   govc object.collect -R create-filter-request.xml # replay filter
-  govc object.collect -R create-filter-request.xml -O # convert filter to Go code`
+  govc object.collect -R create-filter-request.xml -O # convert filter to Go code
+  govc object.collect -s vm/my-vm summary.runtime.host | xargs govc ls -L # inventory path of VM's host
+  govc object.collect -json $vm config | \ # use -json + jq to search array elements
+    jq -r '.[] | select(.Val.Hardware.Device[].MacAddress == "00:0c:29:0c:73:c0") | .Val.Name'`
 }
 
 var stringer = reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
@@ -309,11 +315,6 @@ func (cmd *collect) Run(ctx context.Context, f *flag.FlagSet) error {
 		return err
 	}
 
-	finder, err := cmd.Finder()
-	if err != nil {
-		return err
-	}
-
 	p := property.DefaultCollector(client)
 	filter := new(property.WaitFilter)
 
@@ -328,20 +329,9 @@ func (cmd *collect) Run(ctx context.Context, f *flag.FlagSet) error {
 		switch arg {
 		case "", "-":
 		default:
-			if !ref.FromString(arg) {
-				l, ferr := finder.ManagedObjectList(ctx, arg)
-				if ferr != nil {
-					return err
-				}
-
-				switch len(l) {
-				case 0:
-					return fmt.Errorf("%s not found", arg)
-				case 1:
-					ref = l[0].Object.Reference()
-				default:
-					return flag.ErrHelp
-				}
+			ref, err = cmd.ManagedObject(ctx, arg)
+			if err != nil {
+				return err
 			}
 		}
 
@@ -388,41 +378,48 @@ func (cmd *collect) Run(ctx context.Context, f *flag.FlagSet) error {
 	entered := false
 	hasFilter := len(cmd.filter) != 0
 
-	return property.WaitForUpdates(ctx, p, filter, func(updates []types.ObjectUpdate) bool {
-		matches := 0
+	if cmd.wait != 0 {
+		filter.Options = &types.WaitOptions{
+			MaxWaitSeconds: types.NewInt32(int32(cmd.wait.Seconds())),
+		}
+	}
 
-		for _, update := range updates {
-			if entered && update.Kind == types.ObjectUpdateKindEnter {
-				// on the first update we only get kind "enter"
-				// if a new object is added, the next update with have both "enter" and "modify".
-				continue
-			}
-
-			c := &change{cmd, update}
-
-			if hasFilter {
-				if cmd.match(update) {
-					matches++
-				} else {
+	return cmd.WithCancel(ctx, func(wctx context.Context) error {
+		return property.WaitForUpdates(wctx, p, filter, func(updates []types.ObjectUpdate) bool {
+			matches := 0
+			for _, update := range updates {
+				if entered && update.Kind == types.ObjectUpdateKindEnter {
+					// on the first update we only get kind "enter"
+					// if a new object is added, the next update with have both "enter" and "modify".
 					continue
 				}
+
+				c := &change{cmd, update}
+
+				if hasFilter {
+					if cmd.match(update) {
+						matches++
+					} else {
+						continue
+					}
+				}
+
+				_ = cmd.WriteResult(c)
 			}
 
-			_ = cmd.WriteResult(c)
-		}
+			entered = true
 
-		entered = true
+			if hasFilter {
+				if matches > 0 {
+					return true
+				}
 
-		if hasFilter {
-			if matches > 0 {
-				return true
+				return false
 			}
 
-			return false
-		}
+			cmd.n--
 
-		cmd.n--
-
-		return cmd.n == -1
+			return cmd.n == -1 && cmd.wait == 0
+		})
 	})
 }

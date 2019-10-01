@@ -12,13 +12,19 @@ package glusterfs
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/boltdb/bolt"
 	"github.com/heketi/heketi/executors"
+	wdb "github.com/heketi/heketi/pkg/db"
 	"github.com/heketi/heketi/pkg/glusterfs/api"
-	"github.com/heketi/heketi/pkg/utils"
+	"github.com/heketi/heketi/pkg/idgen"
+	"github.com/heketi/heketi/pkg/paths"
+	"github.com/heketi/heketi/pkg/sortedstrings"
 	"github.com/lpabon/godbc"
 )
 
@@ -35,13 +41,33 @@ const (
 	DEFAULT_EC_DATA               = 4
 	DEFAULT_EC_REDUNDANCY         = 2
 	DEFAULT_THINP_SNAPSHOT_FACTOR = 1.5
+
+	HEKETI_ID_KEY                = "user.heketi.id"
+	HEKETI_ARBITER_KEY           = "user.heketi.arbiter"
+	HEKETI_AVERAGE_FILE_SIZE_KEY = "user.heketi.average-file-size"
+	HEKETI_ZONE_CHECKING_KEY     = "user.heketi.zone-checking"
 )
 
+var (
+	// Average size of files on a volume, currently used only for arbiter sizing.
+	// Might be used for other purposes later.
+	averageFileSize uint64 = 64 * KB
+)
+
+// VolumeEntry struct represents a volume in heketi. Serialization is done using
+// gob when written to db and using json package when exportdb/importdb is used
+// There are two reasons I skip Durability field for json pkg
+//   1. Durability is used in some places in code, however, it represents the
+//      same info that is in Info.Durability.
+//   2. I wasn't able to serialize interface type to json in a straightfoward
+//      way.
+// Chose to skip writing redundant data than adding kludgy code
 type VolumeEntry struct {
 	Info                 api.VolumeInfo
 	Bricks               sort.StringSlice
-	Durability           VolumeDurability
+	Durability           VolumeDurability `json:"-"`
 	GlusterVolumeOptions []string
+	Pending              PendingItem
 }
 
 func VolumeList(tx *bolt.Tx) ([]string, error) {
@@ -57,10 +83,6 @@ func NewVolumeEntry() *VolumeEntry {
 	entry := &VolumeEntry{}
 	entry.Bricks = make(sort.StringSlice, 0)
 
-	gob.Register(&NoneDurability{})
-	gob.Register(&VolumeReplicaDurability{})
-	gob.Register(&VolumeDisperseDurability{})
-
 	return entry
 }
 
@@ -69,10 +91,11 @@ func NewVolumeEntryFromRequest(req *api.VolumeCreateRequest) *VolumeEntry {
 
 	vol := NewVolumeEntry()
 	vol.Info.Gid = req.Gid
-	vol.Info.Id = utils.GenUUID()
+	vol.Info.Id = idgen.GenUUID()
 	vol.Info.Durability = req.Durability
 	vol.Info.Snapshot = req.Snapshot
 	vol.Info.Size = req.Size
+	vol.Info.Block = req.Block
 
 	// Set default durability values
 	durability := vol.Info.Durability.Type
@@ -119,6 +142,34 @@ func NewVolumeEntryFromRequest(req *api.VolumeCreateRequest) *VolumeEntry {
 	// If it is zero, then no volume options are set.
 	vol.GlusterVolumeOptions = req.GlusterVolumeOptions
 
+	if vol.Info.Block {
+		if err := vol.SetRawCapacity(req.Size); err != nil {
+			logger.Err(err)
+			// we can either panic here or return nil. We panic because
+			// returning nil is most likely going to lead to nil
+			// dereference panics anyway
+			panic(err)
+		}
+		// prepend the gluster-block group option,
+		// so that the user-specified options can take precedence
+		blockoptions := strings.Split(BlockHostingVolumeOptions, ",")
+		vol.GlusterVolumeOptions = append(
+			blockoptions,
+			vol.GlusterVolumeOptions...)
+	}
+
+	// Add volume options using PreRequestVolumeOptions, this must be
+	// set before volume options from the request are set.
+	preReqVolumeOptions := strings.Split(PreReqVolumeOptions, ",")
+	vol.GlusterVolumeOptions = append(preReqVolumeOptions,
+		vol.GlusterVolumeOptions...)
+
+	// Add volume options using PostRequestVolumeOptions, this must be
+	// set after volume options from the request are set.
+	postReqVolumeOptions := strings.Split(PostReqVolumeOptions, ",")
+	vol.GlusterVolumeOptions = append(vol.GlusterVolumeOptions,
+		postReqVolumeOptions...)
+
 	// If it is zero, then it will be assigned during volume creation
 	vol.Info.Clusters = req.Clusters
 
@@ -135,6 +186,34 @@ func NewVolumeEntryFromId(tx *bolt.Tx, id string) (*VolumeEntry, error) {
 	}
 
 	return entry, nil
+}
+
+func NewVolumeEntryFromClone(v *VolumeEntry, name string) *VolumeEntry {
+	entry := NewVolumeEntry()
+
+	entry.Info.Id = idgen.GenUUID()
+	if name == "" {
+		entry.Info.Name = "vol_" + entry.Info.Id
+	} else {
+		entry.Info.Name = name
+	}
+
+	entry.GlusterVolumeOptions = v.GlusterVolumeOptions
+	entry.Info.Cluster = v.Info.Cluster
+	entry.Info.Durability = v.Info.Durability
+	entry.Info.Durability.Type = v.Info.Durability.Type
+	entry.Info.Gid = v.Info.Gid
+	entry.Info.Mount = v.Info.Mount
+	entry.Info.Size = v.Info.Size
+	entry.Info.Snapshot = v.Info.Snapshot
+	copy(entry.Info.Mount.GlusterFS.Hosts, v.Info.Mount.GlusterFS.Hosts)
+	entry.Info.Mount.GlusterFS.MountPoint = v.Info.Mount.GlusterFS.Hosts[0] + ":" + entry.Info.Name
+	entry.Info.Mount.GlusterFS.Options = v.Info.Mount.GlusterFS.Options
+	entry.Info.BlockInfo.FreeSize = v.Info.BlockInfo.FreeSize
+	copy(entry.Info.BlockInfo.BlockVolumes, v.Info.BlockInfo.BlockVolumes)
+
+	// entry.Bricks is still empty, these need to be filled by the caller
+	return entry
 }
 
 func (v *VolumeEntry) BucketName() string {
@@ -164,6 +243,9 @@ func (v *VolumeEntry) NewInfoResponse(tx *bolt.Tx) (*api.VolumeInfoResponse, err
 	info.Durability = v.Info.Durability
 	info.Name = v.Info.Name
 	info.GlusterVolumeOptions = v.GlusterVolumeOptions
+	info.Block = v.Info.Block
+	info.BlockInfo = v.Info.BlockInfo
+	info.Gid = v.Info.Gid
 
 	for _, brickid := range v.BricksIds() {
 		brick, err := NewBrickEntryFromId(tx, brickid)
@@ -204,97 +286,186 @@ func (v *VolumeEntry) Unmarshal(buffer []byte) error {
 	return nil
 }
 
+// volOptsMap returns the volume options as a map of space separated
+// key-value pairs. Keys that are found later in the list will overwrite
+// the same key if it occurred earlier in the list. Strings that lack a
+// space separating key from value will be treated as a key  with a
+// value of "".
+func (v *VolumeEntry) volOptsMap() map[string]string {
+	om := map[string]string{}
+	for _, s := range v.GlusterVolumeOptions {
+		r := strings.SplitN(s, " ", 2)
+		if len(r) == 2 {
+			om[r[0]] = r[1]
+		} else {
+			om[r[0]] = ""
+		}
+	}
+	return om
+}
+
+// HasArbiterOption returns true if this volume is flagged for
+// arbiter support.
+func (v *VolumeEntry) HasArbiterOption() bool {
+	value := v.volOptsMap()[HEKETI_ARBITER_KEY]
+	if b, e := strconv.ParseBool(value); e == nil {
+		return b
+	}
+	return false
+}
+
+// GetAverageFileSize returns averageFileSize provided by user or default averageFileSize
+func (v *VolumeEntry) GetAverageFileSize() uint64 {
+	value := v.volOptsMap()[HEKETI_AVERAGE_FILE_SIZE_KEY]
+	if size, e := strconv.ParseUint(value, 10, 64); e == nil {
+		if size == 0 {
+			logger.LogError("Average File Size cannot be zero, using default file size %v", averageFileSize)
+			return averageFileSize
+		}
+		return size
+	}
+	return averageFileSize
+}
+
+// GetZoneCheckingStrategy returns a ZoneCheckingStrategy based on
+// the volume's options.
+func (v *VolumeEntry) GetZoneCheckingStrategy() ZoneCheckingStrategy {
+	value := v.volOptsMap()[HEKETI_ZONE_CHECKING_KEY]
+	if value != "" {
+		return ZoneCheckingStrategy(value)
+	}
+	return ZONE_CHECKING_UNSET
+}
+
 func (v *VolumeEntry) BrickAdd(id string) {
-	godbc.Require(!utils.SortedStringHas(v.Bricks, id))
+	godbc.Require(!sortedstrings.Has(v.Bricks, id))
 
 	v.Bricks = append(v.Bricks, id)
 	v.Bricks.Sort()
 }
 
 func (v *VolumeEntry) BrickDelete(id string) {
-	v.Bricks = utils.SortedStringsDelete(v.Bricks, id)
+	v.Bricks = sortedstrings.Delete(v.Bricks, id)
 }
 
-func (v *VolumeEntry) Create(db *bolt.DB,
-	executor executors.Executor,
-	allocator Allocator) (e error) {
+func (v *VolumeEntry) Create(db wdb.DB,
+	executor executors.Executor) (e error) {
 
-	// On any error, remove the volume
-	defer func() {
-		if e != nil {
-			db.Update(func(tx *bolt.Tx) error {
-				v.Delete(tx)
+	return RunOperation(
+		NewVolumeCreateOperation(v, db),
+		executor)
+}
 
-				return nil
-			})
-		}
-	}()
+// ModifyFreeSize adjusts the free size of a block hosting volume.
+// When taking space from the volume the value must be negative (on
+// block volume add) and positive when the space is being "freed."
+func (v *VolumeEntry) ModifyFreeSize(delta int) error {
+	logger.Debug("Modifying free size: FreeSize=[%v] delta=[%v]",
+		v.Info.BlockInfo.FreeSize, delta)
+	v.Info.BlockInfo.FreeSize += delta
+	if v.Info.BlockInfo.FreeSize < 0 {
+		return logger.Err(fmt.Errorf(
+			"Volume %v free size may not be set less than zero", v.Info.Id))
+	}
+	if v.Info.BlockInfo.FreeSize+v.Info.BlockInfo.ReservedSize > v.Info.Size {
+		return logger.Err(fmt.Errorf(
+			"Volume %v free size may not be set greater than %v",
+			v.Info.Id, v.Info.Size))
+	}
+	return nil
+}
 
-	// Get list of clusters
-	var possibleClusters []string
-	if len(v.Info.Clusters) == 0 {
-		err := db.View(func(tx *bolt.Tx) error {
-			var err error
-			possibleClusters, err = ClusterList(tx)
-			return err
-		})
+func (v *VolumeEntry) ModifyReservedSize(delta int) error {
+	logger.Debug("Modifying reserved size: ReservedSize=[%v] delta=[%v]",
+		v.Info.BlockInfo.ReservedSize, delta)
+	v.Info.BlockInfo.ReservedSize += delta
+	if v.Info.BlockInfo.ReservedSize < 0 {
+		return logger.Err(fmt.Errorf(
+			"Volume %v reserved size may not be set less than zero", v.Info.Id))
+	}
+	if v.Info.BlockInfo.ReservedSize+v.Info.BlockInfo.FreeSize > v.Info.Size {
+		return logger.Err(fmt.Errorf(
+			"Volume %v reserved size may not be set greater than %v",
+			v.Info.Id, v.Info.Size))
+	}
+	return nil
+}
+
+//ReduceRawSize reserves 2% of size for block volume creation
+func ReduceRawSize(size int) int {
+	return size * 98 / 100
+}
+
+// AddRawCapacity adds raw capacity to the BlockInfo
+// FreeSize tracking, reserving one percent of the
+// raw capacity for the filesystem.
+func (v *VolumeEntry) AddRawCapacity(delta int) error {
+	var freeDelta int
+	var reservedDelta int
+
+	freeDelta = ReduceRawSize(delta)
+	reservedDelta = delta - freeDelta
+
+	if err := v.ModifyFreeSize(freeDelta); err != nil {
+		return err
+	}
+	if err := v.ModifyReservedSize(reservedDelta); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (v *VolumeEntry) SetRawCapacity(delta int) error {
+	v.Info.BlockInfo.FreeSize = 0
+	v.Info.BlockInfo.ReservedSize = 0
+	return v.AddRawCapacity(delta)
+}
+
+// TotalSizeBlockVolumes returns the total size of the block volumes that
+// the given volume is hosting. This function iterates over the block
+// volumes in the db to calculate the total.
+func (v *VolumeEntry) TotalSizeBlockVolumes(tx *bolt.Tx) (int, error) {
+	if !v.Info.Block {
+		return 0, fmt.Errorf(
+			"Volume %v is not a block hosting volume", v.Info.Id)
+	}
+	bvsum := 0
+	for _, bvid := range v.Info.BlockInfo.BlockVolumes {
+		bvol, err := NewBlockVolumeEntryFromId(tx, bvid)
 		if err != nil {
-			return err
+			return 0, err
 		}
-	} else {
-		possibleClusters = v.Info.Clusters
+		bvsum += bvol.Info.Size
 	}
+	return bvsum, nil
+}
 
-	// Check we have clusters
-	if len(possibleClusters) == 0 {
-		logger.LogError("Volume being ask to be created, but there are no clusters configured")
-		return ErrNoSpace
+// blockHostingSizeIsCorrect returns true if the total size of the volume
+// is equal to the sum of the used, free and reserved block hosting size values.
+// The used size must be provided and should be calculated based on the sizes
+// of the block volumes.
+func (v *VolumeEntry) blockHostingSizeIsCorrect(used int) bool {
+	logger.Debug("volume [%v]: comparing %v == %v + %v + %v",
+		v.Info.Id, v.Info.Size,
+		used, v.Info.BlockInfo.FreeSize, v.Info.BlockInfo.ReservedSize)
+	unused := v.Info.BlockInfo.FreeSize + v.Info.BlockInfo.ReservedSize
+	if v.Info.Size != (used + unused) {
+		logger.Warning("detected volume [%v] has size %v != %v + %v + %v",
+			v.Info.Id, v.Info.Size,
+			used, v.Info.BlockInfo.FreeSize, v.Info.BlockInfo.ReservedSize)
+		return false
 	}
-	logger.Debug("Using the following clusters: %+v", possibleClusters)
+	return true
+}
 
-	// Check for volume name conflict on any cluster
-	var clusters []string
+func (v *VolumeEntry) tryAllocateBricks(
+	db wdb.DB,
+	possibleClusters []string) (brick_entries []*BrickEntry, err error) {
+
+	cerr := NewMultiClusterError("Unable to create volume on any cluster:")
 	for _, cluster := range possibleClusters {
-		var err error
-
-		// Check this cluster does not have a volume with the name
-		err = db.View(func(tx *bolt.Tx) error {
-			ce, err := NewClusterEntryFromId(tx, cluster)
-			if err != nil {
-				return err
-			}
-
-			for _, volumeId := range ce.Info.Volumes {
-				volume, err := NewVolumeEntryFromId(tx, volumeId)
-				if err != nil {
-					return err
-				}
-				if v.Info.Name == volume.Info.Name {
-					return fmt.Errorf("Name %v already in use in cluster %v",
-						v.Info.Name, cluster)
-				}
-			}
-
-			return nil
-
-		})
-		if err != nil {
-			logger.Warning("%v", err.Error())
-		} else {
-			clusters = append(clusters, cluster)
-		}
-	}
-	if len(clusters) == 0 {
-		return fmt.Errorf("Name %v is already in use in all available clusters", v.Info.Name)
-	}
-
-	// For each cluster look for storage space for this volume
-	var brick_entries []*BrickEntry
-	var err error
-	for _, cluster := range clusters {
-
 		// Check this cluster for space
-		brick_entries, err = v.allocBricksInCluster(db, allocator, cluster, v.Info.Size)
+		brick_entries, err = v.allocBricksInCluster(db, cluster, v.Info.Size)
 
 		if err == nil {
 			v.Info.Cluster = cluster
@@ -305,72 +476,166 @@ func (v *VolumeEntry) Create(db *bolt.DB,
 			err == ErrMinimumBrickSize {
 			logger.Debug("Cluster %v can not accommodate volume "+
 				"(%v), trying next cluster", cluster, err)
-			continue
+			// Map these errors to NoSpace here as that is what heketi
+			// traditionally did. Its not particularly helpful but it
+			// is more backwards compatible.
+			cerr.Add(cluster, ErrNoSpace)
+		} else if err == ErrEmptyCluster ||
+			err == ErrNoStorage {
+			logger.Debug("Issue on cluster %v: %v", cluster, err)
+			cerr.Add(cluster, err)
 		} else {
 			// A genuine error occurred - bail out
-			return logger.LogError("Error calling v.allocBricksInCluster: %v", err)
+			logger.LogError("Error calling v.allocBricksInCluster: %v", err)
+			return
 		}
 	}
+	// if our last attempt failed and we collected at least one error
+	// return the short form all the errors we collected
+	if err != nil && cerr.Len() > 0 {
+		err = cerr.Shorten()
+	}
+	return
+}
 
-	if err != nil || brick_entries == nil {
-		// Map all 'valid' errors to NoSpace here:
-		// Only the last such error could get propagated down,
-		// so it does not make sense to hand the granularity on.
-		// But for other callers (Expand), we keep it.
-		return ErrNoSpace
+// checkDestroyVolumeFromHost returns an error if the volume may
+// not be destroyed at this time. Nil is returned if the volume
+// may be destroyed.
+func (v *VolumeEntry) checkDestroyVolumeFromHost(
+	executor executors.Executor, h string) error {
+
+	err := executor.VolumeDestroyCheck(h, v.Info.Name)
+	if _, ok := err.(*executors.VolumeDoesNotExistErr); ok {
+		logger.Warning("volume %v not present in gluster", v.Info.Id)
+		return nil
+	}
+	return err
+}
+
+func (v *VolumeEntry) destroyVolumeFromHost(
+	executor executors.Executor, h string) error {
+
+	err := executor.VolumeDestroy(h, v.Info.Name)
+	switch {
+	case err == nil:
+		// no errors, so we just deleted the volume from gluster
+		return nil
+	case strings.Contains(err.Error(), "does not exist"):
+		// we asked gluster to delete a volume that already does not exist
+		return nil
+	default:
+		logger.Warning("failed to delete volume %v via %v: %v",
+			v.Info.Id, h, err)
+		return err
+	}
+}
+
+func (v *VolumeEntry) destroyGlusterVolume(
+	db wdb.RODB, executor executors.Executor) error {
+
+	hosts, err := v.hosts(db)
+	if err != nil {
+		return err
+	}
+	err = newTryOnHosts(hosts).run(func(h string) error {
+		return v.destroyVolumeFromHost(executor, h)
+	})
+	if err != nil {
+		logger.LogError("failed to delete volume in cleanup: %v", err)
+		return fmt.Errorf("failed to clean up volume: %v", v.Info.Id)
+	}
+	return nil
+}
+
+func (v *VolumeEntry) cleanupCreateVolume(db wdb.DB,
+	executor executors.Executor,
+	brick_entries []*BrickEntry) error {
+
+	if err := v.destroyGlusterVolume(db, executor); err != nil {
+		return err
 	}
 
-	// Make sure to clean up bricks on error
-	defer func() {
-		if e != nil {
-			db.Update(func(tx *bolt.Tx) error {
-				for _, brick := range brick_entries {
-					v.removeBrickFromDb(tx, brick)
-				}
-				return nil
-			})
+	// from a quick read its "safe" to unconditionally try to delete
+	// bricks. TODO: find out if that is true with functional tests
+	reclaimed, err := DestroyBricks(db, executor, brick_entries)
+	if err != nil {
+		logger.LogError("failed to destroy bricks during cleanup: %v", err)
+	}
+	return v.teardown(db, brick_entries, reclaimed)
+}
+
+func (v *VolumeEntry) createVolumeComponents(
+	db wdb.DB) ([]*BrickEntry, error) {
+
+	// Get list of clusters
+	var possibleClusters []string
+	if len(v.Info.Clusters) == 0 {
+		err := db.View(func(tx *bolt.Tx) error {
+			var err error
+			possibleClusters, err = ClusterList(tx)
+			return err
+		})
+		if err != nil {
+			return nil, err
 		}
-	}()
+	} else {
+		possibleClusters = v.Info.Clusters
+	}
+
+	cr := ClusterReq{v.Info.Block, v.Info.Name}
+	possibleClusters, err := eligibleClusters(db, cr, possibleClusters)
+	if err != nil {
+		return nil, err
+	}
+	logger.Debug("Using the following clusters: %+v", possibleClusters)
+
+	return v.saveCreateVolume(db, possibleClusters)
+}
+
+func (v *VolumeEntry) createVolumeExec(db wdb.DB,
+	executor executors.Executor,
+	brick_entries []*BrickEntry) (e error) {
 
 	// Create the bricks on the nodes
-	err = CreateBricks(db, executor, brick_entries)
-	if err != nil {
-		return err
+	e = CreateBricks(db, executor, brick_entries)
+	if e != nil {
+		return
 	}
-
-	// Clean up created bricks on failure
-	defer func() {
-		if e != nil {
-			DestroyBricks(db, executor, brick_entries)
-		}
-	}()
 
 	// Create GlusterFS volume
-	err = v.createVolume(db, executor, brick_entries)
-	if err != nil {
-		return err
-	}
+	return v.createVolume(db, executor, brick_entries)
+}
 
-	// Destroy volume on failure
-	defer func() {
-		if e != nil {
-			v.Destroy(db, executor)
-		}
-	}()
+func (v *VolumeEntry) saveCreateVolume(db wdb.DB,
+	possibleClusters []string) (brick_entries []*BrickEntry, err error) {
 
-	// Save information on db
 	err = db.Update(func(tx *bolt.Tx) error {
+		txdb := wdb.WrapTx(tx)
+		// For each cluster look for storage space for this volume
+		brick_entries, err = v.tryAllocateBricks(txdb, possibleClusters)
+		if err != nil {
+			return err
+		}
+		if brick_entries == nil {
+			// Map all 'valid' errors to NoSpace here:
+			// Only the last such error could get propagated down,
+			// so it does not make sense to hand the granularity on.
+			// But for other callers (Expand), we keep it.
+			return ErrNoSpace
+		}
 
-		// Save brick entries
-		for _, brick := range brick_entries {
-			err := brick.Save(tx)
-			if err != nil {
-				return err
-			}
+		err = v.updateMountInfo(txdb)
+		if err != nil {
+			return err
 		}
 
 		// Save volume information
-		err = v.Save(tx)
+		if v.Info.Block {
+			if err := v.SetRawCapacity(v.Info.Size); err != nil {
+				return err
+			}
+		}
+		err := v.Save(tx)
 		if err != nil {
 			return err
 		}
@@ -383,147 +648,143 @@ func (v *VolumeEntry) Create(db *bolt.DB,
 		cluster.VolumeAdd(v.Info.Id)
 		return cluster.Save(tx)
 	})
-	if err != nil {
-		return err
-	}
-
-	return nil
-
+	return
 }
 
-func (v *VolumeEntry) Destroy(db *bolt.DB, executor executors.Executor) error {
-	logger.Info("Destroying volume %v", v.Info.Id)
+func (v *VolumeEntry) deleteVolumeExec(db wdb.RODB,
+	executor executors.Executor,
+	brick_entries []*BrickEntry,
+	sshhost string) (map[string]bool, error) {
 
-	// Get the entries from the database
-	brick_entries := make([]*BrickEntry, len(v.Bricks))
-	var sshhost string
-	db.View(func(tx *bolt.Tx) error {
-		for index, id := range v.BricksIds() {
-			brick, err := NewBrickEntryFromId(tx, id)
-			if err != nil {
-				logger.LogError("Brick %v not found in db: %v", id, err)
-				continue
-			}
-			brick_entries[index] = brick
-
-			// Set ssh host to send volume commands
-			if sshhost == "" {
-				node, err := NewNodeEntryFromId(tx, brick.Info.NodeId)
-				if err != nil {
-					logger.LogError("Unable to determine brick node: %v", err)
-					return err
-				}
-				sshhost = node.ManageHostName()
-			}
-		}
-		return nil
-	})
-
-	// Determine if we can destroy the volume
-	err := executor.VolumeDestroyCheck(sshhost, v.Info.Name)
-	if err != nil {
-		logger.Err(err)
-		return err
+	if err := v.checkDestroyVolumeFromHost(executor, sshhost); err != nil {
+		return nil, err
 	}
-
-	// Determine if the bricks can be destroyed
-	err = v.checkBricksCanBeDestroyed(db, executor, brick_entries)
-	if err != nil {
-		logger.Err(err)
-		return err
-	}
-
-	// :TODO: What if the host is no longer available, we may need to try others
-	// Stop volume
-	err = executor.VolumeDestroy(sshhost, v.Info.Name)
-	if err != nil {
+	if err := v.destroyVolumeFromHost(executor, sshhost); err != nil {
 		logger.LogError("Unable to delete volume: %v", err)
-		return err
+		return nil, err
 	}
 
 	// Destroy bricks
-	err = DestroyBricks(db, executor, brick_entries)
+	space_reclaimed, err := DestroyBricks(db, executor, brick_entries)
 	if err != nil {
 		logger.LogError("Unable to delete bricks: %v", err)
-		return err
+		return nil, err
 	}
 
-	// Remove from entries from the db
-	err = db.Update(func(tx *bolt.Tx) error {
+	return space_reclaimed, nil
+}
+
+// teardown removes a volume and the volume's bricks from the database.
+// It updates related objects meta-data such as cluster contents and
+// device used/free sizes.
+func (v *VolumeEntry) teardown(
+	db wdb.DB, brick_entries []*BrickEntry, reclaimed ReclaimMap) error {
+
+	return db.Update(func(tx *bolt.Tx) error {
 		for _, brick := range brick_entries {
-			err = v.removeBrickFromDb(tx, brick)
+			err := brick.removeAndFree(tx, v, reclaimed[brick.Info.DeviceId])
 			if err != nil {
-				logger.Err(err)
-				// Everything is destroyed anyways, just keep deleting the others
-				// Do not return here
+				return err
 			}
 		}
 
-		// Remove volume from cluster
-		cluster, err := NewClusterEntryFromId(tx, v.Info.Cluster)
-		if err != nil {
-			logger.Err(err)
-			// Do not return here.. keep going
+		if v.Info.Cluster != "" {
+			cluster, err := NewClusterEntryFromId(tx, v.Info.Cluster)
+			if err != nil {
+				return err
+			}
+			cluster.VolumeDelete(v.Info.Id)
+			err = cluster.Save(tx)
+			if err != nil {
+				return err
+			}
 		}
-		cluster.VolumeDelete(v.Info.Id)
-
-		err = cluster.Save(tx)
-		if err != nil {
-			logger.Err(err)
-			// Do not return here.. keep going
-		}
-
-		// Delete volume
-		v.Delete(tx)
-
-		return nil
+		return v.Delete(tx)
 	})
-
-	return err
 }
 
-func (v *VolumeEntry) Expand(db *bolt.DB,
-	executor executors.Executor,
-	allocator Allocator,
-	sizeGB int) (e error) {
+func (v *VolumeEntry) manageHostFromBricks(db wdb.DB,
+	brick_entries []*BrickEntry) (sshhost string, err error) {
 
-	// Allocate new bricks in the cluster
-	brick_entries, err := v.allocBricksInCluster(db, allocator, v.Info.Cluster, sizeGB)
-	if err != nil {
-		return err
-	}
-
-	// Setup cleanup function
-	defer func() {
-		if e != nil {
-			logger.Debug("Error detected, cleaning up")
-
-			// Remove from db
-			db.Update(func(tx *bolt.Tx) error {
-				for _, brick := range brick_entries {
-					v.removeBrickFromDb(tx, brick)
-				}
-				err := v.Save(tx)
-				godbc.Check(err == nil)
-
-				return nil
-			})
+	err = db.View(func(tx *bolt.Tx) error {
+		for _, brick := range brick_entries {
+			node, err := NewNodeEntryFromId(tx, brick.Info.NodeId)
+			if err != nil {
+				return err
+			}
+			sshhost = node.ManageHostName()
+			return nil
 		}
-	}()
+		return fmt.Errorf("Unable to get management host from bricks")
+	})
+	return
+}
+
+func (v *VolumeEntry) deleteVolumeComponents(
+	db wdb.RODB) (brick_entries []*BrickEntry, e error) {
+
+	e = db.View(func(tx *bolt.Tx) error {
+		for _, id := range v.BricksIds() {
+			brick, err := NewBrickEntryFromId(tx, id)
+			if err != nil {
+				logger.LogError("Brick %v not found in db: %v", id, err)
+				return err
+			}
+			brick_entries = append(brick_entries, brick)
+		}
+		return nil
+	})
+	return
+}
+
+func (v *VolumeEntry) Destroy(db wdb.DB, executor executors.Executor) error {
+	logger.Info("Destroying volume %v", v.Info.Id)
+
+	return RunOperation(
+		NewVolumeDeleteOperation(v, db),
+		executor)
+}
+
+func (v *VolumeEntry) expandVolumeComponents(db wdb.DB,
+	sizeGB int,
+	setSize bool) (brick_entries []*BrickEntry, e error) {
+
+	e = db.Update(func(tx *bolt.Tx) error {
+		// Allocate new bricks in the cluster
+		txdb := wdb.WrapTx(tx)
+		var err error
+		brick_entries, err = v.allocBricksInCluster(txdb, v.Info.Cluster, sizeGB)
+		if err != nil {
+			return err
+		}
+
+		// Increase the recorded volume size
+		if setSize {
+			v.Info.Size += sizeGB
+		}
+
+		// Save brick entries
+		for _, brick := range brick_entries {
+			err := brick.Save(tx)
+			if err != nil {
+				return err
+			}
+		}
+
+		return v.Save(tx)
+	})
+	return
+}
+
+func (v *VolumeEntry) expandVolumeExec(db wdb.DB,
+	executor executors.Executor,
+	brick_entries []*BrickEntry) (e error) {
 
 	// Create bricks
-	err = CreateBricks(db, executor, brick_entries)
+	err := CreateBricks(db, executor, brick_entries)
 	if err != nil {
 		return err
 	}
-
-	// Setup cleanup function
-	defer func() {
-		if e != nil {
-			logger.Debug("Error detected, cleaning up")
-			DestroyBricks(db, executor, brick_entries)
-		}
-	}()
 
 	// Create a volume request to send to executor
 	// so that it can add the new bricks
@@ -538,25 +799,16 @@ func (v *VolumeEntry) Expand(db *bolt.DB,
 		return err
 	}
 
-	// Increase the recorded volume size
-	v.Info.Size += sizeGB
-
-	// Save volume entry
-	err = db.Update(func(tx *bolt.Tx) error {
-
-		// Save brick entries
-		for _, brick := range brick_entries {
-			err := brick.Save(tx)
-			if err != nil {
-				return err
-			}
-		}
-
-		return v.Save(tx)
-	})
-
 	return err
+}
 
+func (v *VolumeEntry) Expand(db wdb.DB,
+	executor executors.Executor,
+	sizeGB int) (e error) {
+
+	return RunOperation(
+		NewVolumeExpandOperation(v, db, sizeGB),
+		executor)
 }
 
 func (v *VolumeEntry) BricksIds() sort.StringSlice {
@@ -565,30 +817,314 @@ func (v *VolumeEntry) BricksIds() sort.StringSlice {
 	return ids
 }
 
-func (v *VolumeEntry) checkBricksCanBeDestroyed(db *bolt.DB,
-	executor executors.Executor,
-	brick_entries []*BrickEntry) error {
-
-	sg := utils.NewStatusGroup()
-
-	// Create a goroutine for each brick
-	for _, brick := range brick_entries {
-		sg.Add(1)
-		go func(b *BrickEntry) {
-			defer sg.Done()
-			sg.Err(b.DestroyCheck(db, executor))
-		}(brick)
-	}
-
-	// Wait here until all goroutines have returned.  If
-	// any of errored, it would be cought here
-	err := sg.Result()
-	if err != nil {
-		logger.Err(err)
-	}
-	return err
-}
-
 func VolumeEntryUpgrade(tx *bolt.Tx) error {
 	return nil
+}
+
+func (v *VolumeEntry) BlockVolumeAdd(id string) {
+	v.Info.BlockInfo.BlockVolumes = append(v.Info.BlockInfo.BlockVolumes, id)
+	v.Info.BlockInfo.BlockVolumes.Sort()
+}
+
+func (v *VolumeEntry) BlockVolumeDelete(id string) {
+	v.Info.BlockInfo.BlockVolumes = sortedstrings.Delete(v.Info.BlockInfo.BlockVolumes, id)
+}
+
+// Visible returns true if this volume is meant to be visible to
+// API calls.
+func (v *VolumeEntry) Visible() bool {
+	return v.Pending.Id == ""
+}
+
+func volumeNameExistsInCluster(tx *bolt.Tx, cluster *ClusterEntry,
+	name string) (found bool, e error) {
+	for _, volumeId := range cluster.Info.Volumes {
+		volume, err := NewVolumeEntryFromId(tx, volumeId)
+		if err != nil {
+			return false, err
+		}
+		if name == volume.Info.Name {
+			found = true
+			return
+		}
+	}
+
+	return
+}
+
+type ClusterReq struct {
+	Block bool
+	Name  string
+}
+
+func eligibleClusters(db wdb.RODB, req ClusterReq,
+	possibleClusters []string) ([]string, error) {
+	//
+	// If the request carries the Block flag, consider only
+	// those clusters that carry the Block flag if there are
+	// any, otherwise consider all clusters.
+	// If the request does *not* carry the Block flag, consider
+	// only those clusters that do not carry the Block flag.
+	//
+	if len(possibleClusters) == 0 {
+		return nil, fmt.Errorf("No clusters configured")
+	}
+	candidateClusters := []string{}
+	cerr := NewMultiClusterError("No eligible cluster for volume")
+	err := db.View(func(tx *bolt.Tx) error {
+		for _, clusterId := range possibleClusters {
+			c, err := NewClusterEntryFromId(tx, clusterId)
+			if err != nil {
+				return err
+			}
+			switch {
+			case req.Block && c.Info.Block:
+			case !req.Block && c.Info.File:
+			case !(c.Info.Block || c.Info.File):
+				// possibly bad cluster config
+				logger.Info("Cluster %v lacks both block and file flags",
+					clusterId)
+				cerr.Add(
+					c.Info.Id,
+					fmt.Errorf("Cluster has disabled all volume types"))
+				continue
+			default:
+				cerr.Add(
+					c.Info.Id,
+					fmt.Errorf("Cluster does not support requested volume type"))
+				continue
+			}
+			if req.Name != "" {
+				found, err := volumeNameExistsInCluster(tx, c, req.Name)
+				if err != nil {
+					return err
+				}
+				if found {
+					logger.LogError("Name %v already in use in cluster %v",
+						req.Name, clusterId)
+					cerr.Add(
+						c.Info.Id,
+						fmt.Errorf("Volume name '%v' already in use", req.Name))
+					continue
+				}
+			}
+			if c.volumeCount() >= maxVolumesPerCluster {
+				cerr.Add(
+					c.Info.Id,
+					fmt.Errorf("Cluster has %v volumes and limit is %v", c.volumeCount(), maxVolumesPerCluster))
+				continue
+			}
+			candidateClusters = append(candidateClusters, clusterId)
+		}
+		return nil
+	})
+
+	if err == nil && len(candidateClusters) == 0 {
+		logger.LogError("No clusters eligible to satisfy create volume request")
+		// use generic "no space" error if cluster errors is empty
+		err = ErrNoSpace
+		if cerr.Len() > 0 {
+			err = cerr
+		}
+	}
+	return candidateClusters, err
+}
+
+// hosts returns a node-to-host mapping for all nodes in the
+// volume's cluster. These hosts can be used as destinations
+// for gluster commands.
+func (v *VolumeEntry) hosts(db wdb.RODB) (nodeHosts, error) {
+	var hosts nodeHosts
+	err := db.View(func(tx *bolt.Tx) error {
+		vol, err := NewVolumeEntryFromId(tx, v.Info.Id)
+		if err != nil {
+			return err
+		}
+
+		cluster, err := NewClusterEntryFromId(tx, vol.Info.Cluster)
+		if err != nil {
+			return err
+		}
+		hosts, err = cluster.hosts(wdb.WrapTx(tx))
+		return err
+	})
+	return hosts, err
+}
+
+func (v *VolumeEntry) prepareVolumeClone(tx *bolt.Tx, clonename string) (
+	*VolumeEntry, []*BrickEntry, []*DeviceEntry, error) {
+
+	if v.Info.Block {
+		return nil, nil, nil, ErrCloneBlockVol
+	}
+	bricks := []*BrickEntry{}
+	devices := []*DeviceEntry{}
+	cvol := NewVolumeEntryFromClone(v, clonename)
+	for _, brickId := range v.Bricks {
+		brick, err := CloneBrickEntryFromId(tx, brickId)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		device, err := NewDeviceEntryFromId(tx, brick.Info.DeviceId)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+
+		brick.Info.VolumeId = cvol.Info.Id
+
+		cvol.Bricks = append(cvol.Bricks, brick.Id())
+		bricks = append(bricks, brick)
+
+		// Add the cloned brick to the device (clones do not take extra storage space)
+		device.BrickAdd(brick.Id())
+		devices = append(devices, device)
+	}
+	return cvol, bricks, devices, nil
+}
+
+func updateCloneBrickPaths(bricks []*BrickEntry,
+	orig, clone *executors.Volume) error {
+
+	pathIndex := map[string]int{}
+	for i, brick := range bricks {
+		pathIndex[brick.Info.Path] = i
+	}
+	if len(pathIndex) != len(bricks) {
+		return fmt.Errorf(
+			"Unexpected number of brick paths. %v unique paths, %v bricks",
+			len(pathIndex), len(bricks))
+	}
+
+	for i, b := range orig.Bricks.BrickList {
+		c := clone.Bricks.BrickList[i]
+		origPath := strings.Split(b.Name, ":")[1]
+		clonePath := strings.Split(c.Name, ":")[1]
+
+		bidx, ok := pathIndex[origPath]
+		if !ok {
+			return fmt.Errorf(
+				"Failed to find brick path %v in known brick paths",
+				origPath)
+		}
+		brick := bricks[bidx]
+		logger.Debug("Updating brick %v with new path %v (had %v)",
+			brick.Id(), clonePath, origPath)
+		brick.Info.Path = clonePath
+		brick.LvmLv = paths.VolumeIdToCloneLv(clone.ID)
+	}
+	return nil
+}
+
+func (v *VolumeEntry) cloneVolumeRequest(db wdb.RODB, clonename string) (*executors.VolumeCloneRequest, string, error) {
+	godbc.Require(db != nil)
+	godbc.Require(clonename != "")
+
+	// Setup list of bricks
+	vcr := &executors.VolumeCloneRequest{}
+	vcr.Volume = v.Info.Name
+	vcr.Clone = clonename
+
+	var sshhost string
+	err := db.View(func(tx *bolt.Tx) error {
+		vol, err := NewVolumeEntryFromId(tx, v.Info.Id)
+		if err != nil {
+			return err
+		}
+
+		cluster, err := NewClusterEntryFromId(tx, vol.Info.Cluster)
+		if err != nil {
+			return err
+		}
+
+		// TODO: verify if the node is available/online?
+		// picking the 1st node for now...
+		node, err := NewNodeEntryFromId(tx, cluster.Info.Nodes[0])
+		if err != nil {
+			return err
+		}
+		sshhost = node.ManageHostName()
+
+		return nil
+	})
+	if err != nil {
+		return nil, "", err
+	}
+
+	if sshhost == "" {
+		return nil, "", errors.New("failed to find host for cloning volume " + v.Info.Name)
+	}
+
+	return vcr, sshhost, nil
+}
+
+// consistencyCheck ... verifies that a volumeEntry is consistent with rest of the database.
+// It is a method on volumeEntry and needs rest of the database as its input.
+func (v *VolumeEntry) consistencyCheck(db Db) (response DbEntryCheckResponse) {
+
+	var aggregateBlockVolumesSize = 0
+
+	// No consistency check required for following attributes
+	// Id
+	// Name
+	// Durability
+	// GlusterVolumeOptions
+	// Gid
+
+	// PendingId
+	if v.Pending.Id != "" {
+		response.Pending = true
+		if _, found := db.PendingOperations[v.Pending.Id]; !found {
+			response.Inconsistencies = append(response.Inconsistencies, fmt.Sprintf("Volume %v marked pending but no pending op %v", v.Info.Id, v.Pending.Id))
+		}
+		// TODO: Validate back the pending operations' relationship to the volume
+		// This is skipped because some of it is handled in auto cleanup code.
+	}
+
+	// Cluster and mount hosts
+	if clusterEntry, found := db.Clusters[v.Info.Cluster]; !found {
+		response.Inconsistencies = append(response.Inconsistencies, fmt.Sprintf("Volume %v unknown cluster %v", v.Info.Id, v.Info.Cluster))
+	} else {
+		if !sortedstrings.Has(clusterEntry.Info.Volumes, v.Info.Id) {
+			response.Inconsistencies = append(response.Inconsistencies, fmt.Sprintf("Volume %v no link back to volume from cluster %v", v.Info.Id, v.Info.Cluster))
+		}
+		if len(v.Info.Mount.GlusterFS.Hosts) != len(clusterEntry.Info.Nodes) {
+			response.Inconsistencies = append(response.Inconsistencies, fmt.Sprintf("Volume %v mount hosts list(%v) is not same as list of all nodes of the cluster(%v)", v.Info.Id, v.Info.Mount.GlusterFS.Hosts, clusterEntry.Info.Nodes))
+		}
+		// TODO: I should probably match the IPs of the mount hosts to that of storage hostnames but not sure if it is worth it.
+	}
+
+	// Bricks
+	for _, brick := range v.Bricks {
+		if brickEntry, found := db.Bricks[brick]; !found {
+			response.Inconsistencies = append(response.Inconsistencies, fmt.Sprintf("Volume %v unknown brick %v", v.Info.Id, brick))
+		} else {
+			if brickEntry.Info.VolumeId != v.Info.Id {
+				response.Inconsistencies = append(response.Inconsistencies, fmt.Sprintf("Volume %v no link back to volume from brick %v", v.Info.Id, brick))
+			}
+		}
+	}
+
+	// BlockVolumes and sizes
+	for _, blockVolume := range v.Info.BlockInfo.BlockVolumes {
+		if blockVolumeEntry, found := db.BlockVolumes[blockVolume]; !found {
+			response.Inconsistencies = append(response.Inconsistencies, fmt.Sprintf("Volume %v unknown blockvolume %v", v.Info.Id, blockVolume))
+		} else {
+			if blockVolumeEntry.Info.BlockHostingVolume != v.Info.Id {
+				response.Inconsistencies = append(response.Inconsistencies, fmt.Sprintf("Volume %v no link back to volume from blockvolume %v", v.Info.Id, blockVolume))
+			}
+			aggregateBlockVolumesSize += blockVolumeEntry.Info.Size
+		}
+	}
+	if v.Info.Block == true {
+		if aggregateBlockVolumesSize != v.Info.Size-v.Info.BlockInfo.FreeSize-v.Info.BlockInfo.ReservedSize {
+			response.Inconsistencies = append(response.Inconsistencies,
+				fmt.Sprintf("Volume %v blocksize differs aggregateSize %v != volumeSize %v - freeSize %v - reservedSize %v",
+					v.Info.Id, aggregateBlockVolumesSize, v.Info.Size, v.Info.BlockInfo.FreeSize, v.Info.BlockInfo.ReservedSize))
+		}
+	} else if aggregateBlockVolumesSize != 0 {
+		response.Inconsistencies = append(response.Inconsistencies, fmt.Sprintf("Volume %v has blockvolumes but not block flag", v.Info.Id))
+	}
+
+	return
+
 }

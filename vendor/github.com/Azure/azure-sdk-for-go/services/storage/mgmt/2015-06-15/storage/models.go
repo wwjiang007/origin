@@ -18,12 +18,16 @@ package storage
 // Changes may cause incorrect behavior and will be lost if the code is regenerated.
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/date"
 	"net/http"
 )
+
+// The package's fully qualified name.
+const fqdn = "github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2015-06-15/storage"
 
 // AccountStatus enumerates the values for account status.
 type AccountStatus string
@@ -34,6 +38,11 @@ const (
 	// Unavailable ...
 	Unavailable AccountStatus = "Unavailable"
 )
+
+// PossibleAccountStatusValues returns an array of possible values for the AccountStatus const type.
+func PossibleAccountStatusValues() []AccountStatus {
+	return []AccountStatus{Available, Unavailable}
+}
 
 // AccountType enumerates the values for account type.
 type AccountType string
@@ -51,6 +60,11 @@ const (
 	StandardZRS AccountType = "Standard_ZRS"
 )
 
+// PossibleAccountTypeValues returns an array of possible values for the AccountType const type.
+func PossibleAccountTypeValues() []AccountType {
+	return []AccountType{PremiumLRS, StandardGRS, StandardLRS, StandardRAGRS, StandardZRS}
+}
+
 // ProvisioningState enumerates the values for provisioning state.
 type ProvisioningState string
 
@@ -63,6 +77,11 @@ const (
 	Succeeded ProvisioningState = "Succeeded"
 )
 
+// PossibleProvisioningStateValues returns an array of possible values for the ProvisioningState const type.
+func PossibleProvisioningStateValues() []ProvisioningState {
+	return []ProvisioningState{Creating, ResolvingDNS, Succeeded}
+}
+
 // Reason enumerates the values for reason.
 type Reason string
 
@@ -72,6 +91,11 @@ const (
 	// AlreadyExists ...
 	AlreadyExists Reason = "AlreadyExists"
 )
+
+// PossibleReasonValues returns an array of possible values for the Reason const type.
+func PossibleReasonValues() []Reason {
+	return []Reason{AccountNameInvalid, AlreadyExists}
+}
 
 // UsageUnit enumerates the values for usage unit.
 type UsageUnit string
@@ -91,15 +115,20 @@ const (
 	Seconds UsageUnit = "Seconds"
 )
 
+// PossibleUsageUnitValues returns an array of possible values for the UsageUnit const type.
+func PossibleUsageUnitValues() []UsageUnit {
+	return []UsageUnit{Bytes, BytesPerSecond, Count, CountsPerSecond, Percent, Seconds}
+}
+
 // Account the storage account.
 type Account struct {
 	autorest.Response  `json:"-"`
 	*AccountProperties `json:"properties,omitempty"`
-	// ID - Resource Id
+	// ID - READ-ONLY; Resource Id
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name
+	// Name - READ-ONLY; Resource name
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type
+	// Type - READ-ONLY; Resource type
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location
 	Location *string `json:"location,omitempty"`
@@ -112,15 +141,6 @@ func (a Account) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
 	if a.AccountProperties != nil {
 		objectMap["properties"] = a.AccountProperties
-	}
-	if a.ID != nil {
-		objectMap["id"] = a.ID
-	}
-	if a.Name != nil {
-		objectMap["name"] = a.Name
-	}
-	if a.Type != nil {
-		objectMap["type"] = a.Type
 	}
 	if a.Location != nil {
 		objectMap["location"] = a.Location
@@ -200,7 +220,8 @@ func (a *Account) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// AccountCheckNameAvailabilityParameters the parameters used to check the availabity of the storage account name.
+// AccountCheckNameAvailabilityParameters the parameters used to check the availability of the storage
+// account name.
 type AccountCheckNameAvailabilityParameters struct {
 	Name *string `json:"name,omitempty"`
 	Type *string `json:"type,omitempty"`
@@ -333,50 +354,31 @@ type AccountRegenerateKeyParameters struct {
 	KeyName *string `json:"keyName,omitempty"`
 }
 
-// AccountsCreateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// AccountsCreateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type AccountsCreateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future AccountsCreateFuture) Result(client AccountsClient) (a Account, err error) {
+func (future *AccountsCreateFuture) Result(client AccountsClient) (a Account, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "storage.AccountsCreateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return a, azure.NewAsyncOpIncompleteError("storage.AccountsCreateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		a, err = client.CreateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "storage.AccountsCreateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("storage.AccountsCreateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if a.Response.Response, err = future.GetResult(sender); err == nil && a.Response.Response.StatusCode != http.StatusNoContent {
+		a, err = client.CreateResponder(a.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "storage.AccountsCreateFuture", "Result", a.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "storage.AccountsCreateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	a, err = client.CreateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "storage.AccountsCreateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -448,8 +450,8 @@ type CheckNameAvailabilityResult struct {
 type CustomDomain struct {
 	// Name - The custom domain name. Name is the CNAME source.
 	Name *string `json:"name,omitempty"`
-	// UseSubDomain - Indicates whether indirect CName validation is enabled. Default value is false. This should only be set on updates
-	UseSubDomain *bool `json:"useSubDomain,omitempty"`
+	// UseSubDomainName - Indicates whether indirect CName validation is enabled. Default value is false. This should only be set on updates
+	UseSubDomainName *bool `json:"useSubDomainName,omitempty"`
 }
 
 // Endpoints the URIs that are used to perform a retrieval of a public blob, queue or table object.
@@ -466,11 +468,11 @@ type Endpoints struct {
 
 // Resource describes a storage resource.
 type Resource struct {
-	// ID - Resource Id
+	// ID - READ-ONLY; Resource Id
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name
+	// Name - READ-ONLY; Resource name
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type
+	// Type - READ-ONLY; Resource type
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location
 	Location *string `json:"location,omitempty"`
@@ -481,15 +483,6 @@ type Resource struct {
 // MarshalJSON is the custom marshaler for Resource.
 func (r Resource) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
-	if r.ID != nil {
-		objectMap["id"] = r.ID
-	}
-	if r.Name != nil {
-		objectMap["name"] = r.Name
-	}
-	if r.Type != nil {
-		objectMap["type"] = r.Type
-	}
 	if r.Location != nil {
 		objectMap["location"] = r.Location
 	}

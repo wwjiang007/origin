@@ -10,7 +10,6 @@
 /assets/nbproject
 /examples/sample-app/openshift.local.*
 /examples/sample-app/logs/openshift.log
-/dind-*.rc
 /os-version-defs
 /.make/
 /cmd/oc/oc.syso
@@ -24,5 +23,6 @@ origin.iml
 .tag*
 .project
 *.go~
-tags
 .envrc
+# To workaround go-git problem in publishing bots
+vendor/github.com/prometheus/procfs/fixtures/26231/exe

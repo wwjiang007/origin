@@ -21,6 +21,7 @@ import (
 	"context"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -40,13 +41,26 @@ func NewProtectedItemsGroupClientWithBaseURI(baseURI string, subscriptionID stri
 }
 
 // CreateOrUpdate enables backup of an item or to modifies the backup policy information of an already backed up item.
-// This is an asynchronous operation. To know the status of the operation, call the GetItemOperationResult API.
-//
-// vaultName is the name of the recovery services vault. resourceGroupName is the name of the resource group where
-// the recovery services vault is present. fabricName is fabric name associated with the backup item. containerName
-// is container name associated with the backup item. protectedItemName is item name to be backed up. parameters is
-// resource backed up item
-func (client ProtectedItemsGroupClient) CreateOrUpdate(ctx context.Context, vaultName string, resourceGroupName string, fabricName string, containerName string, protectedItemName string, parameters ProtectedItemResource) (result autorest.Response, err error) {
+// This is an
+// asynchronous operation. To know the status of the operation, call the GetItemOperationResult API.
+// Parameters:
+// vaultName - the name of the recovery services vault.
+// resourceGroupName - the name of the resource group where the recovery services vault is present.
+// fabricName - fabric name associated with the backup item.
+// containerName - container name associated with the backup item.
+// protectedItemName - item name to be backed up.
+// parameters - resource backed up item
+func (client ProtectedItemsGroupClient) CreateOrUpdate(ctx context.Context, vaultName string, resourceGroupName string, fabricName string, containerName string, protectedItemName string, parameters ProtectedItemResource) (result ProtectedItemResource, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProtectedItemsGroupClient.CreateOrUpdate")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.CreateOrUpdatePreparer(ctx, vaultName, resourceGroupName, fabricName, containerName, protectedItemName, parameters)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "backup.ProtectedItemsGroupClient", "CreateOrUpdate", nil, "Failure preparing request")
@@ -55,7 +69,7 @@ func (client ProtectedItemsGroupClient) CreateOrUpdate(ctx context.Context, vaul
 
 	resp, err := client.CreateOrUpdateSender(req)
 	if err != nil {
-		result.Response = resp
+		result.Response = autorest.Response{Response: resp}
 		err = autorest.NewErrorWithError(err, "backup.ProtectedItemsGroupClient", "CreateOrUpdate", resp, "Failure sending request")
 		return
 	}
@@ -85,7 +99,7 @@ func (client ProtectedItemsGroupClient) CreateOrUpdatePreparer(ctx context.Conte
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/Subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.RecoveryServices/vaults/{vaultName}/backupFabrics/{fabricName}/protectionContainers/{containerName}/protectedItems/{protectedItemName}", pathParameters),
@@ -97,30 +111,43 @@ func (client ProtectedItemsGroupClient) CreateOrUpdatePreparer(ctx context.Conte
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client ProtectedItemsGroupClient) CreateOrUpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateOrUpdateResponder handles the response to the CreateOrUpdate request. The method always
 // closes the http.Response Body.
-func (client ProtectedItemsGroupClient) CreateOrUpdateResponder(resp *http.Response) (result autorest.Response, err error) {
+func (client ProtectedItemsGroupClient) CreateOrUpdateResponder(resp *http.Response) (result ProtectedItemResource, err error) {
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted),
+		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
-	result.Response = resp
+	result.Response = autorest.Response{Response: resp}
 	return
 }
 
 // Delete used to disable backup of an item within a container. This is an asynchronous operation. To know the status
-// of the request, call the GetItemOperationResult API.
-//
-// vaultName is the name of the recovery services vault. resourceGroupName is the name of the resource group where
-// the recovery services vault is present. fabricName is fabric name associated with the backed up item.
-// containerName is container name associated with the backed up item. protectedItemName is backed up item to be
-// deleted.
+// of the
+// request, call the GetItemOperationResult API.
+// Parameters:
+// vaultName - the name of the recovery services vault.
+// resourceGroupName - the name of the resource group where the recovery services vault is present.
+// fabricName - fabric name associated with the backed up item.
+// containerName - container name associated with the backed up item.
+// protectedItemName - backed up item to be deleted.
 func (client ProtectedItemsGroupClient) Delete(ctx context.Context, vaultName string, resourceGroupName string, fabricName string, containerName string, protectedItemName string) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProtectedItemsGroupClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeletePreparer(ctx, vaultName, resourceGroupName, fabricName, containerName, protectedItemName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "backup.ProtectedItemsGroupClient", "Delete", nil, "Failure preparing request")
@@ -169,8 +196,8 @@ func (client ProtectedItemsGroupClient) DeletePreparer(ctx context.Context, vaul
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client ProtectedItemsGroupClient) DeleteSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
@@ -186,13 +213,26 @@ func (client ProtectedItemsGroupClient) DeleteResponder(resp *http.Response) (re
 }
 
 // Get provides the details of the backed up item. This is an asynchronous operation. To know the status of the
-// operation, call the GetItemOperationResult API.
-//
-// vaultName is the name of the recovery services vault. resourceGroupName is the name of the resource group where
-// the recovery services vault is present. fabricName is fabric name associated with the backed up item.
-// containerName is container name associated with the backed up item. protectedItemName is backed up item name
-// whose details are to be fetched. filter is oData filter options.
+// operation,
+// call the GetItemOperationResult API.
+// Parameters:
+// vaultName - the name of the recovery services vault.
+// resourceGroupName - the name of the resource group where the recovery services vault is present.
+// fabricName - fabric name associated with the backed up item.
+// containerName - container name associated with the backed up item.
+// protectedItemName - backed up item name whose details are to be fetched.
+// filter - oData filter options.
 func (client ProtectedItemsGroupClient) Get(ctx context.Context, vaultName string, resourceGroupName string, fabricName string, containerName string, protectedItemName string, filter string) (result ProtectedItemResource, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProtectedItemsGroupClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, vaultName, resourceGroupName, fabricName, containerName, protectedItemName, filter)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "backup.ProtectedItemsGroupClient", "Get", nil, "Failure preparing request")
@@ -244,8 +284,8 @@ func (client ProtectedItemsGroupClient) GetPreparer(ctx context.Context, vaultNa
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client ProtectedItemsGroupClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always

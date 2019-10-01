@@ -18,12 +18,17 @@ package servicefabric
 // Changes may cause incorrect behavior and will be lost if the code is regenerated.
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
+
+// The package's fully qualified name.
+const fqdn = "github.com/Azure/azure-sdk-for-go/services/servicefabric/mgmt/2016-09-01/servicefabric"
 
 // ClusterState enumerates the values for cluster state.
 type ClusterState string
@@ -51,6 +56,11 @@ const (
 	WaitingForNodes ClusterState = "WaitingForNodes"
 )
 
+// PossibleClusterStateValues returns an array of possible values for the ClusterState const type.
+func PossibleClusterStateValues() []ClusterState {
+	return []ClusterState{AutoScale, BaselineUpgrade, Deploying, EnforcingClusterVersion, Ready, UpdatingInfrastructure, UpdatingUserCertificate, UpdatingUserConfiguration, UpgradeServiceUnreachable, WaitingForNodes}
+}
+
 // DurabilityLevel enumerates the values for durability level.
 type DurabilityLevel string
 
@@ -63,6 +73,11 @@ const (
 	Silver DurabilityLevel = "Silver"
 )
 
+// PossibleDurabilityLevelValues returns an array of possible values for the DurabilityLevel const type.
+func PossibleDurabilityLevelValues() []DurabilityLevel {
+	return []DurabilityLevel{Bronze, Gold, Silver}
+}
+
 // Environment enumerates the values for environment.
 type Environment string
 
@@ -72,6 +87,11 @@ const (
 	// Windows ...
 	Windows Environment = "Windows"
 )
+
+// PossibleEnvironmentValues returns an array of possible values for the Environment const type.
+func PossibleEnvironmentValues() []Environment {
+	return []Environment{Linux, Windows}
+}
 
 // ProvisioningState enumerates the values for provisioning state.
 type ProvisioningState string
@@ -87,6 +107,11 @@ const (
 	Updating ProvisioningState = "Updating"
 )
 
+// PossibleProvisioningStateValues returns an array of possible values for the ProvisioningState const type.
+func PossibleProvisioningStateValues() []ProvisioningState {
+	return []ProvisioningState{Canceled, Failed, Succeeded, Updating}
+}
+
 // ReliabilityLevel enumerates the values for reliability level.
 type ReliabilityLevel string
 
@@ -98,6 +123,11 @@ const (
 	// ReliabilityLevelSilver ...
 	ReliabilityLevelSilver ReliabilityLevel = "Silver"
 )
+
+// PossibleReliabilityLevelValues returns an array of possible values for the ReliabilityLevel const type.
+func PossibleReliabilityLevelValues() []ReliabilityLevel {
+	return []ReliabilityLevel{ReliabilityLevelBronze, ReliabilityLevelGold, ReliabilityLevelSilver}
+}
 
 // ReliabilityLevel1 enumerates the values for reliability level 1.
 type ReliabilityLevel1 string
@@ -113,6 +143,11 @@ const (
 	ReliabilityLevel1Silver ReliabilityLevel1 = "Silver"
 )
 
+// PossibleReliabilityLevel1Values returns an array of possible values for the ReliabilityLevel1 const type.
+func PossibleReliabilityLevel1Values() []ReliabilityLevel1 {
+	return []ReliabilityLevel1{ReliabilityLevel1Bronze, ReliabilityLevel1Gold, ReliabilityLevel1Platinum, ReliabilityLevel1Silver}
+}
+
 // UpgradeMode enumerates the values for upgrade mode.
 type UpgradeMode string
 
@@ -123,6 +158,11 @@ const (
 	Manual UpgradeMode = "Manual"
 )
 
+// PossibleUpgradeModeValues returns an array of possible values for the UpgradeMode const type.
+func PossibleUpgradeModeValues() []UpgradeMode {
+	return []UpgradeMode{Automatic, Manual}
+}
+
 // UpgradeMode1 enumerates the values for upgrade mode 1.
 type UpgradeMode1 string
 
@@ -132,6 +172,11 @@ const (
 	// UpgradeMode1Manual ...
 	UpgradeMode1Manual UpgradeMode1 = "Manual"
 )
+
+// PossibleUpgradeMode1Values returns an array of possible values for the UpgradeMode1 const type.
+func PossibleUpgradeMode1Values() []UpgradeMode1 {
+	return []UpgradeMode1{UpgradeMode1Automatic, UpgradeMode1Manual}
+}
 
 // X509StoreName enumerates the values for x509 store name.
 type X509StoreName string
@@ -154,6 +199,11 @@ const (
 	// TrustedPublisher ...
 	TrustedPublisher X509StoreName = "TrustedPublisher"
 )
+
+// PossibleX509StoreNameValues returns an array of possible values for the X509StoreName const type.
+func PossibleX509StoreNameValues() []X509StoreName {
+	return []X509StoreName{AddressBook, AuthRoot, CertificateAuthority, Disallowed, My, Root, TrustedPeople, TrustedPublisher}
+}
 
 // AvailableOperationDisplay operation supported by ServiceFabric resource provider
 type AvailableOperationDisplay struct {
@@ -191,7 +241,7 @@ type CertificateDescription struct {
 type ClientCertificateCommonName struct {
 	// IsAdmin - Is this certificate used for admin access from the client, if false , it is used or query only access
 	IsAdmin *bool `json:"isAdmin,omitempty"`
-	// CertificateCommonName - Certificate common name to be granted access; be carefull using wild card common names
+	// CertificateCommonName - Certificate common name to be granted access; be careful using wild card common names
 	CertificateCommonName *string `json:"certificateCommonName,omitempty"`
 	// CertificateIssuerThumbprint - Certificate issuer thumbprint
 	CertificateIssuerThumbprint *string `json:"certificateIssuerThumbprint,omitempty"`
@@ -209,11 +259,11 @@ type ClientCertificateThumbprint struct {
 type Cluster struct {
 	autorest.Response  `json:"-"`
 	*ClusterProperties `json:"properties,omitempty"`
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -226,15 +276,6 @@ func (c Cluster) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
 	if c.ClusterProperties != nil {
 		objectMap["properties"] = c.ClusterProperties
-	}
-	if c.ID != nil {
-		objectMap["id"] = c.ID
-	}
-	if c.Name != nil {
-		objectMap["name"] = c.Name
-	}
-	if c.Type != nil {
-		objectMap["type"] = c.Type
 	}
 	if c.Location != nil {
 		objectMap["location"] = c.Location
@@ -322,26 +363,44 @@ type ClusterCodeVersionsListResult struct {
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
-// ClusterCodeVersionsListResultIterator provides access to a complete listing of ClusterCodeVersionsResult values.
+// ClusterCodeVersionsListResultIterator provides access to a complete listing of ClusterCodeVersionsResult
+// values.
 type ClusterCodeVersionsListResultIterator struct {
 	i    int
 	page ClusterCodeVersionsListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *ClusterCodeVersionsListResultIterator) Next() error {
+func (iter *ClusterCodeVersionsListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ClusterCodeVersionsListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *ClusterCodeVersionsListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -363,6 +422,11 @@ func (iter ClusterCodeVersionsListResultIterator) Value() ClusterCodeVersionsRes
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the ClusterCodeVersionsListResultIterator type.
+func NewClusterCodeVersionsListResultIterator(page ClusterCodeVersionsListResultPage) ClusterCodeVersionsListResultIterator {
+	return ClusterCodeVersionsListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (ccvlr ClusterCodeVersionsListResult) IsEmpty() bool {
 	return ccvlr.Value == nil || len(*ccvlr.Value) == 0
@@ -370,11 +434,11 @@ func (ccvlr ClusterCodeVersionsListResult) IsEmpty() bool {
 
 // clusterCodeVersionsListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (ccvlr ClusterCodeVersionsListResult) clusterCodeVersionsListResultPreparer() (*http.Request, error) {
+func (ccvlr ClusterCodeVersionsListResult) clusterCodeVersionsListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if ccvlr.NextLink == nil || len(to.String(ccvlr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(ccvlr.NextLink)))
@@ -382,19 +446,36 @@ func (ccvlr ClusterCodeVersionsListResult) clusterCodeVersionsListResultPreparer
 
 // ClusterCodeVersionsListResultPage contains a page of ClusterCodeVersionsResult values.
 type ClusterCodeVersionsListResultPage struct {
-	fn    func(ClusterCodeVersionsListResult) (ClusterCodeVersionsListResult, error)
+	fn    func(context.Context, ClusterCodeVersionsListResult) (ClusterCodeVersionsListResult, error)
 	ccvlr ClusterCodeVersionsListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *ClusterCodeVersionsListResultPage) Next() error {
-	next, err := page.fn(page.ccvlr)
+func (page *ClusterCodeVersionsListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ClusterCodeVersionsListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.ccvlr)
 	if err != nil {
 		return err
 	}
 	page.ccvlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *ClusterCodeVersionsListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -415,6 +496,11 @@ func (page ClusterCodeVersionsListResultPage) Values() []ClusterCodeVersionsResu
 	return *page.ccvlr.Value
 }
 
+// Creates a new instance of the ClusterCodeVersionsListResultPage type.
+func NewClusterCodeVersionsListResultPage(getNextPage func(context.Context, ClusterCodeVersionsListResult) (ClusterCodeVersionsListResult, error)) ClusterCodeVersionsListResultPage {
+	return ClusterCodeVersionsListResultPage{fn: getNextPage}
+}
+
 // ClusterCodeVersionsResult the result of the ServiceFabric runtime versions
 type ClusterCodeVersionsResult struct {
 	autorest.Response `json:"-"`
@@ -425,6 +511,24 @@ type ClusterCodeVersionsResult struct {
 	// Type - The result resource type
 	Type                   *string `json:"type,omitempty"`
 	*ClusterVersionDetails `json:"properties,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for ClusterCodeVersionsResult.
+func (ccvr ClusterCodeVersionsResult) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if ccvr.ID != nil {
+		objectMap["id"] = ccvr.ID
+	}
+	if ccvr.Name != nil {
+		objectMap["name"] = ccvr.Name
+	}
+	if ccvr.Type != nil {
+		objectMap["type"] = ccvr.Type
+	}
+	if ccvr.ClusterVersionDetails != nil {
+		objectMap["properties"] = ccvr.ClusterVersionDetails
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for ClusterCodeVersionsResult struct.
@@ -478,7 +582,8 @@ func (ccvr *ClusterCodeVersionsResult) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// ClusterHealthPolicy defines a health policy used to evaluate the health of the cluster or of a cluster node.
+// ClusterHealthPolicy defines a health policy used to evaluate the health of the cluster or of a cluster
+// node.
 type ClusterHealthPolicy struct {
 	// MaxPercentUnhealthyNodes - The maximum allowed percentage of unhealthy nodes before reporting an error. For example, to allow 10% of nodes to be unhealthy, this value would be 10.
 	MaxPercentUnhealthyNodes *int32 `json:"maxPercentUnhealthyNodes,omitempty"`
@@ -500,20 +605,37 @@ type ClusterListResultIterator struct {
 	page ClusterListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *ClusterListResultIterator) Next() error {
+func (iter *ClusterListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ClusterListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *ClusterListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -535,6 +657,11 @@ func (iter ClusterListResultIterator) Value() Cluster {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the ClusterListResultIterator type.
+func NewClusterListResultIterator(page ClusterListResultPage) ClusterListResultIterator {
+	return ClusterListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (clr ClusterListResult) IsEmpty() bool {
 	return clr.Value == nil || len(*clr.Value) == 0
@@ -542,11 +669,11 @@ func (clr ClusterListResult) IsEmpty() bool {
 
 // clusterListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (clr ClusterListResult) clusterListResultPreparer() (*http.Request, error) {
+func (clr ClusterListResult) clusterListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if clr.NextLink == nil || len(to.String(clr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(clr.NextLink)))
@@ -554,19 +681,36 @@ func (clr ClusterListResult) clusterListResultPreparer() (*http.Request, error) 
 
 // ClusterListResultPage contains a page of Cluster values.
 type ClusterListResultPage struct {
-	fn  func(ClusterListResult) (ClusterListResult, error)
+	fn  func(context.Context, ClusterListResult) (ClusterListResult, error)
 	clr ClusterListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *ClusterListResultPage) Next() error {
-	next, err := page.fn(page.clr)
+func (page *ClusterListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ClusterListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.clr)
 	if err != nil {
 		return err
 	}
 	page.clr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *ClusterListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -587,19 +731,24 @@ func (page ClusterListResultPage) Values() []Cluster {
 	return *page.clr.Value
 }
 
+// Creates a new instance of the ClusterListResultPage type.
+func NewClusterListResultPage(getNextPage func(context.Context, ClusterListResult) (ClusterListResult, error)) ClusterListResultPage {
+	return ClusterListResultPage{fn: getNextPage}
+}
+
 // ClusterProperties the cluster resource properties
 type ClusterProperties struct {
-	// AvailableClusterVersions - The available cluster code version which the cluster can upgrade to, note that you must choose upgradeMode to manual to upgrade to
+	// AvailableClusterVersions - READ-ONLY; The available cluster code version which the cluster can upgrade to, note that you must choose upgradeMode to manual to upgrade to
 	AvailableClusterVersions *[]ClusterVersionDetails `json:"availableClusterVersions,omitempty"`
-	// ClusterID - The unique identifier for the cluster resource
+	// ClusterID - READ-ONLY; The unique identifier for the cluster resource
 	ClusterID *string `json:"clusterId,omitempty"`
-	// ClusterState - The state for the cluster. Possible values include: 'WaitingForNodes', 'Deploying', 'BaselineUpgrade', 'UpdatingUserConfiguration', 'UpdatingUserCertificate', 'UpdatingInfrastructure', 'EnforcingClusterVersion', 'UpgradeServiceUnreachable', 'AutoScale', 'Ready'
+	// ClusterState - READ-ONLY; The state for the cluster. Possible values include: 'WaitingForNodes', 'Deploying', 'BaselineUpgrade', 'UpdatingUserConfiguration', 'UpdatingUserCertificate', 'UpdatingInfrastructure', 'EnforcingClusterVersion', 'UpgradeServiceUnreachable', 'AutoScale', 'Ready'
 	ClusterState ClusterState `json:"clusterState,omitempty"`
-	// ClusterEndpoint - The endpoint for the cluster connecting to servicefabric resource provider
+	// ClusterEndpoint - READ-ONLY; The endpoint for the cluster connecting to servicefabric resource provider
 	ClusterEndpoint *string `json:"clusterEndpoint,omitempty"`
 	// ClusterCodeVersion - The ServiceFabric code version running in your cluster
 	ClusterCodeVersion *string `json:"clusterCodeVersion,omitempty"`
-	// Certificate - This primay certificate will be used as cluster node to node security, SSL certificate for cluster management endpoint and default admin client
+	// Certificate - This primary certificate will be used as cluster node to node security, SSL certificate for cluster management endpoint and default admin client
 	Certificate *CertificateDescription `json:"certificate,omitempty"`
 	// ReliabilityLevel - Cluster reliability level indicates replica set size of system service. Possible values include: 'ReliabilityLevel1Bronze', 'ReliabilityLevel1Silver', 'ReliabilityLevel1Gold', 'ReliabilityLevel1Platinum'
 	ReliabilityLevel ReliabilityLevel1 `json:"reliabilityLevel,omitempty"`
@@ -615,11 +764,11 @@ type ClusterProperties struct {
 	ReverseProxyCertificate *CertificateDescription `json:"reverseProxyCertificate,omitempty"`
 	// ManagementEndpoint - The http management endpoint of the cluster
 	ManagementEndpoint *string `json:"managementEndpoint,omitempty"`
-	// NodeTypes - The list of nodetypes that make up the cluster
+	// NodeTypes - The list of node types that make up the cluster
 	NodeTypes *[]NodeTypeDescription `json:"nodeTypes,omitempty"`
 	// AzureActiveDirectory - The settings to enable AAD authentication on the cluster
 	AzureActiveDirectory *AzureActiveDirectory `json:"azureActiveDirectory,omitempty"`
-	// ProvisioningState - The provisioning state of the cluster resource. Possible values include: 'Updating', 'Succeeded', 'Failed', 'Canceled'
+	// ProvisioningState - READ-ONLY; The provisioning state of the cluster resource. Possible values include: 'Updating', 'Succeeded', 'Failed', 'Canceled'
 	ProvisioningState ProvisioningState `json:"provisioningState,omitempty"`
 	// VMImage - The name of VM image VMSS has been configured with. Generic names such as Windows or Linux can be used.
 	VMImage *string `json:"vmImage,omitempty"`
@@ -637,7 +786,7 @@ type ClusterPropertiesUpdateParameters struct {
 	UpgradeMode UpgradeMode `json:"upgradeMode,omitempty"`
 	// ClusterCodeVersion - The ServiceFabric code version, if set it, please make sure you have set upgradeMode to Manual, otherwise ,it will fail, if you are using PUT new cluster, you can get the version by using ClusterVersions_List, if you are updating existing cluster, you can get the availableClusterVersions from Clusters_Get
 	ClusterCodeVersion *string `json:"clusterCodeVersion,omitempty"`
-	// Certificate - This primay certificate will be used as cluster node to node security, SSL certificate for cluster management endpoint and default admin client, the certificate should exist in the virtual machine scale sets or Azure key vault, before you add it. It will override original value
+	// Certificate - This primary certificate will be used as cluster node to node security, SSL certificate for cluster management endpoint and default admin client, the certificate should exist in the virtual machine scale sets or Azure key vault, before you add it. It will override original value
 	Certificate *CertificateDescription `json:"certificate,omitempty"`
 	// ClientCertificateThumbprints - The client thumbprint details, it is used for client access for cluster operation, it will override existing collection
 	ClientCertificateThumbprints *[]ClientCertificateThumbprint `json:"clientCertificateThumbprints,omitempty"`
@@ -647,104 +796,66 @@ type ClusterPropertiesUpdateParameters struct {
 	FabricSettings *[]SettingsSectionDescription `json:"fabricSettings,omitempty"`
 	// ReverseProxyCertificate - Certificate for the reverse proxy
 	ReverseProxyCertificate *CertificateDescription `json:"reverseProxyCertificate,omitempty"`
-	// NodeTypes - The list of nodetypes that make up the cluster, it will override
+	// NodeTypes - The list of node types that make up the cluster, it will override
 	NodeTypes *[]NodeTypeDescription `json:"nodeTypes,omitempty"`
 	// UpgradeDescription - The policy to use when upgrading the cluster.
 	UpgradeDescription *ClusterUpgradePolicy `json:"upgradeDescription,omitempty"`
 }
 
-// ClustersCreateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// ClustersCreateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type ClustersCreateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ClustersCreateFuture) Result(client ClustersClient) (c Cluster, err error) {
+func (future *ClustersCreateFuture) Result(client ClustersClient) (c Cluster, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "servicefabric.ClustersCreateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return c, azure.NewAsyncOpIncompleteError("servicefabric.ClustersCreateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		c, err = client.CreateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "servicefabric.ClustersCreateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("servicefabric.ClustersCreateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if c.Response.Response, err = future.GetResult(sender); err == nil && c.Response.Response.StatusCode != http.StatusNoContent {
+		c, err = client.CreateResponder(c.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "servicefabric.ClustersCreateFuture", "Result", c.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "servicefabric.ClustersCreateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	c, err = client.CreateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "servicefabric.ClustersCreateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// ClustersUpdateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// ClustersUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type ClustersUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ClustersUpdateFuture) Result(client ClustersClient) (c Cluster, err error) {
+func (future *ClustersUpdateFuture) Result(client ClustersClient) (c Cluster, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "servicefabric.ClustersUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return c, azure.NewAsyncOpIncompleteError("servicefabric.ClustersUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		c, err = client.UpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "servicefabric.ClustersUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("servicefabric.ClustersUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if c.Response.Response, err = future.GetResult(sender); err == nil && c.Response.Response.StatusCode != http.StatusNoContent {
+		c, err = client.UpdateResponder(c.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "servicefabric.ClustersUpdateFuture", "Result", c.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "servicefabric.ClustersUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	c, err = client.UpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "servicefabric.ClustersUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -881,8 +992,8 @@ type ErrorModelError struct {
 	Message *string `json:"message,omitempty"`
 }
 
-// NodeTypeDescription describes a node type in the cluster, each node type represents sub set of nodes in the
-// cluster
+// NodeTypeDescription describes a node type in the cluster, each node type represents sub set of nodes in
+// the cluster
 type NodeTypeDescription struct {
 	// Name - Name of the node type
 	Name *string `json:"name,omitempty"`
@@ -894,11 +1005,11 @@ type NodeTypeDescription struct {
 	ClientConnectionEndpointPort *int32 `json:"clientConnectionEndpointPort,omitempty"`
 	// HTTPGatewayEndpointPort - The HTTP cluster management endpoint port
 	HTTPGatewayEndpointPort *int32 `json:"httpGatewayEndpointPort,omitempty"`
-	// DurabilityLevel - Nodetype durability Level. Possible values include: 'Bronze', 'Silver', 'Gold'
+	// DurabilityLevel - Node type durability Level. Possible values include: 'Bronze', 'Silver', 'Gold'
 	DurabilityLevel DurabilityLevel `json:"durabilityLevel,omitempty"`
 	// ApplicationPorts - Ports used by applications
 	ApplicationPorts *EndpointRangeDescription `json:"applicationPorts,omitempty"`
-	// EphemeralPorts - System assgined application ports
+	// EphemeralPorts - System assigned application ports
 	EphemeralPorts *EndpointRangeDescription `json:"ephemeralPorts,omitempty"`
 	// IsPrimary - Mark this as the primary node type
 	IsPrimary *bool `json:"isPrimary,omitempty"`
@@ -926,7 +1037,9 @@ func (ntd NodeTypeDescription) MarshalJSON() ([]byte, error) {
 	if ntd.HTTPGatewayEndpointPort != nil {
 		objectMap["httpGatewayEndpointPort"] = ntd.HTTPGatewayEndpointPort
 	}
-	objectMap["durabilityLevel"] = ntd.DurabilityLevel
+	if ntd.DurabilityLevel != "" {
+		objectMap["durabilityLevel"] = ntd.DurabilityLevel
+	}
 	if ntd.ApplicationPorts != nil {
 		objectMap["applicationPorts"] = ntd.ApplicationPorts
 	}
@@ -945,13 +1058,13 @@ func (ntd NodeTypeDescription) MarshalJSON() ([]byte, error) {
 	return json.Marshal(objectMap)
 }
 
-// OperationListResult result of the request to list ServiceFabric operations. It contains a list of operations and
-// a URL link to get the next set of results.
+// OperationListResult result of the request to list ServiceFabric operations. It contains a list of
+// operations and a URL link to get the next set of results.
 type OperationListResult struct {
 	autorest.Response `json:"-"`
-	// Value - List of ServiceFabric operations supported by the Microsoft.ServiceFabric resource provider.
+	// Value - READ-ONLY; List of ServiceFabric operations supported by the Microsoft.ServiceFabric resource provider.
 	Value *[]OperationResult `json:"value,omitempty"`
-	// NextLink - URL to get the next set of operation list results if there are any.
+	// NextLink - READ-ONLY; URL to get the next set of operation list results if there are any.
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
@@ -961,20 +1074,37 @@ type OperationListResultIterator struct {
 	page OperationListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *OperationListResultIterator) Next() error {
+func (iter *OperationListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OperationListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *OperationListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -996,6 +1126,11 @@ func (iter OperationListResultIterator) Value() OperationResult {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the OperationListResultIterator type.
+func NewOperationListResultIterator(page OperationListResultPage) OperationListResultIterator {
+	return OperationListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (olr OperationListResult) IsEmpty() bool {
 	return olr.Value == nil || len(*olr.Value) == 0
@@ -1003,11 +1138,11 @@ func (olr OperationListResult) IsEmpty() bool {
 
 // operationListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (olr OperationListResult) operationListResultPreparer() (*http.Request, error) {
+func (olr OperationListResult) operationListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if olr.NextLink == nil || len(to.String(olr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(olr.NextLink)))
@@ -1015,19 +1150,36 @@ func (olr OperationListResult) operationListResultPreparer() (*http.Request, err
 
 // OperationListResultPage contains a page of OperationResult values.
 type OperationListResultPage struct {
-	fn  func(OperationListResult) (OperationListResult, error)
+	fn  func(context.Context, OperationListResult) (OperationListResult, error)
 	olr OperationListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *OperationListResultPage) Next() error {
-	next, err := page.fn(page.olr)
+func (page *OperationListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OperationListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.olr)
 	if err != nil {
 		return err
 	}
 	page.olr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *OperationListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -1048,11 +1200,16 @@ func (page OperationListResultPage) Values() []OperationResult {
 	return *page.olr.Value
 }
 
+// Creates a new instance of the OperationListResultPage type.
+func NewOperationListResultPage(getNextPage func(context.Context, OperationListResult) (OperationListResult, error)) OperationListResultPage {
+	return OperationListResultPage{fn: getNextPage}
+}
+
 // OperationResult available operation list result
 type OperationResult struct {
 	// Name - Result name
 	Name *string `json:"name,omitempty"`
-	// Display - Dispaly of the result
+	// Display - Display of the result
 	Display *AvailableOperationDisplay `json:"display,omitempty"`
 	// Origin - Origin result
 	Origin *string `json:"origin,omitempty"`
@@ -1062,11 +1219,11 @@ type OperationResult struct {
 
 // Resource the resource model definition.
 type Resource struct {
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -1077,15 +1234,6 @@ type Resource struct {
 // MarshalJSON is the custom marshaler for Resource.
 func (r Resource) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
-	if r.ID != nil {
-		objectMap["id"] = r.ID
-	}
-	if r.Name != nil {
-		objectMap["name"] = r.Name
-	}
-	if r.Type != nil {
-		objectMap["type"] = r.Type
-	}
 	if r.Location != nil {
 		objectMap["location"] = r.Location
 	}

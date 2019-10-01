@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -43,10 +44,22 @@ func NewConnectorsClientWithBaseURI(baseURI string, subscriptionID string) Conne
 }
 
 // CreateOrUpdate creates a connector or updates an existing connector in the hub.
-//
-// resourceGroupName is the name of the resource group. hubName is the name of the hub. connectorName is the name
-// of the connector. parameters is parameters supplied to the CreateOrUpdate Connector operation.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// hubName - the name of the hub.
+// connectorName - the name of the connector.
+// parameters - parameters supplied to the CreateOrUpdate Connector operation.
 func (client ConnectorsClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, hubName string, connectorName string, parameters ConnectorResourceFormat) (result ConnectorsCreateOrUpdateFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ConnectorsClient.CreateOrUpdate")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: connectorName,
 			Constraints: []validation.Constraint{{Target: "connectorName", Name: validation.MaxLength, Rule: 128, Chain: nil},
@@ -88,7 +101,7 @@ func (client ConnectorsClient) CreateOrUpdatePreparer(ctx context.Context, resou
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.CustomerInsights/hubs/{hubName}/connectors/{connectorName}", pathParameters),
@@ -100,15 +113,13 @@ func (client ConnectorsClient) CreateOrUpdatePreparer(ctx context.Context, resou
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client ConnectorsClient) CreateOrUpdateSender(req *http.Request) (future ConnectorsCreateOrUpdateFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -126,10 +137,21 @@ func (client ConnectorsClient) CreateOrUpdateResponder(resp *http.Response) (res
 }
 
 // Delete deletes a connector in the hub.
-//
-// resourceGroupName is the name of the resource group. hubName is the name of the hub. connectorName is the name
-// of the connector.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// hubName - the name of the hub.
+// connectorName - the name of the connector.
 func (client ConnectorsClient) Delete(ctx context.Context, resourceGroupName string, hubName string, connectorName string) (result ConnectorsDeleteFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ConnectorsClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeletePreparer(ctx, resourceGroupName, hubName, connectorName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "customerinsights.ConnectorsClient", "Delete", nil, "Failure preparing request")
@@ -170,15 +192,13 @@ func (client ConnectorsClient) DeletePreparer(ctx context.Context, resourceGroup
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client ConnectorsClient) DeleteSender(req *http.Request) (future ConnectorsDeleteFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -195,10 +215,21 @@ func (client ConnectorsClient) DeleteResponder(resp *http.Response) (result auto
 }
 
 // Get gets a connector in the hub.
-//
-// resourceGroupName is the name of the resource group. hubName is the name of the hub. connectorName is the name
-// of the connector.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// hubName - the name of the hub.
+// connectorName - the name of the connector.
 func (client ConnectorsClient) Get(ctx context.Context, resourceGroupName string, hubName string, connectorName string) (result ConnectorResourceFormat, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ConnectorsClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, resourceGroupName, hubName, connectorName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "customerinsights.ConnectorsClient", "Get", nil, "Failure preparing request")
@@ -245,8 +276,8 @@ func (client ConnectorsClient) GetPreparer(ctx context.Context, resourceGroupNam
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client ConnectorsClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -263,9 +294,20 @@ func (client ConnectorsClient) GetResponder(resp *http.Response) (result Connect
 }
 
 // ListByHub gets all the connectors in the specified hub.
-//
-// resourceGroupName is the name of the resource group. hubName is the name of the hub.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// hubName - the name of the hub.
 func (client ConnectorsClient) ListByHub(ctx context.Context, resourceGroupName string, hubName string) (result ConnectorListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ConnectorsClient.ListByHub")
+		defer func() {
+			sc := -1
+			if result.clr.Response.Response != nil {
+				sc = result.clr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listByHubNextResults
 	req, err := client.ListByHubPreparer(ctx, resourceGroupName, hubName)
 	if err != nil {
@@ -312,8 +354,8 @@ func (client ConnectorsClient) ListByHubPreparer(ctx context.Context, resourceGr
 // ListByHubSender sends the ListByHub request. The method will close the
 // http.Response Body if it receives an error.
 func (client ConnectorsClient) ListByHubSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByHubResponder handles the response to the ListByHub request. The method always
@@ -330,8 +372,8 @@ func (client ConnectorsClient) ListByHubResponder(resp *http.Response) (result C
 }
 
 // listByHubNextResults retrieves the next set of results, if any.
-func (client ConnectorsClient) listByHubNextResults(lastResults ConnectorListResult) (result ConnectorListResult, err error) {
-	req, err := lastResults.connectorListResultPreparer()
+func (client ConnectorsClient) listByHubNextResults(ctx context.Context, lastResults ConnectorListResult) (result ConnectorListResult, err error) {
+	req, err := lastResults.connectorListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "customerinsights.ConnectorsClient", "listByHubNextResults", nil, "Failure preparing next results request")
 	}
@@ -352,6 +394,16 @@ func (client ConnectorsClient) listByHubNextResults(lastResults ConnectorListRes
 
 // ListByHubComplete enumerates all values, automatically crossing page boundaries as required.
 func (client ConnectorsClient) ListByHubComplete(ctx context.Context, resourceGroupName string, hubName string) (result ConnectorListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ConnectorsClient.ListByHub")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListByHub(ctx, resourceGroupName, hubName)
 	return
 }

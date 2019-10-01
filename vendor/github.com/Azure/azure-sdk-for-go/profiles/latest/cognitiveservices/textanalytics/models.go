@@ -1,6 +1,6 @@
 // +build go1.9
 
-// Copyright 2018 Microsoft Corporation
+// Copyright 2019 Microsoft Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,49 +19,37 @@
 
 package textanalytics
 
-import original "github.com/Azure/azure-sdk-for-go/services/cognitiveservices/v2.0/textanalytics"
+import original "github.com/Azure/azure-sdk-for-go/services/cognitiveservices/v2.1/textanalytics"
 
 type BaseClient = original.BaseClient
-
-func New(azureRegion AzureRegions) BaseClient {
-	return original.New(azureRegion)
-}
-func NewWithoutDefaults(azureRegion AzureRegions) BaseClient {
-	return original.NewWithoutDefaults(azureRegion)
-}
-
-type AzureRegions = original.AzureRegions
-
-const (
-	Australiaeast  AzureRegions = original.Australiaeast
-	Brazilsouth    AzureRegions = original.Brazilsouth
-	Eastasia       AzureRegions = original.Eastasia
-	Eastus         AzureRegions = original.Eastus
-	Eastus2        AzureRegions = original.Eastus2
-	Northeurope    AzureRegions = original.Northeurope
-	Southcentralus AzureRegions = original.Southcentralus
-	Southeastasia  AzureRegions = original.Southeastasia
-	Westcentralus  AzureRegions = original.Westcentralus
-	Westeurope     AzureRegions = original.Westeurope
-	Westus         AzureRegions = original.Westus
-	Westus2        AzureRegions = original.Westus2
-)
-
-type BatchInput = original.BatchInput
 type DetectedLanguage = original.DetectedLanguage
+type DocumentStatistics = original.DocumentStatistics
+type EntitiesBatchResult = original.EntitiesBatchResult
+type EntitiesBatchResultItem = original.EntitiesBatchResultItem
+type EntityRecord = original.EntityRecord
 type ErrorRecord = original.ErrorRecord
 type ErrorResponse = original.ErrorResponse
-type Input = original.Input
 type InternalError = original.InternalError
 type KeyPhraseBatchResult = original.KeyPhraseBatchResult
 type KeyPhraseBatchResultItem = original.KeyPhraseBatchResultItem
+type LanguageBatchInput = original.LanguageBatchInput
 type LanguageBatchResult = original.LanguageBatchResult
 type LanguageBatchResultItem = original.LanguageBatchResultItem
+type LanguageInput = original.LanguageInput
+type MatchRecord = original.MatchRecord
 type MultiLanguageBatchInput = original.MultiLanguageBatchInput
 type MultiLanguageInput = original.MultiLanguageInput
+type RequestStatistics = original.RequestStatistics
 type SentimentBatchResult = original.SentimentBatchResult
 type SentimentBatchResultItem = original.SentimentBatchResultItem
+type SetObject = original.SetObject
 
+func New(endpoint string) BaseClient {
+	return original.New(endpoint)
+}
+func NewWithoutDefaults(endpoint string) BaseClient {
+	return original.NewWithoutDefaults(endpoint)
+}
 func UserAgent() string {
 	return original.UserAgent() + " profiles/latest"
 }

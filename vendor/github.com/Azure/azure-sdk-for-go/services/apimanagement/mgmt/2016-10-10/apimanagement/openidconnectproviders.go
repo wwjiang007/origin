@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -41,10 +42,22 @@ func NewOpenIDConnectProvidersClientWithBaseURI(baseURI string, subscriptionID s
 }
 
 // CreateOrUpdate creates or updates the OpenID Connect Provider.
-//
-// resourceGroupName is the name of the resource group. serviceName is the name of the API Management service. opid
-// is identifier of the OpenID Connect Provider. parameters is create parameters.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// serviceName - the name of the API Management service.
+// opid - identifier of the OpenID Connect Provider.
+// parameters - create parameters.
 func (client OpenIDConnectProvidersClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, serviceName string, opid string, parameters OpenidConnectProviderCreateContract) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OpenIDConnectProvidersClient.CreateOrUpdate")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: serviceName,
 			Constraints: []validation.Constraint{{Target: "serviceName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -97,7 +110,7 @@ func (client OpenIDConnectProvidersClient) CreateOrUpdatePreparer(ctx context.Co
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ApiManagement/service/{serviceName}/openidConnectProviders/{opid}", pathParameters),
@@ -109,8 +122,8 @@ func (client OpenIDConnectProvidersClient) CreateOrUpdatePreparer(ctx context.Co
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client OpenIDConnectProvidersClient) CreateOrUpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateOrUpdateResponder handles the response to the CreateOrUpdate request. The method always
@@ -126,11 +139,23 @@ func (client OpenIDConnectProvidersClient) CreateOrUpdateResponder(resp *http.Re
 }
 
 // Delete deletes specific OpenID Connect Provider of the API Management service instance.
-//
-// resourceGroupName is the name of the resource group. serviceName is the name of the API Management service. opid
-// is identifier of the OpenID Connect Provider. ifMatch is the entity state (Etag) version of the OpenID Connect
-// Provider to delete. A value of "*" can be used for If-Match to unconditionally apply the operation.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// serviceName - the name of the API Management service.
+// opid - identifier of the OpenID Connect Provider.
+// ifMatch - the entity state (Etag) version of the OpenID Connect Provider to delete. A value of "*" can be
+// used for If-Match to unconditionally apply the operation.
 func (client OpenIDConnectProvidersClient) Delete(ctx context.Context, resourceGroupName string, serviceName string, opid string, ifMatch string) (result ErrorBodyContract, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OpenIDConnectProvidersClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: serviceName,
 			Constraints: []validation.Constraint{{Target: "serviceName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -189,8 +214,8 @@ func (client OpenIDConnectProvidersClient) DeletePreparer(ctx context.Context, r
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client OpenIDConnectProvidersClient) DeleteSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
@@ -207,10 +232,21 @@ func (client OpenIDConnectProvidersClient) DeleteResponder(resp *http.Response) 
 }
 
 // Get gets specific OpenID Connect Provider.
-//
-// resourceGroupName is the name of the resource group. serviceName is the name of the API Management service. opid
-// is identifier of the OpenID Connect Provider.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// serviceName - the name of the API Management service.
+// opid - identifier of the OpenID Connect Provider.
 func (client OpenIDConnectProvidersClient) Get(ctx context.Context, resourceGroupName string, serviceName string, opid string) (result OpenidConnectProviderContract, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OpenIDConnectProvidersClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: serviceName,
 			Constraints: []validation.Constraint{{Target: "serviceName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -268,8 +304,8 @@ func (client OpenIDConnectProvidersClient) GetPreparer(ctx context.Context, reso
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client OpenIDConnectProvidersClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -286,14 +322,26 @@ func (client OpenIDConnectProvidersClient) GetResponder(resp *http.Response) (re
 }
 
 // ListByService lists all OpenID Connect Providers.
-//
-// resourceGroupName is the name of the resource group. serviceName is the name of the API Management service.
-// filter is | Field | Supported operators    | Supported functions                         |
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// serviceName - the name of the API Management service.
+// filter - | Field | Supported operators    | Supported functions                         |
 // |-------|------------------------|---------------------------------------------|
 // | id    | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |
-// | name  | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith | top is number of records to
-// return. skip is number of records to skip.
+// | name  | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |
+// top - number of records to return.
+// skip - number of records to skip.
 func (client OpenIDConnectProvidersClient) ListByService(ctx context.Context, resourceGroupName string, serviceName string, filter string, top *int32, skip *int32) (result OpenIDConnectProviderCollectionPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OpenIDConnectProvidersClient.ListByService")
+		defer func() {
+			sc := -1
+			if result.oicpc.Response.Response != nil {
+				sc = result.oicpc.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: serviceName,
 			Constraints: []validation.Constraint{{Target: "serviceName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -363,8 +411,8 @@ func (client OpenIDConnectProvidersClient) ListByServicePreparer(ctx context.Con
 // ListByServiceSender sends the ListByService request. The method will close the
 // http.Response Body if it receives an error.
 func (client OpenIDConnectProvidersClient) ListByServiceSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByServiceResponder handles the response to the ListByService request. The method always
@@ -381,8 +429,8 @@ func (client OpenIDConnectProvidersClient) ListByServiceResponder(resp *http.Res
 }
 
 // listByServiceNextResults retrieves the next set of results, if any.
-func (client OpenIDConnectProvidersClient) listByServiceNextResults(lastResults OpenIDConnectProviderCollection) (result OpenIDConnectProviderCollection, err error) {
-	req, err := lastResults.openIDConnectProviderCollectionPreparer()
+func (client OpenIDConnectProvidersClient) listByServiceNextResults(ctx context.Context, lastResults OpenIDConnectProviderCollection) (result OpenIDConnectProviderCollection, err error) {
+	req, err := lastResults.openIDConnectProviderCollectionPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "apimanagement.OpenIDConnectProvidersClient", "listByServiceNextResults", nil, "Failure preparing next results request")
 	}
@@ -403,17 +451,39 @@ func (client OpenIDConnectProvidersClient) listByServiceNextResults(lastResults 
 
 // ListByServiceComplete enumerates all values, automatically crossing page boundaries as required.
 func (client OpenIDConnectProvidersClient) ListByServiceComplete(ctx context.Context, resourceGroupName string, serviceName string, filter string, top *int32, skip *int32) (result OpenIDConnectProviderCollectionIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OpenIDConnectProvidersClient.ListByService")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListByService(ctx, resourceGroupName, serviceName, filter, top, skip)
 	return
 }
 
 // Update updates the specific OpenID Connect Provider.
-//
-// resourceGroupName is the name of the resource group. serviceName is the name of the API Management service. opid
-// is identifier of the OpenID Connect Provider. parameters is update parameters. ifMatch is the entity state
-// (Etag) version of the OpenID Connect Provider to update. A value of "*" can be used for If-Match to
-// unconditionally apply the operation.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// serviceName - the name of the API Management service.
+// opid - identifier of the OpenID Connect Provider.
+// parameters - update parameters.
+// ifMatch - the entity state (Etag) version of the OpenID Connect Provider to update. A value of "*" can be
+// used for If-Match to unconditionally apply the operation.
 func (client OpenIDConnectProvidersClient) Update(ctx context.Context, resourceGroupName string, serviceName string, opid string, parameters OpenidConnectProviderUpdateContract, ifMatch string) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OpenIDConnectProvidersClient.Update")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: serviceName,
 			Constraints: []validation.Constraint{{Target: "serviceName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -461,7 +531,7 @@ func (client OpenIDConnectProvidersClient) UpdatePreparer(ctx context.Context, r
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ApiManagement/service/{serviceName}/openidConnectProviders/{opid}", pathParameters),
@@ -474,8 +544,8 @@ func (client OpenIDConnectProvidersClient) UpdatePreparer(ctx context.Context, r
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client OpenIDConnectProvidersClient) UpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateResponder handles the response to the Update request. The method always

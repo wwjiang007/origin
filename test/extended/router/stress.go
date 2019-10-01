@@ -9,9 +9,10 @@ import (
 
 	g "github.com/onsi/ginkgo"
 	o "github.com/onsi/gomega"
+	"k8s.io/kubernetes/test/e2e/framework/statefulset"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -37,7 +38,7 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 	// hook
 	g.AfterEach(func() {
 		if g.CurrentGinkgoTestDescription().Failed {
-			client := routeclientset.NewForConfigOrDie(oc.AdminConfig()).Route().Routes(ns)
+			client := routeclientset.NewForConfigOrDie(oc.AdminConfig()).RouteV1().Routes(ns)
 			if routes, _ := client.List(metav1.ListOptions{}); routes != nil {
 				outputIngress(routes.Items...)
 			}
@@ -50,10 +51,10 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 	g.BeforeEach(func() {
 		ns = oc.Namespace()
 
-		routerImage, _ = exutil.FindImageFormatString(oc)
+		routerImage, _ = exutil.FindRouterImage(oc)
 		routerImage = strings.Replace(routerImage, "${component}", "haproxy-router", -1)
 
-		_, err := oc.AdminKubeClient().Rbac().RoleBindings(ns).Create(&rbacv1.RoleBinding{
+		_, err := oc.AdminKubeClient().RbacV1().RoleBindings(ns).Create(&rbacv1.RoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "router",
 			},
@@ -74,7 +75,7 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 	g.Describe("The HAProxy router", func() {
 		g.It("converges when multiple routers are writing status", func() {
 			g.By("deploying a scaled out namespace scoped router")
-			rs, err := oc.KubeClient().Extensions().ReplicaSets(ns).Create(
+			rs, err := oc.KubeClient().AppsV1().ReplicaSets(ns).Create(
 				scaledRouter(
 					routerImage,
 					[]string{
@@ -90,7 +91,7 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 			o.Expect(err).NotTo(o.HaveOccurred())
 
 			g.By("creating multiple routes")
-			client := routeclientset.NewForConfigOrDie(oc.AdminConfig()).Route().Routes(ns)
+			client := routeclientset.NewForConfigOrDie(oc.AdminConfig()).RouteV1().Routes(ns)
 			var rv string
 			for i := 0; i < 10; i++ {
 				_, err := client.Create(&routev1.Route{
@@ -156,7 +157,7 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 		g.It("converges when multiple routers are writing conflicting status", func() {
 			g.By("deploying a scaled out namespace scoped router")
 
-			rs, err := oc.KubeClient().Extensions().ReplicaSets(ns).Create(
+			rs, err := oc.KubeClient().AppsV1().ReplicaSets(ns).Create(
 				scaledRouter(
 					routerImage,
 					[]string{
@@ -176,7 +177,7 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 			o.Expect(err).NotTo(o.HaveOccurred())
 
 			g.By("creating multiple routes")
-			client := routeclientset.NewForConfigOrDie(oc.AdminConfig()).Route().Routes(ns)
+			client := routeclientset.NewForConfigOrDie(oc.AdminConfig()).RouteV1().Routes(ns)
 			var rv string
 			for i := 0; i < 20; i++ {
 				_, err := client.Create(&routev1.Route{
@@ -298,14 +299,14 @@ func findIngress(route *routev1.Route, name string) *routev1.RouteIngress {
 	return nil
 }
 
-func scaledRouter(image string, args []string) *extensionsv1beta1.ReplicaSet {
+func scaledRouter(image string, args []string) *appsv1.ReplicaSet {
 	one := int64(1)
 	scale := int32(3)
-	return &extensionsv1beta1.ReplicaSet{
+	return &appsv1.ReplicaSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "router",
 		},
-		Spec: extensionsv1beta1.ReplicaSetSpec{
+		Spec: appsv1.ReplicaSetSpec{
 			Replicas: &scale,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{"app": "router"},
@@ -345,7 +346,7 @@ func outputIngress(routes ...routev1.Route) {
 	e2e.Logf("Routes:\n%s", b.String())
 }
 
-func verifyCommandEquivalent(c clientset.Interface, rs *extensionsv1beta1.ReplicaSet, cmd string) {
+func verifyCommandEquivalent(c clientset.Interface, rs *appsv1.ReplicaSet, cmd string) {
 	selector, err := metav1.LabelSelectorAsSelector(rs.Spec.Selector)
 	o.Expect(err).NotTo(o.HaveOccurred())
 	podList, err := c.CoreV1().Pods(rs.Namespace).List(metav1.ListOptions{LabelSelector: selector.String()})
@@ -356,7 +357,7 @@ func verifyCommandEquivalent(c clientset.Interface, rs *extensionsv1beta1.Replic
 		values = make(map[string]string)
 		uniques := make(map[string]struct{})
 		for _, pod := range podList.Items {
-			stdout, err := e2e.RunHostCmdWithRetries(pod.Namespace, pod.Name, cmd, e2e.StatefulSetPoll, e2e.StatefulPodTimeout)
+			stdout, err := e2e.RunHostCmdWithRetries(pod.Namespace, pod.Name, cmd, statefulset.StatefulSetPoll, statefulset.StatefulPodTimeout)
 			o.Expect(err).NotTo(o.HaveOccurred())
 			values[pod.Name] = stdout
 			uniques[stdout] = struct{}{}

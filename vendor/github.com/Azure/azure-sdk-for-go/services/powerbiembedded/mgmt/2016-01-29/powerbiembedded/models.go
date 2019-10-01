@@ -18,11 +18,14 @@ package powerbiembedded
 // Changes may cause incorrect behavior and will be lost if the code is regenerated.
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
-	"net/http"
 )
+
+// The package's fully qualified name.
+const fqdn = "github.com/Azure/azure-sdk-for-go/services/powerbiembedded/mgmt/2016-01-29/powerbiembedded"
 
 // AccessKeyName enumerates the values for access key name.
 type AccessKeyName string
@@ -34,6 +37,11 @@ const (
 	Key2 AccessKeyName = "key2"
 )
 
+// PossibleAccessKeyNameValues returns an array of possible values for the AccessKeyName const type.
+func PossibleAccessKeyNameValues() []AccessKeyName {
+	return []AccessKeyName{Key1, Key2}
+}
+
 // CheckNameReason enumerates the values for check name reason.
 type CheckNameReason string
 
@@ -43,6 +51,11 @@ const (
 	// Unavailable ...
 	Unavailable CheckNameReason = "Unavailable"
 )
+
+// PossibleCheckNameReasonValues returns an array of possible values for the CheckNameReason const type.
+func PossibleCheckNameReasonValues() []CheckNameReason {
+	return []CheckNameReason{Invalid, Unavailable}
+}
 
 // AzureSku ...
 type AzureSku struct {
@@ -96,9 +109,9 @@ func (cwcr CreateWorkspaceCollectionRequest) MarshalJSON() ([]byte, error) {
 
 // Display ...
 type Display struct {
-	// Provider - The localized friendly form of the resource provider name. This form is also expected to include the publisher/company responsible. Use Title Casing. Begin with “Microsoft” for 1st party services.
+	// Provider - The localized friendly form of the resource provider name. This form is also expected to include the publisher/company responsible. Use Title Casing. Begin with "Microsoft" for 1st party services.
 	Provider *string `json:"provider,omitempty"`
-	// Resource - The localized friendly form of the resource type related to this action/operation. This form should match the public documentation for the resource provider. Use Title Casing. For examples, refer to the “name” section.
+	// Resource - The localized friendly form of the resource type related to this action/operation. This form should match the public documentation for the resource provider. Use Title Casing. For examples, refer to the "name" section.
 	Resource *string `json:"resource,omitempty"`
 	// Operation - The localized friendly name for the operation as shown to the user. This name should be concise (to fit in drop downs), but clear (self-documenting). Use Title Casing and include the entity/resource to which it applies.
 	Operation *string `json:"operation,omitempty"`
@@ -211,7 +224,9 @@ func (wc WorkspaceCollection) MarshalJSON() ([]byte, error) {
 	if wc.Sku != nil {
 		objectMap["sku"] = wc.Sku
 	}
-	objectMap["properties"] = wc.Properties
+	if wc.Properties != nil {
+		objectMap["properties"] = wc.Properties
+	}
 	return json.Marshal(objectMap)
 }
 
@@ -236,52 +251,26 @@ type WorkspaceCollectionList struct {
 	Value             *[]WorkspaceCollection `json:"value,omitempty"`
 }
 
-// WorkspaceCollectionsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// WorkspaceCollectionsDeleteFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type WorkspaceCollectionsDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future WorkspaceCollectionsDeleteFuture) Result(client WorkspaceCollectionsClient) (ar autorest.Response, err error) {
+func (future *WorkspaceCollectionsDeleteFuture) Result(client WorkspaceCollectionsClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "powerbiembedded.WorkspaceCollectionsDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("powerbiembedded.WorkspaceCollectionsDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "powerbiembedded.WorkspaceCollectionsDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("powerbiembedded.WorkspaceCollectionsDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "powerbiembedded.WorkspaceCollectionsDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "powerbiembedded.WorkspaceCollectionsDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 

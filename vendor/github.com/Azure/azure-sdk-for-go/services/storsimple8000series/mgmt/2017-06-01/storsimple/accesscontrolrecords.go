@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -41,10 +42,22 @@ func NewAccessControlRecordsClientWithBaseURI(baseURI string, subscriptionID str
 }
 
 // CreateOrUpdate creates or Updates an access control record.
-//
-// accessControlRecordName is the name of the access control record. parameters is the access control record to be
-// added or updated. resourceGroupName is the resource group name managerName is the manager name
+// Parameters:
+// accessControlRecordName - the name of the access control record.
+// parameters - the access control record to be added or updated.
+// resourceGroupName - the resource group name
+// managerName - the manager name
 func (client AccessControlRecordsClient) CreateOrUpdate(ctx context.Context, accessControlRecordName string, parameters AccessControlRecord, resourceGroupName string, managerName string) (result AccessControlRecordsCreateOrUpdateFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AccessControlRecordsClient.CreateOrUpdate")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameters,
 			Constraints: []validation.Constraint{{Target: "parameters.AccessControlRecordProperties", Name: validation.Null, Rule: true,
@@ -85,7 +98,7 @@ func (client AccessControlRecordsClient) CreateOrUpdatePreparer(ctx context.Cont
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.StorSimple/managers/{managerName}/accessControlRecords/{accessControlRecordName}", pathParameters),
@@ -97,15 +110,13 @@ func (client AccessControlRecordsClient) CreateOrUpdatePreparer(ctx context.Cont
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client AccessControlRecordsClient) CreateOrUpdateSender(req *http.Request) (future AccessControlRecordsCreateOrUpdateFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -123,10 +134,21 @@ func (client AccessControlRecordsClient) CreateOrUpdateResponder(resp *http.Resp
 }
 
 // Delete deletes the access control record.
-//
-// accessControlRecordName is the name of the access control record to delete. resourceGroupName is the resource
-// group name managerName is the manager name
+// Parameters:
+// accessControlRecordName - the name of the access control record to delete.
+// resourceGroupName - the resource group name
+// managerName - the manager name
 func (client AccessControlRecordsClient) Delete(ctx context.Context, accessControlRecordName string, resourceGroupName string, managerName string) (result AccessControlRecordsDeleteFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AccessControlRecordsClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: managerName,
 			Constraints: []validation.Constraint{{Target: "managerName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -174,15 +196,13 @@ func (client AccessControlRecordsClient) DeletePreparer(ctx context.Context, acc
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client AccessControlRecordsClient) DeleteSender(req *http.Request) (future AccessControlRecordsDeleteFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -199,10 +219,21 @@ func (client AccessControlRecordsClient) DeleteResponder(resp *http.Response) (r
 }
 
 // Get returns the properties of the specified access control record name.
-//
-// accessControlRecordName is name of access control record to be fetched. resourceGroupName is the resource group
-// name managerName is the manager name
+// Parameters:
+// accessControlRecordName - name of access control record to be fetched.
+// resourceGroupName - the resource group name
+// managerName - the manager name
 func (client AccessControlRecordsClient) Get(ctx context.Context, accessControlRecordName string, resourceGroupName string, managerName string) (result AccessControlRecord, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AccessControlRecordsClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: managerName,
 			Constraints: []validation.Constraint{{Target: "managerName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -256,8 +287,8 @@ func (client AccessControlRecordsClient) GetPreparer(ctx context.Context, access
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client AccessControlRecordsClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -274,9 +305,20 @@ func (client AccessControlRecordsClient) GetResponder(resp *http.Response) (resu
 }
 
 // ListByManager retrieves all the access control records in a manager.
-//
-// resourceGroupName is the resource group name managerName is the manager name
+// Parameters:
+// resourceGroupName - the resource group name
+// managerName - the manager name
 func (client AccessControlRecordsClient) ListByManager(ctx context.Context, resourceGroupName string, managerName string) (result AccessControlRecordList, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AccessControlRecordsClient.ListByManager")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: managerName,
 			Constraints: []validation.Constraint{{Target: "managerName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -329,8 +371,8 @@ func (client AccessControlRecordsClient) ListByManagerPreparer(ctx context.Conte
 // ListByManagerSender sends the ListByManager request. The method will close the
 // http.Response Body if it receives an error.
 func (client AccessControlRecordsClient) ListByManagerSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByManagerResponder handles the response to the ListByManager request. The method always

@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -41,14 +42,26 @@ func NewPropertiesClientWithBaseURI(baseURI string, subscriptionID string) Prope
 }
 
 // ListByService lists a collection of properties defined within a service instance.
-//
-// resourceGroupName is the name of the resource group. serviceName is the name of the API Management service.
-// filter is | Field | Supported operators    | Supported functions                                   |
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// serviceName - the name of the API Management service.
+// filter - | Field | Supported operators    | Supported functions                                   |
 // |-------|------------------------|-------------------------------------------------------|
 // | tags  | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith, any, all |
-// | name  | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith           | top is number of
-// records to return. skip is number of records to skip.
+// | name  | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith           |
+// top - number of records to return.
+// skip - number of records to skip.
 func (client PropertiesClient) ListByService(ctx context.Context, resourceGroupName string, serviceName string, filter string, top *int32, skip *int32) (result PropertyCollectionPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/PropertiesClient.ListByService")
+		defer func() {
+			sc := -1
+			if result.pc.Response.Response != nil {
+				sc = result.pc.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: serviceName,
 			Constraints: []validation.Constraint{{Target: "serviceName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -118,8 +131,8 @@ func (client PropertiesClient) ListByServicePreparer(ctx context.Context, resour
 // ListByServiceSender sends the ListByService request. The method will close the
 // http.Response Body if it receives an error.
 func (client PropertiesClient) ListByServiceSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByServiceResponder handles the response to the ListByService request. The method always
@@ -136,8 +149,8 @@ func (client PropertiesClient) ListByServiceResponder(resp *http.Response) (resu
 }
 
 // listByServiceNextResults retrieves the next set of results, if any.
-func (client PropertiesClient) listByServiceNextResults(lastResults PropertyCollection) (result PropertyCollection, err error) {
-	req, err := lastResults.propertyCollectionPreparer()
+func (client PropertiesClient) listByServiceNextResults(ctx context.Context, lastResults PropertyCollection) (result PropertyCollection, err error) {
+	req, err := lastResults.propertyCollectionPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "apimanagement.PropertiesClient", "listByServiceNextResults", nil, "Failure preparing next results request")
 	}
@@ -158,6 +171,16 @@ func (client PropertiesClient) listByServiceNextResults(lastResults PropertyColl
 
 // ListByServiceComplete enumerates all values, automatically crossing page boundaries as required.
 func (client PropertiesClient) ListByServiceComplete(ctx context.Context, resourceGroupName string, serviceName string, filter string, top *int32, skip *int32) (result PropertyCollectionIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/PropertiesClient.ListByService")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListByService(ctx, resourceGroupName, serviceName, filter, top, skip)
 	return
 }

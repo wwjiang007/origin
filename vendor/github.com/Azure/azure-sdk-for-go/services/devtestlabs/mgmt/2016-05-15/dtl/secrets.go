@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -41,10 +42,23 @@ func NewSecretsClientWithBaseURI(baseURI string, subscriptionID string) SecretsC
 }
 
 // CreateOrUpdate create or replace an existing secret.
-//
-// resourceGroupName is the name of the resource group. labName is the name of the lab. userName is the name of the
-// user profile. name is the name of the secret. secret is a secret.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// labName - the name of the lab.
+// userName - the name of the user profile.
+// name - the name of the secret.
+// secret - a secret.
 func (client SecretsClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, labName string, userName string, name string, secret Secret) (result Secret, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/SecretsClient.CreateOrUpdate")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: secret,
 			Constraints: []validation.Constraint{{Target: "secret.SecretProperties", Name: validation.Null, Rule: true, Chain: nil}}}}); err != nil {
@@ -88,7 +102,7 @@ func (client SecretsClient) CreateOrUpdatePreparer(ctx context.Context, resource
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.DevTestLab/labs/{labName}/users/{userName}/secrets/{name}", pathParameters),
@@ -100,8 +114,8 @@ func (client SecretsClient) CreateOrUpdatePreparer(ctx context.Context, resource
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client SecretsClient) CreateOrUpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateOrUpdateResponder handles the response to the CreateOrUpdate request. The method always
@@ -118,10 +132,22 @@ func (client SecretsClient) CreateOrUpdateResponder(resp *http.Response) (result
 }
 
 // Delete delete secret.
-//
-// resourceGroupName is the name of the resource group. labName is the name of the lab. userName is the name of the
-// user profile. name is the name of the secret.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// labName - the name of the lab.
+// userName - the name of the user profile.
+// name - the name of the secret.
 func (client SecretsClient) Delete(ctx context.Context, resourceGroupName string, labName string, userName string, name string) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/SecretsClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeletePreparer(ctx, resourceGroupName, labName, userName, name)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "dtl.SecretsClient", "Delete", nil, "Failure preparing request")
@@ -169,8 +195,8 @@ func (client SecretsClient) DeletePreparer(ctx context.Context, resourceGroupNam
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client SecretsClient) DeleteSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
@@ -186,11 +212,23 @@ func (client SecretsClient) DeleteResponder(resp *http.Response) (result autores
 }
 
 // Get get secret.
-//
-// resourceGroupName is the name of the resource group. labName is the name of the lab. userName is the name of the
-// user profile. name is the name of the secret. expand is specify the $expand query. Example:
-// 'properties($select=value)'
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// labName - the name of the lab.
+// userName - the name of the user profile.
+// name - the name of the secret.
+// expand - specify the $expand query. Example: 'properties($select=value)'
 func (client SecretsClient) Get(ctx context.Context, resourceGroupName string, labName string, userName string, name string, expand string) (result Secret, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/SecretsClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, resourceGroupName, labName, userName, name, expand)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "dtl.SecretsClient", "Get", nil, "Failure preparing request")
@@ -241,8 +279,8 @@ func (client SecretsClient) GetPreparer(ctx context.Context, resourceGroupName s
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client SecretsClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -259,12 +297,25 @@ func (client SecretsClient) GetResponder(resp *http.Response) (result Secret, er
 }
 
 // List list secrets in a given user profile.
-//
-// resourceGroupName is the name of the resource group. labName is the name of the lab. userName is the name of the
-// user profile. expand is specify the $expand query. Example: 'properties($select=value)' filter is the filter to
-// apply to the operation. top is the maximum number of resources to return from the operation. orderby is the
-// ordering expression for the results, using OData notation.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// labName - the name of the lab.
+// userName - the name of the user profile.
+// expand - specify the $expand query. Example: 'properties($select=value)'
+// filter - the filter to apply to the operation.
+// top - the maximum number of resources to return from the operation.
+// orderby - the ordering expression for the results, using OData notation.
 func (client SecretsClient) List(ctx context.Context, resourceGroupName string, labName string, userName string, expand string, filter string, top *int32, orderby string) (result ResponseWithContinuationSecretPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/SecretsClient.List")
+		defer func() {
+			sc := -1
+			if result.rwcs.Response.Response != nil {
+				sc = result.rwcs.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listNextResults
 	req, err := client.ListPreparer(ctx, resourceGroupName, labName, userName, expand, filter, top, orderby)
 	if err != nil {
@@ -324,8 +375,8 @@ func (client SecretsClient) ListPreparer(ctx context.Context, resourceGroupName 
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client SecretsClient) ListSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -342,8 +393,8 @@ func (client SecretsClient) ListResponder(resp *http.Response) (result ResponseW
 }
 
 // listNextResults retrieves the next set of results, if any.
-func (client SecretsClient) listNextResults(lastResults ResponseWithContinuationSecret) (result ResponseWithContinuationSecret, err error) {
-	req, err := lastResults.responseWithContinuationSecretPreparer()
+func (client SecretsClient) listNextResults(ctx context.Context, lastResults ResponseWithContinuationSecret) (result ResponseWithContinuationSecret, err error) {
+	req, err := lastResults.responseWithContinuationSecretPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "dtl.SecretsClient", "listNextResults", nil, "Failure preparing next results request")
 	}
@@ -364,6 +415,16 @@ func (client SecretsClient) listNextResults(lastResults ResponseWithContinuation
 
 // ListComplete enumerates all values, automatically crossing page boundaries as required.
 func (client SecretsClient) ListComplete(ctx context.Context, resourceGroupName string, labName string, userName string, expand string, filter string, top *int32, orderby string) (result ResponseWithContinuationSecretIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/SecretsClient.List")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.List(ctx, resourceGroupName, labName, userName, expand, filter, top, orderby)
 	return
 }

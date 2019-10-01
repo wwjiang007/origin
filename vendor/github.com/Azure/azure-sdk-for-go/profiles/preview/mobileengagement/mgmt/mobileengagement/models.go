@@ -1,6 +1,6 @@
 // +build go1.9
 
-// Copyright 2018 Microsoft Corporation
+// Copyright 2019 Microsoft Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,72 +21,9 @@ package mobileengagement
 
 import original "github.com/Azure/azure-sdk-for-go/services/mobileengagement/mgmt/2014-12-01/mobileengagement"
 
-type AppCollectionsClient = original.AppCollectionsClient
-
-func NewAppCollectionsClient(subscriptionID string) AppCollectionsClient {
-	return original.NewAppCollectionsClient(subscriptionID)
-}
-func NewAppCollectionsClientWithBaseURI(baseURI string, subscriptionID string) AppCollectionsClient {
-	return original.NewAppCollectionsClientWithBaseURI(baseURI, subscriptionID)
-}
-
-type AppsClient = original.AppsClient
-
-func NewAppsClient(subscriptionID string) AppsClient {
-	return original.NewAppsClient(subscriptionID)
-}
-func NewAppsClientWithBaseURI(baseURI string, subscriptionID string) AppsClient {
-	return original.NewAppsClientWithBaseURI(baseURI, subscriptionID)
-}
-
-type CampaignsClient = original.CampaignsClient
-
-func NewCampaignsClient(subscriptionID string) CampaignsClient {
-	return original.NewCampaignsClient(subscriptionID)
-}
-func NewCampaignsClientWithBaseURI(baseURI string, subscriptionID string) CampaignsClient {
-	return original.NewCampaignsClientWithBaseURI(baseURI, subscriptionID)
-}
-
 const (
 	DefaultBaseURI = original.DefaultBaseURI
 )
-
-type BaseClient = original.BaseClient
-
-func New(subscriptionID string) BaseClient {
-	return original.New(subscriptionID)
-}
-func NewWithBaseURI(baseURI string, subscriptionID string) BaseClient {
-	return original.NewWithBaseURI(baseURI, subscriptionID)
-}
-
-type DevicesClient = original.DevicesClient
-
-func NewDevicesClient(subscriptionID string) DevicesClient {
-	return original.NewDevicesClient(subscriptionID)
-}
-func NewDevicesClientWithBaseURI(baseURI string, subscriptionID string) DevicesClient {
-	return original.NewDevicesClientWithBaseURI(baseURI, subscriptionID)
-}
-
-type ExportTasksClient = original.ExportTasksClient
-
-func NewExportTasksClient(subscriptionID string) ExportTasksClient {
-	return original.NewExportTasksClient(subscriptionID)
-}
-func NewExportTasksClientWithBaseURI(baseURI string, subscriptionID string) ExportTasksClient {
-	return original.NewExportTasksClientWithBaseURI(baseURI, subscriptionID)
-}
-
-type ImportTasksClient = original.ImportTasksClient
-
-func NewImportTasksClient(subscriptionID string) ImportTasksClient {
-	return original.NewImportTasksClient(subscriptionID)
-}
-func NewImportTasksClientWithBaseURI(baseURI string, subscriptionID string) ImportTasksClient {
-	return original.NewImportTasksClientWithBaseURI(baseURI, subscriptionID)
-}
 
 type AudienceOperators = original.AudienceOperators
 
@@ -253,9 +190,9 @@ const (
 	TypePushQuota         TypeBasicFilter = original.TypePushQuota
 )
 
-type AnnouncementFeedbackCriterion = original.AnnouncementFeedbackCriterion
 type APIError = original.APIError
 type APIErrorError = original.APIErrorError
+type AnnouncementFeedbackCriterion = original.AnnouncementFeedbackCriterion
 type App = original.App
 type AppCollection = original.AppCollection
 type AppCollectionListResult = original.AppCollectionListResult
@@ -263,12 +200,17 @@ type AppCollectionListResultIterator = original.AppCollectionListResultIterator
 type AppCollectionListResultPage = original.AppCollectionListResultPage
 type AppCollectionNameAvailability = original.AppCollectionNameAvailability
 type AppCollectionProperties = original.AppCollectionProperties
+type AppCollectionsClient = original.AppCollectionsClient
 type AppInfoFilter = original.AppInfoFilter
-type ApplicationVersionCriterion = original.ApplicationVersionCriterion
 type AppListResult = original.AppListResult
 type AppListResultIterator = original.AppListResultIterator
 type AppListResultPage = original.AppListResultPage
 type AppProperties = original.AppProperties
+type ApplicationVersionCriterion = original.ApplicationVersionCriterion
+type AppsClient = original.AppsClient
+type BaseClient = original.BaseClient
+type BasicCriterion = original.BasicCriterion
+type BasicFilter = original.BasicFilter
 type BooleanTagCriterion = original.BooleanTagCriterion
 type Campaign = original.Campaign
 type CampaignAudience = original.CampaignAudience
@@ -277,17 +219,17 @@ type CampaignLocalization = original.CampaignLocalization
 type CampaignPushParameters = original.CampaignPushParameters
 type CampaignPushResult = original.CampaignPushResult
 type CampaignResult = original.CampaignResult
-type CampaignsListResult = original.CampaignsListResult
-type CampaignsListResultIterator = original.CampaignsListResultIterator
-type CampaignsListResultPage = original.CampaignsListResultPage
 type CampaignState = original.CampaignState
 type CampaignStateResult = original.CampaignStateResult
 type CampaignStatisticsResult = original.CampaignStatisticsResult
 type CampaignTestNewParameters = original.CampaignTestNewParameters
 type CampaignTestSavedParameters = original.CampaignTestSavedParameters
+type CampaignsClient = original.CampaignsClient
+type CampaignsListResult = original.CampaignsListResult
+type CampaignsListResultIterator = original.CampaignsListResultIterator
+type CampaignsListResultPage = original.CampaignsListResultPage
 type CarrierCountryCriterion = original.CarrierCountryCriterion
 type CarrierNameCriterion = original.CarrierNameCriterion
-type BasicCriterion = original.BasicCriterion
 type Criterion = original.Criterion
 type DatapushFeedbackCriterion = original.DatapushFeedbackCriterion
 type DateRangeExportTaskParameter = original.DateRangeExportTaskParameter
@@ -299,11 +241,12 @@ type DeviceManufacturerCriterion = original.DeviceManufacturerCriterion
 type DeviceMeta = original.DeviceMeta
 type DeviceModelCriterion = original.DeviceModelCriterion
 type DeviceQueryResult = original.DeviceQueryResult
+type DeviceTagsParameters = original.DeviceTagsParameters
+type DeviceTagsResult = original.DeviceTagsResult
+type DevicesClient = original.DevicesClient
 type DevicesQueryResult = original.DevicesQueryResult
 type DevicesQueryResultIterator = original.DevicesQueryResultIterator
 type DevicesQueryResultPage = original.DevicesQueryResultPage
-type DeviceTagsParameters = original.DeviceTagsParameters
-type DeviceTagsResult = original.DeviceTagsResult
 type EngageActiveUsersFilter = original.EngageActiveUsersFilter
 type EngageIdleUsersFilter = original.EngageIdleUsersFilter
 type EngageNewUsersFilter = original.EngageNewUsersFilter
@@ -315,9 +258,9 @@ type ExportTaskListResultIterator = original.ExportTaskListResultIterator
 type ExportTaskListResultPage = original.ExportTaskListResultPage
 type ExportTaskParameter = original.ExportTaskParameter
 type ExportTaskResult = original.ExportTaskResult
+type ExportTasksClient = original.ExportTasksClient
 type FeedbackByCampaignParameter = original.FeedbackByCampaignParameter
 type FeedbackByDateRangeParameter = original.FeedbackByDateRangeParameter
-type BasicFilter = original.BasicFilter
 type Filter = original.Filter
 type FirmwareVersionCriterion = original.FirmwareVersionCriterion
 type GeoFencingCriterion = original.GeoFencingCriterion
@@ -326,6 +269,7 @@ type ImportTaskListResult = original.ImportTaskListResult
 type ImportTaskListResultIterator = original.ImportTaskListResultIterator
 type ImportTaskListResultPage = original.ImportTaskListResultPage
 type ImportTaskResult = original.ImportTaskResult
+type ImportTasksClient = original.ImportTasksClient
 type IntegerTagCriterion = original.IntegerTagCriterion
 type LanguageCriterion = original.LanguageCriterion
 type LocationCriterion = original.LocationCriterion
@@ -343,14 +287,104 @@ type Resource = original.Resource
 type ScreenSizeCriterion = original.ScreenSizeCriterion
 type SegmentCriterion = original.SegmentCriterion
 type StringTagCriterion = original.StringTagCriterion
-type SupportedPlatformsListResult = original.SupportedPlatformsListResult
 type SupportedPlatformsClient = original.SupportedPlatformsClient
+type SupportedPlatformsListResult = original.SupportedPlatformsListResult
 
+func New(subscriptionID string) BaseClient {
+	return original.New(subscriptionID)
+}
+func NewAppCollectionsClient(subscriptionID string) AppCollectionsClient {
+	return original.NewAppCollectionsClient(subscriptionID)
+}
+func NewAppCollectionsClientWithBaseURI(baseURI string, subscriptionID string) AppCollectionsClient {
+	return original.NewAppCollectionsClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewAppsClient(subscriptionID string) AppsClient {
+	return original.NewAppsClient(subscriptionID)
+}
+func NewAppsClientWithBaseURI(baseURI string, subscriptionID string) AppsClient {
+	return original.NewAppsClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewCampaignsClient(subscriptionID string) CampaignsClient {
+	return original.NewCampaignsClient(subscriptionID)
+}
+func NewCampaignsClientWithBaseURI(baseURI string, subscriptionID string) CampaignsClient {
+	return original.NewCampaignsClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewDevicesClient(subscriptionID string) DevicesClient {
+	return original.NewDevicesClient(subscriptionID)
+}
+func NewDevicesClientWithBaseURI(baseURI string, subscriptionID string) DevicesClient {
+	return original.NewDevicesClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewExportTasksClient(subscriptionID string) ExportTasksClient {
+	return original.NewExportTasksClient(subscriptionID)
+}
+func NewExportTasksClientWithBaseURI(baseURI string, subscriptionID string) ExportTasksClient {
+	return original.NewExportTasksClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewImportTasksClient(subscriptionID string) ImportTasksClient {
+	return original.NewImportTasksClient(subscriptionID)
+}
+func NewImportTasksClientWithBaseURI(baseURI string, subscriptionID string) ImportTasksClient {
+	return original.NewImportTasksClientWithBaseURI(baseURI, subscriptionID)
+}
 func NewSupportedPlatformsClient(subscriptionID string) SupportedPlatformsClient {
 	return original.NewSupportedPlatformsClient(subscriptionID)
 }
 func NewSupportedPlatformsClientWithBaseURI(baseURI string, subscriptionID string) SupportedPlatformsClient {
 	return original.NewSupportedPlatformsClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewWithBaseURI(baseURI string, subscriptionID string) BaseClient {
+	return original.NewWithBaseURI(baseURI, subscriptionID)
+}
+func PossibleAudienceOperatorsValues() []AudienceOperators {
+	return original.PossibleAudienceOperatorsValues()
+}
+func PossibleCampaignFeedbacksValues() []CampaignFeedbacks {
+	return original.PossibleCampaignFeedbacksValues()
+}
+func PossibleCampaignKindsValues() []CampaignKinds {
+	return original.PossibleCampaignKindsValues()
+}
+func PossibleCampaignStatesValues() []CampaignStates {
+	return original.PossibleCampaignStatesValues()
+}
+func PossibleCampaignTypeValues() []CampaignType {
+	return original.PossibleCampaignTypeValues()
+}
+func PossibleCampaignTypesValues() []CampaignTypes {
+	return original.PossibleCampaignTypesValues()
+}
+func PossibleDeliveryTimesValues() []DeliveryTimes {
+	return original.PossibleDeliveryTimesValues()
+}
+func PossibleExportFormatValues() []ExportFormat {
+	return original.PossibleExportFormatValues()
+}
+func PossibleExportStateValues() []ExportState {
+	return original.PossibleExportStateValues()
+}
+func PossibleExportTypeValues() []ExportType {
+	return original.PossibleExportTypeValues()
+}
+func PossibleJobStatesValues() []JobStates {
+	return original.PossibleJobStatesValues()
+}
+func PossibleNotificationTypesValues() []NotificationTypes {
+	return original.PossibleNotificationTypesValues()
+}
+func PossibleProvisioningStatesValues() []ProvisioningStates {
+	return original.PossibleProvisioningStatesValues()
+}
+func PossiblePushModesValues() []PushModes {
+	return original.PossiblePushModesValues()
+}
+func PossibleTypeBasicFilterValues() []TypeBasicFilter {
+	return original.PossibleTypeBasicFilterValues()
+}
+func PossibleTypeValues() []Type {
+	return original.PossibleTypeValues()
 }
 func UserAgent() string {
 	return original.UserAgent() + " profiles/preview"

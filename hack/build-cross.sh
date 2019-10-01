@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Build all cross compile targets and the base binaries
 STARTTIME=$(date +%s)
@@ -14,8 +14,6 @@ platforms=(
 )
 image_platforms=( )
 test_platforms=( "${host_platform}" )
-
-targets=( "${OS_CROSS_COMPILE_TARGETS[@]}" )
 
 # Special case ppc64le
 if [[ "${host_platform}" == "linux/ppc64le" ]]; then
@@ -41,7 +39,7 @@ fi
 if [[ -n "${OS_ONLY_BUILD_PLATFORMS-}" ]]; then
   filtered=( )
   for platform in ${platforms[@]}; do
-    if [[ "${platform}" =~ "${OS_ONLY_BUILD_PLATFORMS}" ]]; then
+    if [[ "${platform}" =~ ${OS_ONLY_BUILD_PLATFORMS} ]]; then
       filtered+=("${platform}")
     fi
   done
@@ -49,7 +47,7 @@ if [[ -n "${OS_ONLY_BUILD_PLATFORMS-}" ]]; then
 
   filtered=( )
   for platform in ${image_platforms[@]}; do
-    if [[ "${platform}" =~ "${OS_ONLY_BUILD_PLATFORMS}" ]]; then
+    if [[ "${platform}" =~ ${OS_ONLY_BUILD_PLATFORMS} ]]; then
       filtered+=("${platform}")
     fi
   done
@@ -57,7 +55,7 @@ if [[ -n "${OS_ONLY_BUILD_PLATFORMS-}" ]]; then
 
   filtered=( )
   for platform in ${test_platforms[@]}; do
-    if [[ "${platform}" =~ "${OS_ONLY_BUILD_PLATFORMS}" ]]; then
+    if [[ "${platform}" =~ ${OS_ONLY_BUILD_PLATFORMS} ]]; then
       filtered+=("${platform}")
     fi
   done
@@ -66,25 +64,15 @@ fi
 
 # Build image binaries for a subset of platforms. Image binaries are currently
 # linux-only, and a subset of them are compiled with flags to make them static
-# for use in Docker images "FROM scratch".
+# for use in container images "FROM scratch".
 OS_BUILD_PLATFORMS=("${image_platforms[@]+"${image_platforms[@]}"}")
 os::build::build_static_binaries "${OS_SCRATCH_IMAGE_COMPILE_TARGETS_LINUX[@]-}"
 os::build::build_binaries "${OS_IMAGE_COMPILE_TARGETS_LINUX[@]-}"
 
 # Build the primary client/server for all platforms
 OS_BUILD_PLATFORMS=("${platforms[@]+"${platforms[@]}"}")
-os::build::build_binaries "${OS_CROSS_COMPILE_TARGETS[@]}"
-
-# Build the test binaries for the host platform
-OS_BUILD_PLATFORMS=("${test_platforms[@]+"${test_platforms[@]}"}")
-os::build::build_binaries "${OS_TEST_TARGETS[@]}"
 
 if [[ "${OS_BUILD_RELEASE_ARCHIVES-}" != "n" ]]; then
-  # Make the primary client/server release.
-  OS_BUILD_PLATFORMS=("${platforms[@]+"${platforms[@]}"}")
-  OS_RELEASE_ARCHIVE="openshift-origin" \
-    os::build::place_bins "${OS_CROSS_COMPILE_BINARIES[@]}"
-
   # Make the image binaries release.
   OS_BUILD_PLATFORMS=("${image_platforms[@]+"${image_platforms[@]}"}")
   OS_RELEASE_ARCHIVE="openshift-origin-image" \
@@ -93,8 +81,6 @@ if [[ "${OS_BUILD_RELEASE_ARCHIVES-}" != "n" ]]; then
   os::build::release_sha
 else
   # Place binaries only
-  OS_BUILD_PLATFORMS=("${platforms[@]+"${platforms[@]}"}")
-  os::build::place_bins "${OS_CROSS_COMPILE_BINARIES[@]}"
   OS_BUILD_PLATFORMS=("${image_platforms[@]+"${image_platforms[@]}"}")
   os::build::place_bins "${OS_IMAGE_COMPILE_BINARIES[@]}"
 fi

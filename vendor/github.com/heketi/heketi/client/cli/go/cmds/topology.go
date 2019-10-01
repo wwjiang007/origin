@@ -14,8 +14,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
+	"text/template"
 
-	client "github.com/heketi/heketi/client/api/go-client"
 	"github.com/heketi/heketi/pkg/glusterfs/api"
 	"github.com/spf13/cobra"
 )
@@ -29,15 +30,53 @@ const (
 var jsonConfigFile string
 
 // Config file
+type ConfigFileDeviceOptions struct {
+	api.Device
+	DestroyData bool `json:"destroydata,omitempty"`
+}
+
+type ConfigFileDevice struct {
+	ConfigFileDeviceOptions
+}
 type ConfigFileNode struct {
-	Devices []string           `json:"devices"`
-	Node    api.NodeAddRequest `json:"node"`
+	Devices []*ConfigFileDevice `json:"devices"`
+	Node    api.NodeAddRequest  `json:"node"`
 }
 type ConfigFileCluster struct {
 	Nodes []ConfigFileNode `json:"nodes"`
+	Block *bool            `json:"block,omitempty"`
+	File  *bool            `json:"file,omitempty"`
 }
 type ConfigFile struct {
 	Clusters []ConfigFileCluster `json:"clusters"`
+}
+
+// UnmarshalJSON is implemented on the ConfigFileDevice so that older
+// topology files that use strings in the device list can be used
+// with newer versions of heketi. If the json object is a string,
+// it is assigned to the device name and all other values ignored.
+// Otherwise we assume that the object matches the device and
+// that is decoded into our local wrapper type.
+func (device *ConfigFileDevice) UnmarshalJSON(b []byte) error {
+	var s string
+	err := json.Unmarshal(b, &s)
+	if err == nil {
+		device.Name = s
+		return nil
+	}
+
+	// ConfigFileDevice embeds the ConfigFileDeviceOptions struct which has
+	// additional members compared to the standard api.Device. Structuring
+	// it this way, prevents a recursive call to UnmarshalJSON().
+	var d ConfigFileDeviceOptions
+	err = json.Unmarshal(b, &d)
+	if err != nil {
+		return err
+	}
+	device.Name = d.Name
+	device.Tags = d.Tags
+	device.DestroyData = d.DestroyData
+	return nil
 }
 
 func init() {
@@ -115,7 +154,10 @@ var topologyLoadCommand = &cobra.Command{
 		}
 
 		// Create client
-		heketi := client.NewClient(options.Url, options.User, options.Key)
+		heketi, err := newHeketiClient()
+		if err != nil {
+			return err
+		}
 
 		// Load current topolgy
 		heketiTopology, err := heketi.TopologyInfo()
@@ -147,11 +189,32 @@ var topologyLoadCommand = &cobra.Command{
 					// See if we need to create a cluster
 					if clusterInfo == nil {
 						fmt.Fprintf(stdout, "Creating cluster ... ")
-						clusterInfo, err = heketi.ClusterCreate()
+						req := &api.ClusterCreateRequest{}
+
+						if cluster.File == nil {
+							req.File = true
+						} else {
+							req.File = *cluster.File
+						}
+
+						if cluster.Block == nil {
+							req.Block = true
+						} else {
+							req.Block = *cluster.Block
+						}
+
+						clusterInfo, err = heketi.ClusterCreate(req)
 						if err != nil {
 							return err
 						}
 						fmt.Fprintf(stdout, "ID: %v\n", clusterInfo.Id)
+
+						if req.File {
+							fmt.Fprintf(stdout, "\tAllowing file volumes on cluster.\n")
+						}
+						if req.Block {
+							fmt.Fprintf(stdout, "\tAllowing block volumes on cluster.\n")
+						}
 
 						// Create a cleanup function in case no
 						// nodes or devices are created
@@ -184,15 +247,17 @@ var topologyLoadCommand = &cobra.Command{
 				for _, device := range node.Devices {
 					deviceInfo := getDeviceIdFromHeketiTopology(heketiTopology,
 						nodeInfo.Hostnames.Manage[0],
-						device)
+						device.Name)
 					if deviceInfo != nil {
-						fmt.Fprintf(stdout, "\t\tFound device %v\n", device)
+						fmt.Fprintf(stdout, "\t\tFound device %v\n", device.Name)
 					} else {
-						fmt.Fprintf(stdout, "\t\tAdding device %v ... ", device)
+						fmt.Fprintf(stdout, "\t\tAdding device %v ... ", device.Name)
 
 						req := &api.DeviceAddRequest{}
-						req.Name = device
+						req.Name = device.Name
 						req.NodeId = nodeInfo.Id
+						req.Tags = device.Tags
+						req.DestroyData = device.DestroyData
 						err := heketi.DeviceAdd(req)
 						if err != nil {
 							fmt.Fprintf(stdout, "Unable to add device: %v\n", err)
@@ -209,13 +274,16 @@ var topologyLoadCommand = &cobra.Command{
 
 var topologyInfoCommand = &cobra.Command{
 	Use:     "info",
-	Short:   "Retreives information about the current Topology",
-	Long:    "Retreives information about the current Topology",
+	Short:   "Retrieves information about the current Topology",
+	Long:    "Retrieves information about the current Topology",
 	Example: " $ heketi-cli topology info",
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		// Create a client to talk to Heketi
-		heketi := client.NewClient(options.Url, options.User, options.Key)
+		heketi, err := newHeketiClient()
+		if err != nil {
+			return err
+		}
 
 		// Create Topology
 		topoinfo, err := heketi.TopologyInfo()
@@ -231,112 +299,102 @@ var topologyInfoCommand = &cobra.Command{
 			}
 			fmt.Fprintf(stdout, string(data))
 		} else {
-
 			// Get the cluster list and iterate over
-			for i, _ := range topoinfo.ClusterList {
-				fmt.Fprintf(stdout, "\nCluster Id: %v\n", topoinfo.ClusterList[i].Id)
-				fmt.Fprintf(stdout, "\n    %s\n", "Volumes:")
-				for k, _ := range topoinfo.ClusterList[i].Volumes {
-
-					// Format and print volumeinfo  on this cluster
-					v := topoinfo.ClusterList[i].Volumes[k]
-					s := fmt.Sprintf("\n\tName: %v\n"+
-						"\tSize: %v\n"+
-						"\tId: %v\n"+
-						"\tCluster Id: %v\n"+
-						"\tMount: %v\n"+
-						"\tMount Options: backup-volfile-servers=%v\n"+
-						"\tDurability Type: %v\n",
-						v.Name,
-						v.Size,
-						v.Id,
-						v.Cluster,
-						v.Mount.GlusterFS.MountPoint,
-						v.Mount.GlusterFS.Options["backup-volfile-servers"],
-						v.Durability.Type)
-
-					switch v.Durability.Type {
-					case api.DurabilityEC:
-						s += fmt.Sprintf("\tDisperse Data: %v\n"+
-							"\tDisperse Redundancy: %v\n",
-							v.Durability.Disperse.Data,
-							v.Durability.Disperse.Redundancy)
-					case api.DurabilityReplicate:
-						s += fmt.Sprintf("\tReplica: %v\n",
-							v.Durability.Replicate.Replica)
-					}
-					if v.Snapshot.Enable {
-						s += fmt.Sprintf("\tSnapshot: Enabled\n"+
-							"\tSnapshot Factor: %.2f\n",
-							v.Snapshot.Factor)
-					} else {
-						s += "\tSnapshot: Disabled\n"
-					}
-					s += "\n\t\tBricks:\n"
-					for _, b := range v.Bricks {
-						s += fmt.Sprintf("\t\t\tId: %v\n"+
-							"\t\t\tPath: %v\n"+
-							"\t\t\tSize (GiB): %v\n"+
-							"\t\t\tNode: %v\n"+
-							"\t\t\tDevice: %v\n\n",
-							b.Id,
-							b.Path,
-							b.Size/(1024*1024),
-							b.NodeId,
-							b.DeviceId)
-					}
-					fmt.Fprintf(stdout, "%s", s)
-				}
-
-				// format and print each Node information on this cluster
-				fmt.Fprintf(stdout, "\n    %s\n", "Nodes:")
-				for j, _ := range topoinfo.ClusterList[i].Nodes {
-					info := topoinfo.ClusterList[i].Nodes[j]
-					fmt.Fprintf(stdout, "\n\tNode Id: %v\n"+
-						"\tState: %v\n"+
-						"\tCluster Id: %v\n"+
-						"\tZone: %v\n"+
-						"\tManagement Hostname: %v\n"+
-						"\tStorage Hostname: %v\n",
-						info.Id,
-						info.State,
-						info.ClusterId,
-						info.Zone,
-						info.Hostnames.Manage[0],
-						info.Hostnames.Storage[0])
-					fmt.Fprintf(stdout, "\tDevices:\n")
-
-					// format and print the device info
-					for j, d := range info.DevicesInfo {
-						fmt.Fprintf(stdout, "\t\tId:%-35v"+
-							"Name:%-20v"+
-							"State:%-10v"+
-							"Size (GiB):%-8v"+
-							"Used (GiB):%-8v"+
-							"Free (GiB):%-8v\n",
-							d.Id,
-							d.Name,
-							d.State,
-							d.Storage.Total/(1024*1024),
-							d.Storage.Used/(1024*1024),
-							d.Storage.Free/(1024*1024))
-
-						// format and print the brick information
-						fmt.Fprintf(stdout, "\t\t\tBricks:\n")
-						for _, d := range info.DevicesInfo[j].Bricks {
-							fmt.Fprintf(stdout, "\t\t\t\tId:%-35v"+
-								"Size (GiB):%-8v"+
-								"Path: %v\n",
-								d.Id,
-								d.Size/(1024*1024),
-								d.Path)
-						}
-					}
-				}
+			for _, c := range topoinfo.ClusterList {
+				printClusterInfo(c)
 			}
-
 		}
 
 		return nil
 	},
+}
+
+// NOTE: the output here previously mixed tabs and spaces when
+// using a series of printf calls. This mixing is preserved in
+// the template and is intentional. Deciding to change formatting
+// is left as a future exercise if desired.
+var clusterTemplate = `
+Cluster Id: {{.Id}}
+
+    File:  {{.File}}
+    Block: {{.Block}}
+
+    Volumes:
+{{range .Volumes}}
+	Name: {{.Name}}
+	Size: {{.Size}}
+	Id: {{.Id}}
+	Cluster Id: {{.Cluster}}
+	Mount: {{.Mount.GlusterFS.MountPoint}}
+	Mount Options: {{ range $k, $v := .Mount.GlusterFS.Options }}{{$k}}={{$v}}{{end}}
+	Durability Type: {{.Durability.Type}}
+{{- if eq .Durability.Type "replicate" }}
+	Replica: {{.Durability.Replicate.Replica}}
+{{- else if eq .Durability.Type "disperse" }}
+	Disperse Data: {{.Durability.Disperse.Data}}
+	Disperse Redundancy: {{.Durability.Disperse.Redundancy}}
+{{- end}}
+{{- if .Snapshot.Enable }}
+	Snapshot: Enabled
+	Snapshot Factor: {{.Snapshot.Factor | printf "%.2f"}}
+{{else}}
+	Snapshot: Disabled
+{{end}}
+		Bricks:
+{{- range .Bricks}}
+			Id: {{.Id}}
+			Path: {{.Path}}
+			Size (GiB): {{kibToGib .Size}}
+			Node: {{.NodeId}}
+			Device: {{.DeviceId}}
+{{end}}
+{{end}}
+
+    Nodes:
+{{range .Nodes}}
+	Node Id: {{.Id}}
+	State: {{.State}}
+	Cluster Id: {{.ClusterId}}
+	Zone: {{.Zone}}
+	Management Hostnames: {{join .Hostnames.Manage ", "}}
+	Storage Hostnames: {{join .Hostnames.Storage ", "}}
+{{- if len .Tags | ne 0 }}
+	Tags:{{range $tk, $tv := .Tags }} {{$tk}}:{{$tv -}}{{end}}
+{{end}}
+	Devices:
+{{- range .DevicesInfo}}
+		Id:{{.Id | printf "%-35v" -}}
+		Name:{{.Name | printf "%-20v" -}}
+		State:{{.State | printf "%-10v" -}}
+		Size (GiB):{{kibToGib .Storage.Total | printf "%-8v" -}}
+		Used (GiB):{{kibToGib .Storage.Used | printf "%-8v" -}}
+		Free (GiB):{{kibToGib .Storage.Free | printf "%-8v"}}
+{{- if len .Tags | ne 0 }}
+			Tags:{{range $tk, $tv := .Tags }} {{$tk}}:{{$tv -}}{{end}}
+{{end}}
+			Bricks:
+{{- range .Bricks}}
+				Id:{{.Id | printf "%-35v" -}}
+				Size (GiB):{{kibToGib .Size | printf "%-8v" -}}
+				Path: {{.Path}}
+{{- end}}
+{{- end}}
+{{end}}
+`
+
+func printClusterInfo(cluster api.Cluster) {
+	fm := template.FuncMap{
+		"join": strings.Join,
+		"kibToGib": func(i uint64) string {
+			return fmt.Sprintf("%d", i/(1024*1024))
+		},
+	}
+	t, err := template.New("cluster").Funcs(fm).Parse(clusterTemplate)
+	if err != nil {
+		panic(err)
+	}
+	err = t.Execute(os.Stdout, cluster)
+	if err != nil {
+		panic(err)
+	}
 }

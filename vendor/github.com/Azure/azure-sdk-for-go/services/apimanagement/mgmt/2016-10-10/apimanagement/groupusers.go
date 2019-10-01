@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -41,11 +42,22 @@ func NewGroupUsersClientWithBaseURI(baseURI string, subscriptionID string) Group
 }
 
 // Create adds a user to the specified group.
-//
-// resourceGroupName is the name of the resource group. serviceName is the name of the API Management service.
-// groupID is group identifier. Must be unique in the current API Management service instance. UID is user
-// identifier. Must be unique in the current API Management service instance.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// serviceName - the name of the API Management service.
+// groupID - group identifier. Must be unique in the current API Management service instance.
+// UID - user identifier. Must be unique in the current API Management service instance.
 func (client GroupUsersClient) Create(ctx context.Context, resourceGroupName string, serviceName string, groupID string, UID string) (result ErrorBodyContract, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/GroupUsersClient.Create")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: serviceName,
 			Constraints: []validation.Constraint{{Target: "serviceName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -109,8 +121,8 @@ func (client GroupUsersClient) CreatePreparer(ctx context.Context, resourceGroup
 // CreateSender sends the Create request. The method will close the
 // http.Response Body if it receives an error.
 func (client GroupUsersClient) CreateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateResponder handles the response to the Create request. The method always
@@ -127,11 +139,22 @@ func (client GroupUsersClient) CreateResponder(resp *http.Response) (result Erro
 }
 
 // Delete remove existing user from existing group.
-//
-// resourceGroupName is the name of the resource group. serviceName is the name of the API Management service.
-// groupID is group identifier. Must be unique in the current API Management service instance. UID is user
-// identifier. Must be unique in the current API Management service instance.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// serviceName - the name of the API Management service.
+// groupID - group identifier. Must be unique in the current API Management service instance.
+// UID - user identifier. Must be unique in the current API Management service instance.
 func (client GroupUsersClient) Delete(ctx context.Context, resourceGroupName string, serviceName string, groupID string, UID string) (result ErrorBodyContract, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/GroupUsersClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: serviceName,
 			Constraints: []validation.Constraint{{Target: "serviceName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -195,8 +218,8 @@ func (client GroupUsersClient) DeletePreparer(ctx context.Context, resourceGroup
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client GroupUsersClient) DeleteSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
@@ -213,10 +236,11 @@ func (client GroupUsersClient) DeleteResponder(resp *http.Response) (result Erro
 }
 
 // ListByGroups lists a collection of the members of the group, specified by its identifier.
-//
-// resourceGroupName is the name of the resource group. serviceName is the name of the API Management service.
-// groupID is group identifier. Must be unique in the current API Management service instance. filter is | Field
-// | Supported operators    | Supported functions               |
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// serviceName - the name of the API Management service.
+// groupID - group identifier. Must be unique in the current API Management service instance.
+// filter - | Field            | Supported operators    | Supported functions               |
 // |------------------|------------------------|-----------------------------------|
 // | id               | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |
 // | firstName        | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |
@@ -224,9 +248,20 @@ func (client GroupUsersClient) DeleteResponder(resp *http.Response) (result Erro
 // | email            | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |
 // | state            | eq                     | N/A                               |
 // | registrationDate | ge, le, eq, ne, gt, lt | N/A                               |
-// | note             | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith | top is number of
-// records to return. skip is number of records to skip.
+// | note             | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |
+// top - number of records to return.
+// skip - number of records to skip.
 func (client GroupUsersClient) ListByGroups(ctx context.Context, resourceGroupName string, serviceName string, groupID string, filter string, top *int32, skip *int32) (result UserCollectionPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/GroupUsersClient.ListByGroups")
+		defer func() {
+			sc := -1
+			if result.uc.Response.Response != nil {
+				sc = result.uc.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: serviceName,
 			Constraints: []validation.Constraint{{Target: "serviceName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -301,8 +336,8 @@ func (client GroupUsersClient) ListByGroupsPreparer(ctx context.Context, resourc
 // ListByGroupsSender sends the ListByGroups request. The method will close the
 // http.Response Body if it receives an error.
 func (client GroupUsersClient) ListByGroupsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByGroupsResponder handles the response to the ListByGroups request. The method always
@@ -319,8 +354,8 @@ func (client GroupUsersClient) ListByGroupsResponder(resp *http.Response) (resul
 }
 
 // listByGroupsNextResults retrieves the next set of results, if any.
-func (client GroupUsersClient) listByGroupsNextResults(lastResults UserCollection) (result UserCollection, err error) {
-	req, err := lastResults.userCollectionPreparer()
+func (client GroupUsersClient) listByGroupsNextResults(ctx context.Context, lastResults UserCollection) (result UserCollection, err error) {
+	req, err := lastResults.userCollectionPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "apimanagement.GroupUsersClient", "listByGroupsNextResults", nil, "Failure preparing next results request")
 	}
@@ -341,6 +376,16 @@ func (client GroupUsersClient) listByGroupsNextResults(lastResults UserCollectio
 
 // ListByGroupsComplete enumerates all values, automatically crossing page boundaries as required.
 func (client GroupUsersClient) ListByGroupsComplete(ctx context.Context, resourceGroupName string, serviceName string, groupID string, filter string, top *int32, skip *int32) (result UserCollectionIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/GroupUsersClient.ListByGroups")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListByGroups(ctx, resourceGroupName, serviceName, groupID, filter, top, skip)
 	return
 }

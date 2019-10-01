@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -41,11 +42,23 @@ func NewReferenceDataSetsClientWithBaseURI(baseURI string, subscriptionID string
 }
 
 // CreateOrUpdate create or update a reference data set in the specified environment.
-//
-// resourceGroupName is name of an Azure Resource group. environmentName is the name of the Time Series Insights
-// environment associated with the specified resource group. referenceDataSetName is name of the reference data
-// set. parameters is parameters for creating a reference data set.
+// Parameters:
+// resourceGroupName - name of an Azure Resource group.
+// environmentName - the name of the Time Series Insights environment associated with the specified resource
+// group.
+// referenceDataSetName - name of the reference data set.
+// parameters - parameters for creating a reference data set.
 func (client ReferenceDataSetsClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, environmentName string, referenceDataSetName string, parameters ReferenceDataSetCreateOrUpdateParameters) (result ReferenceDataSetResource, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReferenceDataSetsClient.CreateOrUpdate")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: referenceDataSetName,
 			Constraints: []validation.Constraint{{Target: "referenceDataSetName", Name: validation.MaxLength, Rule: 63, Chain: nil},
@@ -93,7 +106,7 @@ func (client ReferenceDataSetsClient) CreateOrUpdatePreparer(ctx context.Context
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.TimeSeriesInsights/environments/{environmentName}/referenceDataSets/{referenceDataSetName}", pathParameters),
@@ -105,8 +118,8 @@ func (client ReferenceDataSetsClient) CreateOrUpdatePreparer(ctx context.Context
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReferenceDataSetsClient) CreateOrUpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateOrUpdateResponder handles the response to the CreateOrUpdate request. The method always
@@ -124,11 +137,23 @@ func (client ReferenceDataSetsClient) CreateOrUpdateResponder(resp *http.Respons
 
 // Delete deletes the reference data set with the specified name in the specified subscription, resource group, and
 // environment
-//
-// resourceGroupName is name of an Azure Resource group. environmentName is the name of the Time Series Insights
-// environment associated with the specified resource group. referenceDataSetName is the name of the Time Series
-// Insights reference data set associated with the specified environment.
+// Parameters:
+// resourceGroupName - name of an Azure Resource group.
+// environmentName - the name of the Time Series Insights environment associated with the specified resource
+// group.
+// referenceDataSetName - the name of the Time Series Insights reference data set associated with the specified
+// environment.
 func (client ReferenceDataSetsClient) Delete(ctx context.Context, resourceGroupName string, environmentName string, referenceDataSetName string) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReferenceDataSetsClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeletePreparer(ctx, resourceGroupName, environmentName, referenceDataSetName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "timeseriesinsights.ReferenceDataSetsClient", "Delete", nil, "Failure preparing request")
@@ -175,8 +200,8 @@ func (client ReferenceDataSetsClient) DeletePreparer(ctx context.Context, resour
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReferenceDataSetsClient) DeleteSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
@@ -192,11 +217,23 @@ func (client ReferenceDataSetsClient) DeleteResponder(resp *http.Response) (resu
 }
 
 // Get gets the reference data set with the specified name in the specified environment.
-//
-// resourceGroupName is name of an Azure Resource group. environmentName is the name of the Time Series Insights
-// environment associated with the specified resource group. referenceDataSetName is the name of the Time Series
-// Insights reference data set associated with the specified environment.
+// Parameters:
+// resourceGroupName - name of an Azure Resource group.
+// environmentName - the name of the Time Series Insights environment associated with the specified resource
+// group.
+// referenceDataSetName - the name of the Time Series Insights reference data set associated with the specified
+// environment.
 func (client ReferenceDataSetsClient) Get(ctx context.Context, resourceGroupName string, environmentName string, referenceDataSetName string) (result ReferenceDataSetResource, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReferenceDataSetsClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, resourceGroupName, environmentName, referenceDataSetName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "timeseriesinsights.ReferenceDataSetsClient", "Get", nil, "Failure preparing request")
@@ -243,8 +280,8 @@ func (client ReferenceDataSetsClient) GetPreparer(ctx context.Context, resourceG
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReferenceDataSetsClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -262,10 +299,21 @@ func (client ReferenceDataSetsClient) GetResponder(resp *http.Response) (result 
 
 // ListByEnvironment lists all the available reference data sets associated with the subscription and within the
 // specified resource group and environment.
-//
-// resourceGroupName is name of an Azure Resource group. environmentName is the name of the Time Series Insights
-// environment associated with the specified resource group.
+// Parameters:
+// resourceGroupName - name of an Azure Resource group.
+// environmentName - the name of the Time Series Insights environment associated with the specified resource
+// group.
 func (client ReferenceDataSetsClient) ListByEnvironment(ctx context.Context, resourceGroupName string, environmentName string) (result ReferenceDataSetListResponse, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReferenceDataSetsClient.ListByEnvironment")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.ListByEnvironmentPreparer(ctx, resourceGroupName, environmentName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "timeseriesinsights.ReferenceDataSetsClient", "ListByEnvironment", nil, "Failure preparing request")
@@ -311,8 +359,8 @@ func (client ReferenceDataSetsClient) ListByEnvironmentPreparer(ctx context.Cont
 // ListByEnvironmentSender sends the ListByEnvironment request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReferenceDataSetsClient) ListByEnvironmentSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByEnvironmentResponder handles the response to the ListByEnvironment request. The method always
@@ -330,12 +378,25 @@ func (client ReferenceDataSetsClient) ListByEnvironmentResponder(resp *http.Resp
 
 // Update updates the reference data set with the specified name in the specified subscription, resource group, and
 // environment.
-//
-// resourceGroupName is name of an Azure Resource group. environmentName is the name of the Time Series Insights
-// environment associated with the specified resource group. referenceDataSetName is the name of the Time Series
-// Insights reference data set associated with the specified environment. referenceDataSetUpdateParameters is
-// request object that contains the updated information for the reference data set.
+// Parameters:
+// resourceGroupName - name of an Azure Resource group.
+// environmentName - the name of the Time Series Insights environment associated with the specified resource
+// group.
+// referenceDataSetName - the name of the Time Series Insights reference data set associated with the specified
+// environment.
+// referenceDataSetUpdateParameters - request object that contains the updated information for the reference
+// data set.
 func (client ReferenceDataSetsClient) Update(ctx context.Context, resourceGroupName string, environmentName string, referenceDataSetName string, referenceDataSetUpdateParameters ReferenceDataSetUpdateParameters) (result ReferenceDataSetResource, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReferenceDataSetsClient.Update")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UpdatePreparer(ctx, resourceGroupName, environmentName, referenceDataSetName, referenceDataSetUpdateParameters)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "timeseriesinsights.ReferenceDataSetsClient", "Update", nil, "Failure preparing request")
@@ -372,7 +433,7 @@ func (client ReferenceDataSetsClient) UpdatePreparer(ctx context.Context, resour
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.TimeSeriesInsights/environments/{environmentName}/referenceDataSets/{referenceDataSetName}", pathParameters),
@@ -384,8 +445,8 @@ func (client ReferenceDataSetsClient) UpdatePreparer(ctx context.Context, resour
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReferenceDataSetsClient) UpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateResponder handles the response to the Update request. The method always

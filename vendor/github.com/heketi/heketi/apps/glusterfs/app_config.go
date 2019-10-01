@@ -10,47 +10,49 @@
 package glusterfs
 
 import (
-	"encoding/json"
-	"io"
-	"os"
-
+	"github.com/heketi/heketi/executors/injectexec"
 	"github.com/heketi/heketi/executors/kubeexec"
 	"github.com/heketi/heketi/executors/sshexec"
 )
 
+type RetryLimitConfig struct {
+	VolumeCreate int `json:"volume_create"`
+}
+
 type GlusterFSConfig struct {
-	DBfile     string              `json:"db"`
-	Executor   string              `json:"executor"`
-	Allocator  string              `json:"allocator"`
-	SshConfig  sshexec.SshConfig   `json:"sshexec"`
-	KubeConfig kubeexec.KubeConfig `json:"kubeexec"`
-	Loglevel   string              `json:"loglevel"`
+	DBfile       string                  `json:"db"`
+	Executor     string                  `json:"executor"`
+	Allocator    string                  `json:"allocator"`
+	SshConfig    sshexec.SshConfig       `json:"sshexec"`
+	KubeConfig   kubeexec.KubeConfig     `json:"kubeexec"`
+	InjectConfig injectexec.InjectConfig `json:"injectexec"`
+	Loglevel     string                  `json:"loglevel"`
 
 	// advanced settings
-	BrickMaxSize int `json:"brick_max_size_gb"`
-	BrickMinSize int `json:"brick_min_size_gb"`
-	BrickMaxNum  int `json:"max_bricks_per_volume"`
-}
+	BrickMaxSize         int    `json:"brick_max_size_gb"`
+	BrickMinSize         int    `json:"brick_min_size_gb"`
+	BrickMaxNum          int    `json:"max_bricks_per_volume"`
+	AverageFileSize      uint64 `json:"average_file_size_kb"`
+	PreReqVolumeOptions  string `json:"pre_request_volume_options"`
+	PostReqVolumeOptions string `json:"post_request_volume_options"`
+	ZoneChecking         string `json:"zone_checking"`
+	MaxVolumesPerCluster int    `json:"max_volumes_per_cluster"`
 
-type ConfigFile struct {
-	GlusterFS GlusterFSConfig `json:"glusterfs"`
-}
+	//block settings
+	CreateBlockHostingVolumes bool   `json:"auto_create_block_hosting_volume"`
+	BlockHostingVolumeSize    int    `json:"block_hosting_volume_size"`
+	BlockHostingVolumeOptions string `json:"block_hosting_volume_options"`
 
-func loadConfiguration(configIo io.Reader) *GlusterFSConfig {
-	configParser := json.NewDecoder(configIo)
+	// server behaviors
+	DisableMonitorGlusterNodes     bool   `json:"disable_monitor_gluster_nodes"`
+	RefreshTimeMonitorGlusterNodes uint32 `json:"refresh_time_monitor_gluster_nodes"`
+	StartTimeMonitorGlusterNodes   uint32 `json:"start_time_monitor_gluster_nodes"`
+	MaxInflightOperations          uint64 `json:"max_inflight_operations"`
 
-	var config ConfigFile
-	if err := configParser.Decode(&config); err != nil {
-		logger.LogError("Unable to parse config file: %v\n",
-			err.Error())
-		return nil
-	}
+	DisableBackgroundCleaner     bool   `json:"disable_background_cleaner"`
+	RefreshTimeBackgroundCleaner uint32 `json:"refresh_time_background_cleaner"`
+	StartTimeBackgroundCleaner   uint32 `json:"start_time_background_cleaner"`
 
-	// Set environment variable to override configuration file
-	env := os.Getenv("HEKETI_EXECUTOR")
-	if env != "" {
-		config.GlusterFS.Executor = env
-	}
-
-	return &config.GlusterFS
+	// operation retry amounts
+	RetryLimits RetryLimitConfig `json:"operation_retry_limits"`
 }

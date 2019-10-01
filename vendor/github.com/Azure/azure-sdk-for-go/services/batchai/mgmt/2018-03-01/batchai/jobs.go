@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -41,12 +42,23 @@ func NewJobsClientWithBaseURI(baseURI string, subscriptionID string) JobsClient 
 }
 
 // Create adds a Job that gets executed on a cluster.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. jobName is the name of the job
-// within the specified resource group. Job names can only contain a combination of alphanumeric characters along
-// with dash (-) and underscore (_). The name must be from 1 through 64 characters long. parameters is the
-// parameters to provide for job creation.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// jobName - the name of the job within the specified resource group. Job names can only contain a combination
+// of alphanumeric characters along with dash (-) and underscore (_). The name must be from 1 through 64
+// characters long.
+// parameters - the parameters to provide for job creation.
 func (client JobsClient) Create(ctx context.Context, resourceGroupName string, jobName string, parameters JobCreateParameters) (result JobsCreateFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobsClient.Create")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.Pattern, Rule: `^[-\w\._]+$`, Chain: nil}}},
@@ -129,15 +141,13 @@ func (client JobsClient) CreatePreparer(ctx context.Context, resourceGroupName s
 // CreateSender sends the Create request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobsClient) CreateSender(req *http.Request) (future JobsCreateFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -155,11 +165,22 @@ func (client JobsClient) CreateResponder(resp *http.Response) (result Job, err e
 }
 
 // Delete deletes the specified Batch AI job.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. jobName is the name of the job
-// within the specified resource group. Job names can only contain a combination of alphanumeric characters along
-// with dash (-) and underscore (_). The name must be from 1 through 64 characters long.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// jobName - the name of the job within the specified resource group. Job names can only contain a combination
+// of alphanumeric characters along with dash (-) and underscore (_). The name must be from 1 through 64
+// characters long.
 func (client JobsClient) Delete(ctx context.Context, resourceGroupName string, jobName string) (result JobsDeleteFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobsClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.Pattern, Rule: `^[-\w\._]+$`, Chain: nil}}},
@@ -209,15 +230,13 @@ func (client JobsClient) DeletePreparer(ctx context.Context, resourceGroupName s
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobsClient) DeleteSender(req *http.Request) (future JobsDeleteFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -234,11 +253,22 @@ func (client JobsClient) DeleteResponder(resp *http.Response) (result autorest.R
 }
 
 // Get gets information about the specified Batch AI job.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. jobName is the name of the job
-// within the specified resource group. Job names can only contain a combination of alphanumeric characters along
-// with dash (-) and underscore (_). The name must be from 1 through 64 characters long.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// jobName - the name of the job within the specified resource group. Job names can only contain a combination
+// of alphanumeric characters along with dash (-) and underscore (_). The name must be from 1 through 64
+// characters long.
 func (client JobsClient) Get(ctx context.Context, resourceGroupName string, jobName string) (result Job, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobsClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.Pattern, Rule: `^[-\w\._]+$`, Chain: nil}}},
@@ -294,8 +324,8 @@ func (client JobsClient) GetPreparer(ctx context.Context, resourceGroupName stri
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobsClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -312,15 +342,25 @@ func (client JobsClient) GetResponder(resp *http.Response) (result Job, err erro
 }
 
 // List gets information about the jobs associated with the subscription.
-//
-// filter is an OData $filter clause.. Used to filter results that are returned in the GET respnose.
-// selectParameter is an OData $select clause. Used to select the properties to be returned in the GET respnose.
-// maxResults is the maximum number of items to return in the response. A maximum of 1000 files can be returned.
+// Parameters:
+// filter - an OData $filter clause. Used to filter results that are returned in the GET response.
+// selectParameter - an OData $select clause. Used to select the properties to be returned in the GET response.
+// maxResults - the maximum number of items to return in the response. A maximum of 1000 files can be returned.
 func (client JobsClient) List(ctx context.Context, filter string, selectParameter string, maxResults *int32) (result JobListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobsClient.List")
+		defer func() {
+			sc := -1
+			if result.jlr.Response.Response != nil {
+				sc = result.jlr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: maxResults,
 			Constraints: []validation.Constraint{{Target: "maxResults", Name: validation.Null, Rule: false,
-				Chain: []validation.Constraint{{Target: "maxResults", Name: validation.InclusiveMaximum, Rule: 1000, Chain: nil},
+				Chain: []validation.Constraint{{Target: "maxResults", Name: validation.InclusiveMaximum, Rule: int64(1000), Chain: nil},
 					{Target: "maxResults", Name: validation.InclusiveMinimum, Rule: 1, Chain: nil},
 				}}}}}); err != nil {
 		return result, validation.NewError("batchai.JobsClient", "List", err.Error())
@@ -381,8 +421,8 @@ func (client JobsClient) ListPreparer(ctx context.Context, filter string, select
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobsClient) ListSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -399,8 +439,8 @@ func (client JobsClient) ListResponder(resp *http.Response) (result JobListResul
 }
 
 // listNextResults retrieves the next set of results, if any.
-func (client JobsClient) listNextResults(lastResults JobListResult) (result JobListResult, err error) {
-	req, err := lastResults.jobListResultPreparer()
+func (client JobsClient) listNextResults(ctx context.Context, lastResults JobListResult) (result JobListResult, err error) {
+	req, err := lastResults.jobListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "batchai.JobsClient", "listNextResults", nil, "Failure preparing next results request")
 	}
@@ -421,23 +461,43 @@ func (client JobsClient) listNextResults(lastResults JobListResult) (result JobL
 
 // ListComplete enumerates all values, automatically crossing page boundaries as required.
 func (client JobsClient) ListComplete(ctx context.Context, filter string, selectParameter string, maxResults *int32) (result JobListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobsClient.List")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.List(ctx, filter, selectParameter, maxResults)
 	return
 }
 
 // ListByResourceGroup gets information about the Batch AI jobs associated within the specified resource group.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. filter is an OData $filter
-// clause.. Used to filter results that are returned in the GET respnose. selectParameter is an OData $select
-// clause. Used to select the properties to be returned in the GET respnose. maxResults is the maximum number of
-// items to return in the response. A maximum of 1000 files can be returned.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// filter - an OData $filter clause. Used to filter results that are returned in the GET response.
+// selectParameter - an OData $select clause. Used to select the properties to be returned in the GET response.
+// maxResults - the maximum number of items to return in the response. A maximum of 1000 files can be returned.
 func (client JobsClient) ListByResourceGroup(ctx context.Context, resourceGroupName string, filter string, selectParameter string, maxResults *int32) (result JobListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobsClient.ListByResourceGroup")
+		defer func() {
+			sc := -1
+			if result.jlr.Response.Response != nil {
+				sc = result.jlr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.Pattern, Rule: `^[-\w\._]+$`, Chain: nil}}},
 		{TargetValue: maxResults,
 			Constraints: []validation.Constraint{{Target: "maxResults", Name: validation.Null, Rule: false,
-				Chain: []validation.Constraint{{Target: "maxResults", Name: validation.InclusiveMaximum, Rule: 1000, Chain: nil},
+				Chain: []validation.Constraint{{Target: "maxResults", Name: validation.InclusiveMaximum, Rule: int64(1000), Chain: nil},
 					{Target: "maxResults", Name: validation.InclusiveMinimum, Rule: 1, Chain: nil},
 				}}}}}); err != nil {
 		return result, validation.NewError("batchai.JobsClient", "ListByResourceGroup", err.Error())
@@ -499,8 +559,8 @@ func (client JobsClient) ListByResourceGroupPreparer(ctx context.Context, resour
 // ListByResourceGroupSender sends the ListByResourceGroup request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobsClient) ListByResourceGroupSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByResourceGroupResponder handles the response to the ListByResourceGroup request. The method always
@@ -517,8 +577,8 @@ func (client JobsClient) ListByResourceGroupResponder(resp *http.Response) (resu
 }
 
 // listByResourceGroupNextResults retrieves the next set of results, if any.
-func (client JobsClient) listByResourceGroupNextResults(lastResults JobListResult) (result JobListResult, err error) {
-	req, err := lastResults.jobListResultPreparer()
+func (client JobsClient) listByResourceGroupNextResults(ctx context.Context, lastResults JobListResult) (result JobListResult, err error) {
+	req, err := lastResults.jobListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "batchai.JobsClient", "listByResourceGroupNextResults", nil, "Failure preparing next results request")
 	}
@@ -539,21 +599,43 @@ func (client JobsClient) listByResourceGroupNextResults(lastResults JobListResul
 
 // ListByResourceGroupComplete enumerates all values, automatically crossing page boundaries as required.
 func (client JobsClient) ListByResourceGroupComplete(ctx context.Context, resourceGroupName string, filter string, selectParameter string, maxResults *int32) (result JobListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobsClient.ListByResourceGroup")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListByResourceGroup(ctx, resourceGroupName, filter, selectParameter, maxResults)
 	return
 }
 
 // ListOutputFiles list all directories and files inside the given directory of the output directory (Only if the
 // output directory is on Azure File Share or Azure Storage container).
-//
-// resourceGroupName is name of the resource group to which the resource belongs. jobName is the name of the job
-// within the specified resource group. Job names can only contain a combination of alphanumeric characters along
-// with dash (-) and underscore (_). The name must be from 1 through 64 characters long. outputdirectoryid is id of
-// the job output directory. This is the OutputDirectory-->id parameter that is given by the user during Create
-// Job. directory is the path to the directory. linkexpiryinminutes is the number of minutes after which the
-// download link will expire. maxResults is the maximum number of items to return in the response. A maximum of
-// 1000 files can be returned.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// jobName - the name of the job within the specified resource group. Job names can only contain a combination
+// of alphanumeric characters along with dash (-) and underscore (_). The name must be from 1 through 64
+// characters long.
+// outputdirectoryid - id of the job output directory. This is the OutputDirectory-->id parameter that is given
+// by the user during Create Job.
+// directory - the path to the directory.
+// linkexpiryinminutes - the number of minutes after which the download link will expire.
+// maxResults - the maximum number of items to return in the response. A maximum of 1000 files can be returned.
 func (client JobsClient) ListOutputFiles(ctx context.Context, resourceGroupName string, jobName string, outputdirectoryid string, directory string, linkexpiryinminutes *int32, maxResults *int32) (result FileListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobsClient.ListOutputFiles")
+		defer func() {
+			sc := -1
+			if result.flr.Response.Response != nil {
+				sc = result.flr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.Pattern, Rule: `^[-\w\._]+$`, Chain: nil}}},
@@ -563,12 +645,12 @@ func (client JobsClient) ListOutputFiles(ctx context.Context, resourceGroupName 
 				{Target: "jobName", Name: validation.Pattern, Rule: `^[-\w\._]+$`, Chain: nil}}},
 		{TargetValue: linkexpiryinminutes,
 			Constraints: []validation.Constraint{{Target: "linkexpiryinminutes", Name: validation.Null, Rule: false,
-				Chain: []validation.Constraint{{Target: "linkexpiryinminutes", Name: validation.InclusiveMaximum, Rule: 600, Chain: nil},
+				Chain: []validation.Constraint{{Target: "linkexpiryinminutes", Name: validation.InclusiveMaximum, Rule: int64(600), Chain: nil},
 					{Target: "linkexpiryinminutes", Name: validation.InclusiveMinimum, Rule: 5, Chain: nil},
 				}}}},
 		{TargetValue: maxResults,
 			Constraints: []validation.Constraint{{Target: "maxResults", Name: validation.Null, Rule: false,
-				Chain: []validation.Constraint{{Target: "maxResults", Name: validation.InclusiveMaximum, Rule: 1000, Chain: nil},
+				Chain: []validation.Constraint{{Target: "maxResults", Name: validation.InclusiveMaximum, Rule: int64(1000), Chain: nil},
 					{Target: "maxResults", Name: validation.InclusiveMinimum, Rule: 1, Chain: nil},
 				}}}}}); err != nil {
 		return result, validation.NewError("batchai.JobsClient", "ListOutputFiles", err.Error())
@@ -636,8 +718,8 @@ func (client JobsClient) ListOutputFilesPreparer(ctx context.Context, resourceGr
 // ListOutputFilesSender sends the ListOutputFiles request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobsClient) ListOutputFilesSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListOutputFilesResponder handles the response to the ListOutputFiles request. The method always
@@ -654,8 +736,8 @@ func (client JobsClient) ListOutputFilesResponder(resp *http.Response) (result F
 }
 
 // listOutputFilesNextResults retrieves the next set of results, if any.
-func (client JobsClient) listOutputFilesNextResults(lastResults FileListResult) (result FileListResult, err error) {
-	req, err := lastResults.fileListResultPreparer()
+func (client JobsClient) listOutputFilesNextResults(ctx context.Context, lastResults FileListResult) (result FileListResult, err error) {
+	req, err := lastResults.fileListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "batchai.JobsClient", "listOutputFilesNextResults", nil, "Failure preparing next results request")
 	}
@@ -676,17 +758,38 @@ func (client JobsClient) listOutputFilesNextResults(lastResults FileListResult) 
 
 // ListOutputFilesComplete enumerates all values, automatically crossing page boundaries as required.
 func (client JobsClient) ListOutputFilesComplete(ctx context.Context, resourceGroupName string, jobName string, outputdirectoryid string, directory string, linkexpiryinminutes *int32, maxResults *int32) (result FileListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobsClient.ListOutputFiles")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListOutputFiles(ctx, resourceGroupName, jobName, outputdirectoryid, directory, linkexpiryinminutes, maxResults)
 	return
 }
 
 // ListRemoteLoginInformation gets the IP address and port information of all the compute nodes which are used for job
 // execution.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. jobName is the name of the job
-// within the specified resource group. Job names can only contain a combination of alphanumeric characters along
-// with dash (-) and underscore (_). The name must be from 1 through 64 characters long.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// jobName - the name of the job within the specified resource group. Job names can only contain a combination
+// of alphanumeric characters along with dash (-) and underscore (_). The name must be from 1 through 64
+// characters long.
 func (client JobsClient) ListRemoteLoginInformation(ctx context.Context, resourceGroupName string, jobName string) (result RemoteLoginInformationListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobsClient.ListRemoteLoginInformation")
+		defer func() {
+			sc := -1
+			if result.rlilr.Response.Response != nil {
+				sc = result.rlilr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.Pattern, Rule: `^[-\w\._]+$`, Chain: nil}}},
@@ -743,8 +846,8 @@ func (client JobsClient) ListRemoteLoginInformationPreparer(ctx context.Context,
 // ListRemoteLoginInformationSender sends the ListRemoteLoginInformation request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobsClient) ListRemoteLoginInformationSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListRemoteLoginInformationResponder handles the response to the ListRemoteLoginInformation request. The method always
@@ -761,8 +864,8 @@ func (client JobsClient) ListRemoteLoginInformationResponder(resp *http.Response
 }
 
 // listRemoteLoginInformationNextResults retrieves the next set of results, if any.
-func (client JobsClient) listRemoteLoginInformationNextResults(lastResults RemoteLoginInformationListResult) (result RemoteLoginInformationListResult, err error) {
-	req, err := lastResults.remoteLoginInformationListResultPreparer()
+func (client JobsClient) listRemoteLoginInformationNextResults(ctx context.Context, lastResults RemoteLoginInformationListResult) (result RemoteLoginInformationListResult, err error) {
+	req, err := lastResults.remoteLoginInformationListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "batchai.JobsClient", "listRemoteLoginInformationNextResults", nil, "Failure preparing next results request")
 	}
@@ -783,16 +886,37 @@ func (client JobsClient) listRemoteLoginInformationNextResults(lastResults Remot
 
 // ListRemoteLoginInformationComplete enumerates all values, automatically crossing page boundaries as required.
 func (client JobsClient) ListRemoteLoginInformationComplete(ctx context.Context, resourceGroupName string, jobName string) (result RemoteLoginInformationListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobsClient.ListRemoteLoginInformation")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListRemoteLoginInformation(ctx, resourceGroupName, jobName)
 	return
 }
 
 // Terminate terminates a job.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. jobName is the name of the job
-// within the specified resource group. Job names can only contain a combination of alphanumeric characters along
-// with dash (-) and underscore (_). The name must be from 1 through 64 characters long.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// jobName - the name of the job within the specified resource group. Job names can only contain a combination
+// of alphanumeric characters along with dash (-) and underscore (_). The name must be from 1 through 64
+// characters long.
 func (client JobsClient) Terminate(ctx context.Context, resourceGroupName string, jobName string) (result JobsTerminateFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobsClient.Terminate")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.Pattern, Rule: `^[-\w\._]+$`, Chain: nil}}},
@@ -842,15 +966,13 @@ func (client JobsClient) TerminatePreparer(ctx context.Context, resourceGroupNam
 // TerminateSender sends the Terminate request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobsClient) TerminateSender(req *http.Request) (future JobsTerminateFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 

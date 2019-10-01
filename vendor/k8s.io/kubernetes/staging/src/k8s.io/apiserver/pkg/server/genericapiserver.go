@@ -19,31 +19,40 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"os"
+	gpath "path"
 	"strings"
 	"sync"
 	"time"
 
 	systemd "github.com/coreos/go-systemd/daemon"
-	"github.com/emicklei/go-restful"
-	"github.com/emicklei/go-restful-swagger12"
-	"github.com/golang/glog"
+	"github.com/go-openapi/spec"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/util/clock"
 	"k8s.io/apimachinery/pkg/util/sets"
 	utilwaitgroup "k8s.io/apimachinery/pkg/util/waitgroup"
 	"k8s.io/apiserver/pkg/admission"
 	"k8s.io/apiserver/pkg/audit"
+	"k8s.io/apiserver/pkg/authorization/authorizer"
 	genericapi "k8s.io/apiserver/pkg/endpoints"
 	"k8s.io/apiserver/pkg/endpoints/discovery"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/apiserver/pkg/server/healthz"
 	"k8s.io/apiserver/pkg/server/routes"
+	utilopenapi "k8s.io/apiserver/pkg/util/openapi"
 	restclient "k8s.io/client-go/rest"
+	"k8s.io/klog"
+	openapibuilder "k8s.io/kube-openapi/pkg/builder"
 	openapicommon "k8s.io/kube-openapi/pkg/common"
+	"k8s.io/kube-openapi/pkg/handler"
+	openapiutil "k8s.io/kube-openapi/pkg/util"
+	openapiproto "k8s.io/kube-openapi/pkg/util/proto"
 )
 
 // Info about an API group.
@@ -70,6 +79,10 @@ type APIGroupInfo struct {
 	NegotiatedSerializer runtime.NegotiatedSerializer
 	// ParameterCodec performs conversions for query parameters passed to API calls
 	ParameterCodec runtime.ParameterCodec
+
+	// StaticOpenAPISpec is the spec derived from the definitions of all resources installed together.
+	// It is set during InstallAPIGroups, InstallAPIGroup, and InstallLegacyAPIGroup.
+	StaticOpenAPISpec *spec.Swagger
 }
 
 // GenericAPIServer contains state for a Kubernetes cluster api server.
@@ -116,8 +129,15 @@ type GenericAPIServer struct {
 	DiscoveryGroupManager discovery.GroupManager
 
 	// Enable swagger and/or OpenAPI if these configs are non-nil.
-	swaggerConfig *swagger.Config
 	openAPIConfig *openapicommon.Config
+
+	// OpenAPIVersionedService controls the /openapi/v2 endpoint, and can be used to update the served spec.
+	// It is set during PrepareRun.
+	OpenAPIVersionedService *handler.OpenAPIService
+
+	// StaticOpenAPISpec is the spec derived from the restful container endpoints.
+	// It is set during PrepareRun.
+	StaticOpenAPISpec *spec.Swagger
 
 	// PostStartHooks are each called after the server has started listening, in a separate go func for each
 	// with no guarantee of ordering between them.  The map key is a name used for error reporting.
@@ -132,12 +152,34 @@ type GenericAPIServer struct {
 	preShutdownHooksCalled bool
 
 	// healthz checks
-	healthzLock    sync.Mutex
-	healthzChecks  []healthz.HealthzChecker
-	healthzCreated bool
+	healthzLock            sync.Mutex
+	healthzChecks          []healthz.HealthChecker
+	healthzChecksInstalled bool
+	// livez checks
+	livezLock            sync.Mutex
+	livezChecks          []healthz.HealthChecker
+	livezChecksInstalled bool
+	// readyz checks
+	readyzLock            sync.Mutex
+	readyzChecks          []healthz.HealthChecker
+	readyzChecksInstalled bool
+	livezGracePeriod      time.Duration
+	livezClock            clock.Clock
+	// the readiness stop channel is used to signal that the apiserver has initiated a shutdown sequence, this
+	// will cause readyz to return unhealthy.
+	readinessStopCh chan struct{}
 
 	// auditing. The backend is started after the server starts listening.
 	AuditBackend audit.Backend
+
+	// Authorizer determines whether a user is allowed to make a certain request. The Handler does a preliminary
+	// authorization check using the request URI but it may be necessary to make additional checks, such as in
+	// the create-on-update case
+	Authorizer authorizer.Authorizer
+
+	// EquivalentResourceRegistry provides information about resources equivalent to a given resource,
+	// and the kind associated with a given resource. As resources are installed, they are registered here.
+	EquivalentResourceRegistry runtime.EquivalentResourceRegistry
 
 	// enableAPIResponseCompression indicates whether API Responses should support compression
 	// if the client requests it via Accept-Encoding
@@ -149,15 +191,23 @@ type GenericAPIServer struct {
 	// HandlerChainWaitGroup allows you to wait for all chain handlers finish after the server shutdown.
 	HandlerChainWaitGroup *utilwaitgroup.SafeWaitGroup
 
-	// delegationTarget only exists
-	openAPIDelegationTarget OpenAPIDelegationTarget
+	// ShutdownDelayDuration allows to block shutdown for some time, e.g. until endpoints pointing to this API server
+	// have converged on all node. During this time, the API server keeps serving, /healthz will return 200,
+	// but /readyz will return failure.
+	ShutdownDelayDuration time.Duration
+
+	// The limit on the request body size that would be accepted and decoded in a write request.
+	// 0 means no limit.
+	maxRequestBodyBytes int64
+
+	// EventSink creates events.
+	eventSink EventSink
+	eventRef  *corev1.ObjectReference
 }
 
 // DelegationTarget is an interface which allows for composition of API servers with top level handling that works
 // as expected.
 type DelegationTarget interface {
-	OpenAPIDelegationTarget
-
 	// UnprotectedHandler returns a handler that is NOT protected by a normal chain
 	UnprotectedHandler() http.Handler
 
@@ -168,40 +218,29 @@ type DelegationTarget interface {
 	PreShutdownHooks() map[string]preShutdownHookEntry
 
 	// HealthzChecks returns the healthz checks that need to be combined
-	HealthzChecks() []healthz.HealthzChecker
+	HealthzChecks() []healthz.HealthChecker
 
 	// ListedPaths returns the paths for supporting an index
 	ListedPaths() []string
-}
-
-// OpenAPIDelegationTarget provides methods for access the openapi and swagger bits of the delegate server
-// so that they can be later unioned.  This is the only post-construction side-effect we know of
-type OpenAPIDelegationTarget interface {
-	// SwaggerAPIContainer gives all the restful containers involved in this API server to be used to aggregate swagger
-	// It must include all containers it delegates to as well.  Individual entries may be nil an order must be most recent to
-	// least recent.
-	SwaggerAPIContainers() []*restful.Container
 
 	// NextDelegate returns the next delegationTarget in the chain of delegations
 	NextDelegate() DelegationTarget
+
+	// PrepareRun does post API installation setup steps. It calls recursively the same function of the delegates.
+	PrepareRun() preparedGenericAPIServer
 }
 
 func (s *GenericAPIServer) UnprotectedHandler() http.Handler {
 	// when we delegate, we need the server we're delegating to choose whether or not to use gorestful
 	return s.Handler.Director
 }
-
-func (s *GenericAPIServer) SwaggerAPIContainers() []*restful.Container {
-	return append([]*restful.Container{s.Handler.GoRestfulContainer}, s.openAPIDelegationTarget.SwaggerAPIContainers()...)
-}
-
 func (s *GenericAPIServer) PostStartHooks() map[string]postStartHookEntry {
 	return s.postStartHooks
 }
 func (s *GenericAPIServer) PreShutdownHooks() map[string]preShutdownHookEntry {
 	return s.preShutdownHooks
 }
-func (s *GenericAPIServer) HealthzChecks() []healthz.HealthzChecker {
+func (s *GenericAPIServer) HealthzChecks() []healthz.HealthChecker {
 	return s.healthzChecks
 }
 func (s *GenericAPIServer) ListedPaths() []string {
@@ -222,17 +261,14 @@ func NewEmptyDelegate() DelegationTarget {
 func (s emptyDelegate) UnprotectedHandler() http.Handler {
 	return nil
 }
-func (s emptyDelegate) SwaggerAPIContainers() []*restful.Container {
-	return []*restful.Container{}
-}
 func (s emptyDelegate) PostStartHooks() map[string]postStartHookEntry {
 	return map[string]postStartHookEntry{}
 }
 func (s emptyDelegate) PreShutdownHooks() map[string]preShutdownHookEntry {
 	return map[string]preShutdownHookEntry{}
 }
-func (s emptyDelegate) HealthzChecks() []healthz.HealthzChecker {
-	return []healthz.HealthzChecker{}
+func (s emptyDelegate) HealthzChecks() []healthz.HealthChecker {
+	return []healthz.HealthChecker{}
 }
 func (s emptyDelegate) ListedPaths() []string {
 	return []string{}
@@ -240,31 +276,42 @@ func (s emptyDelegate) ListedPaths() []string {
 func (s emptyDelegate) NextDelegate() DelegationTarget {
 	return nil
 }
+func (s emptyDelegate) PrepareRun() preparedGenericAPIServer {
+	return preparedGenericAPIServer{nil}
+}
 
 // preparedGenericAPIServer is a private wrapper that enforces a call of PrepareRun() before Run can be invoked.
 type preparedGenericAPIServer struct {
 	*GenericAPIServer
 }
 
-// PrepareRun does post API installation setup steps.
+// PrepareRun does post API installation setup steps. It calls recursively the same function of the delegates.
 func (s *GenericAPIServer) PrepareRun() preparedGenericAPIServer {
-	if s.swaggerConfig != nil {
-		routes.Swagger{Config: s.swaggerConfig}.Install(s.SwaggerAPIContainers(), s.Handler.GoRestfulContainer)
-	}
+	s.delegationTarget.PrepareRun()
+
 	if s.openAPIConfig != nil {
-		routes.OpenAPI{
+		s.OpenAPIVersionedService, s.StaticOpenAPISpec = routes.OpenAPI{
 			Config: s.openAPIConfig,
 		}.Install(s.Handler.GoRestfulContainer, s.Handler.NonGoRestfulMux)
 	}
 
 	s.installHealthz()
+	s.installLivez()
+	err := s.addReadyzShutdownCheck(s.readinessStopCh)
+	if err != nil {
+		klog.Errorf("Failed to install readyz shutdown check %s", err)
+	}
+	s.installReadyz()
 
 	// Register audit backend preShutdownHook.
 	if s.AuditBackend != nil {
-		s.AddPreShutdownHook("audit-backend", func() error {
+		err := s.AddPreShutdownHook("audit-backend", func() error {
 			s.AuditBackend.Shutdown()
 			return nil
 		})
+		if err != nil {
+			klog.Errorf("Failed to add pre-shutdown hook for audit-backend %s", err)
+		}
 	}
 
 	return preparedGenericAPIServer{s}
@@ -273,20 +320,45 @@ func (s *GenericAPIServer) PrepareRun() preparedGenericAPIServer {
 // Run spawns the secure http server. It only returns if stopCh is closed
 // or the secure port cannot be listened on initially.
 func (s preparedGenericAPIServer) Run(stopCh <-chan struct{}) error {
-	err := s.NonBlockingRun(stopCh)
+	delayedStopCh := make(chan struct{})
+
+	go func() {
+		defer close(delayedStopCh)
+		<-stopCh
+
+		s.Eventf(corev1.EventTypeNormal, "TerminationStart", "Received signal to terminate, becoming unready, but keeping serving")
+
+		time.Sleep(s.ShutdownDelayDuration)
+
+		s.Eventf(corev1.EventTypeNormal, "TerminationMinimalShutdownDurationFinished", "The minimal shutdown duration of %v finished", s.ShutdownDelayDuration)
+	}()
+
+	// close socket after delayed stopCh
+	err := s.NonBlockingRun(delayedStopCh)
 	if err != nil {
 		return err
 	}
 
+	go func() {
+		<-delayedStopCh
+		s.Eventf(corev1.EventTypeNormal, "TerminationStoppedServing", "Server has stopped listening")
+	}()
+
 	<-stopCh
 
+	// run shutdown hooks directly. This includes deregistering from the kubernetes endpoint in case of kube-apiserver.
 	err = s.RunPreShutdownHooks()
 	if err != nil {
 		return err
 	}
+	s.Eventf(corev1.EventTypeNormal, "TerminationPreShutdownHooksFinished", "All pre-shutdown hooks have been finished")
+
+	// wait for the delayed stopCh before closing the handler chain (it rejects everything after Wait has been called).
+	<-delayedStopCh
 
 	// Wait for all requests to finish, which are bounded by the RequestTimeout variable.
 	s.HandlerChainWaitGroup.Wait()
+	s.Eventf(corev1.EventTypeNormal, "TerminationGracefulTerminationFinished", "All pending requests processed")
 
 	return nil
 }
@@ -308,10 +380,13 @@ func (s preparedGenericAPIServer) NonBlockingRun(stopCh <-chan struct{}) error {
 
 	// Use an internal stop channel to allow cleanup of the listeners on error.
 	internalStopCh := make(chan struct{})
-
+	var stoppedCh <-chan struct{}
 	if s.SecureServingInfo != nil && s.Handler != nil {
-		if err := s.SecureServingInfo.Serve(s.Handler, s.ShutdownTimeout, internalStopCh); err != nil {
+		var err error
+		stoppedCh, err = s.SecureServingInfo.Serve(s.Handler, s.ShutdownTimeout, internalStopCh)
+		if err != nil {
 			close(internalStopCh)
+			close(auditStopCh)
 			return err
 		}
 	}
@@ -321,7 +396,11 @@ func (s preparedGenericAPIServer) NonBlockingRun(stopCh <-chan struct{}) error {
 	// ensure cleanup.
 	go func() {
 		<-stopCh
+		close(s.readinessStopCh)
 		close(internalStopCh)
+		if stoppedCh != nil {
+			<-stoppedCh
+		}
 		s.HandlerChainWaitGroup.Wait()
 		close(auditStopCh)
 	}()
@@ -329,17 +408,17 @@ func (s preparedGenericAPIServer) NonBlockingRun(stopCh <-chan struct{}) error {
 	s.RunPostStartHooks(stopCh)
 
 	if _, err := systemd.SdNotify(true, "READY=1\n"); err != nil {
-		glog.Errorf("Unable to send systemd daemon successful start message: %v\n", err)
+		klog.Errorf("Unable to send systemd daemon successful start message: %v\n", err)
 	}
 
 	return nil
 }
 
 // installAPIResources is a private method for installing the REST storage backing each api groupversionresource
-func (s *GenericAPIServer) installAPIResources(apiPrefix string, apiGroupInfo *APIGroupInfo) error {
+func (s *GenericAPIServer) installAPIResources(apiPrefix string, apiGroupInfo *APIGroupInfo, openAPIModels openapiproto.Models) error {
 	for _, groupVersion := range apiGroupInfo.PrioritizedVersions {
 		if len(apiGroupInfo.VersionedResourcesStorageMap[groupVersion.Version]) == 0 {
-			glog.Warningf("Skipping API %v because it has no resources.", groupVersion)
+			klog.Warningf("Skipping API %v because it has no resources.", groupVersion)
 			continue
 		}
 
@@ -347,6 +426,8 @@ func (s *GenericAPIServer) installAPIResources(apiPrefix string, apiGroupInfo *A
 		if apiGroupInfo.OptionsExternalVersion != nil {
 			apiGroupVersion.OptionsExternalVersion = apiGroupInfo.OptionsExternalVersion
 		}
+		apiGroupVersion.OpenAPIModels = openAPIModels
+		apiGroupVersion.MaxRequestBodyBytes = s.maxRequestBodyBytes
 
 		if err := apiGroupVersion.InstallREST(s.Handler.GoRestfulContainer); err != nil {
 			return fmt.Errorf("unable to setup API %v: %v", apiGroupInfo, err)
@@ -360,7 +441,13 @@ func (s *GenericAPIServer) InstallLegacyAPIGroup(apiPrefix string, apiGroupInfo 
 	if !s.legacyAPIGroupPrefixes.Has(apiPrefix) {
 		return fmt.Errorf("%q is not in the allowed legacy API prefixes: %v", apiPrefix, s.legacyAPIGroupPrefixes.List())
 	}
-	if err := s.installAPIResources(apiPrefix, apiGroupInfo); err != nil {
+
+	openAPIModels, err := s.getOpenAPIModels(apiPrefix, apiGroupInfo)
+	if err != nil {
+		return fmt.Errorf("unable to get openapi models: %v", err)
+	}
+
+	if err := s.installAPIResources(apiPrefix, apiGroupInfo, openAPIModels); err != nil {
 		return err
 	}
 
@@ -371,49 +458,62 @@ func (s *GenericAPIServer) InstallLegacyAPIGroup(apiPrefix string, apiGroupInfo 
 	return nil
 }
 
+// Exposes given api groups in the API.
+func (s *GenericAPIServer) InstallAPIGroups(apiGroupInfos ...*APIGroupInfo) error {
+	for _, apiGroupInfo := range apiGroupInfos {
+		// Do not register empty group or empty version.  Doing so claims /apis/ for the wrong entity to be returned.
+		// Catching these here places the error  much closer to its origin
+		if len(apiGroupInfo.PrioritizedVersions[0].Group) == 0 {
+			return fmt.Errorf("cannot register handler with an empty group for %#v", *apiGroupInfo)
+		}
+		if len(apiGroupInfo.PrioritizedVersions[0].Version) == 0 {
+			return fmt.Errorf("cannot register handler with an empty version for %#v", *apiGroupInfo)
+		}
+	}
+
+	openAPIModels, err := s.getOpenAPIModels(APIGroupPrefix, apiGroupInfos...)
+	if err != nil {
+		return fmt.Errorf("unable to get openapi models: %v", err)
+	}
+
+	for _, apiGroupInfo := range apiGroupInfos {
+		if err := s.installAPIResources(APIGroupPrefix, apiGroupInfo, openAPIModels); err != nil {
+			return fmt.Errorf("unable to install api resources: %v", err)
+		}
+
+		// setup discovery
+		// Install the version handler.
+		// Add a handler at /apis/<groupName> to enumerate all versions supported by this group.
+		apiVersionsForDiscovery := []metav1.GroupVersionForDiscovery{}
+		for _, groupVersion := range apiGroupInfo.PrioritizedVersions {
+			// Check the config to make sure that we elide versions that don't have any resources
+			if len(apiGroupInfo.VersionedResourcesStorageMap[groupVersion.Version]) == 0 {
+				continue
+			}
+			apiVersionsForDiscovery = append(apiVersionsForDiscovery, metav1.GroupVersionForDiscovery{
+				GroupVersion: groupVersion.String(),
+				Version:      groupVersion.Version,
+			})
+		}
+		preferredVersionForDiscovery := metav1.GroupVersionForDiscovery{
+			GroupVersion: apiGroupInfo.PrioritizedVersions[0].String(),
+			Version:      apiGroupInfo.PrioritizedVersions[0].Version,
+		}
+		apiGroup := metav1.APIGroup{
+			Name:             apiGroupInfo.PrioritizedVersions[0].Group,
+			Versions:         apiVersionsForDiscovery,
+			PreferredVersion: preferredVersionForDiscovery,
+		}
+
+		s.DiscoveryGroupManager.AddGroup(apiGroup)
+		s.Handler.GoRestfulContainer.Add(discovery.NewAPIGroupHandler(s.Serializer, apiGroup).WebService())
+	}
+	return nil
+}
+
 // Exposes the given api group in the API.
 func (s *GenericAPIServer) InstallAPIGroup(apiGroupInfo *APIGroupInfo) error {
-	// Do not register empty group or empty version.  Doing so claims /apis/ for the wrong entity to be returned.
-	// Catching these here places the error  much closer to its origin
-	if len(apiGroupInfo.PrioritizedVersions[0].Group) == 0 {
-		return fmt.Errorf("cannot register handler with an empty group for %#v", *apiGroupInfo)
-	}
-	if len(apiGroupInfo.PrioritizedVersions[0].Version) == 0 {
-		return fmt.Errorf("cannot register handler with an empty version for %#v", *apiGroupInfo)
-	}
-
-	if err := s.installAPIResources(APIGroupPrefix, apiGroupInfo); err != nil {
-		return err
-	}
-
-	// setup discovery
-	// Install the version handler.
-	// Add a handler at /apis/<groupName> to enumerate all versions supported by this group.
-	apiVersionsForDiscovery := []metav1.GroupVersionForDiscovery{}
-	for _, groupVersion := range apiGroupInfo.PrioritizedVersions {
-		// Check the config to make sure that we elide versions that don't have any resources
-		if len(apiGroupInfo.VersionedResourcesStorageMap[groupVersion.Version]) == 0 {
-			continue
-		}
-		apiVersionsForDiscovery = append(apiVersionsForDiscovery, metav1.GroupVersionForDiscovery{
-			GroupVersion: groupVersion.String(),
-			Version:      groupVersion.Version,
-		})
-	}
-	preferredVersionForDiscovery := metav1.GroupVersionForDiscovery{
-		GroupVersion: apiGroupInfo.PrioritizedVersions[0].String(),
-		Version:      apiGroupInfo.PrioritizedVersions[0].Version,
-	}
-	apiGroup := metav1.APIGroup{
-		Name:             apiGroupInfo.PrioritizedVersions[0].Group,
-		Versions:         apiVersionsForDiscovery,
-		PreferredVersion: preferredVersionForDiscovery,
-	}
-
-	s.DiscoveryGroupManager.AddGroup(apiGroup)
-	s.Handler.GoRestfulContainer.Add(discovery.NewAPIGroupHandler(s.Serializer, apiGroup).WebService())
-
-	return nil
+	return s.InstallAPIGroups(apiGroupInfo)
 }
 
 func (s *GenericAPIServer) getAPIGroupVersion(apiGroupInfo *APIGroupInfo, groupVersion schema.GroupVersion, apiPrefix string) *genericapi.APIGroupVersion {
@@ -441,10 +541,11 @@ func (s *GenericAPIServer) newAPIGroupVersion(apiGroupInfo *APIGroupInfo, groupV
 		Typer:           apiGroupInfo.Scheme,
 		Linker:          runtime.SelfLinker(meta.NewAccessor()),
 
-		Admit:                        s.admissionControl,
-		MinRequestTimeout:            s.minRequestTimeout,
-		EnableAPIResponseCompression: s.enableAPIResponseCompression,
-		OpenAPIConfig:                s.openAPIConfig,
+		EquivalentResourceRegistry: s.EquivalentResourceRegistry,
+
+		Admit:             s.admissionControl,
+		MinRequestTimeout: s.minRequestTimeout,
+		Authorizer:        s.Authorizer,
 	}
 }
 
@@ -459,5 +560,89 @@ func NewDefaultAPIGroupInfo(group string, scheme *runtime.Scheme, parameterCodec
 		Scheme:                 scheme,
 		ParameterCodec:         parameterCodec,
 		NegotiatedSerializer:   codecs,
+	}
+}
+
+// getOpenAPIModels is a private method for getting the OpenAPI models
+func (s *GenericAPIServer) getOpenAPIModels(apiPrefix string, apiGroupInfos ...*APIGroupInfo) (openapiproto.Models, error) {
+	if s.openAPIConfig == nil {
+		return nil, nil
+	}
+	pathsToIgnore := openapiutil.NewTrie(s.openAPIConfig.IgnorePrefixes)
+	resourceNames := make([]string, 0)
+	for _, apiGroupInfo := range apiGroupInfos {
+		groupResources, err := getResourceNamesForGroup(apiPrefix, apiGroupInfo, pathsToIgnore)
+		if err != nil {
+			return nil, err
+		}
+		resourceNames = append(resourceNames, groupResources...)
+	}
+
+	// Build the openapi definitions for those resources and convert it to proto models
+	openAPISpec, err := openapibuilder.BuildOpenAPIDefinitionsForResources(s.openAPIConfig, resourceNames...)
+	if err != nil {
+		return nil, err
+	}
+	for _, apiGroupInfo := range apiGroupInfos {
+		apiGroupInfo.StaticOpenAPISpec = openAPISpec
+	}
+	return utilopenapi.ToProtoModels(openAPISpec)
+}
+
+// getResourceNamesForGroup is a private method for getting the canonical names for each resource to build in an api group
+func getResourceNamesForGroup(apiPrefix string, apiGroupInfo *APIGroupInfo, pathsToIgnore openapiutil.Trie) ([]string, error) {
+	// Get the canonical names of every resource we need to build in this api group
+	resourceNames := make([]string, 0)
+	for _, groupVersion := range apiGroupInfo.PrioritizedVersions {
+		for resource, storage := range apiGroupInfo.VersionedResourcesStorageMap[groupVersion.Version] {
+			path := gpath.Join(apiPrefix, groupVersion.Group, groupVersion.Version, resource)
+			if !pathsToIgnore.HasPrefix(path) {
+				kind, err := genericapi.GetResourceKind(groupVersion, storage, apiGroupInfo.Scheme)
+				if err != nil {
+					return nil, err
+				}
+				sampleObject, err := apiGroupInfo.Scheme.New(kind)
+				if err != nil {
+					return nil, err
+				}
+				name := openapiutil.GetCanonicalTypeName(sampleObject)
+				resourceNames = append(resourceNames, name)
+			}
+		}
+	}
+
+	return resourceNames, nil
+}
+
+// Eventf creates an event with the API server as source, either in default namespace against default namespace, or
+// if POD_NAME/NAMESPACE are set against that pod.
+func (s *GenericAPIServer) Eventf(eventType, reason, messageFmt string, args ...interface{}) {
+	t := metav1.Time{Time: time.Now()}
+	host, _ := os.Hostname() // expicitly ignore error. Empty host is fine
+
+	ref := *s.eventRef
+	if len(ref.Namespace) == 0 {
+		ref.Namespace = "default" // TODO: event broadcaster sets event ns to default. We have to match. Odd.
+	}
+
+	e := &corev1.Event{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%v.%x", ref.Name, t.UnixNano()),
+			Namespace: ref.Namespace,
+		},
+		InvolvedObject: ref,
+		Reason:         reason,
+		Message:        fmt.Sprintf(messageFmt, args...),
+		FirstTimestamp: t,
+		LastTimestamp:  t,
+		Count:          1,
+		Type:           eventType,
+		Source:         corev1.EventSource{Component: "apiserver", Host: host},
+	}
+
+	klog.V(2).Infof("Event(%#v): type: '%v' reason: '%v' %v", e.InvolvedObject, e.Type, e.Reason, e.Message)
+
+	if _, err := s.eventSink.Create(e); err != nil {
+		klog.Warningf("failed to create event %s/%s: %v", e.Namespace, e.Name, err)
 	}
 }

@@ -21,12 +21,13 @@ import (
 	"context"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
 // ConfigurationsClient is the the Microsoft Azure management API provides create, read, update, and delete
-// functionality for Azure MySQL resources including servers, databases, firewall rules, log files and configurations
-// with new business model.
+// functionality for Azure MySQL resources including servers, databases, firewall rules, VNET rules, log files and
+// configurations with new business model.
 type ConfigurationsClient struct {
 	BaseClient
 }
@@ -42,11 +43,23 @@ func NewConfigurationsClientWithBaseURI(baseURI string, subscriptionID string) C
 }
 
 // CreateOrUpdate updates a configuration of a server.
-//
-// resourceGroupName is the name of the resource group that contains the resource. You can obtain this value from
-// the Azure Resource Manager API or the portal. serverName is the name of the server. configurationName is the
-// name of the server configuration. parameters is the required parameters for updating a server configuration.
+// Parameters:
+// resourceGroupName - the name of the resource group that contains the resource. You can obtain this value
+// from the Azure Resource Manager API or the portal.
+// serverName - the name of the server.
+// configurationName - the name of the server configuration.
+// parameters - the required parameters for updating a server configuration.
 func (client ConfigurationsClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, serverName string, configurationName string, parameters Configuration) (result ConfigurationsCreateOrUpdateFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ConfigurationsClient.CreateOrUpdate")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.CreateOrUpdatePreparer(ctx, resourceGroupName, serverName, configurationName, parameters)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "mysql.ConfigurationsClient", "CreateOrUpdate", nil, "Failure preparing request")
@@ -89,15 +102,13 @@ func (client ConfigurationsClient) CreateOrUpdatePreparer(ctx context.Context, r
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client ConfigurationsClient) CreateOrUpdateSender(req *http.Request) (future ConfigurationsCreateOrUpdateFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -115,11 +126,22 @@ func (client ConfigurationsClient) CreateOrUpdateResponder(resp *http.Response) 
 }
 
 // Get gets information about a configuration of server.
-//
-// resourceGroupName is the name of the resource group that contains the resource. You can obtain this value from
-// the Azure Resource Manager API or the portal. serverName is the name of the server. configurationName is the
-// name of the server configuration.
+// Parameters:
+// resourceGroupName - the name of the resource group that contains the resource. You can obtain this value
+// from the Azure Resource Manager API or the portal.
+// serverName - the name of the server.
+// configurationName - the name of the server configuration.
 func (client ConfigurationsClient) Get(ctx context.Context, resourceGroupName string, serverName string, configurationName string) (result Configuration, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ConfigurationsClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, resourceGroupName, serverName, configurationName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "mysql.ConfigurationsClient", "Get", nil, "Failure preparing request")
@@ -166,8 +188,8 @@ func (client ConfigurationsClient) GetPreparer(ctx context.Context, resourceGrou
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client ConfigurationsClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -184,10 +206,21 @@ func (client ConfigurationsClient) GetResponder(resp *http.Response) (result Con
 }
 
 // ListByServer list all the configurations in a given server.
-//
-// resourceGroupName is the name of the resource group that contains the resource. You can obtain this value from
-// the Azure Resource Manager API or the portal. serverName is the name of the server.
+// Parameters:
+// resourceGroupName - the name of the resource group that contains the resource. You can obtain this value
+// from the Azure Resource Manager API or the portal.
+// serverName - the name of the server.
 func (client ConfigurationsClient) ListByServer(ctx context.Context, resourceGroupName string, serverName string) (result ConfigurationListResult, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ConfigurationsClient.ListByServer")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.ListByServerPreparer(ctx, resourceGroupName, serverName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "mysql.ConfigurationsClient", "ListByServer", nil, "Failure preparing request")
@@ -233,8 +266,8 @@ func (client ConfigurationsClient) ListByServerPreparer(ctx context.Context, res
 // ListByServerSender sends the ListByServer request. The method will close the
 // http.Response Body if it receives an error.
 func (client ConfigurationsClient) ListByServerSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByServerResponder handles the response to the ListByServer request. The method always

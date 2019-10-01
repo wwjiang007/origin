@@ -56,7 +56,7 @@ type Client struct {
 func init() {
 	// Fault types are not in the ssoadmin.wsdl
 	vim.Add("SsoFaultNotAuthenticated", reflect.TypeOf((*vim.NotAuthenticated)(nil)).Elem())
-	vim.Add("SsoNoPermission", reflect.TypeOf((*vim.NoPermission)(nil)).Elem())
+	vim.Add("SsoFaultNoPermission", reflect.TypeOf((*vim.NoPermission)(nil)).Elem())
 	vim.Add("SsoFaultInvalidCredentials", reflect.TypeOf((*vim.InvalidLogin)(nil)).Elem())
 	vim.Add("SsoAdminFaultDuplicateSolutionCertificateFaultFault", reflect.TypeOf((*vim.InvalidArgument)(nil)).Elem())
 }
@@ -157,6 +157,28 @@ func (c *Client) DeletePrincipal(ctx context.Context, name string) error {
 	}
 
 	_, err := methods.DeleteLocalPrincipal(ctx, c, &req)
+	return err
+}
+
+func (c *Client) AddUsersToGroup(ctx context.Context, groupName string, userIDs ...types.PrincipalId) error {
+	req := types.AddUsersToLocalGroup{
+		This:      c.ServiceContent.PrincipalManagementService,
+		GroupName: groupName,
+		UserIds:   userIDs,
+	}
+
+	_, err := methods.AddUsersToLocalGroup(ctx, c, &req)
+	return err
+}
+
+func (c *Client) CreateGroup(ctx context.Context, name string, details types.AdminGroupDetails) error {
+	req := types.CreateLocalGroup{
+		This:         c.ServiceContent.PrincipalManagementService,
+		GroupName:    name,
+		GroupDetails: details,
+	}
+
+	_, err := methods.CreateLocalGroup(ctx, c, &req)
 	return err
 }
 

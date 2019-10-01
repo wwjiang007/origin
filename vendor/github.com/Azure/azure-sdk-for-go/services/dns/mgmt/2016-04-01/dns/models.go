@@ -18,12 +18,17 @@ package dns
 // Changes may cause incorrect behavior and will be lost if the code is regenerated.
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
+
+// The package's fully qualified name.
+const fqdn = "github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2016-04-01/dns"
 
 // HTTPStatusCode enumerates the values for http status code.
 type HTTPStatusCode string
@@ -125,6 +130,11 @@ const (
 	UseProxy HTTPStatusCode = "UseProxy"
 )
 
+// PossibleHTTPStatusCodeValues returns an array of possible values for the HTTPStatusCode const type.
+func PossibleHTTPStatusCodeValues() []HTTPStatusCode {
+	return []HTTPStatusCode{Accepted, Ambiguous, BadGateway, BadRequest, Conflict, Continue, Created, ExpectationFailed, Forbidden, Found, GatewayTimeout, Gone, HTTPVersionNotSupported, InternalServerError, LengthRequired, MethodNotAllowed, Moved, MovedPermanently, MultipleChoices, NoContent, NonAuthoritativeInformation, NotAcceptable, NotFound, NotImplemented, NotModified, OK, PartialContent, PaymentRequired, PreconditionFailed, ProxyAuthenticationRequired, Redirect, RedirectKeepVerb, RedirectMethod, RequestedRangeNotSatisfiable, RequestEntityTooLarge, RequestTimeout, RequestURITooLong, ResetContent, SeeOther, ServiceUnavailable, SwitchingProtocols, TemporaryRedirect, Unauthorized, UnsupportedMediaType, Unused, UpgradeRequired, UseProxy}
+}
+
 // OperationStatus enumerates the values for operation status.
 type OperationStatus string
 
@@ -136,6 +146,11 @@ const (
 	// Succeeded ...
 	Succeeded OperationStatus = "Succeeded"
 )
+
+// PossibleOperationStatusValues returns an array of possible values for the OperationStatus const type.
+func PossibleOperationStatusValues() []OperationStatus {
+	return []OperationStatus{Failed, InProgress, Succeeded}
+}
 
 // RecordType enumerates the values for record type.
 type RecordType string
@@ -161,6 +176,11 @@ const (
 	TXT RecordType = "TXT"
 )
 
+// PossibleRecordTypeValues returns an array of possible values for the RecordType const type.
+func PossibleRecordTypeValues() []RecordType {
+	return []RecordType{A, AAAA, CNAME, MX, NS, PTR, SOA, SRV, TXT}
+}
+
 // AaaaRecord an AAAA record.
 type AaaaRecord struct {
 	// Ipv6Address - The IPv6 address of this AAAA record.
@@ -171,6 +191,18 @@ type AaaaRecord struct {
 type ARecord struct {
 	// Ipv4Address - The IPv4 address of this A record.
 	Ipv4Address *string `json:"ipv4Address,omitempty"`
+}
+
+// AzureEntityResource the resource model definition for a Azure Resource Manager resource with an etag.
+type AzureEntityResource struct {
+	// Etag - READ-ONLY; Resource Etag.
+	Etag *string `json:"etag,omitempty"`
+	// ID - READ-ONLY; Fully qualified resource Id for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}
+	ID *string `json:"id,omitempty"`
+	// Name - READ-ONLY; The name of the resource
+	Name *string `json:"name,omitempty"`
+	// Type - READ-ONLY; The type of the resource. Ex- Microsoft.Compute/virtualMachines or Microsoft.Storage/storageAccounts.
+	Type *string `json:"type,omitempty"`
 }
 
 // CloudError ...
@@ -206,6 +238,17 @@ type NsRecord struct {
 	Nsdname *string `json:"nsdname,omitempty"`
 }
 
+// ProxyResource the resource model definition for a ARM proxy resource. It will have everything other than
+// required location and tags
+type ProxyResource struct {
+	// ID - READ-ONLY; Fully qualified resource Id for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}
+	ID *string `json:"id,omitempty"`
+	// Name - READ-ONLY; The name of the resource
+	Name *string `json:"name,omitempty"`
+	// Type - READ-ONLY; The type of the resource. Ex- Microsoft.Compute/virtualMachines or Microsoft.Storage/storageAccounts.
+	Type *string `json:"type,omitempty"`
+}
+
 // PtrRecord a PTR record.
 type PtrRecord struct {
 	// Ptrdname - The PTR target domain name for this PTR record.
@@ -225,6 +268,27 @@ type RecordSet struct {
 	Etag *string `json:"etag,omitempty"`
 	// RecordSetProperties - The properties of the record set.
 	*RecordSetProperties `json:"properties,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for RecordSet.
+func (rs RecordSet) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if rs.ID != nil {
+		objectMap["id"] = rs.ID
+	}
+	if rs.Name != nil {
+		objectMap["name"] = rs.Name
+	}
+	if rs.Type != nil {
+		objectMap["type"] = rs.Type
+	}
+	if rs.Etag != nil {
+		objectMap["etag"] = rs.Etag
+	}
+	if rs.RecordSetProperties != nil {
+		objectMap["properties"] = rs.RecordSetProperties
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for RecordSet struct.
@@ -302,20 +366,37 @@ type RecordSetListResultIterator struct {
 	page RecordSetListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *RecordSetListResultIterator) Next() error {
+func (iter *RecordSetListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RecordSetListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *RecordSetListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -337,6 +418,11 @@ func (iter RecordSetListResultIterator) Value() RecordSet {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the RecordSetListResultIterator type.
+func NewRecordSetListResultIterator(page RecordSetListResultPage) RecordSetListResultIterator {
+	return RecordSetListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (rslr RecordSetListResult) IsEmpty() bool {
 	return rslr.Value == nil || len(*rslr.Value) == 0
@@ -344,11 +430,11 @@ func (rslr RecordSetListResult) IsEmpty() bool {
 
 // recordSetListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (rslr RecordSetListResult) recordSetListResultPreparer() (*http.Request, error) {
+func (rslr RecordSetListResult) recordSetListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if rslr.NextLink == nil || len(to.String(rslr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(rslr.NextLink)))
@@ -356,19 +442,36 @@ func (rslr RecordSetListResult) recordSetListResultPreparer() (*http.Request, er
 
 // RecordSetListResultPage contains a page of RecordSet values.
 type RecordSetListResultPage struct {
-	fn   func(RecordSetListResult) (RecordSetListResult, error)
+	fn   func(context.Context, RecordSetListResult) (RecordSetListResult, error)
 	rslr RecordSetListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *RecordSetListResultPage) Next() error {
-	next, err := page.fn(page.rslr)
+func (page *RecordSetListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RecordSetListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.rslr)
 	if err != nil {
 		return err
 	}
 	page.rslr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *RecordSetListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -387,6 +490,11 @@ func (page RecordSetListResultPage) Values() []RecordSet {
 		return nil
 	}
 	return *page.rslr.Value
+}
+
+// Creates a new instance of the RecordSetListResultPage type.
+func NewRecordSetListResultPage(getNextPage func(context.Context, RecordSetListResult) (RecordSetListResult, error)) RecordSetListResultPage {
+	return RecordSetListResultPage{fn: getNextPage}
 }
 
 // RecordSetProperties represents the properties of the records in the record set.
@@ -462,37 +570,12 @@ type RecordSetUpdateParameters struct {
 
 // Resource ...
 type Resource struct {
-	// ID - Resource ID.
+	// ID - READ-ONLY; Fully qualified resource Id for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; The name of the resource
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; The type of the resource. Ex- Microsoft.Compute/virtualMachines or Microsoft.Storage/storageAccounts.
 	Type *string `json:"type,omitempty"`
-	// Location - Resource location.
-	Location *string `json:"location,omitempty"`
-	// Tags - Resource tags.
-	Tags map[string]*string `json:"tags"`
-}
-
-// MarshalJSON is the custom marshaler for Resource.
-func (r Resource) MarshalJSON() ([]byte, error) {
-	objectMap := make(map[string]interface{})
-	if r.ID != nil {
-		objectMap["id"] = r.ID
-	}
-	if r.Name != nil {
-		objectMap["name"] = r.Name
-	}
-	if r.Type != nil {
-		objectMap["type"] = r.Type
-	}
-	if r.Location != nil {
-		objectMap["location"] = r.Location
-	}
-	if r.Tags != nil {
-		objectMap["tags"] = r.Tags
-	}
-	return json.Marshal(objectMap)
 }
 
 // SoaRecord an SOA record.
@@ -531,6 +614,32 @@ type SubResource struct {
 	ID *string `json:"id,omitempty"`
 }
 
+// TrackedResource the resource model definition for a ARM tracked top level resource
+type TrackedResource struct {
+	// Tags - Resource tags.
+	Tags map[string]*string `json:"tags"`
+	// Location - The geo-location where the resource lives
+	Location *string `json:"location,omitempty"`
+	// ID - READ-ONLY; Fully qualified resource Id for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}
+	ID *string `json:"id,omitempty"`
+	// Name - READ-ONLY; The name of the resource
+	Name *string `json:"name,omitempty"`
+	// Type - READ-ONLY; The type of the resource. Ex- Microsoft.Compute/virtualMachines or Microsoft.Storage/storageAccounts.
+	Type *string `json:"type,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for TrackedResource.
+func (tr TrackedResource) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if tr.Tags != nil {
+		objectMap["tags"] = tr.Tags
+	}
+	if tr.Location != nil {
+		objectMap["location"] = tr.Location
+	}
+	return json.Marshal(objectMap)
+}
+
 // TxtRecord a TXT record.
 type TxtRecord struct {
 	// Value - The text value of this TXT record.
@@ -544,16 +653,16 @@ type Zone struct {
 	Etag *string `json:"etag,omitempty"`
 	// ZoneProperties - The properties of the zone.
 	*ZoneProperties `json:"properties,omitempty"`
-	// ID - Resource ID.
-	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
-	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
-	Type *string `json:"type,omitempty"`
-	// Location - Resource location.
-	Location *string `json:"location,omitempty"`
 	// Tags - Resource tags.
 	Tags map[string]*string `json:"tags"`
+	// Location - The geo-location where the resource lives
+	Location *string `json:"location,omitempty"`
+	// ID - READ-ONLY; Fully qualified resource Id for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}
+	ID *string `json:"id,omitempty"`
+	// Name - READ-ONLY; The name of the resource
+	Name *string `json:"name,omitempty"`
+	// Type - READ-ONLY; The type of the resource. Ex- Microsoft.Compute/virtualMachines or Microsoft.Storage/storageAccounts.
+	Type *string `json:"type,omitempty"`
 }
 
 // MarshalJSON is the custom marshaler for Zone.
@@ -565,20 +674,11 @@ func (z Zone) MarshalJSON() ([]byte, error) {
 	if z.ZoneProperties != nil {
 		objectMap["properties"] = z.ZoneProperties
 	}
-	if z.ID != nil {
-		objectMap["id"] = z.ID
-	}
-	if z.Name != nil {
-		objectMap["name"] = z.Name
-	}
-	if z.Type != nil {
-		objectMap["type"] = z.Type
+	if z.Tags != nil {
+		objectMap["tags"] = z.Tags
 	}
 	if z.Location != nil {
 		objectMap["location"] = z.Location
-	}
-	if z.Tags != nil {
-		objectMap["tags"] = z.Tags
 	}
 	return json.Marshal(objectMap)
 }
@@ -610,6 +710,24 @@ func (z *Zone) UnmarshalJSON(body []byte) error {
 				}
 				z.ZoneProperties = &zoneProperties
 			}
+		case "tags":
+			if v != nil {
+				var tags map[string]*string
+				err = json.Unmarshal(*v, &tags)
+				if err != nil {
+					return err
+				}
+				z.Tags = tags
+			}
+		case "location":
+			if v != nil {
+				var location string
+				err = json.Unmarshal(*v, &location)
+				if err != nil {
+					return err
+				}
+				z.Location = &location
+			}
 		case "id":
 			if v != nil {
 				var ID string
@@ -636,24 +754,6 @@ func (z *Zone) UnmarshalJSON(body []byte) error {
 					return err
 				}
 				z.Type = &typeVar
-			}
-		case "location":
-			if v != nil {
-				var location string
-				err = json.Unmarshal(*v, &location)
-				if err != nil {
-					return err
-				}
-				z.Location = &location
-			}
-		case "tags":
-			if v != nil {
-				var tags map[string]*string
-				err = json.Unmarshal(*v, &tags)
-				if err != nil {
-					return err
-				}
-				z.Tags = tags
 			}
 		}
 	}
@@ -688,20 +788,37 @@ type ZoneListResultIterator struct {
 	page ZoneListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *ZoneListResultIterator) Next() error {
+func (iter *ZoneListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ZoneListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *ZoneListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -723,6 +840,11 @@ func (iter ZoneListResultIterator) Value() Zone {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the ZoneListResultIterator type.
+func NewZoneListResultIterator(page ZoneListResultPage) ZoneListResultIterator {
+	return ZoneListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (zlr ZoneListResult) IsEmpty() bool {
 	return zlr.Value == nil || len(*zlr.Value) == 0
@@ -730,11 +852,11 @@ func (zlr ZoneListResult) IsEmpty() bool {
 
 // zoneListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (zlr ZoneListResult) zoneListResultPreparer() (*http.Request, error) {
+func (zlr ZoneListResult) zoneListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if zlr.NextLink == nil || len(to.String(zlr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(zlr.NextLink)))
@@ -742,19 +864,36 @@ func (zlr ZoneListResult) zoneListResultPreparer() (*http.Request, error) {
 
 // ZoneListResultPage contains a page of Zone values.
 type ZoneListResultPage struct {
-	fn  func(ZoneListResult) (ZoneListResult, error)
+	fn  func(context.Context, ZoneListResult) (ZoneListResult, error)
 	zlr ZoneListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *ZoneListResultPage) Next() error {
-	next, err := page.fn(page.zlr)
+func (page *ZoneListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ZoneListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.zlr)
 	if err != nil {
 		return err
 	}
 	page.zlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *ZoneListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -775,60 +914,45 @@ func (page ZoneListResultPage) Values() []Zone {
 	return *page.zlr.Value
 }
 
+// Creates a new instance of the ZoneListResultPage type.
+func NewZoneListResultPage(getNextPage func(context.Context, ZoneListResult) (ZoneListResult, error)) ZoneListResultPage {
+	return ZoneListResultPage{fn: getNextPage}
+}
+
 // ZoneProperties represents the properties of the zone.
 type ZoneProperties struct {
 	// MaxNumberOfRecordSets - The maximum number of record sets that can be created in this DNS zone.  This is a read-only property and any attempt to set this value will be ignored.
 	MaxNumberOfRecordSets *int64 `json:"maxNumberOfRecordSets,omitempty"`
 	// NumberOfRecordSets - The current number of record sets in this DNS zone.  This is a read-only property and any attempt to set this value will be ignored.
 	NumberOfRecordSets *int64 `json:"numberOfRecordSets,omitempty"`
-	// NameServers - The name servers for this DNS zone. This is a read-only property and any attempt to set this value will be ignored.
+	// NameServers - READ-ONLY; The name servers for this DNS zone. This is a read-only property and any attempt to set this value will be ignored.
 	NameServers *[]string `json:"nameServers,omitempty"`
 }
 
 // ZonesDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
 type ZonesDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ZonesDeleteFuture) Result(client ZonesClient) (zdr ZoneDeleteResult, err error) {
+func (future *ZonesDeleteFuture) Result(client ZonesClient) (zdr ZoneDeleteResult, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "dns.ZonesDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return zdr, azure.NewAsyncOpIncompleteError("dns.ZonesDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		zdr, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "dns.ZonesDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("dns.ZonesDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if zdr.Response.Response, err = future.GetResult(sender); err == nil && zdr.Response.Response.StatusCode != http.StatusNoContent {
+		zdr, err = client.DeleteResponder(zdr.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "dns.ZonesDeleteFuture", "Result", zdr.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "dns.ZonesDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	zdr, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "dns.ZonesDeleteFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }

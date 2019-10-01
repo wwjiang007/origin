@@ -18,12 +18,17 @@ package analysisservices
 // Changes may cause incorrect behavior and will be lost if the code is regenerated.
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
+
+// The package's fully qualified name.
+const fqdn = "github.com/Azure/azure-sdk-for-go/services/analysisservices/mgmt/2017-08-01/analysisservices"
 
 // ConnectionMode enumerates the values for connection mode.
 type ConnectionMode string
@@ -34,6 +39,11 @@ const (
 	// ReadOnly ...
 	ReadOnly ConnectionMode = "ReadOnly"
 )
+
+// PossibleConnectionModeValues returns an array of possible values for the ConnectionMode const type.
+func PossibleConnectionModeValues() []ConnectionMode {
+	return []ConnectionMode{All, ReadOnly}
+}
 
 // ProvisioningState enumerates the values for provisioning state.
 type ProvisioningState string
@@ -65,6 +75,11 @@ const (
 	Updating ProvisioningState = "Updating"
 )
 
+// PossibleProvisioningStateValues returns an array of possible values for the ProvisioningState const type.
+func PossibleProvisioningStateValues() []ProvisioningState {
+	return []ProvisioningState{Deleting, Failed, Paused, Pausing, Preparing, Provisioning, Resuming, Scaling, Succeeded, Suspended, Suspending, Updating}
+}
+
 // SkuTier enumerates the values for sku tier.
 type SkuTier string
 
@@ -76,6 +91,11 @@ const (
 	// Standard ...
 	Standard SkuTier = "Standard"
 )
+
+// PossibleSkuTierValues returns an array of possible values for the SkuTier const type.
+func PossibleSkuTierValues() []SkuTier {
+	return []SkuTier{Basic, Development, Standard}
+}
 
 // State enumerates the values for state.
 type State string
@@ -107,6 +127,11 @@ const (
 	StateUpdating State = "Updating"
 )
 
+// PossibleStateValues returns an array of possible values for the State const type.
+func PossibleStateValues() []State {
+	return []State{StateDeleting, StateFailed, StatePaused, StatePausing, StatePreparing, StateProvisioning, StateResuming, StateScaling, StateSucceeded, StateSuspended, StateSuspending, StateUpdating}
+}
+
 // Status enumerates the values for status.
 type Status string
 
@@ -114,6 +139,11 @@ const (
 	// Live ...
 	Live Status = "Live"
 )
+
+// PossibleStatusValues returns an array of possible values for the Status const type.
+func PossibleStatusValues() []Status {
+	return []Status{Live}
+}
 
 // CheckServerNameAvailabilityParameters details of server name request body.
 type CheckServerNameAvailabilityParameters struct {
@@ -123,7 +153,7 @@ type CheckServerNameAvailabilityParameters struct {
 	Type *string `json:"type,omitempty"`
 }
 
-// CheckServerNameAvailabilityResult the checking result of server name availibility.
+// CheckServerNameAvailabilityResult the checking result of server name availability.
 type CheckServerNameAvailabilityResult struct {
 	autorest.Response `json:"-"`
 	// NameAvailable - Indicator of available of the server name.
@@ -146,9 +176,9 @@ type ErrorResponse struct {
 type GatewayDetails struct {
 	// GatewayResourceID - Gateway resource to be associated with the server.
 	GatewayResourceID *string `json:"gatewayResourceId,omitempty"`
-	// GatewayObjectID - Gateway object id from in the DMTS cluster for the gateway resource.
+	// GatewayObjectID - READ-ONLY; Gateway object id from in the DMTS cluster for the gateway resource.
 	GatewayObjectID *string `json:"gatewayObjectId,omitempty"`
-	// DmtsClusterURI - Uri of the DMTS cluster.
+	// DmtsClusterURI - READ-ONLY; Uri of the DMTS cluster.
 	DmtsClusterURI *string `json:"dmtsClusterUri,omitempty"`
 }
 
@@ -187,13 +217,13 @@ type IPv4FirewallRule struct {
 type IPv4FirewallSettings struct {
 	// FirewallRules - An array of firewall rules.
 	FirewallRules *[]IPv4FirewallRule `json:"firewallRules,omitempty"`
-	// EnablePowerBIService - The indicator of enableing PBI service.
-	EnablePowerBIService *string `json:"enablePowerBIService,omitempty"`
+	// EnablePowerBIService - The indicator of enabling PBI service.
+	EnablePowerBIService *bool `json:"enablePowerBIService,omitempty"`
 }
 
 // Operation a Consumption REST API operation.
 type Operation struct {
-	// Name - Operation name: {provider}/{resource}/{operation}.
+	// Name - READ-ONLY; Operation name: {provider}/{resource}/{operation}.
 	Name *string `json:"name,omitempty"`
 	// Display - The object that represents the operation.
 	Display *OperationDisplay `json:"display,omitempty"`
@@ -201,21 +231,21 @@ type Operation struct {
 
 // OperationDisplay the object that represents the operation.
 type OperationDisplay struct {
-	// Provider - Service provider: Microsoft.Consumption.
+	// Provider - READ-ONLY; Service provider: Microsoft.Consumption.
 	Provider *string `json:"provider,omitempty"`
-	// Resource - Resource on which the operation is performed: UsageDetail, etc.
+	// Resource - READ-ONLY; Resource on which the operation is performed: UsageDetail, etc.
 	Resource *string `json:"resource,omitempty"`
-	// Operation - Operation type: Read, write, delete, etc.
+	// Operation - READ-ONLY; Operation type: Read, write, delete, etc.
 	Operation *string `json:"operation,omitempty"`
 }
 
-// OperationListResult result of listing consumption operations. It contains a list of operations and a URL link to
-// get the next set of results.
+// OperationListResult result of listing consumption operations. It contains a list of operations and a URL
+// link to get the next set of results.
 type OperationListResult struct {
 	autorest.Response `json:"-"`
-	// Value - List of analysis services operations supported by the Microsoft.AnalysisServices resource provider.
+	// Value - READ-ONLY; List of analysis services operations supported by the Microsoft.AnalysisServices resource provider.
 	Value *[]Operation `json:"value,omitempty"`
-	// NextLink - URL to get the next set of operation list results if there are any.
+	// NextLink - READ-ONLY; URL to get the next set of operation list results if there are any.
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
@@ -225,20 +255,37 @@ type OperationListResultIterator struct {
 	page OperationListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *OperationListResultIterator) Next() error {
+func (iter *OperationListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OperationListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *OperationListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -260,6 +307,11 @@ func (iter OperationListResultIterator) Value() Operation {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the OperationListResultIterator type.
+func NewOperationListResultIterator(page OperationListResultPage) OperationListResultIterator {
+	return OperationListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (olr OperationListResult) IsEmpty() bool {
 	return olr.Value == nil || len(*olr.Value) == 0
@@ -267,11 +319,11 @@ func (olr OperationListResult) IsEmpty() bool {
 
 // operationListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (olr OperationListResult) operationListResultPreparer() (*http.Request, error) {
+func (olr OperationListResult) operationListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if olr.NextLink == nil || len(to.String(olr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(olr.NextLink)))
@@ -279,19 +331,36 @@ func (olr OperationListResult) operationListResultPreparer() (*http.Request, err
 
 // OperationListResultPage contains a page of Operation values.
 type OperationListResultPage struct {
-	fn  func(OperationListResult) (OperationListResult, error)
+	fn  func(context.Context, OperationListResult) (OperationListResult, error)
 	olr OperationListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *OperationListResultPage) Next() error {
-	next, err := page.fn(page.olr)
+func (page *OperationListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OperationListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.olr)
 	if err != nil {
 		return err
 	}
 	page.olr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *OperationListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -310,6 +379,11 @@ func (page OperationListResultPage) Values() []Operation {
 		return nil
 	}
 	return *page.olr.Value
+}
+
+// Creates a new instance of the OperationListResultPage type.
+func NewOperationListResultPage(getNextPage func(context.Context, OperationListResult) (OperationListResult, error)) OperationListResultPage {
+	return OperationListResultPage{fn: getNextPage}
 }
 
 // OperationStatus the status of operation.
@@ -331,11 +405,11 @@ type OperationStatus struct {
 
 // Resource represents an instance of an Analysis Services resource.
 type Resource struct {
-	// ID - An identifier that represents the Analysis Services resource.
+	// ID - READ-ONLY; An identifier that represents the Analysis Services resource.
 	ID *string `json:"id,omitempty"`
-	// Name - The name of the Analysis Services resource.
+	// Name - READ-ONLY; The name of the Analysis Services resource.
 	Name *string `json:"name,omitempty"`
-	// Type - The type of the Analysis Services resource.
+	// Type - READ-ONLY; The type of the Analysis Services resource.
 	Type *string `json:"type,omitempty"`
 	// Location - Location of the Analysis Services resource.
 	Location *string `json:"location,omitempty"`
@@ -348,15 +422,6 @@ type Resource struct {
 // MarshalJSON is the custom marshaler for Resource.
 func (r Resource) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
-	if r.ID != nil {
-		objectMap["id"] = r.ID
-	}
-	if r.Name != nil {
-		objectMap["name"] = r.Name
-	}
-	if r.Type != nil {
-		objectMap["type"] = r.Type
-	}
 	if r.Location != nil {
 		objectMap["location"] = r.Location
 	}
@@ -384,11 +449,11 @@ type Server struct {
 	autorest.Response `json:"-"`
 	// ServerProperties - Properties of the provision operation request.
 	*ServerProperties `json:"properties,omitempty"`
-	// ID - An identifier that represents the Analysis Services resource.
+	// ID - READ-ONLY; An identifier that represents the Analysis Services resource.
 	ID *string `json:"id,omitempty"`
-	// Name - The name of the Analysis Services resource.
+	// Name - READ-ONLY; The name of the Analysis Services resource.
 	Name *string `json:"name,omitempty"`
-	// Type - The type of the Analysis Services resource.
+	// Type - READ-ONLY; The type of the Analysis Services resource.
 	Type *string `json:"type,omitempty"`
 	// Location - Location of the Analysis Services resource.
 	Location *string `json:"location,omitempty"`
@@ -403,15 +468,6 @@ func (s Server) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
 	if s.ServerProperties != nil {
 		objectMap["properties"] = s.ServerProperties
-	}
-	if s.ID != nil {
-		objectMap["id"] = s.ID
-	}
-	if s.Name != nil {
-		objectMap["name"] = s.Name
-	}
-	if s.Type != nil {
-		objectMap["type"] = s.Type
 	}
 	if s.Location != nil {
 		objectMap["location"] = s.Location
@@ -509,7 +565,8 @@ type ServerAdministrators struct {
 	Members *[]string `json:"members,omitempty"`
 }
 
-// ServerMutableProperties an object that represents a set of mutable Analysis Services resource properties.
+// ServerMutableProperties an object that represents a set of mutable Analysis Services resource
+// properties.
 type ServerMutableProperties struct {
 	// AsAdministrators - A collection of AS server administrators
 	AsAdministrators *ServerAdministrators `json:"asAdministrators,omitempty"`
@@ -525,11 +582,11 @@ type ServerMutableProperties struct {
 
 // ServerProperties properties of Analysis Services resource.
 type ServerProperties struct {
-	// State - The current state of Analysis Services resource. The state is to indicate more states outside of resource provisioning. Possible values include: 'StateDeleting', 'StateSucceeded', 'StateFailed', 'StatePaused', 'StateSuspended', 'StateProvisioning', 'StateUpdating', 'StateSuspending', 'StatePausing', 'StateResuming', 'StatePreparing', 'StateScaling'
+	// State - READ-ONLY; The current state of Analysis Services resource. The state is to indicate more states outside of resource provisioning. Possible values include: 'StateDeleting', 'StateSucceeded', 'StateFailed', 'StatePaused', 'StateSuspended', 'StateProvisioning', 'StateUpdating', 'StateSuspending', 'StatePausing', 'StateResuming', 'StatePreparing', 'StateScaling'
 	State State `json:"state,omitempty"`
-	// ProvisioningState - The current deployment state of Analysis Services resource. The provisioningState is to indicate states for resource provisioning. Possible values include: 'Deleting', 'Succeeded', 'Failed', 'Paused', 'Suspended', 'Provisioning', 'Updating', 'Suspending', 'Pausing', 'Resuming', 'Preparing', 'Scaling'
+	// ProvisioningState - READ-ONLY; The current deployment state of Analysis Services resource. The provisioningState is to indicate states for resource provisioning. Possible values include: 'Deleting', 'Succeeded', 'Failed', 'Paused', 'Suspended', 'Provisioning', 'Updating', 'Suspending', 'Pausing', 'Resuming', 'Preparing', 'Scaling'
 	ProvisioningState ProvisioningState `json:"provisioningState,omitempty"`
-	// ServerFullName - The full name of the Analysis Services resource.
+	// ServerFullName - READ-ONLY; The full name of the Analysis Services resource.
 	ServerFullName *string `json:"serverFullName,omitempty"`
 	// AsAdministrators - A collection of AS server administrators
 	AsAdministrators *ServerAdministrators `json:"asAdministrators,omitempty"`
@@ -550,242 +607,129 @@ type Servers struct {
 	Value *[]Server `json:"value,omitempty"`
 }
 
-// ServersCreateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// ServersCreateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type ServersCreateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ServersCreateFuture) Result(client ServersClient) (s Server, err error) {
+func (future *ServersCreateFuture) Result(client ServersClient) (s Server, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "analysisservices.ServersCreateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return s, azure.NewAsyncOpIncompleteError("analysisservices.ServersCreateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		s, err = client.CreateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "analysisservices.ServersCreateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("analysisservices.ServersCreateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if s.Response.Response, err = future.GetResult(sender); err == nil && s.Response.Response.StatusCode != http.StatusNoContent {
+		s, err = client.CreateResponder(s.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "analysisservices.ServersCreateFuture", "Result", s.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "analysisservices.ServersCreateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	s, err = client.CreateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "analysisservices.ServersCreateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// ServersDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// ServersDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type ServersDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ServersDeleteFuture) Result(client ServersClient) (ar autorest.Response, err error) {
+func (future *ServersDeleteFuture) Result(client ServersClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "analysisservices.ServersDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("analysisservices.ServersDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "analysisservices.ServersDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("analysisservices.ServersDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "analysisservices.ServersDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "analysisservices.ServersDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
-// ServersResumeFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// ServersResumeFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type ServersResumeFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ServersResumeFuture) Result(client ServersClient) (ar autorest.Response, err error) {
+func (future *ServersResumeFuture) Result(client ServersClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "analysisservices.ServersResumeFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("analysisservices.ServersResumeFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.ResumeResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "analysisservices.ServersResumeFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("analysisservices.ServersResumeFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "analysisservices.ServersResumeFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.ResumeResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "analysisservices.ServersResumeFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
-// ServersSuspendFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// ServersSuspendFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type ServersSuspendFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ServersSuspendFuture) Result(client ServersClient) (ar autorest.Response, err error) {
+func (future *ServersSuspendFuture) Result(client ServersClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "analysisservices.ServersSuspendFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("analysisservices.ServersSuspendFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.SuspendResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "analysisservices.ServersSuspendFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("analysisservices.ServersSuspendFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "analysisservices.ServersSuspendFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.SuspendResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "analysisservices.ServersSuspendFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
-// ServersUpdateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// ServersUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type ServersUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ServersUpdateFuture) Result(client ServersClient) (s Server, err error) {
+func (future *ServersUpdateFuture) Result(client ServersClient) (s Server, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "analysisservices.ServersUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return s, azure.NewAsyncOpIncompleteError("analysisservices.ServersUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		s, err = client.UpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "analysisservices.ServersUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("analysisservices.ServersUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if s.Response.Response, err = future.GetResult(sender); err == nil && s.Response.Response.StatusCode != http.StatusNoContent {
+		s, err = client.UpdateResponder(s.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "analysisservices.ServersUpdateFuture", "Result", s.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "analysisservices.ServersUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	s, err = client.UpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "analysisservices.ServersUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -863,7 +807,8 @@ type SkuDetailsForExistingResource struct {
 	Sku *ResourceSku `json:"sku,omitempty"`
 }
 
-// SkuEnumerationForExistingResourceResult an object that represents enumerating SKUs for existing resources.
+// SkuEnumerationForExistingResourceResult an object that represents enumerating SKUs for existing
+// resources.
 type SkuEnumerationForExistingResourceResult struct {
 	autorest.Response `json:"-"`
 	// Value - The collection of available SKUs for existing resources.

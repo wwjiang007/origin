@@ -21,6 +21,7 @@ import (
 	"context"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -40,9 +41,20 @@ func NewClientWithBaseURI(baseURI string) Client {
 }
 
 // Get get specific `Reservation` details.
-//
-// reservationID is id of the Reservation Item reservationOrderID is order Id of the reservation
+// Parameters:
+// reservationID - id of the Reservation Item
+// reservationOrderID - order Id of the reservation
 func (client Client) Get(ctx context.Context, reservationID string, reservationOrderID string) (result Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, reservationID, reservationOrderID)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "reservations.Client", "Get", nil, "Failure preparing request")
@@ -87,8 +99,8 @@ func (client Client) GetPreparer(ctx context.Context, reservationID string, rese
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -105,9 +117,19 @@ func (client Client) GetResponder(resp *http.Response) (result Response, err err
 }
 
 // List list `Reservation`s within a single `ReservationOrder`.
-//
-// reservationOrderID is order Id of the reservation
+// Parameters:
+// reservationOrderID - order Id of the reservation
 func (client Client) List(ctx context.Context, reservationOrderID string) (result ListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.List")
+		defer func() {
+			sc := -1
+			if result.l.Response.Response != nil {
+				sc = result.l.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listNextResults
 	req, err := client.ListPreparer(ctx, reservationOrderID)
 	if err != nil {
@@ -152,8 +174,8 @@ func (client Client) ListPreparer(ctx context.Context, reservationOrderID string
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -170,8 +192,8 @@ func (client Client) ListResponder(resp *http.Response) (result List, err error)
 }
 
 // listNextResults retrieves the next set of results, if any.
-func (client Client) listNextResults(lastResults List) (result List, err error) {
-	req, err := lastResults.listPreparer()
+func (client Client) listNextResults(ctx context.Context, lastResults List) (result List, err error) {
+	req, err := lastResults.listPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "reservations.Client", "listNextResults", nil, "Failure preparing next results request")
 	}
@@ -192,14 +214,35 @@ func (client Client) listNextResults(lastResults List) (result List, err error) 
 
 // ListComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListComplete(ctx context.Context, reservationOrderID string) (result ListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.List")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.List(ctx, reservationOrderID)
 	return
 }
 
 // ListRevisions list of all the revisions for the `Reservation`.
-//
-// reservationID is id of the Reservation Item reservationOrderID is order Id of the reservation
+// Parameters:
+// reservationID - id of the Reservation Item
+// reservationOrderID - order Id of the reservation
 func (client Client) ListRevisions(ctx context.Context, reservationID string, reservationOrderID string) (result ListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListRevisions")
+		defer func() {
+			sc := -1
+			if result.l.Response.Response != nil {
+				sc = result.l.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listRevisionsNextResults
 	req, err := client.ListRevisionsPreparer(ctx, reservationID, reservationOrderID)
 	if err != nil {
@@ -245,8 +288,8 @@ func (client Client) ListRevisionsPreparer(ctx context.Context, reservationID st
 // ListRevisionsSender sends the ListRevisions request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListRevisionsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListRevisionsResponder handles the response to the ListRevisions request. The method always
@@ -263,8 +306,8 @@ func (client Client) ListRevisionsResponder(resp *http.Response) (result List, e
 }
 
 // listRevisionsNextResults retrieves the next set of results, if any.
-func (client Client) listRevisionsNextResults(lastResults List) (result List, err error) {
-	req, err := lastResults.listPreparer()
+func (client Client) listRevisionsNextResults(ctx context.Context, lastResults List) (result List, err error) {
+	req, err := lastResults.listPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "reservations.Client", "listRevisionsNextResults", nil, "Failure preparing next results request")
 	}
@@ -285,16 +328,36 @@ func (client Client) listRevisionsNextResults(lastResults List) (result List, er
 
 // ListRevisionsComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListRevisionsComplete(ctx context.Context, reservationID string, reservationOrderID string) (result ListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListRevisions")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListRevisions(ctx, reservationID, reservationOrderID)
 	return
 }
 
 // Merge merge the specified `Reservation`s into a new `Reservation`. The two `Reservation`s being merged must have
 // same properties.
-//
-// reservationOrderID is order Id of the reservation body is information needed for commercial request for a
-// reservation
+// Parameters:
+// reservationOrderID - order Id of the reservation
+// body - information needed for commercial request for a reservation
 func (client Client) Merge(ctx context.Context, reservationOrderID string, body MergeRequest) (result ReservationMergeFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.Merge")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.MergePreparer(ctx, reservationOrderID, body)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "reservations.Client", "Merge", nil, "Failure preparing request")
@@ -322,7 +385,7 @@ func (client Client) MergePreparer(ctx context.Context, reservationOrderID strin
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/providers/Microsoft.Capacity/reservationOrders/{reservationOrderId}/merge", pathParameters),
@@ -334,15 +397,13 @@ func (client Client) MergePreparer(ctx context.Context, reservationOrderID strin
 // MergeSender sends the Merge request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) MergeSender(req *http.Request) (future ReservationMergeFuture, err error) {
-	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -360,9 +421,20 @@ func (client Client) MergeResponder(resp *http.Response) (result ListResponse, e
 }
 
 // Split split a `Reservation` into two `Reservation`s with specified quantity distribution.
-//
-// reservationOrderID is order Id of the reservation body is information needed to Split a reservation item
+// Parameters:
+// reservationOrderID - order Id of the reservation
+// body - information needed to Split a reservation item
 func (client Client) Split(ctx context.Context, reservationOrderID string, body SplitRequest) (result SplitFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.Split")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.SplitPreparer(ctx, reservationOrderID, body)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "reservations.Client", "Split", nil, "Failure preparing request")
@@ -390,7 +462,7 @@ func (client Client) SplitPreparer(ctx context.Context, reservationOrderID strin
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/providers/Microsoft.Capacity/reservationOrders/{reservationOrderId}/split", pathParameters),
@@ -402,15 +474,13 @@ func (client Client) SplitPreparer(ctx context.Context, reservationOrderID strin
 // SplitSender sends the Split request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) SplitSender(req *http.Request) (future SplitFuture, err error) {
-	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -428,10 +498,21 @@ func (client Client) SplitResponder(resp *http.Response) (result ListResponse, e
 }
 
 // Update updates the applied scopes of the `Reservation`.
-//
-// reservationOrderID is order Id of the reservation reservationID is id of the Reservation Item parameters is
-// information needed to patch a reservation item
+// Parameters:
+// reservationOrderID - order Id of the reservation
+// reservationID - id of the Reservation Item
+// parameters - information needed to patch a reservation item
 func (client Client) Update(ctx context.Context, reservationOrderID string, reservationID string, parameters Patch) (result ReservationUpdateFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.Update")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UpdatePreparer(ctx, reservationOrderID, reservationID, parameters)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "reservations.Client", "Update", nil, "Failure preparing request")
@@ -460,7 +541,7 @@ func (client Client) UpdatePreparer(ctx context.Context, reservationOrderID stri
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/providers/Microsoft.Capacity/reservationOrders/{reservationOrderId}/reservations/{reservationId}", pathParameters),
@@ -472,15 +553,13 @@ func (client Client) UpdatePreparer(ctx context.Context, reservationOrderID stri
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) UpdateSender(req *http.Request) (future ReservationUpdateFuture, err error) {
-	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 

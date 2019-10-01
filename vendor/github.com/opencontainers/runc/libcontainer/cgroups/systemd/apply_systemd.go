@@ -5,6 +5,7 @@ package systemd
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
@@ -71,13 +72,8 @@ const (
 )
 
 var (
-	connLock                        sync.Mutex
-	theConn                         *systemdDbus.Conn
-	hasStartTransientUnit           bool
-	hasStartTransientSliceUnit      bool
-	hasTransientDefaultDependencies bool
-	hasDelegateScope                bool
-	hasDelegateSlice                bool
+	connLock sync.Mutex
+	theConn  *systemdDbus.Conn
 )
 
 func newProp(name string, units interface{}) systemdDbus.Property {
@@ -101,115 +97,20 @@ func UseSystemd() bool {
 		if err != nil {
 			return false
 		}
-
-		// Assume we have StartTransientUnit
-		hasStartTransientUnit = true
-
-		// But if we get UnknownMethod error we don't
-		if _, err := theConn.StartTransientUnit("test.scope", "invalid", nil, nil); err != nil {
-			if dbusError, ok := err.(dbus.Error); ok {
-				if dbusError.Name == "org.freedesktop.DBus.Error.UnknownMethod" {
-					hasStartTransientUnit = false
-					return hasStartTransientUnit
-				}
-			}
-		}
-
-		// Ensure the scope name we use doesn't exist. Use the Pid to
-		// avoid collisions between multiple libcontainer users on a
-		// single host.
-		scope := fmt.Sprintf("libcontainer-%d-systemd-test-default-dependencies.scope", os.Getpid())
-		testScopeExists := true
-		for i := 0; i <= testScopeWait; i++ {
-			if _, err := theConn.StopUnit(scope, "replace", nil); err != nil {
-				if dbusError, ok := err.(dbus.Error); ok {
-					if strings.Contains(dbusError.Name, "org.freedesktop.systemd1.NoSuchUnit") {
-						testScopeExists = false
-						break
-					}
-				}
-			}
-			time.Sleep(time.Millisecond)
-		}
-
-		// Bail out if we can't kill this scope without testing for DefaultDependencies
-		if testScopeExists {
-			return hasStartTransientUnit
-		}
-
-		// Assume StartTransientUnit on a scope allows DefaultDependencies
-		hasTransientDefaultDependencies = true
-		ddf := newProp("DefaultDependencies", false)
-		if _, err := theConn.StartTransientUnit(scope, "replace", []systemdDbus.Property{ddf}, nil); err != nil {
-			if dbusError, ok := err.(dbus.Error); ok {
-				if strings.Contains(dbusError.Name, "org.freedesktop.DBus.Error.PropertyReadOnly") {
-					hasTransientDefaultDependencies = false
-				}
-			}
-		}
-
-		// Not critical because of the stop unit logic above.
-		theConn.StopUnit(scope, "replace", nil)
-
-		// Assume StartTransientUnit on a scope allows Delegate
-		hasDelegateScope = true
-		dlScope := newProp("Delegate", true)
-		if _, err := theConn.StartTransientUnit(scope, "replace", []systemdDbus.Property{dlScope}, nil); err != nil {
-			if dbusError, ok := err.(dbus.Error); ok {
-				if strings.Contains(dbusError.Name, "org.freedesktop.DBus.Error.PropertyReadOnly") {
-					hasDelegateScope = false
-				}
-			}
-		}
-
-		// Assume we have the ability to start a transient unit as a slice
-		// This was broken until systemd v229, but has been back-ported on RHEL environments >= 219
-		// For details, see: https://bugzilla.redhat.com/show_bug.cgi?id=1370299
-		hasStartTransientSliceUnit = true
-
-		// To ensure simple clean-up, we create a slice off the root with no hierarchy
-		slice := fmt.Sprintf("libcontainer_%d_systemd_test_default.slice", os.Getpid())
-		if _, err := theConn.StartTransientUnit(slice, "replace", nil, nil); err != nil {
-			if _, ok := err.(dbus.Error); ok {
-				hasStartTransientSliceUnit = false
-			}
-		}
-
-		for i := 0; i <= testSliceWait; i++ {
-			if _, err := theConn.StopUnit(slice, "replace", nil); err != nil {
-				if dbusError, ok := err.(dbus.Error); ok {
-					if strings.Contains(dbusError.Name, "org.freedesktop.systemd1.NoSuchUnit") {
-						hasStartTransientSliceUnit = false
-						break
-					}
-				}
-			} else {
-				break
-			}
-			time.Sleep(time.Millisecond)
-		}
-
-		// Not critical because of the stop unit logic above.
-		theConn.StopUnit(slice, "replace", nil)
-
-		// Assume StartTransientUnit on a slice allows Delegate
-		hasDelegateSlice = true
-		dlSlice := newProp("Delegate", true)
-		if _, err := theConn.StartTransientUnit(slice, "replace", []systemdDbus.Property{dlSlice}, nil); err != nil {
-			if dbusError, ok := err.(dbus.Error); ok {
-				// Starting with systemd v237, Delegate is not even a property of slices anymore,
-				// so the D-Bus call fails with "InvalidArgs" error.
-				if strings.Contains(dbusError.Name, "org.freedesktop.DBus.Error.PropertyReadOnly") || strings.Contains(dbusError.Name, "org.freedesktop.DBus.Error.InvalidArgs") {
-					hasDelegateSlice = false
-				}
-			}
-		}
-
-		// Not critical because of the stop unit logic above.
-		theConn.StopUnit(scope, "replace", nil)
-		theConn.StopUnit(slice, "replace", nil)
 	}
-	return hasStartTransientUnit
+	return true
+}
+
+func NewSystemdCgroupsManager() (func(config *configs.Cgroup, paths map[string]string) cgroups.Manager, error) {
+	if !systemdUtil.IsRunningSystemd() {
+		return nil, fmt.Errorf("systemd not running on this host, can't use systemd as a cgroups.Manager")
+	}
+	return func(config *configs.Cgroup, paths map[string]string) cgroups.Manager {
+		return &Manager{
+			Cgroups: config,
+			Paths:   paths,
+		}
+	}, nil
 }
 
 func (m *Manager) Apply(pid int) error {
@@ -245,10 +146,6 @@ func (m *Manager) Apply(pid int) error {
 
 	// if we create a slice, the parent is defined via a Wants=
 	if strings.HasSuffix(unitName, ".slice") {
-		// This was broken until systemd v229, but has been back-ported on RHEL environments >= 219
-		if !hasStartTransientSliceUnit {
-			return fmt.Errorf("systemd version does not support ability to start a slice as transient unit")
-		}
 		properties = append(properties, systemdDbus.PropWants(slice))
 	} else {
 		// otherwise, we use Slice=
@@ -261,15 +158,9 @@ func (m *Manager) Apply(pid int) error {
 	}
 
 	// Check if we can delegate. This is only supported on systemd versions 218 and above.
-	if strings.HasSuffix(unitName, ".slice") {
-		if hasDelegateSlice {
-			// systemd 237 and above no longer allows delegation on a slice
-			properties = append(properties, newProp("Delegate", true))
-		}
-	} else {
-		if hasDelegateScope {
-			properties = append(properties, newProp("Delegate", true))
-		}
+	if !strings.HasSuffix(unitName, ".slice") {
+		// Assume scopes always support delegation.
+		properties = append(properties, newProp("Delegate", true))
 	}
 
 	// Always enable accounting, this gets us the same behaviour as the fs implementation,
@@ -279,10 +170,9 @@ func (m *Manager) Apply(pid int) error {
 		newProp("CPUAccounting", true),
 		newProp("BlockIOAccounting", true))
 
-	if hasTransientDefaultDependencies {
-		properties = append(properties,
-			newProp("DefaultDependencies", false))
-	}
+	// Assume DefaultDependencies= will always work (the check for it was previously broken.)
+	properties = append(properties,
+		newProp("DefaultDependencies", false))
 
 	if c.Resources.Memory != 0 {
 		properties = append(properties,
@@ -317,6 +207,12 @@ func (m *Manager) Apply(pid int) error {
 	if c.Resources.BlkioWeight != 0 {
 		properties = append(properties,
 			newProp("BlockIOWeight", uint64(c.Resources.BlkioWeight)))
+	}
+
+	if c.Resources.PidsLimit > 0 {
+		properties = append(properties,
+			newProp("TasksAccounting", true),
+			newProp("TasksMax", uint64(c.Resources.PidsLimit)))
 	}
 
 	// We have to set kernel memory here, as we can't change it once
@@ -464,7 +360,7 @@ func ExpandSlice(slice string) (string, error) {
 }
 
 func getSubsystemPath(c *configs.Cgroup, subsystem string) (string, error) {
-	mountpoint, err := cgroups.FindCgroupMountpoint(subsystem)
+	mountpoint, err := cgroups.FindCgroupMountpoint(c.Path, subsystem)
 	if err != nil {
 		return "", err
 	}
@@ -583,6 +479,15 @@ func setKernelMemory(c *configs.Cgroup) error {
 
 	if err := os.MkdirAll(path, 0755); err != nil {
 		return err
+	}
+	// do not try to enable the kernel memory if we already have
+	// tasks in the cgroup.
+	content, err := ioutil.ReadFile(filepath.Join(path, "tasks"))
+	if err != nil {
+		return err
+	}
+	if len(content) > 0 {
+		return nil
 	}
 	return fs.EnableKernelMemoryAccounting(path)
 }

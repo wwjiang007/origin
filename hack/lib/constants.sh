@@ -1,20 +1,20 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script provides constants for the Golang binary build process
 
 readonly OS_GO_PACKAGE=github.com/openshift/origin
 
-readonly OS_BUILD_ENV_GOLANG="${OS_BUILD_ENV_GOLANG:-1.10}"
+readonly OS_BUILD_ENV_GOLANG="${OS_BUILD_ENV_GOLANG:-1.12}"
 readonly OS_BUILD_ENV_IMAGE="${OS_BUILD_ENV_IMAGE:-openshift/origin-release:golang-${OS_BUILD_ENV_GOLANG}}"
 readonly OS_REQUIRED_GO_VERSION="go${OS_BUILD_ENV_GOLANG}"
 readonly OS_GLIDE_MINOR_VERSION="13"
 readonly OS_REQUIRED_GLIDE_VERSION="0.$OS_GLIDE_MINOR_VERSION"
 
 readonly OS_GOFLAGS_TAGS="include_gcs include_oss containers_image_openpgp"
-readonly OS_GOFLAGS_TAGS_LINUX_AMD64="gssapi"
-readonly OS_GOFLAGS_TAGS_LINUX_S390X="gssapi"
-readonly OS_GOFLAGS_TAGS_LINUX_ARM64="gssapi"
-readonly OS_GOFLAGS_TAGS_LINUX_PPC64LE="gssapi"
+readonly OS_GOFLAGS_TAGS_LINUX_AMD64="gssapi selinux"
+readonly OS_GOFLAGS_TAGS_LINUX_S390X="gssapi selinux"
+readonly OS_GOFLAGS_TAGS_LINUX_ARM64="gssapi selinux"
+readonly OS_GOFLAGS_TAGS_LINUX_PPC64LE="gssapi selinux"
 
 readonly OS_OUTPUT_BASEPATH="${OS_OUTPUT_BASEPATH:-_output}"
 readonly OS_BASE_OUTPUT="${OS_ROOT}/${OS_OUTPUT_BASEPATH}"
@@ -27,72 +27,18 @@ readonly OS_OUTPUT_RPMPATH="${OS_OUTPUT_RELEASEPATH}/rpms"
 readonly OS_OUTPUT_BINPATH="${OS_OUTPUT}/bin"
 readonly OS_OUTPUT_PKGDIR="${OS_OUTPUT}/pkgdir"
 
-readonly OS_SDN_COMPILE_TARGETS_LINUX=(
-  cmd/sdn-cni-plugin
-  vendor/github.com/containernetworking/plugins/plugins/ipam/host-local
-  vendor/github.com/containernetworking/plugins/plugins/main/loopback
-)
 readonly OS_IMAGE_COMPILE_TARGETS_LINUX=(
-  "${OS_SDN_COMPILE_TARGETS_LINUX[@]}"
-  cmd/hypershift
-  cmd/template-service-broker
-  cmd/openshift-node-config
-  cmd/openshift-sdn
-  cmd/openshift
   vendor/k8s.io/kubernetes/cmd/hyperkube
 )
 readonly OS_SCRATCH_IMAGE_COMPILE_TARGETS_LINUX=(
-  images/pod
+  ""
 )
 readonly OS_IMAGE_COMPILE_BINARIES=("${OS_SCRATCH_IMAGE_COMPILE_TARGETS_LINUX[@]##*/}" "${OS_IMAGE_COMPILE_TARGETS_LINUX[@]##*/}")
-
-readonly OS_CROSS_COMPILE_TARGETS=(
-  cmd/oc
-  cmd/oadm
-)
-readonly OS_CROSS_COMPILE_BINARIES=("${OS_CROSS_COMPILE_TARGETS[@]##*/}")
-
-readonly OS_TEST_TARGETS=(
-  test/extended/extended.test
-)
 
 readonly OS_GOVET_BLACKLIST=(
 )
 
 #If you update this list, be sure to get the images/origin/Dockerfile
-readonly OPENSHIFT_BINARY_SYMLINKS=(
-)
-readonly OC_BINARY_SYMLINKS=(
-  openshift-deploy
-  openshift-sti-build
-  openshift-docker-build
-  openshift-git-clone
-  openshift-manage-dockerfile
-  openshift-extract-image-content
-  openshift-router
-  openshift-recycle
-)
-readonly OC_BINARY_COPY=(
-  kubectl
-)
-readonly OS_BINARY_RELEASE_CLIENT_WINDOWS=(
-  oc.exe
-  kubectl.exe
-  README.md
-  ./LICENSE
-)
-readonly OS_BINARY_RELEASE_CLIENT_MAC=(
-  oc
-  kubectl
-  README.md
-  ./LICENSE
-)
-readonly OS_BINARY_RELEASE_CLIENT_LINUX=(
-  ./oc
-  ./kubectl
-  ./README.md
-  ./LICENSE
-)
 readonly OS_BINARY_RELEASE_SERVER_LINUX=(
   './*'
 )
@@ -122,24 +68,27 @@ function os::build::ldflags() {
 
   local buildDate="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 
-  declare -a ldflags=()
+  declare -a ldflags=(
+    "-s"
+    "-w"
+  )
 
-  ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/pkg/oc/clusterup.defaultImageStreams" "${OS_BUILD_LDFLAGS_DEFAULT_IMAGE_STREAMS}"))
-  ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/pkg/cmd/util/variable.DefaultImagePrefix" "${OS_BUILD_LDFLAGS_IMAGE_PREFIX}"))
   ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/pkg/version.majorFromGit" "${OS_GIT_MAJOR}"))
   ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/pkg/version.minorFromGit" "${OS_GIT_MINOR}"))
   ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/pkg/version.versionFromGit" "${OS_GIT_VERSION}"))
   ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/pkg/version.commitFromGit" "${OS_GIT_COMMIT}"))
+  ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/pkg/version.gitTreeState" "${OS_GIT_TREE_STATE}"))
   ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/pkg/version.buildDate" "${buildDate}"))
+
   ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/kubernetes/pkg/version.gitMajor" "${KUBE_GIT_MAJOR}"))
   ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/kubernetes/pkg/version.gitMinor" "${KUBE_GIT_MINOR}"))
-  ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/kubernetes/pkg/version.gitCommit" "${KUBE_GIT_COMMIT}"))
+  ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/kubernetes/pkg/version.gitCommit" "${OS_GIT_COMMIT}"))
   ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/kubernetes/pkg/version.gitVersion" "${KUBE_GIT_VERSION}"))
   ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/kubernetes/pkg/version.buildDate" "${buildDate}"))
   ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/kubernetes/pkg/version.gitTreeState" "clean"))
   ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/client-go/pkg/version.gitMajor" "${KUBE_GIT_MAJOR}"))
   ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/client-go/pkg/version.gitMinor" "${KUBE_GIT_MINOR}"))
-  ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/client-go/pkg/version.gitCommit" "${KUBE_GIT_COMMIT}"))
+  ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/client-go/pkg/version.gitCommit" "${OS_GIT_COMMIT}"))
   ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/client-go/pkg/version.gitVersion" "${KUBE_GIT_VERSION}"))
   ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/client-go/pkg/version.buildDate" "${buildDate}"))
   ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/client-go/pkg/version.gitTreeState" "clean")
@@ -297,36 +246,20 @@ function os::build::generate_windows_versioninfo() {
        }
 }
 EOF
-  goversioninfo -o ${OS_ROOT}/cmd/oc/oc.syso ${windows_versioninfo_file}
+  goversioninfo -o ${OS_ROOT}/vendor/github.com/openshift/oc/cmd/oc/oc.syso ${windows_versioninfo_file}
 }
 readonly -f os::build::generate_windows_versioninfo
 
 # Removes the .syso file used to add compile-time VERSIONINFO metadata to the
 # Windows binary.
 function os::build::clean_windows_versioninfo() {
-  rm ${OS_ROOT}/cmd/oc/oc.syso
+  rm ${OS_ROOT}/vendor/github.com/openshift/oc/cmd/oc/oc.syso
 }
 readonly -f os::build::clean_windows_versioninfo
 
 # OS_ALL_IMAGES is the list of images built by os::build::images.
 readonly OS_ALL_IMAGES=(
-  origin-pod
-  origin-base
-  origin-cli
-  origin-hypershift
   origin-hyperkube
-  origin-control-plane
-  origin-node
-  origin-deployer
-  origin-docker-builder
-  origin-keepalived-ipfailover
-  origin-haproxy-router
-  origin-f5-router
-  origin-egress-router
-  origin-egress-http-proxy
-  origin-egress-dns-proxy
-  origin-recycler
-  origin-template-service-broker
   origin-tests
 )
 
@@ -350,20 +283,6 @@ function os::build::check_binaries() {
     fi
   fi
 
-  # enforce that certain binaries don't accidentally grow too large
-  # IMPORTANT: contact Clayton or another master team member before altering this code
-  if [[ -f "${OS_OUTPUT_BINPATH}/${platform}/oc" ]]; then
-    size=$($duexe --apparent-size -m "${OS_OUTPUT_BINPATH}/${platform}/oc" | cut -f 1)
-    if [[ "${size}" -gt "118" ]]; then
-      os::log::fatal "oc binary has grown substantially to ${size}. You must have approval before bumping this limit."
-    fi
-  fi
-  if [[ -f "${OS_OUTPUT_BINPATH}/${platform}/openshift-node-config" ]]; then
-    size=$($duexe --apparent-size -m "${OS_OUTPUT_BINPATH}/${platform}/openshift-node-config" | cut -f 1)
-    if [[ "${size}" -gt "32" ]]; then
-      os::log::fatal "openshift-node-config binary has grown substantially to ${size}. You must have approval before bumping this limit."
-    fi
-  fi
   if [[ -f "${OS_OUTPUT_BINPATH}/${platform}/pod" ]]; then
     size=$($duexe --apparent-size -m "${OS_OUTPUT_BINPATH}/${platform}/pod" | cut -f 1)
     if [[ "${size}" -gt "2" ]]; then
@@ -389,31 +308,12 @@ function os::build::images() {
   tag_prefix="${OS_IMAGE_PREFIX:-"openshift/origin"}"
 
   # images that depend on "${tag_prefix}-source" or "${tag_prefix}-base"
-  ( os::build::image "${tag_prefix}-pod"                     images/pod ) &
-  ( os::build::image "${tag_prefix}-template-service-broker" images/template-service-broker ) &
-  ( os::build::image "${tag_prefix}-cli"                     images/cli ) &
   ( os::build::image "${tag_prefix}-hyperkube"               images/hyperkube ) &
-  ( os::build::image "${tag_prefix}-hypershift"              images/hypershift ) &
-  ( os::build::image "${tag_prefix}-egress-router"           images/egress/router ) &
-  ( os::build::image "${tag_prefix}-egress-http-proxy"       images/egress/http-proxy ) &
-  ( os::build::image "${tag_prefix}-egress-dns-proxy"        images/egress/dns-proxy ) &
-  ( os::build::image "${tag_prefix}-keepalived-ipfailover"   images/ipfailover/keepalived ) &
 
   for i in `jobs -p`; do wait $i; done
 
-  # images that depend on "${tag_prefix}-cli"
+  # images that depend on "${tag_prefix}-cli" or hyperkube
   ( os::build::image "${tag_prefix}-tests"          images/tests ) &
-  ( os::build::image "${tag_prefix}-control-plane"  images/origin ) &
-  ( os::build::image "${tag_prefix}-deployer"       images/deployer ) &
-  ( os::build::image "${tag_prefix}-docker-builder" images/builder/docker/docker-builder ) &
-  ( os::build::image "${tag_prefix}-haproxy-router" images/router/haproxy ) &
-  ( os::build::image "${tag_prefix}-recycler"       images/recycler ) &
-  ( os::build::image "${tag_prefix}-f5-router"      images/router/f5 ) &
-
-  for i in `jobs -p`; do wait $i; done
-
-  # images that depend on "${tag_prefix}-control-plane"
-  ( os::build::image "${tag_prefix}-node"           images/node ) &
 
   for i in `jobs -p`; do wait $i; done
 }

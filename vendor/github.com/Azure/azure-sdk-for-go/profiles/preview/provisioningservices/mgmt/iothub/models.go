@@ -1,6 +1,6 @@
 // +build go1.9
 
-// Copyright 2018 Microsoft Corporation
+// Copyright 2019 Microsoft Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,47 +19,15 @@
 
 package iothub
 
-import original "github.com/Azure/azure-sdk-for-go/services/provisioningservices/mgmt/2017-11-15/iothub"
+import (
+	"context"
+
+	original "github.com/Azure/azure-sdk-for-go/services/provisioningservices/mgmt/2018-01-22/iothub"
+)
 
 const (
 	DefaultBaseURI = original.DefaultBaseURI
 )
-
-type BaseClient = original.BaseClient
-
-func New(subscriptionID string) BaseClient {
-	return original.New(subscriptionID)
-}
-func NewWithBaseURI(baseURI string, subscriptionID string) BaseClient {
-	return original.NewWithBaseURI(baseURI, subscriptionID)
-}
-
-type DpsCertificateClient = original.DpsCertificateClient
-
-func NewDpsCertificateClient(subscriptionID string) DpsCertificateClient {
-	return original.NewDpsCertificateClient(subscriptionID)
-}
-func NewDpsCertificateClientWithBaseURI(baseURI string, subscriptionID string) DpsCertificateClient {
-	return original.NewDpsCertificateClientWithBaseURI(baseURI, subscriptionID)
-}
-
-type DpsCertificatesClient = original.DpsCertificatesClient
-
-func NewDpsCertificatesClient(subscriptionID string) DpsCertificatesClient {
-	return original.NewDpsCertificatesClient(subscriptionID)
-}
-func NewDpsCertificatesClientWithBaseURI(baseURI string, subscriptionID string) DpsCertificatesClient {
-	return original.NewDpsCertificatesClientWithBaseURI(baseURI, subscriptionID)
-}
-
-type IotDpsResourceClient = original.IotDpsResourceClient
-
-func NewIotDpsResourceClient(subscriptionID string) IotDpsResourceClient {
-	return original.NewIotDpsResourceClient(subscriptionID)
-}
-func NewIotDpsResourceClientWithBaseURI(baseURI string, subscriptionID string) IotDpsResourceClient {
-	return original.NewIotDpsResourceClientWithBaseURI(baseURI, subscriptionID)
-}
 
 type AccessRightsDescription = original.AccessRightsDescription
 
@@ -118,14 +86,17 @@ const (
 )
 
 type AsyncOperationResult = original.AsyncOperationResult
+type BaseClient = original.BaseClient
 type CertificateBodyDescription = original.CertificateBodyDescription
 type CertificateListDescription = original.CertificateListDescription
 type CertificateProperties = original.CertificateProperties
 type CertificateResponse = original.CertificateResponse
 type DefinitionDescription = original.DefinitionDescription
+type DpsCertificateClient = original.DpsCertificateClient
 type ErrorDetails = original.ErrorDetails
 type ErrorMesssage = original.ErrorMesssage
 type IotDpsPropertiesDescription = original.IotDpsPropertiesDescription
+type IotDpsResourceClient = original.IotDpsResourceClient
 type IotDpsResourceCreateOrUpdateFuture = original.IotDpsResourceCreateOrUpdateFuture
 type IotDpsResourceDeleteFuture = original.IotDpsResourceDeleteFuture
 type IotDpsResourceUpdateFuture = original.IotDpsResourceUpdateFuture
@@ -141,6 +112,7 @@ type OperationInputs = original.OperationInputs
 type OperationListResult = original.OperationListResult
 type OperationListResultIterator = original.OperationListResultIterator
 type OperationListResultPage = original.OperationListResultPage
+type OperationsClient = original.OperationsClient
 type ProvisioningServiceDescription = original.ProvisioningServiceDescription
 type ProvisioningServiceDescriptionListResult = original.ProvisioningServiceDescriptionListResult
 type ProvisioningServiceDescriptionListResultIterator = original.ProvisioningServiceDescriptionListResultIterator
@@ -154,13 +126,72 @@ type TagsResource = original.TagsResource
 type VerificationCodeRequest = original.VerificationCodeRequest
 type VerificationCodeResponse = original.VerificationCodeResponse
 type VerificationCodeResponseProperties = original.VerificationCodeResponseProperties
-type OperationsClient = original.OperationsClient
 
+func New(subscriptionID string) BaseClient {
+	return original.New(subscriptionID)
+}
+func NewDpsCertificateClient(subscriptionID string) DpsCertificateClient {
+	return original.NewDpsCertificateClient(subscriptionID)
+}
+func NewDpsCertificateClientWithBaseURI(baseURI string, subscriptionID string) DpsCertificateClient {
+	return original.NewDpsCertificateClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewIotDpsResourceClient(subscriptionID string) IotDpsResourceClient {
+	return original.NewIotDpsResourceClient(subscriptionID)
+}
+func NewIotDpsResourceClientWithBaseURI(baseURI string, subscriptionID string) IotDpsResourceClient {
+	return original.NewIotDpsResourceClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewIotDpsSkuDefinitionListResultIterator(page IotDpsSkuDefinitionListResultPage) IotDpsSkuDefinitionListResultIterator {
+	return original.NewIotDpsSkuDefinitionListResultIterator(page)
+}
+func NewIotDpsSkuDefinitionListResultPage(getNextPage func(context.Context, IotDpsSkuDefinitionListResult) (IotDpsSkuDefinitionListResult, error)) IotDpsSkuDefinitionListResultPage {
+	return original.NewIotDpsSkuDefinitionListResultPage(getNextPage)
+}
+func NewOperationListResultIterator(page OperationListResultPage) OperationListResultIterator {
+	return original.NewOperationListResultIterator(page)
+}
+func NewOperationListResultPage(getNextPage func(context.Context, OperationListResult) (OperationListResult, error)) OperationListResultPage {
+	return original.NewOperationListResultPage(getNextPage)
+}
 func NewOperationsClient(subscriptionID string) OperationsClient {
 	return original.NewOperationsClient(subscriptionID)
 }
 func NewOperationsClientWithBaseURI(baseURI string, subscriptionID string) OperationsClient {
 	return original.NewOperationsClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewProvisioningServiceDescriptionListResultIterator(page ProvisioningServiceDescriptionListResultPage) ProvisioningServiceDescriptionListResultIterator {
+	return original.NewProvisioningServiceDescriptionListResultIterator(page)
+}
+func NewProvisioningServiceDescriptionListResultPage(getNextPage func(context.Context, ProvisioningServiceDescriptionListResult) (ProvisioningServiceDescriptionListResult, error)) ProvisioningServiceDescriptionListResultPage {
+	return original.NewProvisioningServiceDescriptionListResultPage(getNextPage)
+}
+func NewSharedAccessSignatureAuthorizationRuleListResultIterator(page SharedAccessSignatureAuthorizationRuleListResultPage) SharedAccessSignatureAuthorizationRuleListResultIterator {
+	return original.NewSharedAccessSignatureAuthorizationRuleListResultIterator(page)
+}
+func NewSharedAccessSignatureAuthorizationRuleListResultPage(getNextPage func(context.Context, SharedAccessSignatureAuthorizationRuleListResult) (SharedAccessSignatureAuthorizationRuleListResult, error)) SharedAccessSignatureAuthorizationRuleListResultPage {
+	return original.NewSharedAccessSignatureAuthorizationRuleListResultPage(getNextPage)
+}
+func NewWithBaseURI(baseURI string, subscriptionID string) BaseClient {
+	return original.NewWithBaseURI(baseURI, subscriptionID)
+}
+func PossibleAccessRightsDescriptionValues() []AccessRightsDescription {
+	return original.PossibleAccessRightsDescriptionValues()
+}
+func PossibleAllocationPolicyValues() []AllocationPolicy {
+	return original.PossibleAllocationPolicyValues()
+}
+func PossibleCertificatePurposeValues() []CertificatePurpose {
+	return original.PossibleCertificatePurposeValues()
+}
+func PossibleIotDpsSkuValues() []IotDpsSku {
+	return original.PossibleIotDpsSkuValues()
+}
+func PossibleNameUnavailabilityReasonValues() []NameUnavailabilityReason {
+	return original.PossibleNameUnavailabilityReasonValues()
+}
+func PossibleStateValues() []State {
+	return original.PossibleStateValues()
 }
 func UserAgent() string {
 	return original.UserAgent() + " profiles/preview"

@@ -1,6 +1,6 @@
 // Package operationalinsights implements the Azure ARM Operationalinsights service API version v1.
 //
-// Operational Insights Data Client
+// Log Analytics Data Plane Client
 package operationalinsights
 
 // Copyright (c) Microsoft and contributors.  All rights reserved.
@@ -32,20 +32,18 @@ const (
 // BaseClient is the base client for Operationalinsights.
 type BaseClient struct {
 	autorest.Client
-	BaseURI     string
-	WorkspaceID string
+	BaseURI string
 }
 
 // New creates an instance of the BaseClient client.
-func New(workspaceID string) BaseClient {
-	return NewWithBaseURI(DefaultBaseURI, workspaceID)
+func New() BaseClient {
+	return NewWithBaseURI(DefaultBaseURI)
 }
 
 // NewWithBaseURI creates an instance of the BaseClient client.
-func NewWithBaseURI(baseURI string, workspaceID string) BaseClient {
+func NewWithBaseURI(baseURI string) BaseClient {
 	return BaseClient{
-		Client:      autorest.NewClientWithUserAgent(UserAgent()),
-		BaseURI:     baseURI,
-		WorkspaceID: workspaceID,
+		Client:  autorest.NewClientWithUserAgent(UserAgent()),
+		BaseURI: baseURI,
 	}
 }

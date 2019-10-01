@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -36,12 +37,23 @@ func NewClient() Client {
 }
 
 // CreateCredential creates the specified credential for use with external data sources in the specified database.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database in which to create the credential. Note: This is NOT an external database name, but the
-// name of an existing U-SQL database that should contain the new credential object. credentialName is the name of
-// the credential. parameters is the parameters required to create the credential (name and password)
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database in which to create the credential. Note: This is NOT an external
+// database name, but the name of an existing U-SQL database that should contain the new credential object.
+// credentialName - the name of the credential.
+// parameters - the parameters required to create the credential (name and password)
 func (client Client) CreateCredential(ctx context.Context, accountName string, databaseName string, credentialName string, parameters DataLakeAnalyticsCatalogCredentialCreateParameters) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.CreateCredential")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameters,
 			Constraints: []validation.Constraint{{Target: "parameters.Password", Name: validation.Null, Rule: true, Chain: nil},
@@ -89,7 +101,7 @@ func (client Client) CreateCredentialPreparer(ctx context.Context, accountName s
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithCustomBaseURL("https://{accountName}.{adlaCatalogDnsSuffix}", urlParameters),
 		autorest.WithPathParameters("/catalog/usql/databases/{databaseName}/credentials/{credentialName}", pathParameters),
@@ -101,8 +113,8 @@ func (client Client) CreateCredentialPreparer(ctx context.Context, accountName s
 // CreateCredentialSender sends the CreateCredential request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) CreateCredentialSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateCredentialResponder handles the response to the CreateCredential request. The method always
@@ -119,11 +131,22 @@ func (client Client) CreateCredentialResponder(resp *http.Response) (result auto
 
 // CreateSecret creates the specified secret for use with external data sources in the specified database. This is
 // deprecated and will be removed in the next release. Please use CreateCredential instead.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database in which to create the secret. secretName is the name of the secret. parameters is the
-// parameters required to create the secret (name and password)
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database in which to create the secret.
+// secretName - the name of the secret.
+// parameters - the parameters required to create the secret (name and password)
 func (client Client) CreateSecret(ctx context.Context, accountName string, databaseName string, secretName string, parameters DataLakeAnalyticsCatalogSecretCreateOrUpdateParameters) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.CreateSecret")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameters,
 			Constraints: []validation.Constraint{{Target: "parameters.Password", Name: validation.Null, Rule: true, Chain: nil}}}}); err != nil {
@@ -169,7 +192,7 @@ func (client Client) CreateSecretPreparer(ctx context.Context, accountName strin
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithCustomBaseURL("https://{accountName}.{adlaCatalogDnsSuffix}", urlParameters),
 		autorest.WithPathParameters("/catalog/usql/databases/{databaseName}/secrets/{secretName}", pathParameters),
@@ -181,8 +204,8 @@ func (client Client) CreateSecretPreparer(ctx context.Context, accountName strin
 // CreateSecretSender sends the CreateSecret request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) CreateSecretSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateSecretResponder handles the response to the CreateSecret request. The method always
@@ -199,10 +222,20 @@ func (client Client) CreateSecretResponder(resp *http.Response) (result autorest
 
 // DeleteAllSecrets deletes all secrets in the specified database. This is deprecated and will be removed in the next
 // release. In the future, please only drop individual credentials using DeleteCredential
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the secret.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the secret.
 func (client Client) DeleteAllSecrets(ctx context.Context, accountName string, databaseName string) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.DeleteAllSecrets")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeleteAllSecretsPreparer(ctx, accountName, databaseName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "catalog.Client", "DeleteAllSecrets", nil, "Failure preparing request")
@@ -251,8 +284,8 @@ func (client Client) DeleteAllSecretsPreparer(ctx context.Context, accountName s
 // DeleteAllSecretsSender sends the DeleteAllSecrets request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) DeleteAllSecretsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteAllSecretsResponder handles the response to the DeleteAllSecrets request. The method always
@@ -268,13 +301,25 @@ func (client Client) DeleteAllSecretsResponder(resp *http.Response) (result auto
 }
 
 // DeleteCredential deletes the specified credential in the specified database
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the credential. credentialName is the name of the credential to delete
-// parameters is the parameters to delete a credential if the current user is not the account owner. cascade is
-// indicates if the delete should be a cascading delete (which deletes all resources dependent on the credential as
-// well as the credential) or not. If false will fail if there are any resources relying on the credential.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the credential.
+// credentialName - the name of the credential to delete
+// parameters - the parameters to delete a credential if the current user is not the account owner.
+// cascade - indicates if the delete should be a cascading delete (which deletes all resources dependent on the
+// credential as well as the credential) or not. If false will fail if there are any resources relying on the
+// credential.
 func (client Client) DeleteCredential(ctx context.Context, accountName string, databaseName string, credentialName string, parameters *DataLakeAnalyticsCatalogCredentialDeleteParameters, cascade *bool) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.DeleteCredential")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeleteCredentialPreparer(ctx, accountName, databaseName, credentialName, parameters, cascade)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "catalog.Client", "DeleteCredential", nil, "Failure preparing request")
@@ -319,7 +364,7 @@ func (client Client) DeleteCredentialPreparer(ctx context.Context, accountName s
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithCustomBaseURL("https://{accountName}.{adlaCatalogDnsSuffix}", urlParameters),
 		autorest.WithPathParameters("/catalog/usql/databases/{databaseName}/credentials/{credentialName}", pathParameters),
@@ -334,8 +379,8 @@ func (client Client) DeleteCredentialPreparer(ctx context.Context, accountName s
 // DeleteCredentialSender sends the DeleteCredential request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) DeleteCredentialSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteCredentialResponder handles the response to the DeleteCredential request. The method always
@@ -352,10 +397,21 @@ func (client Client) DeleteCredentialResponder(resp *http.Response) (result auto
 
 // DeleteSecret deletes the specified secret in the specified database. This is deprecated and will be removed in the
 // next release. Please use DeleteCredential instead.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the secret. secretName is the name of the secret to delete
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the secret.
+// secretName - the name of the secret to delete
 func (client Client) DeleteSecret(ctx context.Context, accountName string, databaseName string, secretName string) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.DeleteSecret")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeleteSecretPreparer(ctx, accountName, databaseName, secretName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "catalog.Client", "DeleteSecret", nil, "Failure preparing request")
@@ -405,8 +461,8 @@ func (client Client) DeleteSecretPreparer(ctx context.Context, accountName strin
 // DeleteSecretSender sends the DeleteSecret request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) DeleteSecretSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteSecretResponder handles the response to the DeleteSecret request. The method always
@@ -422,10 +478,21 @@ func (client Client) DeleteSecretResponder(resp *http.Response) (result autorest
 }
 
 // GetAssembly retrieves the specified assembly from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the assembly. assemblyName is the name of the assembly.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the assembly.
+// assemblyName - the name of the assembly.
 func (client Client) GetAssembly(ctx context.Context, accountName string, databaseName string, assemblyName string) (result USQLAssembly, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.GetAssembly")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetAssemblyPreparer(ctx, accountName, databaseName, assemblyName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "catalog.Client", "GetAssembly", nil, "Failure preparing request")
@@ -475,8 +542,8 @@ func (client Client) GetAssemblyPreparer(ctx context.Context, accountName string
 // GetAssemblySender sends the GetAssembly request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) GetAssemblySender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetAssemblyResponder handles the response to the GetAssembly request. The method always
@@ -493,10 +560,21 @@ func (client Client) GetAssemblyResponder(resp *http.Response) (result USQLAssem
 }
 
 // GetCredential retrieves the specified credential from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the schema. credentialName is the name of the credential.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the schema.
+// credentialName - the name of the credential.
 func (client Client) GetCredential(ctx context.Context, accountName string, databaseName string, credentialName string) (result USQLCredential, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.GetCredential")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetCredentialPreparer(ctx, accountName, databaseName, credentialName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "catalog.Client", "GetCredential", nil, "Failure preparing request")
@@ -546,8 +624,8 @@ func (client Client) GetCredentialPreparer(ctx context.Context, accountName stri
 // GetCredentialSender sends the GetCredential request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) GetCredentialSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetCredentialResponder handles the response to the GetCredential request. The method always
@@ -564,10 +642,20 @@ func (client Client) GetCredentialResponder(resp *http.Response) (result USQLCre
 }
 
 // GetDatabase retrieves the specified database from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database.
 func (client Client) GetDatabase(ctx context.Context, accountName string, databaseName string) (result USQLDatabase, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.GetDatabase")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetDatabasePreparer(ctx, accountName, databaseName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "catalog.Client", "GetDatabase", nil, "Failure preparing request")
@@ -616,8 +704,8 @@ func (client Client) GetDatabasePreparer(ctx context.Context, accountName string
 // GetDatabaseSender sends the GetDatabase request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) GetDatabaseSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetDatabaseResponder handles the response to the GetDatabase request. The method always
@@ -634,11 +722,21 @@ func (client Client) GetDatabaseResponder(resp *http.Response) (result USQLDatab
 }
 
 // GetExternalDataSource retrieves the specified external data source from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the external data source. externalDataSourceName is the name of the external
-// data source.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the external data source.
+// externalDataSourceName - the name of the external data source.
 func (client Client) GetExternalDataSource(ctx context.Context, accountName string, databaseName string, externalDataSourceName string) (result USQLExternalDataSource, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.GetExternalDataSource")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetExternalDataSourcePreparer(ctx, accountName, databaseName, externalDataSourceName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "catalog.Client", "GetExternalDataSource", nil, "Failure preparing request")
@@ -688,8 +786,8 @@ func (client Client) GetExternalDataSourcePreparer(ctx context.Context, accountN
 // GetExternalDataSourceSender sends the GetExternalDataSource request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) GetExternalDataSourceSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetExternalDataSourceResponder handles the response to the GetExternalDataSource request. The method always
@@ -706,11 +804,22 @@ func (client Client) GetExternalDataSourceResponder(resp *http.Response) (result
 }
 
 // GetPackage retrieves the specified package from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the package. schemaName is the name of the schema containing the package.
-// packageName is the name of the package.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the package.
+// schemaName - the name of the schema containing the package.
+// packageName - the name of the package.
 func (client Client) GetPackage(ctx context.Context, accountName string, databaseName string, schemaName string, packageName string) (result USQLPackage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.GetPackage")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPackagePreparer(ctx, accountName, databaseName, schemaName, packageName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "catalog.Client", "GetPackage", nil, "Failure preparing request")
@@ -761,8 +870,8 @@ func (client Client) GetPackagePreparer(ctx context.Context, accountName string,
 // GetPackageSender sends the GetPackage request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) GetPackageSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetPackageResponder handles the response to the GetPackage request. The method always
@@ -779,11 +888,22 @@ func (client Client) GetPackageResponder(resp *http.Response) (result USQLPackag
 }
 
 // GetProcedure retrieves the specified procedure from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the procedure. schemaName is the name of the schema containing the
-// procedure. procedureName is the name of the procedure.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the procedure.
+// schemaName - the name of the schema containing the procedure.
+// procedureName - the name of the procedure.
 func (client Client) GetProcedure(ctx context.Context, accountName string, databaseName string, schemaName string, procedureName string) (result USQLProcedure, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.GetProcedure")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetProcedurePreparer(ctx, accountName, databaseName, schemaName, procedureName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "catalog.Client", "GetProcedure", nil, "Failure preparing request")
@@ -834,8 +954,8 @@ func (client Client) GetProcedurePreparer(ctx context.Context, accountName strin
 // GetProcedureSender sends the GetProcedure request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) GetProcedureSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetProcedureResponder handles the response to the GetProcedure request. The method always
@@ -852,10 +972,21 @@ func (client Client) GetProcedureResponder(resp *http.Response) (result USQLProc
 }
 
 // GetSchema retrieves the specified schema from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the schema. schemaName is the name of the schema.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the schema.
+// schemaName - the name of the schema.
 func (client Client) GetSchema(ctx context.Context, accountName string, databaseName string, schemaName string) (result USQLSchema, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.GetSchema")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetSchemaPreparer(ctx, accountName, databaseName, schemaName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "catalog.Client", "GetSchema", nil, "Failure preparing request")
@@ -905,8 +1036,8 @@ func (client Client) GetSchemaPreparer(ctx context.Context, accountName string, 
 // GetSchemaSender sends the GetSchema request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) GetSchemaSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetSchemaResponder handles the response to the GetSchema request. The method always
@@ -924,10 +1055,21 @@ func (client Client) GetSchemaResponder(resp *http.Response) (result USQLSchema,
 
 // GetSecret gets the specified secret in the specified database. This is deprecated and will be removed in the next
 // release. Please use GetCredential instead.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the secret. secretName is the name of the secret to get
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the secret.
+// secretName - the name of the secret to get
 func (client Client) GetSecret(ctx context.Context, accountName string, databaseName string, secretName string) (result USQLSecret, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.GetSecret")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetSecretPreparer(ctx, accountName, databaseName, secretName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "catalog.Client", "GetSecret", nil, "Failure preparing request")
@@ -977,8 +1119,8 @@ func (client Client) GetSecretPreparer(ctx context.Context, accountName string, 
 // GetSecretSender sends the GetSecret request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) GetSecretSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetSecretResponder handles the response to the GetSecret request. The method always
@@ -995,11 +1137,22 @@ func (client Client) GetSecretResponder(resp *http.Response) (result USQLSecret,
 }
 
 // GetTable retrieves the specified table from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the table. schemaName is the name of the schema containing the table.
-// tableName is the name of the table.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the table.
+// schemaName - the name of the schema containing the table.
+// tableName - the name of the table.
 func (client Client) GetTable(ctx context.Context, accountName string, databaseName string, schemaName string, tableName string) (result USQLTable, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.GetTable")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetTablePreparer(ctx, accountName, databaseName, schemaName, tableName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "catalog.Client", "GetTable", nil, "Failure preparing request")
@@ -1050,8 +1203,8 @@ func (client Client) GetTablePreparer(ctx context.Context, accountName string, d
 // GetTableSender sends the GetTable request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) GetTableSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetTableResponder handles the response to the GetTable request. The method always
@@ -1068,12 +1221,23 @@ func (client Client) GetTableResponder(resp *http.Response) (result USQLTable, e
 }
 
 // GetTablePartition retrieves the specified table partition from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the partition. schemaName is the name of the schema containing the
-// partition. tableName is the name of the table containing the partition. partitionName is the name of the table
-// partition.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the partition.
+// schemaName - the name of the schema containing the partition.
+// tableName - the name of the table containing the partition.
+// partitionName - the name of the table partition.
 func (client Client) GetTablePartition(ctx context.Context, accountName string, databaseName string, schemaName string, tableName string, partitionName string) (result USQLTablePartition, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.GetTablePartition")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetTablePartitionPreparer(ctx, accountName, databaseName, schemaName, tableName, partitionName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "catalog.Client", "GetTablePartition", nil, "Failure preparing request")
@@ -1125,8 +1289,8 @@ func (client Client) GetTablePartitionPreparer(ctx context.Context, accountName 
 // GetTablePartitionSender sends the GetTablePartition request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) GetTablePartitionSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetTablePartitionResponder handles the response to the GetTablePartition request. The method always
@@ -1143,12 +1307,23 @@ func (client Client) GetTablePartitionResponder(resp *http.Response) (result USQ
 }
 
 // GetTableStatistic retrieves the specified table statistics from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the statistics. schemaName is the name of the schema containing the
-// statistics. tableName is the name of the table containing the statistics. statisticsName is the name of the
-// table statistics.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the statistics.
+// schemaName - the name of the schema containing the statistics.
+// tableName - the name of the table containing the statistics.
+// statisticsName - the name of the table statistics.
 func (client Client) GetTableStatistic(ctx context.Context, accountName string, databaseName string, schemaName string, tableName string, statisticsName string) (result USQLTableStatistics, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.GetTableStatistic")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetTableStatisticPreparer(ctx, accountName, databaseName, schemaName, tableName, statisticsName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "catalog.Client", "GetTableStatistic", nil, "Failure preparing request")
@@ -1200,8 +1375,8 @@ func (client Client) GetTableStatisticPreparer(ctx context.Context, accountName 
 // GetTableStatisticSender sends the GetTableStatistic request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) GetTableStatisticSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetTableStatisticResponder handles the response to the GetTableStatistic request. The method always
@@ -1218,11 +1393,22 @@ func (client Client) GetTableStatisticResponder(resp *http.Response) (result USQ
 }
 
 // GetTableType retrieves the specified table type from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the table type. schemaName is the name of the schema containing the table
-// type. tableTypeName is the name of the table type to retrieve.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the table type.
+// schemaName - the name of the schema containing the table type.
+// tableTypeName - the name of the table type to retrieve.
 func (client Client) GetTableType(ctx context.Context, accountName string, databaseName string, schemaName string, tableTypeName string) (result USQLTableType, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.GetTableType")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetTableTypePreparer(ctx, accountName, databaseName, schemaName, tableTypeName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "catalog.Client", "GetTableType", nil, "Failure preparing request")
@@ -1273,8 +1459,8 @@ func (client Client) GetTableTypePreparer(ctx context.Context, accountName strin
 // GetTableTypeSender sends the GetTableType request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) GetTableTypeSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetTableTypeResponder handles the response to the GetTableType request. The method always
@@ -1291,11 +1477,22 @@ func (client Client) GetTableTypeResponder(resp *http.Response) (result USQLTabl
 }
 
 // GetTableValuedFunction retrieves the specified table valued function from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the table valued function. schemaName is the name of the schema containing
-// the table valued function. tableValuedFunctionName is the name of the tableValuedFunction.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the table valued function.
+// schemaName - the name of the schema containing the table valued function.
+// tableValuedFunctionName - the name of the tableValuedFunction.
 func (client Client) GetTableValuedFunction(ctx context.Context, accountName string, databaseName string, schemaName string, tableValuedFunctionName string) (result USQLTableValuedFunction, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.GetTableValuedFunction")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetTableValuedFunctionPreparer(ctx, accountName, databaseName, schemaName, tableValuedFunctionName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "catalog.Client", "GetTableValuedFunction", nil, "Failure preparing request")
@@ -1346,8 +1543,8 @@ func (client Client) GetTableValuedFunctionPreparer(ctx context.Context, account
 // GetTableValuedFunctionSender sends the GetTableValuedFunction request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) GetTableValuedFunctionSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetTableValuedFunctionResponder handles the response to the GetTableValuedFunction request. The method always
@@ -1364,11 +1561,22 @@ func (client Client) GetTableValuedFunctionResponder(resp *http.Response) (resul
 }
 
 // GetView retrieves the specified view from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the view. schemaName is the name of the schema containing the view. viewName
-// is the name of the view.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the view.
+// schemaName - the name of the schema containing the view.
+// viewName - the name of the view.
 func (client Client) GetView(ctx context.Context, accountName string, databaseName string, schemaName string, viewName string) (result USQLView, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.GetView")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetViewPreparer(ctx, accountName, databaseName, schemaName, viewName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "catalog.Client", "GetView", nil, "Failure preparing request")
@@ -1419,8 +1627,8 @@ func (client Client) GetViewPreparer(ctx context.Context, accountName string, da
 // GetViewSender sends the GetView request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) GetViewSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetViewResponder handles the response to the GetView request. The method always
@@ -1437,10 +1645,21 @@ func (client Client) GetViewResponder(resp *http.Response) (result USQLView, err
 }
 
 // GrantACL grants an access control list (ACL) entry to the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. parameters is
-// parameters supplied to create or update an access control list (ACL) entry for a Data Lake Analytics catalog.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// parameters - parameters supplied to create or update an access control list (ACL) entry for a Data Lake
+// Analytics catalog.
 func (client Client) GrantACL(ctx context.Context, accountName string, parameters ACLCreateOrUpdateParameters) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.GrantACL")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameters,
 			Constraints: []validation.Constraint{{Target: "parameters.PrincipalID", Name: validation.Null, Rule: true, Chain: nil}}}}); err != nil {
@@ -1482,7 +1701,7 @@ func (client Client) GrantACLPreparer(ctx context.Context, accountName string, p
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithCustomBaseURL("https://{accountName}.{adlaCatalogDnsSuffix}", urlParameters),
 		autorest.WithPath("/catalog/usql/acl"),
@@ -1494,8 +1713,8 @@ func (client Client) GrantACLPreparer(ctx context.Context, accountName string, p
 // GrantACLSender sends the GrantACL request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) GrantACLSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GrantACLResponder handles the response to the GrantACL request. The method always
@@ -1511,11 +1730,21 @@ func (client Client) GrantACLResponder(resp *http.Response) (result autorest.Res
 }
 
 // GrantACLToDatabase grants an access control list (ACL) entry to the database from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database. parameters is parameters supplied to create or update an access control list (ACL)
-// entry for a database.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database.
+// parameters - parameters supplied to create or update an access control list (ACL) entry for a database.
 func (client Client) GrantACLToDatabase(ctx context.Context, accountName string, databaseName string, parameters ACLCreateOrUpdateParameters) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.GrantACLToDatabase")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameters,
 			Constraints: []validation.Constraint{{Target: "parameters.PrincipalID", Name: validation.Null, Rule: true, Chain: nil}}}}); err != nil {
@@ -1561,7 +1790,7 @@ func (client Client) GrantACLToDatabasePreparer(ctx context.Context, accountName
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithCustomBaseURL("https://{accountName}.{adlaCatalogDnsSuffix}", urlParameters),
 		autorest.WithPathParameters("/catalog/usql/databases/{databaseName}/acl", pathParameters),
@@ -1573,8 +1802,8 @@ func (client Client) GrantACLToDatabasePreparer(ctx context.Context, accountName
 // GrantACLToDatabaseSender sends the GrantACLToDatabase request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) GrantACLToDatabaseSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GrantACLToDatabaseResponder handles the response to the GrantACLToDatabase request. The method always
@@ -1590,16 +1819,29 @@ func (client Client) GrantACLToDatabaseResponder(resp *http.Response) (result au
 }
 
 // ListAcls retrieves the list of access control list (ACL) entries for the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. filter is oData
-// filter. Optional. top is the number of items to return. Optional. skip is the number of items to skip over
-// before returning elements. Optional. selectParameter is oData Select statement. Limits the properties on each
-// entry to just those requested, e.g. Categories?$select=CategoryName,Description. Optional. orderby is orderBy
-// clause. One or more comma-separated expressions with an optional "asc" (the default) or "desc" depending on the
-// order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc. Optional. count is the Boolean
-// value of true or false to request a count of the matching resources included with the resources in the response,
-// e.g. Categories?$count=true. Optional.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// filter - oData filter. Optional.
+// top - the number of items to return. Optional.
+// skip - the number of items to skip over before returning elements. Optional.
+// selectParameter - oData Select statement. Limits the properties on each entry to just those requested, e.g.
+// Categories?$select=CategoryName,Description. Optional.
+// orderby - orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
+// "desc" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc.
+// Optional.
+// count - the Boolean value of true or false to request a count of the matching resources included with the
+// resources in the response, e.g. Categories?$count=true. Optional.
 func (client Client) ListAcls(ctx context.Context, accountName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result ACLListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListAcls")
+		defer func() {
+			sc := -1
+			if result.al.Response.Response != nil {
+				sc = result.al.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
@@ -1673,8 +1915,8 @@ func (client Client) ListAclsPreparer(ctx context.Context, accountName string, f
 // ListAclsSender sends the ListAcls request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListAclsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListAclsResponder handles the response to the ListAcls request. The method always
@@ -1691,8 +1933,8 @@ func (client Client) ListAclsResponder(resp *http.Response) (result ACLList, err
 }
 
 // listAclsNextResults retrieves the next set of results, if any.
-func (client Client) listAclsNextResults(lastResults ACLList) (result ACLList, err error) {
-	req, err := lastResults.aCLListPreparer()
+func (client Client) listAclsNextResults(ctx context.Context, lastResults ACLList) (result ACLList, err error) {
+	req, err := lastResults.aCLListPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "catalog.Client", "listAclsNextResults", nil, "Failure preparing next results request")
 	}
@@ -1713,23 +1955,46 @@ func (client Client) listAclsNextResults(lastResults ACLList) (result ACLList, e
 
 // ListAclsComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListAclsComplete(ctx context.Context, accountName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result ACLListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListAcls")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListAcls(ctx, accountName, filter, top, skip, selectParameter, orderby, count)
 	return
 }
 
 // ListAclsByDatabase retrieves the list of access control list (ACL) entries for the database from the Data Lake
 // Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database. filter is oData filter. Optional. top is the number of items to return. Optional. skip
-// is the number of items to skip over before returning elements. Optional. selectParameter is oData Select
-// statement. Limits the properties on each entry to just those requested, e.g.
-// Categories?$select=CategoryName,Description. Optional. orderby is orderBy clause. One or more comma-separated
-// expressions with an optional "asc" (the default) or "desc" depending on the order you'd like the values sorted,
-// e.g. Categories?$orderby=CategoryName desc. Optional. count is the Boolean value of true or false to request a
-// count of the matching resources included with the resources in the response, e.g. Categories?$count=true.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database.
+// filter - oData filter. Optional.
+// top - the number of items to return. Optional.
+// skip - the number of items to skip over before returning elements. Optional.
+// selectParameter - oData Select statement. Limits the properties on each entry to just those requested, e.g.
+// Categories?$select=CategoryName,Description. Optional.
+// orderby - orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
+// "desc" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc.
 // Optional.
+// count - the Boolean value of true or false to request a count of the matching resources included with the
+// resources in the response, e.g. Categories?$count=true. Optional.
 func (client Client) ListAclsByDatabase(ctx context.Context, accountName string, databaseName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result ACLListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListAclsByDatabase")
+		defer func() {
+			sc := -1
+			if result.al.Response.Response != nil {
+				sc = result.al.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
@@ -1807,8 +2072,8 @@ func (client Client) ListAclsByDatabasePreparer(ctx context.Context, accountName
 // ListAclsByDatabaseSender sends the ListAclsByDatabase request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListAclsByDatabaseSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListAclsByDatabaseResponder handles the response to the ListAclsByDatabase request. The method always
@@ -1825,8 +2090,8 @@ func (client Client) ListAclsByDatabaseResponder(resp *http.Response) (result AC
 }
 
 // listAclsByDatabaseNextResults retrieves the next set of results, if any.
-func (client Client) listAclsByDatabaseNextResults(lastResults ACLList) (result ACLList, err error) {
-	req, err := lastResults.aCLListPreparer()
+func (client Client) listAclsByDatabaseNextResults(ctx context.Context, lastResults ACLList) (result ACLList, err error) {
+	req, err := lastResults.aCLListPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "catalog.Client", "listAclsByDatabaseNextResults", nil, "Failure preparing next results request")
 	}
@@ -1847,22 +2112,45 @@ func (client Client) listAclsByDatabaseNextResults(lastResults ACLList) (result 
 
 // ListAclsByDatabaseComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListAclsByDatabaseComplete(ctx context.Context, accountName string, databaseName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result ACLListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListAclsByDatabase")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListAclsByDatabase(ctx, accountName, databaseName, filter, top, skip, selectParameter, orderby, count)
 	return
 }
 
 // ListAssemblies retrieves the list of assemblies from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the assembly. filter is oData filter. Optional. top is the number of items
-// to return. Optional. skip is the number of items to skip over before returning elements. Optional.
-// selectParameter is oData Select statement. Limits the properties on each entry to just those requested, e.g.
-// Categories?$select=CategoryName,Description. Optional. orderby is orderBy clause. One or more comma-separated
-// expressions with an optional "asc" (the default) or "desc" depending on the order you'd like the values sorted,
-// e.g. Categories?$orderby=CategoryName desc. Optional. count is the Boolean value of true or false to request a
-// count of the matching resources included with the resources in the response, e.g. Categories?$count=true.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the assembly.
+// filter - oData filter. Optional.
+// top - the number of items to return. Optional.
+// skip - the number of items to skip over before returning elements. Optional.
+// selectParameter - oData Select statement. Limits the properties on each entry to just those requested, e.g.
+// Categories?$select=CategoryName,Description. Optional.
+// orderby - orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
+// "desc" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc.
 // Optional.
+// count - the Boolean value of true or false to request a count of the matching resources included with the
+// resources in the response, e.g. Categories?$count=true. Optional.
 func (client Client) ListAssemblies(ctx context.Context, accountName string, databaseName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLAssemblyListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListAssemblies")
+		defer func() {
+			sc := -1
+			if result.ual.Response.Response != nil {
+				sc = result.ual.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
@@ -1940,8 +2228,8 @@ func (client Client) ListAssembliesPreparer(ctx context.Context, accountName str
 // ListAssembliesSender sends the ListAssemblies request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListAssembliesSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListAssembliesResponder handles the response to the ListAssemblies request. The method always
@@ -1958,8 +2246,8 @@ func (client Client) ListAssembliesResponder(resp *http.Response) (result USQLAs
 }
 
 // listAssembliesNextResults retrieves the next set of results, if any.
-func (client Client) listAssembliesNextResults(lastResults USQLAssemblyList) (result USQLAssemblyList, err error) {
-	req, err := lastResults.uSQLAssemblyListPreparer()
+func (client Client) listAssembliesNextResults(ctx context.Context, lastResults USQLAssemblyList) (result USQLAssemblyList, err error) {
+	req, err := lastResults.uSQLAssemblyListPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "catalog.Client", "listAssembliesNextResults", nil, "Failure preparing next results request")
 	}
@@ -1980,22 +2268,45 @@ func (client Client) listAssembliesNextResults(lastResults USQLAssemblyList) (re
 
 // ListAssembliesComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListAssembliesComplete(ctx context.Context, accountName string, databaseName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLAssemblyListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListAssemblies")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListAssemblies(ctx, accountName, databaseName, filter, top, skip, selectParameter, orderby, count)
 	return
 }
 
 // ListCredentials retrieves the list of credentials from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the schema. filter is oData filter. Optional. top is the number of items to
-// return. Optional. skip is the number of items to skip over before returning elements. Optional. selectParameter
-// is oData Select statement. Limits the properties on each entry to just those requested, e.g.
-// Categories?$select=CategoryName,Description. Optional. orderby is orderBy clause. One or more comma-separated
-// expressions with an optional "asc" (the default) or "desc" depending on the order you'd like the values sorted,
-// e.g. Categories?$orderby=CategoryName desc. Optional. count is the Boolean value of true or false to request a
-// count of the matching resources included with the resources in the response, e.g. Categories?$count=true.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the schema.
+// filter - oData filter. Optional.
+// top - the number of items to return. Optional.
+// skip - the number of items to skip over before returning elements. Optional.
+// selectParameter - oData Select statement. Limits the properties on each entry to just those requested, e.g.
+// Categories?$select=CategoryName,Description. Optional.
+// orderby - orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
+// "desc" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc.
 // Optional.
+// count - the Boolean value of true or false to request a count of the matching resources included with the
+// resources in the response, e.g. Categories?$count=true. Optional.
 func (client Client) ListCredentials(ctx context.Context, accountName string, databaseName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLCredentialListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListCredentials")
+		defer func() {
+			sc := -1
+			if result.ucl.Response.Response != nil {
+				sc = result.ucl.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
@@ -2073,8 +2384,8 @@ func (client Client) ListCredentialsPreparer(ctx context.Context, accountName st
 // ListCredentialsSender sends the ListCredentials request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListCredentialsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListCredentialsResponder handles the response to the ListCredentials request. The method always
@@ -2091,8 +2402,8 @@ func (client Client) ListCredentialsResponder(resp *http.Response) (result USQLC
 }
 
 // listCredentialsNextResults retrieves the next set of results, if any.
-func (client Client) listCredentialsNextResults(lastResults USQLCredentialList) (result USQLCredentialList, err error) {
-	req, err := lastResults.uSQLCredentialListPreparer()
+func (client Client) listCredentialsNextResults(ctx context.Context, lastResults USQLCredentialList) (result USQLCredentialList, err error) {
+	req, err := lastResults.uSQLCredentialListPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "catalog.Client", "listCredentialsNextResults", nil, "Failure preparing next results request")
 	}
@@ -2113,21 +2424,44 @@ func (client Client) listCredentialsNextResults(lastResults USQLCredentialList) 
 
 // ListCredentialsComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListCredentialsComplete(ctx context.Context, accountName string, databaseName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLCredentialListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListCredentials")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListCredentials(ctx, accountName, databaseName, filter, top, skip, selectParameter, orderby, count)
 	return
 }
 
 // ListDatabases retrieves the list of databases from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. filter is oData
-// filter. Optional. top is the number of items to return. Optional. skip is the number of items to skip over
-// before returning elements. Optional. selectParameter is oData Select statement. Limits the properties on each
-// entry to just those requested, e.g. Categories?$select=CategoryName,Description. Optional. orderby is orderBy
-// clause. One or more comma-separated expressions with an optional "asc" (the default) or "desc" depending on the
-// order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc. Optional. count is the Boolean
-// value of true or false to request a count of the matching resources included with the resources in the response,
-// e.g. Categories?$count=true. Optional.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// filter - oData filter. Optional.
+// top - the number of items to return. Optional.
+// skip - the number of items to skip over before returning elements. Optional.
+// selectParameter - oData Select statement. Limits the properties on each entry to just those requested, e.g.
+// Categories?$select=CategoryName,Description. Optional.
+// orderby - orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
+// "desc" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc.
+// Optional.
+// count - the Boolean value of true or false to request a count of the matching resources included with the
+// resources in the response, e.g. Categories?$count=true. Optional.
 func (client Client) ListDatabases(ctx context.Context, accountName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLDatabaseListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListDatabases")
+		defer func() {
+			sc := -1
+			if result.udl.Response.Response != nil {
+				sc = result.udl.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
@@ -2201,8 +2535,8 @@ func (client Client) ListDatabasesPreparer(ctx context.Context, accountName stri
 // ListDatabasesSender sends the ListDatabases request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListDatabasesSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListDatabasesResponder handles the response to the ListDatabases request. The method always
@@ -2219,8 +2553,8 @@ func (client Client) ListDatabasesResponder(resp *http.Response) (result USQLDat
 }
 
 // listDatabasesNextResults retrieves the next set of results, if any.
-func (client Client) listDatabasesNextResults(lastResults USQLDatabaseList) (result USQLDatabaseList, err error) {
-	req, err := lastResults.uSQLDatabaseListPreparer()
+func (client Client) listDatabasesNextResults(ctx context.Context, lastResults USQLDatabaseList) (result USQLDatabaseList, err error) {
+	req, err := lastResults.uSQLDatabaseListPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "catalog.Client", "listDatabasesNextResults", nil, "Failure preparing next results request")
 	}
@@ -2241,22 +2575,45 @@ func (client Client) listDatabasesNextResults(lastResults USQLDatabaseList) (res
 
 // ListDatabasesComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListDatabasesComplete(ctx context.Context, accountName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLDatabaseListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListDatabases")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListDatabases(ctx, accountName, filter, top, skip, selectParameter, orderby, count)
 	return
 }
 
 // ListExternalDataSources retrieves the list of external data sources from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the external data sources. filter is oData filter. Optional. top is the
-// number of items to return. Optional. skip is the number of items to skip over before returning elements.
-// Optional. selectParameter is oData Select statement. Limits the properties on each entry to just those
-// requested, e.g. Categories?$select=CategoryName,Description. Optional. orderby is orderBy clause. One or more
-// comma-separated expressions with an optional "asc" (the default) or "desc" depending on the order you'd like the
-// values sorted, e.g. Categories?$orderby=CategoryName desc. Optional. count is the Boolean value of true or false
-// to request a count of the matching resources included with the resources in the response, e.g.
-// Categories?$count=true. Optional.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the external data sources.
+// filter - oData filter. Optional.
+// top - the number of items to return. Optional.
+// skip - the number of items to skip over before returning elements. Optional.
+// selectParameter - oData Select statement. Limits the properties on each entry to just those requested, e.g.
+// Categories?$select=CategoryName,Description. Optional.
+// orderby - orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
+// "desc" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc.
+// Optional.
+// count - the Boolean value of true or false to request a count of the matching resources included with the
+// resources in the response, e.g. Categories?$count=true. Optional.
 func (client Client) ListExternalDataSources(ctx context.Context, accountName string, databaseName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLExternalDataSourceListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListExternalDataSources")
+		defer func() {
+			sc := -1
+			if result.uedsl.Response.Response != nil {
+				sc = result.uedsl.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
@@ -2334,8 +2691,8 @@ func (client Client) ListExternalDataSourcesPreparer(ctx context.Context, accoun
 // ListExternalDataSourcesSender sends the ListExternalDataSources request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListExternalDataSourcesSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListExternalDataSourcesResponder handles the response to the ListExternalDataSources request. The method always
@@ -2352,8 +2709,8 @@ func (client Client) ListExternalDataSourcesResponder(resp *http.Response) (resu
 }
 
 // listExternalDataSourcesNextResults retrieves the next set of results, if any.
-func (client Client) listExternalDataSourcesNextResults(lastResults USQLExternalDataSourceList) (result USQLExternalDataSourceList, err error) {
-	req, err := lastResults.uSQLExternalDataSourceListPreparer()
+func (client Client) listExternalDataSourcesNextResults(ctx context.Context, lastResults USQLExternalDataSourceList) (result USQLExternalDataSourceList, err error) {
+	req, err := lastResults.uSQLExternalDataSourceListPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "catalog.Client", "listExternalDataSourcesNextResults", nil, "Failure preparing next results request")
 	}
@@ -2374,22 +2731,46 @@ func (client Client) listExternalDataSourcesNextResults(lastResults USQLExternal
 
 // ListExternalDataSourcesComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListExternalDataSourcesComplete(ctx context.Context, accountName string, databaseName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLExternalDataSourceListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListExternalDataSources")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListExternalDataSources(ctx, accountName, databaseName, filter, top, skip, selectParameter, orderby, count)
 	return
 }
 
 // ListPackages retrieves the list of packages from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the packages. schemaName is the name of the schema containing the packages.
-// filter is oData filter. Optional. top is the number of items to return. Optional. skip is the number of items to
-// skip over before returning elements. Optional. selectParameter is oData Select statement. Limits the properties
-// on each entry to just those requested, e.g. Categories?$select=CategoryName,Description. Optional. orderby is
-// orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or "desc" depending
-// on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc. Optional. count is the
-// Boolean value of true or false to request a count of the matching resources included with the resources in the
-// response, e.g. Categories?$count=true. Optional.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the packages.
+// schemaName - the name of the schema containing the packages.
+// filter - oData filter. Optional.
+// top - the number of items to return. Optional.
+// skip - the number of items to skip over before returning elements. Optional.
+// selectParameter - oData Select statement. Limits the properties on each entry to just those requested, e.g.
+// Categories?$select=CategoryName,Description. Optional.
+// orderby - orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
+// "desc" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc.
+// Optional.
+// count - the Boolean value of true or false to request a count of the matching resources included with the
+// resources in the response, e.g. Categories?$count=true. Optional.
 func (client Client) ListPackages(ctx context.Context, accountName string, databaseName string, schemaName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLPackageListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListPackages")
+		defer func() {
+			sc := -1
+			if result.upl.Response.Response != nil {
+				sc = result.upl.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
@@ -2468,8 +2849,8 @@ func (client Client) ListPackagesPreparer(ctx context.Context, accountName strin
 // ListPackagesSender sends the ListPackages request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListPackagesSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListPackagesResponder handles the response to the ListPackages request. The method always
@@ -2486,8 +2867,8 @@ func (client Client) ListPackagesResponder(resp *http.Response) (result USQLPack
 }
 
 // listPackagesNextResults retrieves the next set of results, if any.
-func (client Client) listPackagesNextResults(lastResults USQLPackageList) (result USQLPackageList, err error) {
-	req, err := lastResults.uSQLPackageListPreparer()
+func (client Client) listPackagesNextResults(ctx context.Context, lastResults USQLPackageList) (result USQLPackageList, err error) {
+	req, err := lastResults.uSQLPackageListPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "catalog.Client", "listPackagesNextResults", nil, "Failure preparing next results request")
 	}
@@ -2508,22 +2889,46 @@ func (client Client) listPackagesNextResults(lastResults USQLPackageList) (resul
 
 // ListPackagesComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListPackagesComplete(ctx context.Context, accountName string, databaseName string, schemaName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLPackageListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListPackages")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListPackages(ctx, accountName, databaseName, schemaName, filter, top, skip, selectParameter, orderby, count)
 	return
 }
 
 // ListProcedures retrieves the list of procedures from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the procedures. schemaName is the name of the schema containing the
-// procedures. filter is oData filter. Optional. top is the number of items to return. Optional. skip is the number
-// of items to skip over before returning elements. Optional. selectParameter is oData Select statement. Limits the
-// properties on each entry to just those requested, e.g. Categories?$select=CategoryName,Description. Optional.
-// orderby is orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the procedures.
+// schemaName - the name of the schema containing the procedures.
+// filter - oData filter. Optional.
+// top - the number of items to return. Optional.
+// skip - the number of items to skip over before returning elements. Optional.
+// selectParameter - oData Select statement. Limits the properties on each entry to just those requested, e.g.
+// Categories?$select=CategoryName,Description. Optional.
+// orderby - orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
 // "desc" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc.
-// Optional. count is the Boolean value of true or false to request a count of the matching resources included with
-// the resources in the response, e.g. Categories?$count=true. Optional.
+// Optional.
+// count - the Boolean value of true or false to request a count of the matching resources included with the
+// resources in the response, e.g. Categories?$count=true. Optional.
 func (client Client) ListProcedures(ctx context.Context, accountName string, databaseName string, schemaName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLProcedureListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListProcedures")
+		defer func() {
+			sc := -1
+			if result.upl.Response.Response != nil {
+				sc = result.upl.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
@@ -2602,8 +3007,8 @@ func (client Client) ListProceduresPreparer(ctx context.Context, accountName str
 // ListProceduresSender sends the ListProcedures request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListProceduresSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListProceduresResponder handles the response to the ListProcedures request. The method always
@@ -2620,8 +3025,8 @@ func (client Client) ListProceduresResponder(resp *http.Response) (result USQLPr
 }
 
 // listProceduresNextResults retrieves the next set of results, if any.
-func (client Client) listProceduresNextResults(lastResults USQLProcedureList) (result USQLProcedureList, err error) {
-	req, err := lastResults.uSQLProcedureListPreparer()
+func (client Client) listProceduresNextResults(ctx context.Context, lastResults USQLProcedureList) (result USQLProcedureList, err error) {
+	req, err := lastResults.uSQLProcedureListPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "catalog.Client", "listProceduresNextResults", nil, "Failure preparing next results request")
 	}
@@ -2642,22 +3047,45 @@ func (client Client) listProceduresNextResults(lastResults USQLProcedureList) (r
 
 // ListProceduresComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListProceduresComplete(ctx context.Context, accountName string, databaseName string, schemaName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLProcedureListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListProcedures")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListProcedures(ctx, accountName, databaseName, schemaName, filter, top, skip, selectParameter, orderby, count)
 	return
 }
 
 // ListSchemas retrieves the list of schemas from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the schema. filter is oData filter. Optional. top is the number of items to
-// return. Optional. skip is the number of items to skip over before returning elements. Optional. selectParameter
-// is oData Select statement. Limits the properties on each entry to just those requested, e.g.
-// Categories?$select=CategoryName,Description. Optional. orderby is orderBy clause. One or more comma-separated
-// expressions with an optional "asc" (the default) or "desc" depending on the order you'd like the values sorted,
-// e.g. Categories?$orderby=CategoryName desc. Optional. count is the Boolean value of true or false to request a
-// count of the matching resources included with the resources in the response, e.g. Categories?$count=true.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the schema.
+// filter - oData filter. Optional.
+// top - the number of items to return. Optional.
+// skip - the number of items to skip over before returning elements. Optional.
+// selectParameter - oData Select statement. Limits the properties on each entry to just those requested, e.g.
+// Categories?$select=CategoryName,Description. Optional.
+// orderby - orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
+// "desc" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc.
 // Optional.
+// count - the Boolean value of true or false to request a count of the matching resources included with the
+// resources in the response, e.g. Categories?$count=true. Optional.
 func (client Client) ListSchemas(ctx context.Context, accountName string, databaseName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLSchemaListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListSchemas")
+		defer func() {
+			sc := -1
+			if result.usl.Response.Response != nil {
+				sc = result.usl.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
@@ -2735,8 +3163,8 @@ func (client Client) ListSchemasPreparer(ctx context.Context, accountName string
 // ListSchemasSender sends the ListSchemas request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListSchemasSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListSchemasResponder handles the response to the ListSchemas request. The method always
@@ -2753,8 +3181,8 @@ func (client Client) ListSchemasResponder(resp *http.Response) (result USQLSchem
 }
 
 // listSchemasNextResults retrieves the next set of results, if any.
-func (client Client) listSchemasNextResults(lastResults USQLSchemaList) (result USQLSchemaList, err error) {
-	req, err := lastResults.uSQLSchemaListPreparer()
+func (client Client) listSchemasNextResults(ctx context.Context, lastResults USQLSchemaList) (result USQLSchemaList, err error) {
+	req, err := lastResults.uSQLSchemaListPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "catalog.Client", "listSchemasNextResults", nil, "Failure preparing next results request")
 	}
@@ -2775,23 +3203,207 @@ func (client Client) listSchemasNextResults(lastResults USQLSchemaList) (result 
 
 // ListSchemasComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListSchemasComplete(ctx context.Context, accountName string, databaseName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLSchemaListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListSchemas")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListSchemas(ctx, accountName, databaseName, filter, top, skip, selectParameter, orderby, count)
 	return
 }
 
+// ListTableFragments retrieves the list of table fragments from the Data Lake Analytics catalog.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the table fragments.
+// schemaName - the name of the schema containing the table fragments.
+// tableName - the name of the table containing the table fragments.
+// filter - oData filter. Optional.
+// top - the number of items to return. Optional.
+// skip - the number of items to skip over before returning elements. Optional.
+// selectParameter - oData Select statement. Limits the properties on each entry to just those requested, e.g.
+// Categories?$select=CategoryName,Description. Optional.
+// orderby - orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
+// "desc" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc.
+// Optional.
+// count - the Boolean value of true or false to request a count of the matching resources included with the
+// resources in the response, e.g. Categories?$count=true. Optional.
+func (client Client) ListTableFragments(ctx context.Context, accountName string, databaseName string, schemaName string, tableName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLTableFragmentListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListTableFragments")
+		defer func() {
+			sc := -1
+			if result.utfl.Response.Response != nil {
+				sc = result.utfl.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	if err := validation.Validate([]validation.Validation{
+		{TargetValue: top,
+			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
+				Chain: []validation.Constraint{{Target: "top", Name: validation.InclusiveMinimum, Rule: 1, Chain: nil}}}}},
+		{TargetValue: skip,
+			Constraints: []validation.Constraint{{Target: "skip", Name: validation.Null, Rule: false,
+				Chain: []validation.Constraint{{Target: "skip", Name: validation.InclusiveMinimum, Rule: 1, Chain: nil}}}}}}); err != nil {
+		return result, validation.NewError("catalog.Client", "ListTableFragments", err.Error())
+	}
+
+	result.fn = client.listTableFragmentsNextResults
+	req, err := client.ListTableFragmentsPreparer(ctx, accountName, databaseName, schemaName, tableName, filter, top, skip, selectParameter, orderby, count)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "catalog.Client", "ListTableFragments", nil, "Failure preparing request")
+		return
+	}
+
+	resp, err := client.ListTableFragmentsSender(req)
+	if err != nil {
+		result.utfl.Response = autorest.Response{Response: resp}
+		err = autorest.NewErrorWithError(err, "catalog.Client", "ListTableFragments", resp, "Failure sending request")
+		return
+	}
+
+	result.utfl, err = client.ListTableFragmentsResponder(resp)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "catalog.Client", "ListTableFragments", resp, "Failure responding to request")
+	}
+
+	return
+}
+
+// ListTableFragmentsPreparer prepares the ListTableFragments request.
+func (client Client) ListTableFragmentsPreparer(ctx context.Context, accountName string, databaseName string, schemaName string, tableName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (*http.Request, error) {
+	urlParameters := map[string]interface{}{
+		"accountName":          accountName,
+		"adlaCatalogDnsSuffix": client.AdlaCatalogDNSSuffix,
+	}
+
+	pathParameters := map[string]interface{}{
+		"databaseName": autorest.Encode("path", databaseName),
+		"schemaName":   autorest.Encode("path", schemaName),
+		"tableName":    autorest.Encode("path", tableName),
+	}
+
+	const APIVersion = "2016-11-01"
+	queryParameters := map[string]interface{}{
+		"api-version": APIVersion,
+	}
+	if len(filter) > 0 {
+		queryParameters["$filter"] = autorest.Encode("query", filter)
+	}
+	if top != nil {
+		queryParameters["$top"] = autorest.Encode("query", *top)
+	}
+	if skip != nil {
+		queryParameters["$skip"] = autorest.Encode("query", *skip)
+	}
+	if len(selectParameter) > 0 {
+		queryParameters["$select"] = autorest.Encode("query", selectParameter)
+	}
+	if len(orderby) > 0 {
+		queryParameters["$orderby"] = autorest.Encode("query", orderby)
+	}
+	if count != nil {
+		queryParameters["$count"] = autorest.Encode("query", *count)
+	}
+
+	preparer := autorest.CreatePreparer(
+		autorest.AsGet(),
+		autorest.WithCustomBaseURL("https://{accountName}.{adlaCatalogDnsSuffix}", urlParameters),
+		autorest.WithPathParameters("/catalog/usql/databases/{databaseName}/schemas/{schemaName}/tables/{tableName}/tablefragments", pathParameters),
+		autorest.WithQueryParameters(queryParameters))
+	return preparer.Prepare((&http.Request{}).WithContext(ctx))
+}
+
+// ListTableFragmentsSender sends the ListTableFragments request. The method will close the
+// http.Response Body if it receives an error.
+func (client Client) ListTableFragmentsSender(req *http.Request) (*http.Response, error) {
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
+}
+
+// ListTableFragmentsResponder handles the response to the ListTableFragments request. The method always
+// closes the http.Response Body.
+func (client Client) ListTableFragmentsResponder(resp *http.Response) (result USQLTableFragmentList, err error) {
+	err = autorest.Respond(
+		resp,
+		client.ByInspecting(),
+		azure.WithErrorUnlessStatusCode(http.StatusOK),
+		autorest.ByUnmarshallingJSON(&result),
+		autorest.ByClosing())
+	result.Response = autorest.Response{Response: resp}
+	return
+}
+
+// listTableFragmentsNextResults retrieves the next set of results, if any.
+func (client Client) listTableFragmentsNextResults(ctx context.Context, lastResults USQLTableFragmentList) (result USQLTableFragmentList, err error) {
+	req, err := lastResults.uSQLTableFragmentListPreparer(ctx)
+	if err != nil {
+		return result, autorest.NewErrorWithError(err, "catalog.Client", "listTableFragmentsNextResults", nil, "Failure preparing next results request")
+	}
+	if req == nil {
+		return
+	}
+	resp, err := client.ListTableFragmentsSender(req)
+	if err != nil {
+		result.Response = autorest.Response{Response: resp}
+		return result, autorest.NewErrorWithError(err, "catalog.Client", "listTableFragmentsNextResults", resp, "Failure sending next results request")
+	}
+	result, err = client.ListTableFragmentsResponder(resp)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "catalog.Client", "listTableFragmentsNextResults", resp, "Failure responding to next results request")
+	}
+	return
+}
+
+// ListTableFragmentsComplete enumerates all values, automatically crossing page boundaries as required.
+func (client Client) ListTableFragmentsComplete(ctx context.Context, accountName string, databaseName string, schemaName string, tableName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLTableFragmentListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListTableFragments")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	result.page, err = client.ListTableFragments(ctx, accountName, databaseName, schemaName, tableName, filter, top, skip, selectParameter, orderby, count)
+	return
+}
+
 // ListTablePartitions retrieves the list of table partitions from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the partitions. schemaName is the name of the schema containing the
-// partitions. tableName is the name of the table containing the partitions. filter is oData filter. Optional. top
-// is the number of items to return. Optional. skip is the number of items to skip over before returning elements.
-// Optional. selectParameter is oData Select statement. Limits the properties on each entry to just those
-// requested, e.g. Categories?$select=CategoryName,Description. Optional. orderby is orderBy clause. One or more
-// comma-separated expressions with an optional "asc" (the default) or "desc" depending on the order you'd like the
-// values sorted, e.g. Categories?$orderby=CategoryName desc. Optional. count is the Boolean value of true or false
-// to request a count of the matching resources included with the resources in the response, e.g.
-// Categories?$count=true. Optional.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the partitions.
+// schemaName - the name of the schema containing the partitions.
+// tableName - the name of the table containing the partitions.
+// filter - oData filter. Optional.
+// top - the number of items to return. Optional.
+// skip - the number of items to skip over before returning elements. Optional.
+// selectParameter - oData Select statement. Limits the properties on each entry to just those requested, e.g.
+// Categories?$select=CategoryName,Description. Optional.
+// orderby - orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
+// "desc" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc.
+// Optional.
+// count - the Boolean value of true or false to request a count of the matching resources included with the
+// resources in the response, e.g. Categories?$count=true. Optional.
 func (client Client) ListTablePartitions(ctx context.Context, accountName string, databaseName string, schemaName string, tableName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLTablePartitionListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListTablePartitions")
+		defer func() {
+			sc := -1
+			if result.utpl.Response.Response != nil {
+				sc = result.utpl.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
@@ -2871,8 +3483,8 @@ func (client Client) ListTablePartitionsPreparer(ctx context.Context, accountNam
 // ListTablePartitionsSender sends the ListTablePartitions request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListTablePartitionsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListTablePartitionsResponder handles the response to the ListTablePartitions request. The method always
@@ -2889,8 +3501,8 @@ func (client Client) ListTablePartitionsResponder(resp *http.Response) (result U
 }
 
 // listTablePartitionsNextResults retrieves the next set of results, if any.
-func (client Client) listTablePartitionsNextResults(lastResults USQLTablePartitionList) (result USQLTablePartitionList, err error) {
-	req, err := lastResults.uSQLTablePartitionListPreparer()
+func (client Client) listTablePartitionsNextResults(ctx context.Context, lastResults USQLTablePartitionList) (result USQLTablePartitionList, err error) {
+	req, err := lastResults.uSQLTablePartitionListPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "catalog.Client", "listTablePartitionsNextResults", nil, "Failure preparing next results request")
 	}
@@ -2911,24 +3523,49 @@ func (client Client) listTablePartitionsNextResults(lastResults USQLTablePartiti
 
 // ListTablePartitionsComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListTablePartitionsComplete(ctx context.Context, accountName string, databaseName string, schemaName string, tableName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLTablePartitionListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListTablePartitions")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListTablePartitions(ctx, accountName, databaseName, schemaName, tableName, filter, top, skip, selectParameter, orderby, count)
 	return
 }
 
 // ListTables retrieves the list of tables from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the tables. schemaName is the name of the schema containing the tables.
-// filter is oData filter. Optional. top is the number of items to return. Optional. skip is the number of items to
-// skip over before returning elements. Optional. selectParameter is oData Select statement. Limits the properties
-// on each entry to just those requested, e.g. Categories?$select=CategoryName,Description. Optional. orderby is
-// orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or "desc" depending
-// on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc. Optional. count is the
-// Boolean value of true or false to request a count of the matching resources included with the resources in the
-// response, e.g. Categories?$count=true. Optional. basic is the basic switch indicates what level of information
-// to return when listing tables. When basic is true, only database_name, schema_name, table_name and version are
-// returned for each table, otherwise all table metadata is returned. By default, it is false. Optional.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the tables.
+// schemaName - the name of the schema containing the tables.
+// filter - oData filter. Optional.
+// top - the number of items to return. Optional.
+// skip - the number of items to skip over before returning elements. Optional.
+// selectParameter - oData Select statement. Limits the properties on each entry to just those requested, e.g.
+// Categories?$select=CategoryName,Description. Optional.
+// orderby - orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
+// "desc" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc.
+// Optional.
+// count - the Boolean value of true or false to request a count of the matching resources included with the
+// resources in the response, e.g. Categories?$count=true. Optional.
+// basic - the basic switch indicates what level of information to return when listing tables. When basic is
+// true, only database_name, schema_name, table_name and version are returned for each table, otherwise all
+// table metadata is returned. By default, it is false. Optional.
 func (client Client) ListTables(ctx context.Context, accountName string, databaseName string, schemaName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool, basic *bool) (result USQLTableListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListTables")
+		defer func() {
+			sc := -1
+			if result.utl.Response.Response != nil {
+				sc = result.utl.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
@@ -3012,8 +3649,8 @@ func (client Client) ListTablesPreparer(ctx context.Context, accountName string,
 // ListTablesSender sends the ListTables request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListTablesSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListTablesResponder handles the response to the ListTables request. The method always
@@ -3030,8 +3667,8 @@ func (client Client) ListTablesResponder(resp *http.Response) (result USQLTableL
 }
 
 // listTablesNextResults retrieves the next set of results, if any.
-func (client Client) listTablesNextResults(lastResults USQLTableList) (result USQLTableList, err error) {
-	req, err := lastResults.uSQLTableListPreparer()
+func (client Client) listTablesNextResults(ctx context.Context, lastResults USQLTableList) (result USQLTableList, err error) {
+	req, err := lastResults.uSQLTableListPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "catalog.Client", "listTablesNextResults", nil, "Failure preparing next results request")
 	}
@@ -3052,24 +3689,48 @@ func (client Client) listTablesNextResults(lastResults USQLTableList) (result US
 
 // ListTablesComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListTablesComplete(ctx context.Context, accountName string, databaseName string, schemaName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool, basic *bool) (result USQLTableListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListTables")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListTables(ctx, accountName, databaseName, schemaName, filter, top, skip, selectParameter, orderby, count, basic)
 	return
 }
 
 // ListTablesByDatabase retrieves the list of all tables in a database from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the tables. filter is oData filter. Optional. top is the number of items to
-// return. Optional. skip is the number of items to skip over before returning elements. Optional. selectParameter
-// is oData Select statement. Limits the properties on each entry to just those requested, e.g.
-// Categories?$select=CategoryName,Description. Optional. orderby is orderBy clause. One or more comma-separated
-// expressions with an optional "asc" (the default) or "desc" depending on the order you'd like the values sorted,
-// e.g. Categories?$orderby=CategoryName desc. Optional. count is the Boolean value of true or false to request a
-// count of the matching resources included with the resources in the response, e.g. Categories?$count=true.
-// Optional. basic is the basic switch indicates what level of information to return when listing tables. When
-// basic is true, only database_name, schema_name, table_name and version are returned for each table, otherwise
-// all table metadata is returned. By default, it is false
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the tables.
+// filter - oData filter. Optional.
+// top - the number of items to return. Optional.
+// skip - the number of items to skip over before returning elements. Optional.
+// selectParameter - oData Select statement. Limits the properties on each entry to just those requested, e.g.
+// Categories?$select=CategoryName,Description. Optional.
+// orderby - orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
+// "desc" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc.
+// Optional.
+// count - the Boolean value of true or false to request a count of the matching resources included with the
+// resources in the response, e.g. Categories?$count=true. Optional.
+// basic - the basic switch indicates what level of information to return when listing tables. When basic is
+// true, only database_name, schema_name, table_name and version are returned for each table, otherwise all
+// table metadata is returned. By default, it is false
 func (client Client) ListTablesByDatabase(ctx context.Context, accountName string, databaseName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool, basic *bool) (result USQLTableListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListTablesByDatabase")
+		defer func() {
+			sc := -1
+			if result.utl.Response.Response != nil {
+				sc = result.utl.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
@@ -3152,8 +3813,8 @@ func (client Client) ListTablesByDatabasePreparer(ctx context.Context, accountNa
 // ListTablesByDatabaseSender sends the ListTablesByDatabase request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListTablesByDatabaseSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListTablesByDatabaseResponder handles the response to the ListTablesByDatabase request. The method always
@@ -3170,8 +3831,8 @@ func (client Client) ListTablesByDatabaseResponder(resp *http.Response) (result 
 }
 
 // listTablesByDatabaseNextResults retrieves the next set of results, if any.
-func (client Client) listTablesByDatabaseNextResults(lastResults USQLTableList) (result USQLTableList, err error) {
-	req, err := lastResults.uSQLTableListPreparer()
+func (client Client) listTablesByDatabaseNextResults(ctx context.Context, lastResults USQLTableList) (result USQLTableList, err error) {
+	req, err := lastResults.uSQLTableListPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "catalog.Client", "listTablesByDatabaseNextResults", nil, "Failure preparing next results request")
 	}
@@ -3192,23 +3853,47 @@ func (client Client) listTablesByDatabaseNextResults(lastResults USQLTableList) 
 
 // ListTablesByDatabaseComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListTablesByDatabaseComplete(ctx context.Context, accountName string, databaseName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool, basic *bool) (result USQLTableListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListTablesByDatabase")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListTablesByDatabase(ctx, accountName, databaseName, filter, top, skip, selectParameter, orderby, count, basic)
 	return
 }
 
 // ListTableStatistics retrieves the list of table statistics from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the statistics. schemaName is the name of the schema containing the
-// statistics. tableName is the name of the table containing the statistics. filter is oData filter. Optional. top
-// is the number of items to return. Optional. skip is the number of items to skip over before returning elements.
-// Optional. selectParameter is oData Select statement. Limits the properties on each entry to just those
-// requested, e.g. Categories?$select=CategoryName,Description. Optional. orderby is orderBy clause. One or more
-// comma-separated expressions with an optional "asc" (the default) or "desc" depending on the order you'd like the
-// values sorted, e.g. Categories?$orderby=CategoryName desc. Optional. count is the Boolean value of true or false
-// to request a count of the matching resources included with the resources in the response, e.g.
-// Categories?$count=true. Optional.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the statistics.
+// schemaName - the name of the schema containing the statistics.
+// tableName - the name of the table containing the statistics.
+// filter - oData filter. Optional.
+// top - the number of items to return. Optional.
+// skip - the number of items to skip over before returning elements. Optional.
+// selectParameter - oData Select statement. Limits the properties on each entry to just those requested, e.g.
+// Categories?$select=CategoryName,Description. Optional.
+// orderby - orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
+// "desc" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc.
+// Optional.
+// count - the Boolean value of true or false to request a count of the matching resources included with the
+// resources in the response, e.g. Categories?$count=true. Optional.
 func (client Client) ListTableStatistics(ctx context.Context, accountName string, databaseName string, schemaName string, tableName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLTableStatisticsListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListTableStatistics")
+		defer func() {
+			sc := -1
+			if result.utsl.Response.Response != nil {
+				sc = result.utsl.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
@@ -3288,8 +3973,8 @@ func (client Client) ListTableStatisticsPreparer(ctx context.Context, accountNam
 // ListTableStatisticsSender sends the ListTableStatistics request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListTableStatisticsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListTableStatisticsResponder handles the response to the ListTableStatistics request. The method always
@@ -3306,8 +3991,8 @@ func (client Client) ListTableStatisticsResponder(resp *http.Response) (result U
 }
 
 // listTableStatisticsNextResults retrieves the next set of results, if any.
-func (client Client) listTableStatisticsNextResults(lastResults USQLTableStatisticsList) (result USQLTableStatisticsList, err error) {
-	req, err := lastResults.uSQLTableStatisticsListPreparer()
+func (client Client) listTableStatisticsNextResults(ctx context.Context, lastResults USQLTableStatisticsList) (result USQLTableStatisticsList, err error) {
+	req, err := lastResults.uSQLTableStatisticsListPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "catalog.Client", "listTableStatisticsNextResults", nil, "Failure preparing next results request")
 	}
@@ -3328,23 +4013,46 @@ func (client Client) listTableStatisticsNextResults(lastResults USQLTableStatist
 
 // ListTableStatisticsComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListTableStatisticsComplete(ctx context.Context, accountName string, databaseName string, schemaName string, tableName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLTableStatisticsListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListTableStatistics")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListTableStatistics(ctx, accountName, databaseName, schemaName, tableName, filter, top, skip, selectParameter, orderby, count)
 	return
 }
 
 // ListTableStatisticsByDatabase retrieves the list of all statistics in a database from the Data Lake Analytics
 // catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the table statistics. filter is oData filter. Optional. top is the number of
-// items to return. Optional. skip is the number of items to skip over before returning elements. Optional.
-// selectParameter is oData Select statement. Limits the properties on each entry to just those requested, e.g.
-// Categories?$select=CategoryName,Description. Optional. orderby is orderBy clause. One or more comma-separated
-// expressions with an optional "asc" (the default) or "desc" depending on the order you'd like the values sorted,
-// e.g. Categories?$orderby=CategoryName desc. Optional. count is the Boolean value of true or false to request a
-// count of the matching resources included with the resources in the response, e.g. Categories?$count=true.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the table statistics.
+// filter - oData filter. Optional.
+// top - the number of items to return. Optional.
+// skip - the number of items to skip over before returning elements. Optional.
+// selectParameter - oData Select statement. Limits the properties on each entry to just those requested, e.g.
+// Categories?$select=CategoryName,Description. Optional.
+// orderby - orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
+// "desc" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc.
 // Optional.
+// count - the Boolean value of true or false to request a count of the matching resources included with the
+// resources in the response, e.g. Categories?$count=true. Optional.
 func (client Client) ListTableStatisticsByDatabase(ctx context.Context, accountName string, databaseName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLTableStatisticsListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListTableStatisticsByDatabase")
+		defer func() {
+			sc := -1
+			if result.utsl.Response.Response != nil {
+				sc = result.utsl.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
@@ -3422,8 +4130,8 @@ func (client Client) ListTableStatisticsByDatabasePreparer(ctx context.Context, 
 // ListTableStatisticsByDatabaseSender sends the ListTableStatisticsByDatabase request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListTableStatisticsByDatabaseSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListTableStatisticsByDatabaseResponder handles the response to the ListTableStatisticsByDatabase request. The method always
@@ -3440,8 +4148,8 @@ func (client Client) ListTableStatisticsByDatabaseResponder(resp *http.Response)
 }
 
 // listTableStatisticsByDatabaseNextResults retrieves the next set of results, if any.
-func (client Client) listTableStatisticsByDatabaseNextResults(lastResults USQLTableStatisticsList) (result USQLTableStatisticsList, err error) {
-	req, err := lastResults.uSQLTableStatisticsListPreparer()
+func (client Client) listTableStatisticsByDatabaseNextResults(ctx context.Context, lastResults USQLTableStatisticsList) (result USQLTableStatisticsList, err error) {
+	req, err := lastResults.uSQLTableStatisticsListPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "catalog.Client", "listTableStatisticsByDatabaseNextResults", nil, "Failure preparing next results request")
 	}
@@ -3462,23 +4170,47 @@ func (client Client) listTableStatisticsByDatabaseNextResults(lastResults USQLTa
 
 // ListTableStatisticsByDatabaseComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListTableStatisticsByDatabaseComplete(ctx context.Context, accountName string, databaseName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLTableStatisticsListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListTableStatisticsByDatabase")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListTableStatisticsByDatabase(ctx, accountName, databaseName, filter, top, skip, selectParameter, orderby, count)
 	return
 }
 
 // ListTableStatisticsByDatabaseAndSchema retrieves the list of all table statistics within the specified schema from
 // the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the statistics. schemaName is the name of the schema containing the
-// statistics. filter is oData filter. Optional. top is the number of items to return. Optional. skip is the number
-// of items to skip over before returning elements. Optional. selectParameter is oData Select statement. Limits the
-// properties on each entry to just those requested, e.g. Categories?$select=CategoryName,Description. Optional.
-// orderby is orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the statistics.
+// schemaName - the name of the schema containing the statistics.
+// filter - oData filter. Optional.
+// top - the number of items to return. Optional.
+// skip - the number of items to skip over before returning elements. Optional.
+// selectParameter - oData Select statement. Limits the properties on each entry to just those requested, e.g.
+// Categories?$select=CategoryName,Description. Optional.
+// orderby - orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
 // "desc" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc.
-// Optional. count is the Boolean value of true or false to request a count of the matching resources included with
-// the resources in the response, e.g. Categories?$count=true. Optional.
+// Optional.
+// count - the Boolean value of true or false to request a count of the matching resources included with the
+// resources in the response, e.g. Categories?$count=true. Optional.
 func (client Client) ListTableStatisticsByDatabaseAndSchema(ctx context.Context, accountName string, databaseName string, schemaName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLTableStatisticsListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListTableStatisticsByDatabaseAndSchema")
+		defer func() {
+			sc := -1
+			if result.utsl.Response.Response != nil {
+				sc = result.utsl.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
@@ -3557,8 +4289,8 @@ func (client Client) ListTableStatisticsByDatabaseAndSchemaPreparer(ctx context.
 // ListTableStatisticsByDatabaseAndSchemaSender sends the ListTableStatisticsByDatabaseAndSchema request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListTableStatisticsByDatabaseAndSchemaSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListTableStatisticsByDatabaseAndSchemaResponder handles the response to the ListTableStatisticsByDatabaseAndSchema request. The method always
@@ -3575,8 +4307,8 @@ func (client Client) ListTableStatisticsByDatabaseAndSchemaResponder(resp *http.
 }
 
 // listTableStatisticsByDatabaseAndSchemaNextResults retrieves the next set of results, if any.
-func (client Client) listTableStatisticsByDatabaseAndSchemaNextResults(lastResults USQLTableStatisticsList) (result USQLTableStatisticsList, err error) {
-	req, err := lastResults.uSQLTableStatisticsListPreparer()
+func (client Client) listTableStatisticsByDatabaseAndSchemaNextResults(ctx context.Context, lastResults USQLTableStatisticsList) (result USQLTableStatisticsList, err error) {
+	req, err := lastResults.uSQLTableStatisticsListPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "catalog.Client", "listTableStatisticsByDatabaseAndSchemaNextResults", nil, "Failure preparing next results request")
 	}
@@ -3597,22 +4329,46 @@ func (client Client) listTableStatisticsByDatabaseAndSchemaNextResults(lastResul
 
 // ListTableStatisticsByDatabaseAndSchemaComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListTableStatisticsByDatabaseAndSchemaComplete(ctx context.Context, accountName string, databaseName string, schemaName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLTableStatisticsListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListTableStatisticsByDatabaseAndSchema")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListTableStatisticsByDatabaseAndSchema(ctx, accountName, databaseName, schemaName, filter, top, skip, selectParameter, orderby, count)
 	return
 }
 
 // ListTableTypes retrieves the list of table types from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the table types. schemaName is the name of the schema containing the table
-// types. filter is oData filter. Optional. top is the number of items to return. Optional. skip is the number of
-// items to skip over before returning elements. Optional. selectParameter is oData Select statement. Limits the
-// properties on each entry to just those requested, e.g. Categories?$select=CategoryName,Description. Optional.
-// orderby is orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the table types.
+// schemaName - the name of the schema containing the table types.
+// filter - oData filter. Optional.
+// top - the number of items to return. Optional.
+// skip - the number of items to skip over before returning elements. Optional.
+// selectParameter - oData Select statement. Limits the properties on each entry to just those requested, e.g.
+// Categories?$select=CategoryName,Description. Optional.
+// orderby - orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
 // "desc" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc.
-// Optional. count is the Boolean value of true or false to request a count of the matching resources included with
-// the resources in the response, e.g. Categories?$count=true. Optional.
+// Optional.
+// count - the Boolean value of true or false to request a count of the matching resources included with the
+// resources in the response, e.g. Categories?$count=true. Optional.
 func (client Client) ListTableTypes(ctx context.Context, accountName string, databaseName string, schemaName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLTableTypeListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListTableTypes")
+		defer func() {
+			sc := -1
+			if result.uttl.Response.Response != nil {
+				sc = result.uttl.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
@@ -3691,8 +4447,8 @@ func (client Client) ListTableTypesPreparer(ctx context.Context, accountName str
 // ListTableTypesSender sends the ListTableTypes request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListTableTypesSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListTableTypesResponder handles the response to the ListTableTypes request. The method always
@@ -3709,8 +4465,8 @@ func (client Client) ListTableTypesResponder(resp *http.Response) (result USQLTa
 }
 
 // listTableTypesNextResults retrieves the next set of results, if any.
-func (client Client) listTableTypesNextResults(lastResults USQLTableTypeList) (result USQLTableTypeList, err error) {
-	req, err := lastResults.uSQLTableTypeListPreparer()
+func (client Client) listTableTypesNextResults(ctx context.Context, lastResults USQLTableTypeList) (result USQLTableTypeList, err error) {
+	req, err := lastResults.uSQLTableTypeListPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "catalog.Client", "listTableTypesNextResults", nil, "Failure preparing next results request")
 	}
@@ -3731,23 +4487,46 @@ func (client Client) listTableTypesNextResults(lastResults USQLTableTypeList) (r
 
 // ListTableTypesComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListTableTypesComplete(ctx context.Context, accountName string, databaseName string, schemaName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLTableTypeListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListTableTypes")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListTableTypes(ctx, accountName, databaseName, schemaName, filter, top, skip, selectParameter, orderby, count)
 	return
 }
 
 // ListTableValuedFunctions retrieves the list of table valued functions from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the table valued functions. schemaName is the name of the schema containing
-// the table valued functions. filter is oData filter. Optional. top is the number of items to return. Optional.
-// skip is the number of items to skip over before returning elements. Optional. selectParameter is oData Select
-// statement. Limits the properties on each entry to just those requested, e.g.
-// Categories?$select=CategoryName,Description. Optional. orderby is orderBy clause. One or more comma-separated
-// expressions with an optional "asc" (the default) or "desc" depending on the order you'd like the values sorted,
-// e.g. Categories?$orderby=CategoryName desc. Optional. count is the Boolean value of true or false to request a
-// count of the matching resources included with the resources in the response, e.g. Categories?$count=true.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the table valued functions.
+// schemaName - the name of the schema containing the table valued functions.
+// filter - oData filter. Optional.
+// top - the number of items to return. Optional.
+// skip - the number of items to skip over before returning elements. Optional.
+// selectParameter - oData Select statement. Limits the properties on each entry to just those requested, e.g.
+// Categories?$select=CategoryName,Description. Optional.
+// orderby - orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
+// "desc" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc.
 // Optional.
+// count - the Boolean value of true or false to request a count of the matching resources included with the
+// resources in the response, e.g. Categories?$count=true. Optional.
 func (client Client) ListTableValuedFunctions(ctx context.Context, accountName string, databaseName string, schemaName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLTableValuedFunctionListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListTableValuedFunctions")
+		defer func() {
+			sc := -1
+			if result.utvfl.Response.Response != nil {
+				sc = result.utvfl.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
@@ -3826,8 +4605,8 @@ func (client Client) ListTableValuedFunctionsPreparer(ctx context.Context, accou
 // ListTableValuedFunctionsSender sends the ListTableValuedFunctions request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListTableValuedFunctionsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListTableValuedFunctionsResponder handles the response to the ListTableValuedFunctions request. The method always
@@ -3844,8 +4623,8 @@ func (client Client) ListTableValuedFunctionsResponder(resp *http.Response) (res
 }
 
 // listTableValuedFunctionsNextResults retrieves the next set of results, if any.
-func (client Client) listTableValuedFunctionsNextResults(lastResults USQLTableValuedFunctionList) (result USQLTableValuedFunctionList, err error) {
-	req, err := lastResults.uSQLTableValuedFunctionListPreparer()
+func (client Client) listTableValuedFunctionsNextResults(ctx context.Context, lastResults USQLTableValuedFunctionList) (result USQLTableValuedFunctionList, err error) {
+	req, err := lastResults.uSQLTableValuedFunctionListPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "catalog.Client", "listTableValuedFunctionsNextResults", nil, "Failure preparing next results request")
 	}
@@ -3866,23 +4645,46 @@ func (client Client) listTableValuedFunctionsNextResults(lastResults USQLTableVa
 
 // ListTableValuedFunctionsComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListTableValuedFunctionsComplete(ctx context.Context, accountName string, databaseName string, schemaName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLTableValuedFunctionListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListTableValuedFunctions")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListTableValuedFunctions(ctx, accountName, databaseName, schemaName, filter, top, skip, selectParameter, orderby, count)
 	return
 }
 
 // ListTableValuedFunctionsByDatabase retrieves the list of all table valued functions in a database from the Data Lake
 // Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the table valued functions. filter is oData filter. Optional. top is the
-// number of items to return. Optional. skip is the number of items to skip over before returning elements.
-// Optional. selectParameter is oData Select statement. Limits the properties on each entry to just those
-// requested, e.g. Categories?$select=CategoryName,Description. Optional. orderby is orderBy clause. One or more
-// comma-separated expressions with an optional "asc" (the default) or "desc" depending on the order you'd like the
-// values sorted, e.g. Categories?$orderby=CategoryName desc. Optional. count is the Boolean value of true or false
-// to request a count of the matching resources included with the resources in the response, e.g.
-// Categories?$count=true. Optional.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the table valued functions.
+// filter - oData filter. Optional.
+// top - the number of items to return. Optional.
+// skip - the number of items to skip over before returning elements. Optional.
+// selectParameter - oData Select statement. Limits the properties on each entry to just those requested, e.g.
+// Categories?$select=CategoryName,Description. Optional.
+// orderby - orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
+// "desc" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc.
+// Optional.
+// count - the Boolean value of true or false to request a count of the matching resources included with the
+// resources in the response, e.g. Categories?$count=true. Optional.
 func (client Client) ListTableValuedFunctionsByDatabase(ctx context.Context, accountName string, databaseName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLTableValuedFunctionListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListTableValuedFunctionsByDatabase")
+		defer func() {
+			sc := -1
+			if result.utvfl.Response.Response != nil {
+				sc = result.utvfl.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
@@ -3960,8 +4762,8 @@ func (client Client) ListTableValuedFunctionsByDatabasePreparer(ctx context.Cont
 // ListTableValuedFunctionsByDatabaseSender sends the ListTableValuedFunctionsByDatabase request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListTableValuedFunctionsByDatabaseSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListTableValuedFunctionsByDatabaseResponder handles the response to the ListTableValuedFunctionsByDatabase request. The method always
@@ -3978,8 +4780,8 @@ func (client Client) ListTableValuedFunctionsByDatabaseResponder(resp *http.Resp
 }
 
 // listTableValuedFunctionsByDatabaseNextResults retrieves the next set of results, if any.
-func (client Client) listTableValuedFunctionsByDatabaseNextResults(lastResults USQLTableValuedFunctionList) (result USQLTableValuedFunctionList, err error) {
-	req, err := lastResults.uSQLTableValuedFunctionListPreparer()
+func (client Client) listTableValuedFunctionsByDatabaseNextResults(ctx context.Context, lastResults USQLTableValuedFunctionList) (result USQLTableValuedFunctionList, err error) {
+	req, err := lastResults.uSQLTableValuedFunctionListPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "catalog.Client", "listTableValuedFunctionsByDatabaseNextResults", nil, "Failure preparing next results request")
 	}
@@ -4000,22 +4802,46 @@ func (client Client) listTableValuedFunctionsByDatabaseNextResults(lastResults U
 
 // ListTableValuedFunctionsByDatabaseComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListTableValuedFunctionsByDatabaseComplete(ctx context.Context, accountName string, databaseName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLTableValuedFunctionListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListTableValuedFunctionsByDatabase")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListTableValuedFunctionsByDatabase(ctx, accountName, databaseName, filter, top, skip, selectParameter, orderby, count)
 	return
 }
 
 // ListTypes retrieves the list of types within the specified database and schema from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the types. schemaName is the name of the schema containing the types. filter
-// is oData filter. Optional. top is the number of items to return. Optional. skip is the number of items to skip
-// over before returning elements. Optional. selectParameter is oData Select statement. Limits the properties on
-// each entry to just those requested, e.g. Categories?$select=CategoryName,Description. Optional. orderby is
-// orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or "desc" depending
-// on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc. Optional. count is the
-// Boolean value of true or false to request a count of the matching resources included with the resources in the
-// response, e.g. Categories?$count=true. Optional.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the types.
+// schemaName - the name of the schema containing the types.
+// filter - oData filter. Optional.
+// top - the number of items to return. Optional.
+// skip - the number of items to skip over before returning elements. Optional.
+// selectParameter - oData Select statement. Limits the properties on each entry to just those requested, e.g.
+// Categories?$select=CategoryName,Description. Optional.
+// orderby - orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
+// "desc" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc.
+// Optional.
+// count - the Boolean value of true or false to request a count of the matching resources included with the
+// resources in the response, e.g. Categories?$count=true. Optional.
 func (client Client) ListTypes(ctx context.Context, accountName string, databaseName string, schemaName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLTypeListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListTypes")
+		defer func() {
+			sc := -1
+			if result.utl.Response.Response != nil {
+				sc = result.utl.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
@@ -4094,8 +4920,8 @@ func (client Client) ListTypesPreparer(ctx context.Context, accountName string, 
 // ListTypesSender sends the ListTypes request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListTypesSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListTypesResponder handles the response to the ListTypes request. The method always
@@ -4112,8 +4938,8 @@ func (client Client) ListTypesResponder(resp *http.Response) (result USQLTypeLis
 }
 
 // listTypesNextResults retrieves the next set of results, if any.
-func (client Client) listTypesNextResults(lastResults USQLTypeList) (result USQLTypeList, err error) {
-	req, err := lastResults.uSQLTypeListPreparer()
+func (client Client) listTypesNextResults(ctx context.Context, lastResults USQLTypeList) (result USQLTypeList, err error) {
+	req, err := lastResults.uSQLTypeListPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "catalog.Client", "listTypesNextResults", nil, "Failure preparing next results request")
 	}
@@ -4134,22 +4960,46 @@ func (client Client) listTypesNextResults(lastResults USQLTypeList) (result USQL
 
 // ListTypesComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListTypesComplete(ctx context.Context, accountName string, databaseName string, schemaName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLTypeListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListTypes")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListTypes(ctx, accountName, databaseName, schemaName, filter, top, skip, selectParameter, orderby, count)
 	return
 }
 
 // ListViews retrieves the list of views from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the views. schemaName is the name of the schema containing the views. filter
-// is oData filter. Optional. top is the number of items to return. Optional. skip is the number of items to skip
-// over before returning elements. Optional. selectParameter is oData Select statement. Limits the properties on
-// each entry to just those requested, e.g. Categories?$select=CategoryName,Description. Optional. orderby is
-// orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or "desc" depending
-// on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc. Optional. count is the
-// Boolean value of true or false to request a count of the matching resources included with the resources in the
-// response, e.g. Categories?$count=true. Optional.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the views.
+// schemaName - the name of the schema containing the views.
+// filter - oData filter. Optional.
+// top - the number of items to return. Optional.
+// skip - the number of items to skip over before returning elements. Optional.
+// selectParameter - oData Select statement. Limits the properties on each entry to just those requested, e.g.
+// Categories?$select=CategoryName,Description. Optional.
+// orderby - orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
+// "desc" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc.
+// Optional.
+// count - the Boolean value of true or false to request a count of the matching resources included with the
+// resources in the response, e.g. Categories?$count=true. Optional.
 func (client Client) ListViews(ctx context.Context, accountName string, databaseName string, schemaName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLViewListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListViews")
+		defer func() {
+			sc := -1
+			if result.uvl.Response.Response != nil {
+				sc = result.uvl.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
@@ -4228,8 +5078,8 @@ func (client Client) ListViewsPreparer(ctx context.Context, accountName string, 
 // ListViewsSender sends the ListViews request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListViewsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListViewsResponder handles the response to the ListViews request. The method always
@@ -4246,8 +5096,8 @@ func (client Client) ListViewsResponder(resp *http.Response) (result USQLViewLis
 }
 
 // listViewsNextResults retrieves the next set of results, if any.
-func (client Client) listViewsNextResults(lastResults USQLViewList) (result USQLViewList, err error) {
-	req, err := lastResults.uSQLViewListPreparer()
+func (client Client) listViewsNextResults(ctx context.Context, lastResults USQLViewList) (result USQLViewList, err error) {
+	req, err := lastResults.uSQLViewListPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "catalog.Client", "listViewsNextResults", nil, "Failure preparing next results request")
 	}
@@ -4268,22 +5118,45 @@ func (client Client) listViewsNextResults(lastResults USQLViewList) (result USQL
 
 // ListViewsComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListViewsComplete(ctx context.Context, accountName string, databaseName string, schemaName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLViewListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListViews")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListViews(ctx, accountName, databaseName, schemaName, filter, top, skip, selectParameter, orderby, count)
 	return
 }
 
 // ListViewsByDatabase retrieves the list of all views in a database from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the views. filter is oData filter. Optional. top is the number of items to
-// return. Optional. skip is the number of items to skip over before returning elements. Optional. selectParameter
-// is oData Select statement. Limits the properties on each entry to just those requested, e.g.
-// Categories?$select=CategoryName,Description. Optional. orderby is orderBy clause. One or more comma-separated
-// expressions with an optional "asc" (the default) or "desc" depending on the order you'd like the values sorted,
-// e.g. Categories?$orderby=CategoryName desc. Optional. count is the Boolean value of true or false to request a
-// count of the matching resources included with the resources in the response, e.g. Categories?$count=true.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the views.
+// filter - oData filter. Optional.
+// top - the number of items to return. Optional.
+// skip - the number of items to skip over before returning elements. Optional.
+// selectParameter - oData Select statement. Limits the properties on each entry to just those requested, e.g.
+// Categories?$select=CategoryName,Description. Optional.
+// orderby - orderBy clause. One or more comma-separated expressions with an optional "asc" (the default) or
+// "desc" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc.
 // Optional.
+// count - the Boolean value of true or false to request a count of the matching resources included with the
+// resources in the response, e.g. Categories?$count=true. Optional.
 func (client Client) ListViewsByDatabase(ctx context.Context, accountName string, databaseName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLViewListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListViewsByDatabase")
+		defer func() {
+			sc := -1
+			if result.uvl.Response.Response != nil {
+				sc = result.uvl.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
@@ -4361,8 +5234,8 @@ func (client Client) ListViewsByDatabasePreparer(ctx context.Context, accountNam
 // ListViewsByDatabaseSender sends the ListViewsByDatabase request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) ListViewsByDatabaseSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListViewsByDatabaseResponder handles the response to the ListViewsByDatabase request. The method always
@@ -4379,8 +5252,8 @@ func (client Client) ListViewsByDatabaseResponder(resp *http.Response) (result U
 }
 
 // listViewsByDatabaseNextResults retrieves the next set of results, if any.
-func (client Client) listViewsByDatabaseNextResults(lastResults USQLViewList) (result USQLViewList, err error) {
-	req, err := lastResults.uSQLViewListPreparer()
+func (client Client) listViewsByDatabaseNextResults(ctx context.Context, lastResults USQLViewList) (result USQLViewList, err error) {
+	req, err := lastResults.uSQLViewListPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "catalog.Client", "listViewsByDatabaseNextResults", nil, "Failure preparing next results request")
 	}
@@ -4401,15 +5274,224 @@ func (client Client) listViewsByDatabaseNextResults(lastResults USQLViewList) (r
 
 // ListViewsByDatabaseComplete enumerates all values, automatically crossing page boundaries as required.
 func (client Client) ListViewsByDatabaseComplete(ctx context.Context, accountName string, databaseName string, filter string, top *int32, skip *int32, selectParameter string, orderby string, count *bool) (result USQLViewListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.ListViewsByDatabase")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListViewsByDatabase(ctx, accountName, databaseName, filter, top, skip, selectParameter, orderby, count)
 	return
 }
 
+// PreviewTable retrieves a preview set of rows in given table.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the table.
+// schemaName - the name of the schema containing the table.
+// tableName - the name of the table.
+// maxRows - the maximum number of preview rows to be retrieved. Rows returned may be less than or equal to
+// this number depending on row sizes and number of rows in the table.
+// maxColumns - the maximum number of columns to be retrieved.
+func (client Client) PreviewTable(ctx context.Context, accountName string, databaseName string, schemaName string, tableName string, maxRows *int64, maxColumns *int64) (result USQLTablePreview, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.PreviewTable")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	req, err := client.PreviewTablePreparer(ctx, accountName, databaseName, schemaName, tableName, maxRows, maxColumns)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "catalog.Client", "PreviewTable", nil, "Failure preparing request")
+		return
+	}
+
+	resp, err := client.PreviewTableSender(req)
+	if err != nil {
+		result.Response = autorest.Response{Response: resp}
+		err = autorest.NewErrorWithError(err, "catalog.Client", "PreviewTable", resp, "Failure sending request")
+		return
+	}
+
+	result, err = client.PreviewTableResponder(resp)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "catalog.Client", "PreviewTable", resp, "Failure responding to request")
+	}
+
+	return
+}
+
+// PreviewTablePreparer prepares the PreviewTable request.
+func (client Client) PreviewTablePreparer(ctx context.Context, accountName string, databaseName string, schemaName string, tableName string, maxRows *int64, maxColumns *int64) (*http.Request, error) {
+	urlParameters := map[string]interface{}{
+		"accountName":          accountName,
+		"adlaCatalogDnsSuffix": client.AdlaCatalogDNSSuffix,
+	}
+
+	pathParameters := map[string]interface{}{
+		"databaseName": autorest.Encode("path", databaseName),
+		"schemaName":   autorest.Encode("path", schemaName),
+		"tableName":    autorest.Encode("path", tableName),
+	}
+
+	const APIVersion = "2016-11-01"
+	queryParameters := map[string]interface{}{
+		"api-version": APIVersion,
+	}
+	if maxRows != nil {
+		queryParameters["maxRows"] = autorest.Encode("query", *maxRows)
+	}
+	if maxColumns != nil {
+		queryParameters["maxColumns"] = autorest.Encode("query", *maxColumns)
+	}
+
+	preparer := autorest.CreatePreparer(
+		autorest.AsGet(),
+		autorest.WithCustomBaseURL("https://{accountName}.{adlaCatalogDnsSuffix}", urlParameters),
+		autorest.WithPathParameters("/catalog/usql/databases/{databaseName}/schemas/{schemaName}/tables/{tableName}/previewrows", pathParameters),
+		autorest.WithQueryParameters(queryParameters))
+	return preparer.Prepare((&http.Request{}).WithContext(ctx))
+}
+
+// PreviewTableSender sends the PreviewTable request. The method will close the
+// http.Response Body if it receives an error.
+func (client Client) PreviewTableSender(req *http.Request) (*http.Response, error) {
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
+}
+
+// PreviewTableResponder handles the response to the PreviewTable request. The method always
+// closes the http.Response Body.
+func (client Client) PreviewTableResponder(resp *http.Response) (result USQLTablePreview, err error) {
+	err = autorest.Respond(
+		resp,
+		client.ByInspecting(),
+		azure.WithErrorUnlessStatusCode(http.StatusOK),
+		autorest.ByUnmarshallingJSON(&result),
+		autorest.ByClosing())
+	result.Response = autorest.Response{Response: resp}
+	return
+}
+
+// PreviewTablePartition retrieves a preview set of rows in given partition.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the partition.
+// schemaName - the name of the schema containing the partition.
+// tableName - the name of the table containing the partition.
+// partitionName - the name of the table partition.
+// maxRows - the maximum number of preview rows to be retrieved.Rows returned may be less than or equal to this
+// number depending on row sizes and number of rows in the partition.
+// maxColumns - the maximum number of columns to be retrieved.
+func (client Client) PreviewTablePartition(ctx context.Context, accountName string, databaseName string, schemaName string, tableName string, partitionName string, maxRows *int64, maxColumns *int64) (result USQLTablePreview, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.PreviewTablePartition")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	req, err := client.PreviewTablePartitionPreparer(ctx, accountName, databaseName, schemaName, tableName, partitionName, maxRows, maxColumns)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "catalog.Client", "PreviewTablePartition", nil, "Failure preparing request")
+		return
+	}
+
+	resp, err := client.PreviewTablePartitionSender(req)
+	if err != nil {
+		result.Response = autorest.Response{Response: resp}
+		err = autorest.NewErrorWithError(err, "catalog.Client", "PreviewTablePartition", resp, "Failure sending request")
+		return
+	}
+
+	result, err = client.PreviewTablePartitionResponder(resp)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "catalog.Client", "PreviewTablePartition", resp, "Failure responding to request")
+	}
+
+	return
+}
+
+// PreviewTablePartitionPreparer prepares the PreviewTablePartition request.
+func (client Client) PreviewTablePartitionPreparer(ctx context.Context, accountName string, databaseName string, schemaName string, tableName string, partitionName string, maxRows *int64, maxColumns *int64) (*http.Request, error) {
+	urlParameters := map[string]interface{}{
+		"accountName":          accountName,
+		"adlaCatalogDnsSuffix": client.AdlaCatalogDNSSuffix,
+	}
+
+	pathParameters := map[string]interface{}{
+		"databaseName":  autorest.Encode("path", databaseName),
+		"partitionName": autorest.Encode("path", partitionName),
+		"schemaName":    autorest.Encode("path", schemaName),
+		"tableName":     autorest.Encode("path", tableName),
+	}
+
+	const APIVersion = "2016-11-01"
+	queryParameters := map[string]interface{}{
+		"api-version": APIVersion,
+	}
+	if maxRows != nil {
+		queryParameters["maxRows"] = autorest.Encode("query", *maxRows)
+	}
+	if maxColumns != nil {
+		queryParameters["maxColumns"] = autorest.Encode("query", *maxColumns)
+	}
+
+	preparer := autorest.CreatePreparer(
+		autorest.AsGet(),
+		autorest.WithCustomBaseURL("https://{accountName}.{adlaCatalogDnsSuffix}", urlParameters),
+		autorest.WithPathParameters("/catalog/usql/databases/{databaseName}/schemas/{schemaName}/tables/{tableName}/partitions/{partitionName}/previewrows", pathParameters),
+		autorest.WithQueryParameters(queryParameters))
+	return preparer.Prepare((&http.Request{}).WithContext(ctx))
+}
+
+// PreviewTablePartitionSender sends the PreviewTablePartition request. The method will close the
+// http.Response Body if it receives an error.
+func (client Client) PreviewTablePartitionSender(req *http.Request) (*http.Response, error) {
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
+}
+
+// PreviewTablePartitionResponder handles the response to the PreviewTablePartition request. The method always
+// closes the http.Response Body.
+func (client Client) PreviewTablePartitionResponder(resp *http.Response) (result USQLTablePreview, err error) {
+	err = autorest.Respond(
+		resp,
+		client.ByInspecting(),
+		azure.WithErrorUnlessStatusCode(http.StatusOK),
+		autorest.ByUnmarshallingJSON(&result),
+		autorest.ByClosing())
+	result.Response = autorest.Response{Response: resp}
+	return
+}
+
 // RevokeACL revokes an access control list (ACL) entry from the Data Lake Analytics catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. parameters is
-// parameters supplied to delete an access control list (ACL) entry from a Data Lake Analytics catalog.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// parameters - parameters supplied to delete an access control list (ACL) entry from a Data Lake Analytics
+// catalog.
 func (client Client) RevokeACL(ctx context.Context, accountName string, parameters ACLDeleteParameters) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.RevokeACL")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameters,
 			Constraints: []validation.Constraint{{Target: "parameters.PrincipalID", Name: validation.Null, Rule: true, Chain: nil}}}}); err != nil {
@@ -4451,7 +5533,7 @@ func (client Client) RevokeACLPreparer(ctx context.Context, accountName string, 
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithCustomBaseURL("https://{accountName}.{adlaCatalogDnsSuffix}", urlParameters),
 		autorest.WithPath("/catalog/usql/acl"),
@@ -4463,8 +5545,8 @@ func (client Client) RevokeACLPreparer(ctx context.Context, accountName string, 
 // RevokeACLSender sends the RevokeACL request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) RevokeACLSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // RevokeACLResponder handles the response to the RevokeACL request. The method always
@@ -4481,11 +5563,21 @@ func (client Client) RevokeACLResponder(resp *http.Response) (result autorest.Re
 
 // RevokeACLFromDatabase revokes an access control list (ACL) entry for the database from the Data Lake Analytics
 // catalog.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database. parameters is parameters supplied to delete an access control list (ACL) entry for a
-// database.
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database.
+// parameters - parameters supplied to delete an access control list (ACL) entry for a database.
 func (client Client) RevokeACLFromDatabase(ctx context.Context, accountName string, databaseName string, parameters ACLDeleteParameters) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.RevokeACLFromDatabase")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameters,
 			Constraints: []validation.Constraint{{Target: "parameters.PrincipalID", Name: validation.Null, Rule: true, Chain: nil}}}}); err != nil {
@@ -4531,7 +5623,7 @@ func (client Client) RevokeACLFromDatabasePreparer(ctx context.Context, accountN
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithCustomBaseURL("https://{accountName}.{adlaCatalogDnsSuffix}", urlParameters),
 		autorest.WithPathParameters("/catalog/usql/databases/{databaseName}/acl", pathParameters),
@@ -4543,8 +5635,8 @@ func (client Client) RevokeACLFromDatabasePreparer(ctx context.Context, accountN
 // RevokeACLFromDatabaseSender sends the RevokeACLFromDatabase request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) RevokeACLFromDatabaseSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // RevokeACLFromDatabaseResponder handles the response to the RevokeACLFromDatabase request. The method always
@@ -4560,11 +5652,22 @@ func (client Client) RevokeACLFromDatabaseResponder(resp *http.Response) (result
 }
 
 // UpdateCredential modifies the specified credential for use with external data sources in the specified database
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the credential. credentialName is the name of the credential. parameters is
-// the parameters required to modify the credential (name and password)
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the credential.
+// credentialName - the name of the credential.
+// parameters - the parameters required to modify the credential (name and password)
 func (client Client) UpdateCredential(ctx context.Context, accountName string, databaseName string, credentialName string, parameters DataLakeAnalyticsCatalogCredentialUpdateParameters) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.UpdateCredential")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UpdateCredentialPreparer(ctx, accountName, databaseName, credentialName, parameters)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "catalog.Client", "UpdateCredential", nil, "Failure preparing request")
@@ -4604,7 +5707,7 @@ func (client Client) UpdateCredentialPreparer(ctx context.Context, accountName s
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithCustomBaseURL("https://{accountName}.{adlaCatalogDnsSuffix}", urlParameters),
 		autorest.WithPathParameters("/catalog/usql/databases/{databaseName}/credentials/{credentialName}", pathParameters),
@@ -4616,8 +5719,8 @@ func (client Client) UpdateCredentialPreparer(ctx context.Context, accountName s
 // UpdateCredentialSender sends the UpdateCredential request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) UpdateCredentialSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateCredentialResponder handles the response to the UpdateCredential request. The method always
@@ -4634,11 +5737,22 @@ func (client Client) UpdateCredentialResponder(resp *http.Response) (result auto
 
 // UpdateSecret modifies the specified secret for use with external data sources in the specified database. This is
 // deprecated and will be removed in the next release. Please use UpdateCredential instead.
-//
-// accountName is the Azure Data Lake Analytics account upon which to execute catalog operations. databaseName is
-// the name of the database containing the secret. secretName is the name of the secret. parameters is the
-// parameters required to modify the secret (name and password)
+// Parameters:
+// accountName - the Azure Data Lake Analytics account upon which to execute catalog operations.
+// databaseName - the name of the database containing the secret.
+// secretName - the name of the secret.
+// parameters - the parameters required to modify the secret (name and password)
 func (client Client) UpdateSecret(ctx context.Context, accountName string, databaseName string, secretName string, parameters DataLakeAnalyticsCatalogSecretCreateOrUpdateParameters) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/Client.UpdateSecret")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UpdateSecretPreparer(ctx, accountName, databaseName, secretName, parameters)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "catalog.Client", "UpdateSecret", nil, "Failure preparing request")
@@ -4678,7 +5792,7 @@ func (client Client) UpdateSecretPreparer(ctx context.Context, accountName strin
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithCustomBaseURL("https://{accountName}.{adlaCatalogDnsSuffix}", urlParameters),
 		autorest.WithPathParameters("/catalog/usql/databases/{databaseName}/secrets/{secretName}", pathParameters),
@@ -4690,8 +5804,8 @@ func (client Client) UpdateSecretPreparer(ctx context.Context, accountName strin
 // UpdateSecretSender sends the UpdateSecret request. The method will close the
 // http.Response Body if it receives an error.
 func (client Client) UpdateSecretSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateSecretResponder handles the response to the UpdateSecret request. The method always

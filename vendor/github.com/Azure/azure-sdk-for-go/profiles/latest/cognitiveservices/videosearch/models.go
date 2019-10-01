@@ -1,6 +1,6 @@
 // +build go1.9
 
-// Copyright 2018 Microsoft Corporation
+// Copyright 2019 Microsoft Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,17 +22,8 @@ package videosearch
 import original "github.com/Azure/azure-sdk-for-go/services/cognitiveservices/v1.0/videosearch"
 
 const (
-	DefaultBaseURI = original.DefaultBaseURI
+	DefaultEndpoint = original.DefaultEndpoint
 )
-
-type BaseClient = original.BaseClient
-
-func New() BaseClient {
-	return original.New()
-}
-func NewWithBaseURI(baseURI string) BaseClient {
-	return original.NewWithBaseURI(baseURI)
-}
 
 type ErrorCode = original.ErrorCode
 
@@ -144,27 +135,28 @@ const (
 	VideoResolutionSD480p  VideoResolution = original.VideoResolutionSD480p
 )
 
-type BasicAnswer = original.BasicAnswer
 type Answer = original.Answer
+type BaseClient = original.BaseClient
+type BasicAnswer = original.BasicAnswer
 type BasicCreativeWork = original.BasicCreativeWork
+type BasicIdentifiable = original.BasicIdentifiable
+type BasicMediaObject = original.BasicMediaObject
+type BasicResponse = original.BasicResponse
+type BasicResponseBase = original.BasicResponseBase
+type BasicSearchResultsAnswer = original.BasicSearchResultsAnswer
+type BasicThing = original.BasicThing
 type CreativeWork = original.CreativeWork
 type Error = original.Error
 type ErrorResponse = original.ErrorResponse
-type BasicIdentifiable = original.BasicIdentifiable
 type Identifiable = original.Identifiable
 type ImageObject = original.ImageObject
-type BasicMediaObject = original.BasicMediaObject
 type MediaObject = original.MediaObject
 type PivotSuggestions = original.PivotSuggestions
 type Query = original.Query
 type QueryContext = original.QueryContext
-type BasicResponse = original.BasicResponse
 type Response = original.Response
-type BasicResponseBase = original.BasicResponseBase
 type ResponseBase = original.ResponseBase
-type BasicSearchResultsAnswer = original.BasicSearchResultsAnswer
 type SearchResultsAnswer = original.SearchResultsAnswer
-type BasicThing = original.BasicThing
 type Thing = original.Thing
 type TrendingVideos = original.TrendingVideos
 type TrendingVideosCategory = original.TrendingVideosCategory
@@ -173,20 +165,54 @@ type TrendingVideosTile = original.TrendingVideosTile
 type VideoDetails = original.VideoDetails
 type VideoObject = original.VideoObject
 type Videos = original.Videos
+type VideosClient = original.VideosClient
 type VideosModule = original.VideosModule
 
+func New() BaseClient {
+	return original.New()
+}
+func NewVideosClient() VideosClient {
+	return original.NewVideosClient()
+}
+func NewWithoutDefaults(endpoint string) BaseClient {
+	return original.NewWithoutDefaults(endpoint)
+}
+func PossibleErrorCodeValues() []ErrorCode {
+	return original.PossibleErrorCodeValues()
+}
+func PossibleErrorSubCodeValues() []ErrorSubCode {
+	return original.PossibleErrorSubCodeValues()
+}
+func PossibleFreshnessValues() []Freshness {
+	return original.PossibleFreshnessValues()
+}
+func PossibleSafeSearchValues() []SafeSearch {
+	return original.PossibleSafeSearchValues()
+}
+func PossibleTextFormatValues() []TextFormat {
+	return original.PossibleTextFormatValues()
+}
+func PossibleTypeValues() []Type {
+	return original.PossibleTypeValues()
+}
+func PossibleVideoInsightModuleValues() []VideoInsightModule {
+	return original.PossibleVideoInsightModuleValues()
+}
+func PossibleVideoLengthValues() []VideoLength {
+	return original.PossibleVideoLengthValues()
+}
+func PossibleVideoPricingValues() []VideoPricing {
+	return original.PossibleVideoPricingValues()
+}
+func PossibleVideoQueryScenarioValues() []VideoQueryScenario {
+	return original.PossibleVideoQueryScenarioValues()
+}
+func PossibleVideoResolutionValues() []VideoResolution {
+	return original.PossibleVideoResolutionValues()
+}
 func UserAgent() string {
 	return original.UserAgent() + " profiles/latest"
 }
 func Version() string {
 	return original.Version()
-}
-
-type VideosClient = original.VideosClient
-
-func NewVideosClient() VideosClient {
-	return original.NewVideosClient()
-}
-func NewVideosClientWithBaseURI(baseURI string) VideosClient {
-	return original.NewVideosClientWithBaseURI(baseURI)
 }

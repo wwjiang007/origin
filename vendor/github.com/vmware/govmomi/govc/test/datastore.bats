@@ -222,6 +222,9 @@ upload_file() {
   run govc datastore.disk.info "$vmdk"
   assert_success
 
+  run govc datastore.disk.info -uuid "$vmdk"
+  assert_success
+
   run govc datastore.rm "$vmdk"
   assert_success
 
@@ -366,5 +369,22 @@ upload_file() {
   assert_success
 
   run govc datastore.disk.shrink -copy=false "$vmdk"
+  assert_success
+}
+
+@test "datastore.cluster" {
+  vcsim_env
+
+  pod=/DC0/datastore/DC0_POD0
+  run govc folder.create -pod $pod
+  assert_success
+
+  run govc datastore.cluster.info
+  assert_success
+
+  run govc datastore.cluster.change -drs-enabled -drs-mode manual $pod
+  assert_success
+
+  run govc datastore.cluster.info -json
   assert_success
 }

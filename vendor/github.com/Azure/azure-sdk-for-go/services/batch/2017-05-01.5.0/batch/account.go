@@ -23,6 +23,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"github.com/satori/go.uuid"
 	"net/http"
 )
@@ -43,19 +44,32 @@ func NewAccountClientWithBaseURI(baseURI string) AccountClient {
 }
 
 // ListNodeAgentSkus sends the list node agent skus request.
-//
-// filter is an OData $filter clause. maxResults is the maximum number of items to return in the response. A
-// maximum of 1000 results will be returned. timeout is the maximum time that the server can spend processing the
-// request, in seconds. The default is 30 seconds. clientRequestID is the caller-generated request identity, in the
-// form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0.
-// returnClientRequestID is whether the server should return the client-request-id in the response. ocpDate is the
-// time the request was issued. Client libraries typically set this to the current system clock time; set it
-// explicitly if you are calling the REST API directly.
+// Parameters:
+// filter - an OData $filter clause.
+// maxResults - the maximum number of items to return in the response. A maximum of 1000 results will be
+// returned.
+// timeout - the maximum time that the server can spend processing the request, in seconds. The default is 30
+// seconds.
+// clientRequestID - the caller-generated request identity, in the form of a GUID with no decoration such as
+// curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0.
+// returnClientRequestID - whether the server should return the client-request-id in the response.
+// ocpDate - the time the request was issued. Client libraries typically set this to the current system clock
+// time; set it explicitly if you are calling the REST API directly.
 func (client AccountClient) ListNodeAgentSkus(ctx context.Context, filter string, maxResults *int32, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123) (result AccountListNodeAgentSkusResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AccountClient.ListNodeAgentSkus")
+		defer func() {
+			sc := -1
+			if result.alnasr.Response.Response != nil {
+				sc = result.alnasr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: maxResults,
 			Constraints: []validation.Constraint{{Target: "maxResults", Name: validation.Null, Rule: false,
-				Chain: []validation.Constraint{{Target: "maxResults", Name: validation.InclusiveMaximum, Rule: 1000, Chain: nil},
+				Chain: []validation.Constraint{{Target: "maxResults", Name: validation.InclusiveMaximum, Rule: int64(1000), Chain: nil},
 					{Target: "maxResults", Name: validation.InclusiveMinimum, Rule: 1, Chain: nil},
 				}}}}}); err != nil {
 		return result, validation.NewError("batch.AccountClient", "ListNodeAgentSkus", err.Error())
@@ -129,8 +143,8 @@ func (client AccountClient) ListNodeAgentSkusPreparer(ctx context.Context, filte
 // ListNodeAgentSkusSender sends the ListNodeAgentSkus request. The method will close the
 // http.Response Body if it receives an error.
 func (client AccountClient) ListNodeAgentSkusSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListNodeAgentSkusResponder handles the response to the ListNodeAgentSkus request. The method always
@@ -147,8 +161,8 @@ func (client AccountClient) ListNodeAgentSkusResponder(resp *http.Response) (res
 }
 
 // listNodeAgentSkusNextResults retrieves the next set of results, if any.
-func (client AccountClient) listNodeAgentSkusNextResults(lastResults AccountListNodeAgentSkusResult) (result AccountListNodeAgentSkusResult, err error) {
-	req, err := lastResults.accountListNodeAgentSkusResultPreparer()
+func (client AccountClient) listNodeAgentSkusNextResults(ctx context.Context, lastResults AccountListNodeAgentSkusResult) (result AccountListNodeAgentSkusResult, err error) {
+	req, err := lastResults.accountListNodeAgentSkusResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "batch.AccountClient", "listNodeAgentSkusNextResults", nil, "Failure preparing next results request")
 	}
@@ -169,6 +183,16 @@ func (client AccountClient) listNodeAgentSkusNextResults(lastResults AccountList
 
 // ListNodeAgentSkusComplete enumerates all values, automatically crossing page boundaries as required.
 func (client AccountClient) ListNodeAgentSkusComplete(ctx context.Context, filter string, maxResults *int32, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123) (result AccountListNodeAgentSkusResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AccountClient.ListNodeAgentSkus")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListNodeAgentSkus(ctx, filter, maxResults, timeout, clientRequestID, returnClientRequestID, ocpDate)
 	return
 }

@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -41,10 +42,21 @@ func NewAppServicePlansClientWithBaseURI(baseURI string, subscriptionID string) 
 }
 
 // CreateOrUpdate creates or updates an App Service Plan.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan. appServicePlan is details of the App Service plan.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
+// appServicePlan - details of the App Service plan.
 func (client AppServicePlansClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, name string, appServicePlan AppServicePlan) (result AppServicePlansCreateOrUpdateFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.CreateOrUpdate")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -85,7 +97,7 @@ func (client AppServicePlansClient) CreateOrUpdatePreparer(ctx context.Context, 
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Web/serverfarms/{name}", pathParameters),
@@ -97,15 +109,13 @@ func (client AppServicePlansClient) CreateOrUpdatePreparer(ctx context.Context, 
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) CreateOrUpdateSender(req *http.Request) (future AppServicePlansCreateOrUpdateFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -115,7 +125,7 @@ func (client AppServicePlansClient) CreateOrUpdateResponder(resp *http.Response)
 	err = autorest.Respond(
 		resp,
 		client.ByInspecting(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted),
+		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusCreated, http.StatusAccepted),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
 	result.Response = autorest.Response{Response: resp}
@@ -123,11 +133,23 @@ func (client AppServicePlansClient) CreateOrUpdateResponder(resp *http.Response)
 }
 
 // CreateOrUpdateVnetRoute create or update a Virtual Network route in an App Service plan.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan. vnetName is name of the Virtual Network. routeName is name of the Virtual Network route. route is
-// definition of the Virtual Network route.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
+// vnetName - name of the Virtual Network.
+// routeName - name of the Virtual Network route.
+// route - definition of the Virtual Network route.
 func (client AppServicePlansClient) CreateOrUpdateVnetRoute(ctx context.Context, resourceGroupName string, name string, vnetName string, routeName string, route VnetRoute) (result VnetRoute, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.CreateOrUpdateVnetRoute")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -173,7 +195,7 @@ func (client AppServicePlansClient) CreateOrUpdateVnetRoutePreparer(ctx context.
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Web/serverfarms/{name}/virtualNetworkConnections/{vnetName}/routes/{routeName}", pathParameters),
@@ -185,8 +207,8 @@ func (client AppServicePlansClient) CreateOrUpdateVnetRoutePreparer(ctx context.
 // CreateOrUpdateVnetRouteSender sends the CreateOrUpdateVnetRoute request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) CreateOrUpdateVnetRouteSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateOrUpdateVnetRouteResponder handles the response to the CreateOrUpdateVnetRoute request. The method always
@@ -203,10 +225,20 @@ func (client AppServicePlansClient) CreateOrUpdateVnetRouteResponder(resp *http.
 }
 
 // Delete delete an App Service plan.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
 func (client AppServicePlansClient) Delete(ctx context.Context, resourceGroupName string, name string) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -260,8 +292,8 @@ func (client AppServicePlansClient) DeletePreparer(ctx context.Context, resource
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) DeleteSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
@@ -277,10 +309,22 @@ func (client AppServicePlansClient) DeleteResponder(resp *http.Response) (result
 }
 
 // DeleteHybridConnection delete a Hybrid Connection in use in an App Service plan.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan. namespaceName is name of the Service Bus namespace. relayName is name of the Service Bus relay.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
+// namespaceName - name of the Service Bus namespace.
+// relayName - name of the Service Bus relay.
 func (client AppServicePlansClient) DeleteHybridConnection(ctx context.Context, resourceGroupName string, name string, namespaceName string, relayName string) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.DeleteHybridConnection")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -336,8 +380,8 @@ func (client AppServicePlansClient) DeleteHybridConnectionPreparer(ctx context.C
 // DeleteHybridConnectionSender sends the DeleteHybridConnection request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) DeleteHybridConnectionSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteHybridConnectionResponder handles the response to the DeleteHybridConnection request. The method always
@@ -353,10 +397,22 @@ func (client AppServicePlansClient) DeleteHybridConnectionResponder(resp *http.R
 }
 
 // DeleteVnetRoute delete a Virtual Network route in an App Service plan.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan. vnetName is name of the Virtual Network. routeName is name of the Virtual Network route.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
+// vnetName - name of the Virtual Network.
+// routeName - name of the Virtual Network route.
 func (client AppServicePlansClient) DeleteVnetRoute(ctx context.Context, resourceGroupName string, name string, vnetName string, routeName string) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.DeleteVnetRoute")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -412,8 +468,8 @@ func (client AppServicePlansClient) DeleteVnetRoutePreparer(ctx context.Context,
 // DeleteVnetRouteSender sends the DeleteVnetRoute request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) DeleteVnetRouteSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteVnetRouteResponder handles the response to the DeleteVnetRoute request. The method always
@@ -429,10 +485,20 @@ func (client AppServicePlansClient) DeleteVnetRouteResponder(resp *http.Response
 }
 
 // Get get an App Service plan.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
 func (client AppServicePlansClient) Get(ctx context.Context, resourceGroupName string, name string) (result AppServicePlan, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -486,8 +552,8 @@ func (client AppServicePlansClient) GetPreparer(ctx context.Context, resourceGro
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -504,10 +570,22 @@ func (client AppServicePlansClient) GetResponder(resp *http.Response) (result Ap
 }
 
 // GetHybridConnection retrieve a Hybrid Connection in use in an App Service plan.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan. namespaceName is name of the Service Bus namespace. relayName is name of the Service Bus relay.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
+// namespaceName - name of the Service Bus namespace.
+// relayName - name of the Service Bus relay.
 func (client AppServicePlansClient) GetHybridConnection(ctx context.Context, resourceGroupName string, name string, namespaceName string, relayName string) (result HybridConnection, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.GetHybridConnection")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -563,8 +641,8 @@ func (client AppServicePlansClient) GetHybridConnectionPreparer(ctx context.Cont
 // GetHybridConnectionSender sends the GetHybridConnection request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) GetHybridConnectionSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetHybridConnectionResponder handles the response to the GetHybridConnection request. The method always
@@ -581,10 +659,20 @@ func (client AppServicePlansClient) GetHybridConnectionResponder(resp *http.Resp
 }
 
 // GetHybridConnectionPlanLimit get the maximum number of Hybrid Connections allowed in an App Service plan.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
 func (client AppServicePlansClient) GetHybridConnectionPlanLimit(ctx context.Context, resourceGroupName string, name string) (result HybridConnectionLimits, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.GetHybridConnectionPlanLimit")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -638,8 +726,8 @@ func (client AppServicePlansClient) GetHybridConnectionPlanLimitPreparer(ctx con
 // GetHybridConnectionPlanLimitSender sends the GetHybridConnectionPlanLimit request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) GetHybridConnectionPlanLimitSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetHybridConnectionPlanLimitResponder handles the response to the GetHybridConnectionPlanLimit request. The method always
@@ -656,10 +744,22 @@ func (client AppServicePlansClient) GetHybridConnectionPlanLimitResponder(resp *
 }
 
 // GetRouteForVnet get a Virtual Network route in an App Service plan.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan. vnetName is name of the Virtual Network. routeName is name of the Virtual Network route.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
+// vnetName - name of the Virtual Network.
+// routeName - name of the Virtual Network route.
 func (client AppServicePlansClient) GetRouteForVnet(ctx context.Context, resourceGroupName string, name string, vnetName string, routeName string) (result ListVnetRoute, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.GetRouteForVnet")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -715,8 +815,8 @@ func (client AppServicePlansClient) GetRouteForVnetPreparer(ctx context.Context,
 // GetRouteForVnetSender sends the GetRouteForVnet request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) GetRouteForVnetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetRouteForVnetResponder handles the response to the GetRouteForVnet request. The method always
@@ -732,10 +832,21 @@ func (client AppServicePlansClient) GetRouteForVnetResponder(resp *http.Response
 	return
 }
 
-// GetServerFarmSkus gets all selectable sku's for a given App Service Plan
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of App Service Plan
+// GetServerFarmSkus gets all selectable SKUs for a given App Service Plan
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of App Service Plan
 func (client AppServicePlansClient) GetServerFarmSkus(ctx context.Context, resourceGroupName string, name string) (result SetObject, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.GetServerFarmSkus")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -789,8 +900,8 @@ func (client AppServicePlansClient) GetServerFarmSkusPreparer(ctx context.Contex
 // GetServerFarmSkusSender sends the GetServerFarmSkus request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) GetServerFarmSkusSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetServerFarmSkusResponder handles the response to the GetServerFarmSkus request. The method always
@@ -807,10 +918,21 @@ func (client AppServicePlansClient) GetServerFarmSkusResponder(resp *http.Respon
 }
 
 // GetVnetFromServerFarm get a Virtual Network associated with an App Service plan.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan. vnetName is name of the Virtual Network.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
+// vnetName - name of the Virtual Network.
 func (client AppServicePlansClient) GetVnetFromServerFarm(ctx context.Context, resourceGroupName string, name string, vnetName string) (result VnetInfo, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.GetVnetFromServerFarm")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -865,8 +987,8 @@ func (client AppServicePlansClient) GetVnetFromServerFarmPreparer(ctx context.Co
 // GetVnetFromServerFarmSender sends the GetVnetFromServerFarm request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) GetVnetFromServerFarmSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetVnetFromServerFarmResponder handles the response to the GetVnetFromServerFarm request. The method always
@@ -883,11 +1005,22 @@ func (client AppServicePlansClient) GetVnetFromServerFarmResponder(resp *http.Re
 }
 
 // GetVnetGateway get a Virtual Network gateway.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan. vnetName is name of the Virtual Network. gatewayName is name of the gateway. Only the 'primary' gateway is
-// supported.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
+// vnetName - name of the Virtual Network.
+// gatewayName - name of the gateway. Only the 'primary' gateway is supported.
 func (client AppServicePlansClient) GetVnetGateway(ctx context.Context, resourceGroupName string, name string, vnetName string, gatewayName string) (result VnetGateway, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.GetVnetGateway")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -943,8 +1076,8 @@ func (client AppServicePlansClient) GetVnetGatewayPreparer(ctx context.Context, 
 // GetVnetGatewaySender sends the GetVnetGateway request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) GetVnetGatewaySender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetVnetGatewayResponder handles the response to the GetVnetGateway request. The method always
@@ -960,12 +1093,22 @@ func (client AppServicePlansClient) GetVnetGatewayResponder(resp *http.Response)
 	return
 }
 
-// List get all App Service plans for a subcription.
-//
-// detailed is specify <code>true</code> to return all App Service plan properties. The default is
+// List get all App Service plans for a subscription.
+// Parameters:
+// detailed - specify <code>true</code> to return all App Service plan properties. The default is
 // <code>false</code>, which returns a subset of the properties.
 // Retrieval of all properties may increase the API latency.
 func (client AppServicePlansClient) List(ctx context.Context, detailed *bool) (result AppServicePlanCollectionPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.List")
+		defer func() {
+			sc := -1
+			if result.aspc.Response.Response != nil {
+				sc = result.aspc.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listNextResults
 	req, err := client.ListPreparer(ctx, detailed)
 	if err != nil {
@@ -1013,8 +1156,8 @@ func (client AppServicePlansClient) ListPreparer(ctx context.Context, detailed *
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) ListSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -1031,8 +1174,8 @@ func (client AppServicePlansClient) ListResponder(resp *http.Response) (result A
 }
 
 // listNextResults retrieves the next set of results, if any.
-func (client AppServicePlansClient) listNextResults(lastResults AppServicePlanCollection) (result AppServicePlanCollection, err error) {
-	req, err := lastResults.appServicePlanCollectionPreparer()
+func (client AppServicePlansClient) listNextResults(ctx context.Context, lastResults AppServicePlanCollection) (result AppServicePlanCollection, err error) {
+	req, err := lastResults.appServicePlanCollectionPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "web.AppServicePlansClient", "listNextResults", nil, "Failure preparing next results request")
 	}
@@ -1053,14 +1196,34 @@ func (client AppServicePlansClient) listNextResults(lastResults AppServicePlanCo
 
 // ListComplete enumerates all values, automatically crossing page boundaries as required.
 func (client AppServicePlansClient) ListComplete(ctx context.Context, detailed *bool) (result AppServicePlanCollectionIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.List")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.List(ctx, detailed)
 	return
 }
 
 // ListByResourceGroup get all App Service plans in a resource group.
-//
-// resourceGroupName is name of the resource group to which the resource belongs.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
 func (client AppServicePlansClient) ListByResourceGroup(ctx context.Context, resourceGroupName string) (result AppServicePlanCollectionPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.ListByResourceGroup")
+		defer func() {
+			sc := -1
+			if result.aspc.Response.Response != nil {
+				sc = result.aspc.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -1114,8 +1277,8 @@ func (client AppServicePlansClient) ListByResourceGroupPreparer(ctx context.Cont
 // ListByResourceGroupSender sends the ListByResourceGroup request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) ListByResourceGroupSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByResourceGroupResponder handles the response to the ListByResourceGroup request. The method always
@@ -1132,8 +1295,8 @@ func (client AppServicePlansClient) ListByResourceGroupResponder(resp *http.Resp
 }
 
 // listByResourceGroupNextResults retrieves the next set of results, if any.
-func (client AppServicePlansClient) listByResourceGroupNextResults(lastResults AppServicePlanCollection) (result AppServicePlanCollection, err error) {
-	req, err := lastResults.appServicePlanCollectionPreparer()
+func (client AppServicePlansClient) listByResourceGroupNextResults(ctx context.Context, lastResults AppServicePlanCollection) (result AppServicePlanCollection, err error) {
+	req, err := lastResults.appServicePlanCollectionPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "web.AppServicePlansClient", "listByResourceGroupNextResults", nil, "Failure preparing next results request")
 	}
@@ -1154,15 +1317,35 @@ func (client AppServicePlansClient) listByResourceGroupNextResults(lastResults A
 
 // ListByResourceGroupComplete enumerates all values, automatically crossing page boundaries as required.
 func (client AppServicePlansClient) ListByResourceGroupComplete(ctx context.Context, resourceGroupName string) (result AppServicePlanCollectionIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.ListByResourceGroup")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListByResourceGroup(ctx, resourceGroupName)
 	return
 }
 
 // ListCapabilities list all capabilities of an App Service plan.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
 func (client AppServicePlansClient) ListCapabilities(ctx context.Context, resourceGroupName string, name string) (result ListCapability, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.ListCapabilities")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -1216,8 +1399,8 @@ func (client AppServicePlansClient) ListCapabilitiesPreparer(ctx context.Context
 // ListCapabilitiesSender sends the ListCapabilities request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) ListCapabilitiesSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListCapabilitiesResponder handles the response to the ListCapabilities request. The method always
@@ -1234,10 +1417,22 @@ func (client AppServicePlansClient) ListCapabilitiesResponder(resp *http.Respons
 }
 
 // ListHybridConnectionKeys get the send key name and value of a Hybrid Connection.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan. namespaceName is the name of the Service Bus namespace. relayName is the name of the Service Bus relay.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
+// namespaceName - the name of the Service Bus namespace.
+// relayName - the name of the Service Bus relay.
 func (client AppServicePlansClient) ListHybridConnectionKeys(ctx context.Context, resourceGroupName string, name string, namespaceName string, relayName string) (result HybridConnectionKey, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.ListHybridConnectionKeys")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -1293,8 +1488,8 @@ func (client AppServicePlansClient) ListHybridConnectionKeysPreparer(ctx context
 // ListHybridConnectionKeysSender sends the ListHybridConnectionKeys request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) ListHybridConnectionKeysSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListHybridConnectionKeysResponder handles the response to the ListHybridConnectionKeys request. The method always
@@ -1311,10 +1506,20 @@ func (client AppServicePlansClient) ListHybridConnectionKeysResponder(resp *http
 }
 
 // ListHybridConnections retrieve all Hybrid Connections in use in an App Service plan.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
 func (client AppServicePlansClient) ListHybridConnections(ctx context.Context, resourceGroupName string, name string) (result HybridConnectionCollectionPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.ListHybridConnections")
+		defer func() {
+			sc := -1
+			if result.hcc.Response.Response != nil {
+				sc = result.hcc.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -1369,8 +1574,8 @@ func (client AppServicePlansClient) ListHybridConnectionsPreparer(ctx context.Co
 // ListHybridConnectionsSender sends the ListHybridConnections request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) ListHybridConnectionsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListHybridConnectionsResponder handles the response to the ListHybridConnections request. The method always
@@ -1387,8 +1592,8 @@ func (client AppServicePlansClient) ListHybridConnectionsResponder(resp *http.Re
 }
 
 // listHybridConnectionsNextResults retrieves the next set of results, if any.
-func (client AppServicePlansClient) listHybridConnectionsNextResults(lastResults HybridConnectionCollection) (result HybridConnectionCollection, err error) {
-	req, err := lastResults.hybridConnectionCollectionPreparer()
+func (client AppServicePlansClient) listHybridConnectionsNextResults(ctx context.Context, lastResults HybridConnectionCollection) (result HybridConnectionCollection, err error) {
+	req, err := lastResults.hybridConnectionCollectionPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "web.AppServicePlansClient", "listHybridConnectionsNextResults", nil, "Failure preparing next results request")
 	}
@@ -1409,15 +1614,35 @@ func (client AppServicePlansClient) listHybridConnectionsNextResults(lastResults
 
 // ListHybridConnectionsComplete enumerates all values, automatically crossing page boundaries as required.
 func (client AppServicePlansClient) ListHybridConnectionsComplete(ctx context.Context, resourceGroupName string, name string) (result HybridConnectionCollectionIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.ListHybridConnections")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListHybridConnections(ctx, resourceGroupName, name)
 	return
 }
 
 // ListMetricDefintions get metrics that can be queried for an App Service plan, and their definitions.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
 func (client AppServicePlansClient) ListMetricDefintions(ctx context.Context, resourceGroupName string, name string) (result ResourceMetricDefinitionCollectionPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.ListMetricDefintions")
+		defer func() {
+			sc := -1
+			if result.rmdc.Response.Response != nil {
+				sc = result.rmdc.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -1472,8 +1697,8 @@ func (client AppServicePlansClient) ListMetricDefintionsPreparer(ctx context.Con
 // ListMetricDefintionsSender sends the ListMetricDefintions request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) ListMetricDefintionsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListMetricDefintionsResponder handles the response to the ListMetricDefintions request. The method always
@@ -1490,8 +1715,8 @@ func (client AppServicePlansClient) ListMetricDefintionsResponder(resp *http.Res
 }
 
 // listMetricDefintionsNextResults retrieves the next set of results, if any.
-func (client AppServicePlansClient) listMetricDefintionsNextResults(lastResults ResourceMetricDefinitionCollection) (result ResourceMetricDefinitionCollection, err error) {
-	req, err := lastResults.resourceMetricDefinitionCollectionPreparer()
+func (client AppServicePlansClient) listMetricDefintionsNextResults(ctx context.Context, lastResults ResourceMetricDefinitionCollection) (result ResourceMetricDefinitionCollection, err error) {
+	req, err := lastResults.resourceMetricDefinitionCollectionPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "web.AppServicePlansClient", "listMetricDefintionsNextResults", nil, "Failure preparing next results request")
 	}
@@ -1512,18 +1737,39 @@ func (client AppServicePlansClient) listMetricDefintionsNextResults(lastResults 
 
 // ListMetricDefintionsComplete enumerates all values, automatically crossing page boundaries as required.
 func (client AppServicePlansClient) ListMetricDefintionsComplete(ctx context.Context, resourceGroupName string, name string) (result ResourceMetricDefinitionCollectionIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.ListMetricDefintions")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListMetricDefintions(ctx, resourceGroupName, name)
 	return
 }
 
-// ListMetrics get metrics for an App Serice plan.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan. details is specify <code>true</code> to include instance details. The default is <code>false</code>.
-// filter is return only usages/metrics specified in the filter. Filter conforms to odata syntax. Example:
-// $filter=(name.value eq 'Metric1' or name.value eq 'Metric2') and startTime eq '2014-01-01T00:00:00Z' and endTime
-// eq '2014-12-31T23:59:59Z' and timeGrain eq duration'[Hour|Minute|Day]'.
+// ListMetrics get metrics for an App Service plan.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
+// details - specify <code>true</code> to include instance details. The default is <code>false</code>.
+// filter - return only usages/metrics specified in the filter. Filter conforms to odata syntax. Example:
+// $filter=(name.value eq 'Metric1' or name.value eq 'Metric2') and startTime eq '2014-01-01T00:00:00Z' and
+// endTime eq '2014-12-31T23:59:59Z' and timeGrain eq duration'[Hour|Minute|Day]'.
 func (client AppServicePlansClient) ListMetrics(ctx context.Context, resourceGroupName string, name string, details *bool, filter string) (result ResourceMetricCollectionPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.ListMetrics")
+		defer func() {
+			sc := -1
+			if result.rmc.Response.Response != nil {
+				sc = result.rmc.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -1584,8 +1830,8 @@ func (client AppServicePlansClient) ListMetricsPreparer(ctx context.Context, res
 // ListMetricsSender sends the ListMetrics request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) ListMetricsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListMetricsResponder handles the response to the ListMetrics request. The method always
@@ -1602,8 +1848,8 @@ func (client AppServicePlansClient) ListMetricsResponder(resp *http.Response) (r
 }
 
 // listMetricsNextResults retrieves the next set of results, if any.
-func (client AppServicePlansClient) listMetricsNextResults(lastResults ResourceMetricCollection) (result ResourceMetricCollection, err error) {
-	req, err := lastResults.resourceMetricCollectionPreparer()
+func (client AppServicePlansClient) listMetricsNextResults(ctx context.Context, lastResults ResourceMetricCollection) (result ResourceMetricCollection, err error) {
+	req, err := lastResults.resourceMetricCollectionPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "web.AppServicePlansClient", "listMetricsNextResults", nil, "Failure preparing next results request")
 	}
@@ -1624,15 +1870,36 @@ func (client AppServicePlansClient) listMetricsNextResults(lastResults ResourceM
 
 // ListMetricsComplete enumerates all values, automatically crossing page boundaries as required.
 func (client AppServicePlansClient) ListMetricsComplete(ctx context.Context, resourceGroupName string, name string, details *bool, filter string) (result ResourceMetricCollectionIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.ListMetrics")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListMetrics(ctx, resourceGroupName, name, details, filter)
 	return
 }
 
 // ListRoutesForVnet get all routes that are associated with a Virtual Network in an App Service plan.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan. vnetName is name of the Virtual Network.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
+// vnetName - name of the Virtual Network.
 func (client AppServicePlansClient) ListRoutesForVnet(ctx context.Context, resourceGroupName string, name string, vnetName string) (result ListVnetRoute, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.ListRoutesForVnet")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -1687,8 +1954,8 @@ func (client AppServicePlansClient) ListRoutesForVnetPreparer(ctx context.Contex
 // ListRoutesForVnetSender sends the ListRoutesForVnet request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) ListRoutesForVnetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListRoutesForVnetResponder handles the response to the ListRoutesForVnet request. The method always
@@ -1705,11 +1972,22 @@ func (client AppServicePlansClient) ListRoutesForVnetResponder(resp *http.Respon
 }
 
 // ListUsages gets server farm usage information
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of App Service Plan
-// filter is return only usages/metrics specified in the filter. Filter conforms to odata syntax. Example:
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of App Service Plan
+// filter - return only usages/metrics specified in the filter. Filter conforms to odata syntax. Example:
 // $filter=(name.value eq 'Metric1' or name.value eq 'Metric2').
 func (client AppServicePlansClient) ListUsages(ctx context.Context, resourceGroupName string, name string, filter string) (result CsmUsageQuotaCollectionPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.ListUsages")
+		defer func() {
+			sc := -1
+			if result.cuqc.Response.Response != nil {
+				sc = result.cuqc.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -1767,8 +2045,8 @@ func (client AppServicePlansClient) ListUsagesPreparer(ctx context.Context, reso
 // ListUsagesSender sends the ListUsages request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) ListUsagesSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListUsagesResponder handles the response to the ListUsages request. The method always
@@ -1785,8 +2063,8 @@ func (client AppServicePlansClient) ListUsagesResponder(resp *http.Response) (re
 }
 
 // listUsagesNextResults retrieves the next set of results, if any.
-func (client AppServicePlansClient) listUsagesNextResults(lastResults CsmUsageQuotaCollection) (result CsmUsageQuotaCollection, err error) {
-	req, err := lastResults.csmUsageQuotaCollectionPreparer()
+func (client AppServicePlansClient) listUsagesNextResults(ctx context.Context, lastResults CsmUsageQuotaCollection) (result CsmUsageQuotaCollection, err error) {
+	req, err := lastResults.csmUsageQuotaCollectionPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "web.AppServicePlansClient", "listUsagesNextResults", nil, "Failure preparing next results request")
 	}
@@ -1807,15 +2085,35 @@ func (client AppServicePlansClient) listUsagesNextResults(lastResults CsmUsageQu
 
 // ListUsagesComplete enumerates all values, automatically crossing page boundaries as required.
 func (client AppServicePlansClient) ListUsagesComplete(ctx context.Context, resourceGroupName string, name string, filter string) (result CsmUsageQuotaCollectionIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.ListUsages")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListUsages(ctx, resourceGroupName, name, filter)
 	return
 }
 
 // ListVnets get all Virtual Networks associated with an App Service plan.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
 func (client AppServicePlansClient) ListVnets(ctx context.Context, resourceGroupName string, name string) (result ListVnetInfo, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.ListVnets")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -1869,8 +2167,8 @@ func (client AppServicePlansClient) ListVnetsPreparer(ctx context.Context, resou
 // ListVnetsSender sends the ListVnets request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) ListVnetsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListVnetsResponder handles the response to the ListVnets request. The method always
@@ -1887,13 +2185,25 @@ func (client AppServicePlansClient) ListVnetsResponder(resp *http.Response) (res
 }
 
 // ListWebApps get all apps associated with an App Service plan.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan. skipToken is skip to a web app in the list of webapps associated with app service plan. If specified, the
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
+// skipToken - skip to a web app in the list of webapps associated with app service plan. If specified, the
 // resulting list will contain web apps starting from (including) the skipToken. Otherwise, the resulting list
-// contains web apps from the start of the list filter is supported filter: $filter=state eq running. Returns only
-// web apps that are currently running top is list page size. If specified, results are paged.
+// contains web apps from the start of the list
+// filter - supported filter: $filter=state eq running. Returns only web apps that are currently running
+// top - list page size. If specified, results are paged.
 func (client AppServicePlansClient) ListWebApps(ctx context.Context, resourceGroupName string, name string, skipToken string, filter string, top string) (result AppCollectionPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.ListWebApps")
+		defer func() {
+			sc := -1
+			if result.ac.Response.Response != nil {
+				sc = result.ac.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -1957,8 +2267,8 @@ func (client AppServicePlansClient) ListWebAppsPreparer(ctx context.Context, res
 // ListWebAppsSender sends the ListWebApps request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) ListWebAppsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListWebAppsResponder handles the response to the ListWebApps request. The method always
@@ -1975,8 +2285,8 @@ func (client AppServicePlansClient) ListWebAppsResponder(resp *http.Response) (r
 }
 
 // listWebAppsNextResults retrieves the next set of results, if any.
-func (client AppServicePlansClient) listWebAppsNextResults(lastResults AppCollection) (result AppCollection, err error) {
-	req, err := lastResults.appCollectionPreparer()
+func (client AppServicePlansClient) listWebAppsNextResults(ctx context.Context, lastResults AppCollection) (result AppCollection, err error) {
+	req, err := lastResults.appCollectionPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "web.AppServicePlansClient", "listWebAppsNextResults", nil, "Failure preparing next results request")
 	}
@@ -1997,16 +2307,37 @@ func (client AppServicePlansClient) listWebAppsNextResults(lastResults AppCollec
 
 // ListWebAppsComplete enumerates all values, automatically crossing page boundaries as required.
 func (client AppServicePlansClient) ListWebAppsComplete(ctx context.Context, resourceGroupName string, name string, skipToken string, filter string, top string) (result AppCollectionIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.ListWebApps")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListWebApps(ctx, resourceGroupName, name, skipToken, filter, top)
 	return
 }
 
 // ListWebAppsByHybridConnection get all apps that use a Hybrid Connection in an App Service Plan.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan. namespaceName is name of the Hybrid Connection namespace. relayName is name of the Hybrid Connection
-// relay.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
+// namespaceName - name of the Hybrid Connection namespace.
+// relayName - name of the Hybrid Connection relay.
 func (client AppServicePlansClient) ListWebAppsByHybridConnection(ctx context.Context, resourceGroupName string, name string, namespaceName string, relayName string) (result ResourceCollectionPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.ListWebAppsByHybridConnection")
+		defer func() {
+			sc := -1
+			if result.rc.Response.Response != nil {
+				sc = result.rc.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -2063,8 +2394,8 @@ func (client AppServicePlansClient) ListWebAppsByHybridConnectionPreparer(ctx co
 // ListWebAppsByHybridConnectionSender sends the ListWebAppsByHybridConnection request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) ListWebAppsByHybridConnectionSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListWebAppsByHybridConnectionResponder handles the response to the ListWebAppsByHybridConnection request. The method always
@@ -2081,8 +2412,8 @@ func (client AppServicePlansClient) ListWebAppsByHybridConnectionResponder(resp 
 }
 
 // listWebAppsByHybridConnectionNextResults retrieves the next set of results, if any.
-func (client AppServicePlansClient) listWebAppsByHybridConnectionNextResults(lastResults ResourceCollection) (result ResourceCollection, err error) {
-	req, err := lastResults.resourceCollectionPreparer()
+func (client AppServicePlansClient) listWebAppsByHybridConnectionNextResults(ctx context.Context, lastResults ResourceCollection) (result ResourceCollection, err error) {
+	req, err := lastResults.resourceCollectionPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "web.AppServicePlansClient", "listWebAppsByHybridConnectionNextResults", nil, "Failure preparing next results request")
 	}
@@ -2103,15 +2434,36 @@ func (client AppServicePlansClient) listWebAppsByHybridConnectionNextResults(las
 
 // ListWebAppsByHybridConnectionComplete enumerates all values, automatically crossing page boundaries as required.
 func (client AppServicePlansClient) ListWebAppsByHybridConnectionComplete(ctx context.Context, resourceGroupName string, name string, namespaceName string, relayName string) (result ResourceCollectionIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.ListWebAppsByHybridConnection")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListWebAppsByHybridConnection(ctx, resourceGroupName, name, namespaceName, relayName)
 	return
 }
 
 // RebootWorker reboot a worker machine in an App Service plan.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan. workerName is name of worker machine, which typically starts with RD.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
+// workerName - name of worker machine, which typically starts with RD.
 func (client AppServicePlansClient) RebootWorker(ctx context.Context, resourceGroupName string, name string, workerName string) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.RebootWorker")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -2166,8 +2518,8 @@ func (client AppServicePlansClient) RebootWorkerPreparer(ctx context.Context, re
 // RebootWorkerSender sends the RebootWorker request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) RebootWorkerSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // RebootWorkerResponder handles the response to the RebootWorker request. The method always
@@ -2183,12 +2535,23 @@ func (client AppServicePlansClient) RebootWorkerResponder(resp *http.Response) (
 }
 
 // RestartWebApps restart all apps in an App Service plan.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan. softRestart is specify <code>true</code> to performa a soft restart, applies the configuration settings
-// and restarts the apps if necessary. The default is <code>false</code>, which always restarts and reprovisions
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
+// softRestart - specify <code>true</code> to perform a soft restart, applies the configuration settings and
+// restarts the apps if necessary. The default is <code>false</code>, which always restarts and reprovisions
 // the apps
 func (client AppServicePlansClient) RestartWebApps(ctx context.Context, resourceGroupName string, name string, softRestart *bool) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.RestartWebApps")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -2245,8 +2608,8 @@ func (client AppServicePlansClient) RestartWebAppsPreparer(ctx context.Context, 
 // RestartWebAppsSender sends the RestartWebApps request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) RestartWebAppsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // RestartWebAppsResponder handles the response to the RestartWebApps request. The method always
@@ -2262,10 +2625,21 @@ func (client AppServicePlansClient) RestartWebAppsResponder(resp *http.Response)
 }
 
 // Update creates or updates an App Service Plan.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan. appServicePlan is details of the App Service plan.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
+// appServicePlan - details of the App Service plan.
 func (client AppServicePlansClient) Update(ctx context.Context, resourceGroupName string, name string, appServicePlan AppServicePlanPatchResource) (result AppServicePlan, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.Update")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -2309,7 +2683,7 @@ func (client AppServicePlansClient) UpdatePreparer(ctx context.Context, resource
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Web/serverfarms/{name}", pathParameters),
@@ -2321,8 +2695,8 @@ func (client AppServicePlansClient) UpdatePreparer(ctx context.Context, resource
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) UpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateResponder handles the response to the Update request. The method always
@@ -2339,11 +2713,23 @@ func (client AppServicePlansClient) UpdateResponder(resp *http.Response) (result
 }
 
 // UpdateVnetGateway update a Virtual Network gateway.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan. vnetName is name of the Virtual Network. gatewayName is name of the gateway. Only the 'primary' gateway is
-// supported. connectionEnvelope is definition of the gateway.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
+// vnetName - name of the Virtual Network.
+// gatewayName - name of the gateway. Only the 'primary' gateway is supported.
+// connectionEnvelope - definition of the gateway.
 func (client AppServicePlansClient) UpdateVnetGateway(ctx context.Context, resourceGroupName string, name string, vnetName string, gatewayName string, connectionEnvelope VnetGateway) (result VnetGateway, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.UpdateVnetGateway")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -2392,7 +2778,7 @@ func (client AppServicePlansClient) UpdateVnetGatewayPreparer(ctx context.Contex
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Web/serverfarms/{name}/virtualNetworkConnections/{vnetName}/gateways/{gatewayName}", pathParameters),
@@ -2404,8 +2790,8 @@ func (client AppServicePlansClient) UpdateVnetGatewayPreparer(ctx context.Contex
 // UpdateVnetGatewaySender sends the UpdateVnetGateway request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) UpdateVnetGatewaySender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateVnetGatewayResponder handles the response to the UpdateVnetGateway request. The method always
@@ -2422,11 +2808,23 @@ func (client AppServicePlansClient) UpdateVnetGatewayResponder(resp *http.Respon
 }
 
 // UpdateVnetRoute create or update a Virtual Network route in an App Service plan.
-//
-// resourceGroupName is name of the resource group to which the resource belongs. name is name of the App Service
-// plan. vnetName is name of the Virtual Network. routeName is name of the Virtual Network route. route is
-// definition of the Virtual Network route.
+// Parameters:
+// resourceGroupName - name of the resource group to which the resource belongs.
+// name - name of the App Service plan.
+// vnetName - name of the Virtual Network.
+// routeName - name of the Virtual Network route.
+// route - definition of the Virtual Network route.
 func (client AppServicePlansClient) UpdateVnetRoute(ctx context.Context, resourceGroupName string, name string, vnetName string, routeName string, route VnetRoute) (result VnetRoute, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AppServicePlansClient.UpdateVnetRoute")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: resourceGroupName,
 			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
@@ -2472,7 +2870,7 @@ func (client AppServicePlansClient) UpdateVnetRoutePreparer(ctx context.Context,
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Web/serverfarms/{name}/virtualNetworkConnections/{vnetName}/routes/{routeName}", pathParameters),
@@ -2484,8 +2882,8 @@ func (client AppServicePlansClient) UpdateVnetRoutePreparer(ctx context.Context,
 // UpdateVnetRouteSender sends the UpdateVnetRoute request. The method will close the
 // http.Response Body if it receives an error.
 func (client AppServicePlansClient) UpdateVnetRouteSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateVnetRouteResponder handles the response to the UpdateVnetRoute request. The method always

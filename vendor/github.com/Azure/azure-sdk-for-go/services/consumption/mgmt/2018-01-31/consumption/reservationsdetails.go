@@ -21,6 +21,7 @@ import (
 	"context"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -41,10 +42,21 @@ func NewReservationsDetailsClientWithBaseURI(baseURI string, subscriptionID stri
 }
 
 // ListByReservationOrder lists the reservations details for provided date range.
-//
-// reservationOrderID is order Id of the reservation filter is filter reservation details by date range. The
-// properties/UsageDate for start date and end date. The filter supports 'le' and  'ge'
+// Parameters:
+// reservationOrderID - order Id of the reservation
+// filter - filter reservation details by date range. The properties/UsageDate for start date and end date. The
+// filter supports 'le' and  'ge'
 func (client ReservationsDetailsClient) ListByReservationOrder(ctx context.Context, reservationOrderID string, filter string) (result ReservationDetailsListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReservationsDetailsClient.ListByReservationOrder")
+		defer func() {
+			sc := -1
+			if result.rdlr.Response.Response != nil {
+				sc = result.rdlr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listByReservationOrderNextResults
 	req, err := client.ListByReservationOrderPreparer(ctx, reservationOrderID, filter)
 	if err != nil {
@@ -90,8 +102,8 @@ func (client ReservationsDetailsClient) ListByReservationOrderPreparer(ctx conte
 // ListByReservationOrderSender sends the ListByReservationOrder request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReservationsDetailsClient) ListByReservationOrderSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByReservationOrderResponder handles the response to the ListByReservationOrder request. The method always
@@ -108,8 +120,8 @@ func (client ReservationsDetailsClient) ListByReservationOrderResponder(resp *ht
 }
 
 // listByReservationOrderNextResults retrieves the next set of results, if any.
-func (client ReservationsDetailsClient) listByReservationOrderNextResults(lastResults ReservationDetailsListResult) (result ReservationDetailsListResult, err error) {
-	req, err := lastResults.reservationDetailsListResultPreparer()
+func (client ReservationsDetailsClient) listByReservationOrderNextResults(ctx context.Context, lastResults ReservationDetailsListResult) (result ReservationDetailsListResult, err error) {
+	req, err := lastResults.reservationDetailsListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "consumption.ReservationsDetailsClient", "listByReservationOrderNextResults", nil, "Failure preparing next results request")
 	}
@@ -130,16 +142,37 @@ func (client ReservationsDetailsClient) listByReservationOrderNextResults(lastRe
 
 // ListByReservationOrderComplete enumerates all values, automatically crossing page boundaries as required.
 func (client ReservationsDetailsClient) ListByReservationOrderComplete(ctx context.Context, reservationOrderID string, filter string) (result ReservationDetailsListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReservationsDetailsClient.ListByReservationOrder")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListByReservationOrder(ctx, reservationOrderID, filter)
 	return
 }
 
 // ListByReservationOrderAndReservation lists the reservations details for provided date range.
-//
-// reservationOrderID is order Id of the reservation reservationID is id of the reservation filter is filter
-// reservation details by date range. The properties/UsageDate for start date and end date. The filter supports
-// 'le' and  'ge'
+// Parameters:
+// reservationOrderID - order Id of the reservation
+// reservationID - id of the reservation
+// filter - filter reservation details by date range. The properties/UsageDate for start date and end date. The
+// filter supports 'le' and  'ge'
 func (client ReservationsDetailsClient) ListByReservationOrderAndReservation(ctx context.Context, reservationOrderID string, reservationID string, filter string) (result ReservationDetailsListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReservationsDetailsClient.ListByReservationOrderAndReservation")
+		defer func() {
+			sc := -1
+			if result.rdlr.Response.Response != nil {
+				sc = result.rdlr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listByReservationOrderAndReservationNextResults
 	req, err := client.ListByReservationOrderAndReservationPreparer(ctx, reservationOrderID, reservationID, filter)
 	if err != nil {
@@ -186,8 +219,8 @@ func (client ReservationsDetailsClient) ListByReservationOrderAndReservationPrep
 // ListByReservationOrderAndReservationSender sends the ListByReservationOrderAndReservation request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReservationsDetailsClient) ListByReservationOrderAndReservationSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByReservationOrderAndReservationResponder handles the response to the ListByReservationOrderAndReservation request. The method always
@@ -204,8 +237,8 @@ func (client ReservationsDetailsClient) ListByReservationOrderAndReservationResp
 }
 
 // listByReservationOrderAndReservationNextResults retrieves the next set of results, if any.
-func (client ReservationsDetailsClient) listByReservationOrderAndReservationNextResults(lastResults ReservationDetailsListResult) (result ReservationDetailsListResult, err error) {
-	req, err := lastResults.reservationDetailsListResultPreparer()
+func (client ReservationsDetailsClient) listByReservationOrderAndReservationNextResults(ctx context.Context, lastResults ReservationDetailsListResult) (result ReservationDetailsListResult, err error) {
+	req, err := lastResults.reservationDetailsListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "consumption.ReservationsDetailsClient", "listByReservationOrderAndReservationNextResults", nil, "Failure preparing next results request")
 	}
@@ -226,6 +259,16 @@ func (client ReservationsDetailsClient) listByReservationOrderAndReservationNext
 
 // ListByReservationOrderAndReservationComplete enumerates all values, automatically crossing page boundaries as required.
 func (client ReservationsDetailsClient) ListByReservationOrderAndReservationComplete(ctx context.Context, reservationOrderID string, reservationID string, filter string) (result ReservationDetailsListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReservationsDetailsClient.ListByReservationOrderAndReservation")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListByReservationOrderAndReservation(ctx, reservationOrderID, reservationID, filter)
 	return
 }

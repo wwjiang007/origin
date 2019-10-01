@@ -25,6 +25,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/spec"
 	"github.com/go-openapi/strfmt"
@@ -65,21 +67,6 @@ type jsonRequestSlice struct {
 	RequestID int64    // header
 	Tags      []string // csv
 	Friend    []friend
-}
-
-type jsonRequestAllTypes struct {
-	Confirmed bool
-	Planned   strfmt.Date
-	Delivered strfmt.DateTime
-	Age       int32
-	ID        int64
-	Score     float32
-	Factor    float64
-	Friend    friend
-	Name      string
-	Tags      []string
-	Picture   []byte
-	RequestID int64
 }
 
 func parametersForAllTypes(fmt string) map[string]spec.Parameter {
@@ -299,9 +286,11 @@ func TestRequestBindingForValid(t *testing.T) {
 		binder := newUntypedRequestBinder(op1, new(spec.Swagger), strfmt.Default)
 
 		lval := []string{"one", "two", "three"}
-		queryString := ""
+		var queryString string
+		var skipEscape bool
 		switch fmt {
 		case "multi":
+			skipEscape = true
 			queryString = strings.Join(lval, "&tags=")
 		case "ssv":
 			queryString = strings.Join(lval, " ")
@@ -312,15 +301,19 @@ func TestRequestBindingForValid(t *testing.T) {
 		default:
 			queryString = strings.Join(lval, ",")
 		}
+		if !skipEscape {
+			queryString = url.QueryEscape(queryString)
+		}
 
 		urlStr := "http://localhost:8002/hello/1?name=the-name&tags=" + queryString
 
-		req, _ := http.NewRequest("POST", urlStr, bytes.NewBuffer([]byte(`{"name":"toby","age":32}`)))
+		req, err := http.NewRequest("POST", urlStr, bytes.NewBuffer([]byte(`{"name":"toby","age":32}`)))
+		require.NoError(t, err)
 		req.Header.Set("Content-Type", "application/json;charset=utf-8")
 		req.Header.Set("X-Request-Id", "1325959595")
 
 		data := jsonRequestParams{}
-		err := binder.Bind(req, RouteParams([]RouteParam{{"id", "1"}}), runtime.JSONConsumer(), &data)
+		err = binder.Bind(req, RouteParams([]RouteParam{{"id", "1"}}), runtime.JSONConsumer(), &data)
 
 		expected := jsonRequestParams{
 			ID:        1,
@@ -428,8 +421,8 @@ func TestBindingFileUpload(t *testing.T) {
 	part, err := writer.CreateFormFile("file", "plain-jane.txt")
 	assert.NoError(t, err)
 
-	part.Write([]byte("the file contents"))
-	writer.WriteField("name", "the-name")
+	_, _ = part.Write([]byte("the file contents"))
+	_ = writer.WriteField("name", "the-name")
 	assert.NoError(t, writer.Close())
 
 	urlStr := "http://localhost:8002/hello"
@@ -462,8 +455,8 @@ func TestBindingFileUpload(t *testing.T) {
 	part, err = writer.CreateFormFile("bad-name", "plain-jane.txt")
 	assert.NoError(t, err)
 
-	part.Write([]byte("the file contents"))
-	writer.WriteField("name", "the-name")
+	_, _ = part.Write([]byte("the file contents"))
+	_ = writer.WriteField("name", "the-name")
 	assert.NoError(t, writer.Close())
 	req, _ = http.NewRequest("POST", urlStr, body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -473,7 +466,7 @@ func TestBindingFileUpload(t *testing.T) {
 
 	req, _ = http.NewRequest("POST", urlStr, body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	req.MultipartReader()
+	_, _ = req.MultipartReader()
 
 	data = fileRequest{}
 	assert.Error(t, binder.Bind(req, nil, runtime.JSONConsumer(), &data))

@@ -18,8 +18,11 @@ package simulator
 
 import (
 	"context"
+	"log"
 	"reflect"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
@@ -27,6 +30,7 @@ import (
 	"github.com/vmware/govmomi/property"
 	"github.com/vmware/govmomi/simulator/esx"
 	"github.com/vmware/govmomi/simulator/vpx"
+	"github.com/vmware/govmomi/view"
 	"github.com/vmware/govmomi/vim25/methods"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/soap"
@@ -250,6 +254,7 @@ func TestWaitForUpdates(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	updates := make(chan bool)
 	cb := func(once bool) func([]types.PropertyChange) bool {
 		return func(pc []types.PropertyChange) bool {
 			if len(pc) != 1 {
@@ -267,6 +272,9 @@ func TestWaitForUpdates(t *testing.T) {
 				t.Fail()
 			}
 
+			if once == false {
+				updates <- true
+			}
 			return once
 		}
 	}
@@ -279,11 +287,16 @@ func TestWaitForUpdates(t *testing.T) {
 		t.Error(err)
 	}
 
-	// incremental updates not yet suppported
-	err = property.Wait(ctx, pc, folder.Reference(), props, cb(false))
-	if err == nil {
-		t.Error("expected error")
-	}
+	wctx, cancel := context.WithCancel(ctx)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		_ = property.Wait(wctx, pc, folder.Reference(), props, cb(false))
+	}()
+	<-updates
+	cancel()
+	wg.Wait()
 
 	// test object not found
 	Map.Remove(folder.Reference())
@@ -305,10 +318,246 @@ func TestWaitForUpdates(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = methods.CancelWaitForUpdates(ctx, c.Client, &types.CancelWaitForUpdates{This: p.Reference()})
+	err = p.CancelWaitForUpdates(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestIncrementalWaitForUpdates(t *testing.T) {
+	ctx := context.Background()
+
+	m := VPX()
+
+	defer m.Remove()
+
+	err := m.Create()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s := m.Service.NewServer()
+	defer s.Close()
+
+	c, err := govmomi.NewClient(ctx, s.URL, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	pc := property.DefaultCollector(c.Client)
+	obj := Map.Any("VirtualMachine").(*VirtualMachine)
+	ref := obj.Reference()
+	vm := object.NewVirtualMachine(c.Client, ref)
+
+	tests := []struct {
+		name  string
+		props []string
+	}{
+		{"1 field", []string{"runtime.powerState"}},
+		{"2 fields", []string{"summary.runtime.powerState", "summary.runtime.bootTime"}},
+		{"3 fields", []string{"runtime.powerState", "summary.runtime.powerState", "summary.runtime.bootTime"}},
+		{"parent field", []string{"runtime"}},
+		{"nested parent field", []string{"summary.runtime"}},
+		{"all", nil},
+	}
+
+	// toggle power state to generate updates
+	state := map[types.VirtualMachinePowerState]func(context.Context) (*object.Task, error){
+		types.VirtualMachinePowerStatePoweredOff: vm.PowerOn,
+		types.VirtualMachinePowerStatePoweredOn:  vm.PowerOff,
+	}
+
+	for i, test := range tests {
+		var props []string
+		matches := false
+		wait := make(chan bool)
+		host := obj.Summary.Runtime.Host // add host to filter just to have a different type in the filter
+		filter := new(property.WaitFilter).Add(*host, host.Type, nil).Add(ref, ref.Type, test.props)
+
+		go func() {
+			perr := property.WaitForUpdates(ctx, pc, filter, func(updates []types.ObjectUpdate) bool {
+				if updates[0].Kind == types.ObjectUpdateKindEnter {
+					wait <- true
+					return false
+				}
+				for _, update := range updates {
+					for _, change := range update.ChangeSet {
+						props = append(props, change.Name)
+					}
+				}
+
+				if test.props == nil {
+					// special case to test All flag
+					matches = isTrue(filter.Spec.PropSet[0].All) && len(props) > 1
+
+					return matches
+				}
+
+				if len(props) > len(test.props) {
+					return true
+				}
+
+				matches = reflect.DeepEqual(props, test.props)
+				return matches
+			})
+
+			if perr != nil {
+				t.Error(perr)
+			}
+			wait <- matches
+		}()
+
+		<-wait // wait for enter
+		_, _ = state[obj.Runtime.PowerState](ctx)
+		if !<-wait { // wait for modify
+			t.Errorf("%d: updates=%s, expected=%s", i, props, test.props)
+		}
+	}
+
+	// Test ContainerView + Delete
+	v, err := view.NewManager(c.Client).CreateContainerView(ctx, c.Client.ServiceContent.RootFolder, []string{ref.Type}, true)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		filter := new(property.WaitFilter).Add(v.Reference(), ref.Type, tests[0].props, v.TraversalSpec())
+		perr := property.WaitForUpdates(ctx, pc, filter, func(updates []types.ObjectUpdate) bool {
+			for _, update := range updates {
+				switch update.Kind {
+				case types.ObjectUpdateKindEnter:
+					wg.Done()
+					return false
+				case types.ObjectUpdateKindModify:
+				case types.ObjectUpdateKindLeave:
+					return update.Obj == vm.Reference()
+				}
+			}
+			return false
+		})
+		if perr != nil {
+			t.Error(perr)
+		}
+	}()
+
+	wg.Wait() // wait for 1st enter
+	wg.Add(1)
+	_, _ = vm.PowerOff(ctx)
+	_, _ = vm.Destroy(ctx)
+	wg.Wait() // wait for Delete to be reported
+}
+
+func TestWaitForUpdatesOneUpdateCalculation(t *testing.T) {
+	/*
+	 * In this test, we use WaitForUpdatesEx in non-blocking way
+	 * by setting the MaxWaitSeconds to 0.
+	 * We filter on 'runtime.powerState'
+	 * Once we get the first 'enter' update, we change the
+	 * power state of the VM to generate a 'modify' update.
+	 * Once we get the modify, we can stop.
+	 */
+	ctx := context.Background()
+
+	m := VPX()
+	defer m.Remove()
+
+	err := m.Create()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s := m.Service.NewServer()
+	defer s.Close()
+
+	c, err := govmomi.NewClient(ctx, s.URL, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	wait := make(chan bool)
+	pc := property.DefaultCollector(c.Client)
+	obj := Map.Any("VirtualMachine").(*VirtualMachine)
+	ref := obj.Reference()
+	vm := object.NewVirtualMachine(c.Client, ref)
+	filter := new(property.WaitFilter).Add(ref, ref.Type, []string{"runtime.powerState"})
+	// WaitOptions.maxWaitSeconds:
+	// A value of 0 causes WaitForUpdatesEx to do one update calculation and return any results.
+	filter.Options = &types.WaitOptions{
+		MaxWaitSeconds: types.NewInt32(0),
+	}
+	// toggle power state to generate updates
+	state := map[types.VirtualMachinePowerState]func(context.Context) (*object.Task, error){
+		types.VirtualMachinePowerStatePoweredOff: vm.PowerOn,
+		types.VirtualMachinePowerStatePoweredOn:  vm.PowerOff,
+	}
+
+	err = pc.CreateFilter(ctx, filter.CreateFilter)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req := types.WaitForUpdatesEx{
+		This:    pc.Reference(),
+		Options: filter.Options,
+	}
+
+	go func() {
+		for {
+			res, err := methods.WaitForUpdatesEx(ctx, c.Client, &req)
+			if err != nil {
+				if ctx.Err() == context.Canceled {
+					werr := pc.CancelWaitForUpdates(context.Background())
+					t.Error(werr)
+					return
+				}
+				t.Error(err)
+				return
+			}
+
+			set := res.Returnval
+			if set == nil {
+				// Retry if the result came back empty
+				// Thats a normal case when MaxWaitSeconds is set to 0.
+				// It means we have no updates for now
+				time.Sleep(500 * time.Millisecond)
+				continue
+			}
+
+			req.Version = set.Version
+
+			for _, fs := range set.FilterSet {
+				// We expect the enter of VM first
+				if fs.ObjectSet[0].Kind == types.ObjectUpdateKindEnter {
+					wait <- true
+					// Keep going
+					continue
+				}
+
+				// We also expect a modify due to the power state change
+				if fs.ObjectSet[0].Kind == types.ObjectUpdateKindModify {
+					wait <- true
+					// Now we can return to stop the routine
+					return
+				}
+			}
+		}
+	}()
+
+	// wait for the enter update.
+	<-wait
+
+	// Now change the VM power state, to generate a modify update
+	_, err = state[obj.Runtime.PowerState](ctx)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// wait for the modify update.
+	<-wait
 }
 
 func TestPropertyCollectorWithUnsetValues(t *testing.T) {
@@ -337,9 +586,9 @@ func TestPropertyCollectorWithUnsetValues(t *testing.T) {
 	vmRef := vm.Reference()
 
 	propSets := [][]string{
-		{"parentVApp"},                                                         // unset string by default (not returned by RetrievePropertiesEx)
-		{"rootSnapshot"},                                                       // unset VirtualMachineSnapshot[] by default (returned by RetrievePropertiesEx)
-		{"config.networkShaper.enabled"},                                       // unset at config.networkShaper level by default (not returned by RetrievePropertiesEx)
+		{"parentVApp"},                   // unset string by default (not returned by RetrievePropertiesEx)
+		{"rootSnapshot"},                 // unset VirtualMachineSnapshot[] by default (returned by RetrievePropertiesEx)
+		{"config.networkShaper.enabled"}, // unset at config.networkShaper level by default (not returned by RetrievePropertiesEx)
 		{"parentVApp", "rootSnapshot", "config.networkShaper.enabled"},         // (not returned by RetrievePropertiesEx)
 		{"name", "parentVApp", "rootSnapshot", "config.networkShaper.enabled"}, // (only name returned by RetrievePropertiesEx)
 		{"name", "config.guestFullName"},                                       // both set (and returned by RetrievePropertiesEx))
@@ -463,22 +712,6 @@ func TestExtractEmbeddedField(t *testing.T) {
 
 	if obj.Type() != reflect.ValueOf(new(mo.ResourcePool)).Elem().Type() {
 		t.Errorf("unexpected type=%s", obj.Type().Name())
-	}
-
-	// satisfies the mo.Reference interface, but does not embed a type from the "mo" package
-	type NoMo struct {
-		types.ManagedObjectReference
-
-		Self types.ManagedObjectReference
-	}
-
-	n := new(NoMo)
-	n.ManagedObjectReference = types.ManagedObjectReference{Type: "NoMo", Value: "no-mo"}
-	Map.Put(n)
-
-	_, ok = getObject(internalContext, n.Reference())
-	if ok {
-		t.Error("expected not ok")
 	}
 }
 
@@ -1228,5 +1461,201 @@ func TestPropertyCollectorSession(t *testing.T) { // aka issue-923
 		if err = c.Logout(ctx); err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+func TestPropertyCollectorNoPathSet(t *testing.T) {
+	ctx := context.Background()
+
+	m := VPX()
+	m.Datacenter = 3
+	m.Folder = 2
+
+	defer m.Remove()
+
+	err := m.Create()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s := m.Service.NewServer()
+	defer s.Close()
+
+	client, err := govmomi.NewClient(ctx, s.URL, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// request from https://github.com/vmware/govmomi/issues/1199
+	req := &types.RetrieveProperties{
+		This: client.ServiceContent.PropertyCollector,
+		SpecSet: []types.PropertyFilterSpec{
+			{
+				PropSet: []types.PropertySpec{
+					{
+						Type:    "Datacenter",
+						All:     types.NewBool(false),
+						PathSet: nil,
+					},
+				},
+				ObjectSet: []types.ObjectSpec{
+					{
+						Obj:  client.ServiceContent.RootFolder,
+						Skip: types.NewBool(false),
+						SelectSet: []types.BaseSelectionSpec{
+							&types.TraversalSpec{
+								SelectionSpec: types.SelectionSpec{
+									Name: "resourcePoolTraversalSpec",
+								},
+								Type: "ResourcePool",
+								Path: "resourcePool",
+								Skip: types.NewBool(false),
+								SelectSet: []types.BaseSelectionSpec{
+									&types.SelectionSpec{
+										Name: "resourcePoolTraversalSpec",
+									},
+									&types.SelectionSpec{
+										Name: "resourcePoolVmTraversalSpec",
+									},
+								},
+							},
+							&types.TraversalSpec{
+								SelectionSpec: types.SelectionSpec{
+									Name: "resourcePoolVmTraversalSpec",
+								},
+								Type:      "ResourcePool",
+								Path:      "vm",
+								Skip:      types.NewBool(false),
+								SelectSet: nil,
+							},
+							&types.TraversalSpec{
+								SelectionSpec: types.SelectionSpec{
+									Name: "computeResourceRpTraversalSpec",
+								},
+								Type: "ComputeResource",
+								Path: "resourcePool",
+								Skip: types.NewBool(false),
+								SelectSet: []types.BaseSelectionSpec{
+									&types.SelectionSpec{
+										Name: "resourcePoolTraversalSpec",
+									},
+									&types.SelectionSpec{
+										Name: "resourcePoolVmTraversalSpec",
+									},
+								},
+							},
+							&types.TraversalSpec{
+								SelectionSpec: types.SelectionSpec{
+									Name: "computeResourceHostTraversalSpec",
+								},
+								Type:      "ComputeResource",
+								Path:      "host",
+								Skip:      types.NewBool(false),
+								SelectSet: nil,
+							},
+							&types.TraversalSpec{
+								SelectionSpec: types.SelectionSpec{
+									Name: "datacenterVmTraversalSpec",
+								},
+								Type: "Datacenter",
+								Path: "vmFolder",
+								Skip: types.NewBool(false),
+								SelectSet: []types.BaseSelectionSpec{
+									&types.SelectionSpec{
+										Name: "folderTraversalSpec",
+									},
+								},
+							},
+							&types.TraversalSpec{
+								SelectionSpec: types.SelectionSpec{
+									Name: "datacenterHostTraversalSpec",
+								},
+								Type: "Datacenter",
+								Path: "hostFolder",
+								Skip: types.NewBool(false),
+								SelectSet: []types.BaseSelectionSpec{
+									&types.SelectionSpec{
+										Name: "folderTraversalSpec",
+									},
+								},
+							},
+							&types.TraversalSpec{
+								SelectionSpec: types.SelectionSpec{
+									Name: "hostVmTraversalSpec",
+								},
+								Type: "HostSystem",
+								Path: "vm",
+								Skip: types.NewBool(false),
+								SelectSet: []types.BaseSelectionSpec{
+									&types.SelectionSpec{
+										Name: "folderTraversalSpec",
+									},
+								},
+							},
+							&types.TraversalSpec{
+								SelectionSpec: types.SelectionSpec{
+									Name: "datacenterDatastoreTraversalSpec",
+								},
+								Type: "Datacenter",
+								Path: "datastoreFolder",
+								Skip: types.NewBool(false),
+								SelectSet: []types.BaseSelectionSpec{
+									&types.SelectionSpec{
+										Name: "folderTraversalSpec",
+									},
+								},
+							},
+							&types.TraversalSpec{
+								SelectionSpec: types.SelectionSpec{
+									Name: "folderTraversalSpec",
+								},
+								Type: "Folder",
+								Path: "childEntity",
+								Skip: types.NewBool(false),
+								SelectSet: []types.BaseSelectionSpec{
+									&types.SelectionSpec{
+										Name: "folderTraversalSpec",
+									},
+									&types.SelectionSpec{
+										Name: "datacenterHostTraversalSpec",
+									},
+									&types.SelectionSpec{
+										Name: "datacenterVmTraversalSpec",
+									},
+									&types.SelectionSpec{
+										Name: "computeResourceRpTraversalSpec",
+									},
+									&types.SelectionSpec{
+										Name: "computeResourceHostTraversalSpec",
+									},
+									&types.SelectionSpec{
+										Name: "hostVmTraversalSpec",
+									},
+									&types.SelectionSpec{
+										Name: "resourcePoolVmTraversalSpec",
+									},
+									&types.SelectionSpec{
+										Name: "datacenterDatastoreTraversalSpec",
+									},
+								},
+							},
+						},
+					},
+				},
+				ReportMissingObjectsInResults: (*bool)(nil),
+			},
+		},
+	}
+
+	res, err := methods.RetrieveProperties(ctx, client, req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	content := res.Returnval
+	count := m.Count()
+
+	if len(content) != count.Datacenter {
+		t.Fatalf("len(content)=%d", len(content))
 	}
 }

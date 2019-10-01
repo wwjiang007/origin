@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -41,11 +42,24 @@ func NewVolumesClientWithBaseURI(baseURI string, subscriptionID string) VolumesC
 }
 
 // CreateOrUpdate creates or updates the volume.
-//
-// deviceName is the device name volumeContainerName is the volume container name. volumeName is the volume name.
-// parameters is volume to be created or updated. resourceGroupName is the resource group name managerName is the
-// manager name
+// Parameters:
+// deviceName - the device name
+// volumeContainerName - the volume container name.
+// volumeName - the volume name.
+// parameters - volume to be created or updated.
+// resourceGroupName - the resource group name
+// managerName - the manager name
 func (client VolumesClient) CreateOrUpdate(ctx context.Context, deviceName string, volumeContainerName string, volumeName string, parameters Volume, resourceGroupName string, managerName string) (result VolumesCreateOrUpdateFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/VolumesClient.CreateOrUpdate")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameters,
 			Constraints: []validation.Constraint{{Target: "parameters.VolumeProperties", Name: validation.Null, Rule: true,
@@ -90,7 +104,7 @@ func (client VolumesClient) CreateOrUpdatePreparer(ctx context.Context, deviceNa
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.StorSimple/managers/{managerName}/devices/{deviceName}/volumeContainers/{volumeContainerName}/volumes/{volumeName}", pathParameters),
@@ -102,15 +116,13 @@ func (client VolumesClient) CreateOrUpdatePreparer(ctx context.Context, deviceNa
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client VolumesClient) CreateOrUpdateSender(req *http.Request) (future VolumesCreateOrUpdateFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -128,10 +140,23 @@ func (client VolumesClient) CreateOrUpdateResponder(resp *http.Response) (result
 }
 
 // Delete deletes the volume.
-//
-// deviceName is the device name volumeContainerName is the volume container name. volumeName is the volume name.
-// resourceGroupName is the resource group name managerName is the manager name
+// Parameters:
+// deviceName - the device name
+// volumeContainerName - the volume container name.
+// volumeName - the volume name.
+// resourceGroupName - the resource group name
+// managerName - the manager name
 func (client VolumesClient) Delete(ctx context.Context, deviceName string, volumeContainerName string, volumeName string, resourceGroupName string, managerName string) (result VolumesDeleteFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/VolumesClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: managerName,
 			Constraints: []validation.Constraint{{Target: "managerName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -181,15 +206,13 @@ func (client VolumesClient) DeletePreparer(ctx context.Context, deviceName strin
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client VolumesClient) DeleteSender(req *http.Request) (future VolumesDeleteFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -206,10 +229,23 @@ func (client VolumesClient) DeleteResponder(resp *http.Response) (result autores
 }
 
 // Get returns the properties of the specified volume name.
-//
-// deviceName is the device name volumeContainerName is the volume container name. volumeName is the volume name.
-// resourceGroupName is the resource group name managerName is the manager name
+// Parameters:
+// deviceName - the device name
+// volumeContainerName - the volume container name.
+// volumeName - the volume name.
+// resourceGroupName - the resource group name
+// managerName - the manager name
 func (client VolumesClient) Get(ctx context.Context, deviceName string, volumeContainerName string, volumeName string, resourceGroupName string, managerName string) (result Volume, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/VolumesClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: managerName,
 			Constraints: []validation.Constraint{{Target: "managerName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -265,8 +301,8 @@ func (client VolumesClient) GetPreparer(ctx context.Context, deviceName string, 
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client VolumesClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -283,9 +319,21 @@ func (client VolumesClient) GetResponder(resp *http.Response) (result Volume, er
 }
 
 // ListByDevice retrieves all the volumes in a device.
-//
-// deviceName is the device name resourceGroupName is the resource group name managerName is the manager name
+// Parameters:
+// deviceName - the device name
+// resourceGroupName - the resource group name
+// managerName - the manager name
 func (client VolumesClient) ListByDevice(ctx context.Context, deviceName string, resourceGroupName string, managerName string) (result VolumeList, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/VolumesClient.ListByDevice")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: managerName,
 			Constraints: []validation.Constraint{{Target: "managerName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -339,8 +387,8 @@ func (client VolumesClient) ListByDevicePreparer(ctx context.Context, deviceName
 // ListByDeviceSender sends the ListByDevice request. The method will close the
 // http.Response Body if it receives an error.
 func (client VolumesClient) ListByDeviceSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByDeviceResponder handles the response to the ListByDevice request. The method always
@@ -357,10 +405,22 @@ func (client VolumesClient) ListByDeviceResponder(resp *http.Response) (result V
 }
 
 // ListByVolumeContainer retrieves all the volumes in a volume container.
-//
-// deviceName is the device name volumeContainerName is the volume container name. resourceGroupName is the
-// resource group name managerName is the manager name
+// Parameters:
+// deviceName - the device name
+// volumeContainerName - the volume container name.
+// resourceGroupName - the resource group name
+// managerName - the manager name
 func (client VolumesClient) ListByVolumeContainer(ctx context.Context, deviceName string, volumeContainerName string, resourceGroupName string, managerName string) (result VolumeList, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/VolumesClient.ListByVolumeContainer")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: managerName,
 			Constraints: []validation.Constraint{{Target: "managerName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -415,8 +475,8 @@ func (client VolumesClient) ListByVolumeContainerPreparer(ctx context.Context, d
 // ListByVolumeContainerSender sends the ListByVolumeContainer request. The method will close the
 // http.Response Body if it receives an error.
 func (client VolumesClient) ListByVolumeContainerSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByVolumeContainerResponder handles the response to the ListByVolumeContainer request. The method always
@@ -433,10 +493,23 @@ func (client VolumesClient) ListByVolumeContainerResponder(resp *http.Response) 
 }
 
 // ListMetricDefinition gets the metric definitions for the specified volume.
-//
-// deviceName is the device name volumeContainerName is the volume container name. volumeName is the volume name.
-// resourceGroupName is the resource group name managerName is the manager name
+// Parameters:
+// deviceName - the device name
+// volumeContainerName - the volume container name.
+// volumeName - the volume name.
+// resourceGroupName - the resource group name
+// managerName - the manager name
 func (client VolumesClient) ListMetricDefinition(ctx context.Context, deviceName string, volumeContainerName string, volumeName string, resourceGroupName string, managerName string) (result MetricDefinitionList, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/VolumesClient.ListMetricDefinition")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: managerName,
 			Constraints: []validation.Constraint{{Target: "managerName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -492,8 +565,8 @@ func (client VolumesClient) ListMetricDefinitionPreparer(ctx context.Context, de
 // ListMetricDefinitionSender sends the ListMetricDefinition request. The method will close the
 // http.Response Body if it receives an error.
 func (client VolumesClient) ListMetricDefinitionSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListMetricDefinitionResponder handles the response to the ListMetricDefinition request. The method always
@@ -510,10 +583,24 @@ func (client VolumesClient) ListMetricDefinitionResponder(resp *http.Response) (
 }
 
 // ListMetrics gets the metrics for the specified volume.
-//
-// deviceName is the device name volumeContainerName is the volume container name. volumeName is the volume name.
-// resourceGroupName is the resource group name managerName is the manager name filter is oData Filter options
+// Parameters:
+// deviceName - the device name
+// volumeContainerName - the volume container name.
+// volumeName - the volume name.
+// resourceGroupName - the resource group name
+// managerName - the manager name
+// filter - oData Filter options
 func (client VolumesClient) ListMetrics(ctx context.Context, deviceName string, volumeContainerName string, volumeName string, resourceGroupName string, managerName string, filter string) (result MetricList, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/VolumesClient.ListMetrics")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: managerName,
 			Constraints: []validation.Constraint{{Target: "managerName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -570,8 +657,8 @@ func (client VolumesClient) ListMetricsPreparer(ctx context.Context, deviceName 
 // ListMetricsSender sends the ListMetrics request. The method will close the
 // http.Response Body if it receives an error.
 func (client VolumesClient) ListMetricsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListMetricsResponder handles the response to the ListMetrics request. The method always

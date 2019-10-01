@@ -2,9 +2,11 @@ package builds
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	e2e "k8s.io/kubernetes/test/e2e/framework"
+	"k8s.io/kubernetes/test/e2e/framework/pod"
 
 	g "github.com/onsi/ginkgo"
 	o "github.com/onsi/gomega"
@@ -28,27 +30,19 @@ var _ = g.Describe("[Feature:Builds][Slow] s2i build with environment file in so
 
 	g.Context("", func() {
 		g.BeforeEach(func() {
-			exutil.DumpDockerInfo()
-		})
-
-		g.JustBeforeEach(func() {
-			g.By("waiting for default service account")
-			err := exutil.WaitForServiceAccount(oc.KubeClient().Core().ServiceAccounts(oc.Namespace()), "default")
-			o.Expect(err).NotTo(o.HaveOccurred())
-			g.By("waiting for builder service account")
-			err = exutil.WaitForServiceAccount(oc.KubeClient().Core().ServiceAccounts(oc.Namespace()), "builder")
-			o.Expect(err).NotTo(o.HaveOccurred())
+			exutil.PreTestDump()
 		})
 
 		g.AfterEach(func() {
 			if g.CurrentGinkgoTestDescription().Failed {
 				exutil.DumpPodStates(oc)
+				exutil.DumpConfigMapStates(oc)
 				exutil.DumpPodLogsStartingWith("", oc)
 			}
 		})
 
 		g.Describe("Building from a template", func() {
-			g.It(fmt.Sprintf("should create a image from %q template and run it in a pod", stiEnvBuildFixture), func() {
+			g.It(fmt.Sprintf("should create a image from %q template and run it in a pod", filepath.Base(stiEnvBuildFixture)), func() {
 
 				g.By(fmt.Sprintf("calling oc create -f %q", imageStreamFixture))
 				err := oc.Run("create").Args("-f", imageStreamFixture).Execute()
@@ -63,8 +57,8 @@ var _ = g.Describe("[Feature:Builds][Slow] s2i build with environment file in so
 				br, _ := exutil.StartBuildAndWait(oc, "test", "--from-dir", path)
 				br.AssertSuccess()
 
-				g.By("getting the Docker image reference from ImageStream")
-				imageName, err := exutil.GetDockerImageReference(oc.ImageClient().Image().ImageStreams(oc.Namespace()), "test", "latest")
+				g.By("getting the container image reference from ImageStream")
+				imageName, err := exutil.GetDockerImageReference(oc.ImageClient().ImageV1().ImageStreams(oc.Namespace()), "test", "latest")
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				g.By("instantiating a pod and service with the new image")
@@ -72,11 +66,11 @@ var _ = g.Describe("[Feature:Builds][Slow] s2i build with environment file in so
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				g.By("waiting for the pod to be running")
-				err = e2e.WaitForPodNameRunningInNamespace(oc.KubeFramework().ClientSet, "build-test-pod", oc.Namespace())
+				err = pod.WaitForPodNameRunningInNamespace(oc.KubeFramework().ClientSet, "build-test-pod", oc.Namespace())
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				g.By("waiting for the service to become available")
-				err = e2e.WaitForEndpoint(oc.KubeFramework().ClientSet, oc.Namespace(), buildTestService)
+				err = exutil.WaitForEndpoint(oc.KubeFramework().ClientSet, oc.Namespace(), buildTestService)
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				g.By("expecting the pod container has TEST_ENV variable set")

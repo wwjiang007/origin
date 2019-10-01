@@ -21,6 +21,7 @@ import (
 	"context"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -43,9 +44,20 @@ func NewReplicationRecoveryServicesProvidersClientWithBaseURI(baseURI string, su
 }
 
 // Delete the operation to removes/delete(unregister) a recovery services provider from the vault
-//
-// fabricName is fabric name. providerName is recovery services provider name.
+// Parameters:
+// fabricName - fabric name.
+// providerName - recovery services provider name.
 func (client ReplicationRecoveryServicesProvidersClient) Delete(ctx context.Context, fabricName string, providerName string) (result ReplicationRecoveryServicesProvidersDeleteFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationRecoveryServicesProvidersClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeletePreparer(ctx, fabricName, providerName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationRecoveryServicesProvidersClient", "Delete", nil, "Failure preparing request")
@@ -87,15 +99,13 @@ func (client ReplicationRecoveryServicesProvidersClient) DeletePreparer(ctx cont
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationRecoveryServicesProvidersClient) DeleteSender(req *http.Request) (future ReplicationRecoveryServicesProvidersDeleteFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -112,9 +122,20 @@ func (client ReplicationRecoveryServicesProvidersClient) DeleteResponder(resp *h
 }
 
 // Get gets the details of registered recovery services provider.
-//
-// fabricName is fabric name. providerName is recovery services provider name
+// Parameters:
+// fabricName - fabric name.
+// providerName - recovery services provider name
 func (client ReplicationRecoveryServicesProvidersClient) Get(ctx context.Context, fabricName string, providerName string) (result RecoveryServicesProvider, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationRecoveryServicesProvidersClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, fabricName, providerName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationRecoveryServicesProvidersClient", "Get", nil, "Failure preparing request")
@@ -162,8 +183,8 @@ func (client ReplicationRecoveryServicesProvidersClient) GetPreparer(ctx context
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationRecoveryServicesProvidersClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -181,6 +202,16 @@ func (client ReplicationRecoveryServicesProvidersClient) GetResponder(resp *http
 
 // List lists the registered recovery services providers in the vault
 func (client ReplicationRecoveryServicesProvidersClient) List(ctx context.Context) (result RecoveryServicesProviderCollectionPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationRecoveryServicesProvidersClient.List")
+		defer func() {
+			sc := -1
+			if result.rspc.Response.Response != nil {
+				sc = result.rspc.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listNextResults
 	req, err := client.ListPreparer(ctx)
 	if err != nil {
@@ -227,8 +258,8 @@ func (client ReplicationRecoveryServicesProvidersClient) ListPreparer(ctx contex
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationRecoveryServicesProvidersClient) ListSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -245,8 +276,8 @@ func (client ReplicationRecoveryServicesProvidersClient) ListResponder(resp *htt
 }
 
 // listNextResults retrieves the next set of results, if any.
-func (client ReplicationRecoveryServicesProvidersClient) listNextResults(lastResults RecoveryServicesProviderCollection) (result RecoveryServicesProviderCollection, err error) {
-	req, err := lastResults.recoveryServicesProviderCollectionPreparer()
+func (client ReplicationRecoveryServicesProvidersClient) listNextResults(ctx context.Context, lastResults RecoveryServicesProviderCollection) (result RecoveryServicesProviderCollection, err error) {
+	req, err := lastResults.recoveryServicesProviderCollectionPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "siterecovery.ReplicationRecoveryServicesProvidersClient", "listNextResults", nil, "Failure preparing next results request")
 	}
@@ -267,14 +298,34 @@ func (client ReplicationRecoveryServicesProvidersClient) listNextResults(lastRes
 
 // ListComplete enumerates all values, automatically crossing page boundaries as required.
 func (client ReplicationRecoveryServicesProvidersClient) ListComplete(ctx context.Context) (result RecoveryServicesProviderCollectionIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationRecoveryServicesProvidersClient.List")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.List(ctx)
 	return
 }
 
 // ListByReplicationFabrics lists the registered recovery services providers for the specified fabric.
-//
-// fabricName is fabric name
+// Parameters:
+// fabricName - fabric name
 func (client ReplicationRecoveryServicesProvidersClient) ListByReplicationFabrics(ctx context.Context, fabricName string) (result RecoveryServicesProviderCollectionPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationRecoveryServicesProvidersClient.ListByReplicationFabrics")
+		defer func() {
+			sc := -1
+			if result.rspc.Response.Response != nil {
+				sc = result.rspc.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listByReplicationFabricsNextResults
 	req, err := client.ListByReplicationFabricsPreparer(ctx, fabricName)
 	if err != nil {
@@ -322,8 +373,8 @@ func (client ReplicationRecoveryServicesProvidersClient) ListByReplicationFabric
 // ListByReplicationFabricsSender sends the ListByReplicationFabrics request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationRecoveryServicesProvidersClient) ListByReplicationFabricsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByReplicationFabricsResponder handles the response to the ListByReplicationFabrics request. The method always
@@ -340,8 +391,8 @@ func (client ReplicationRecoveryServicesProvidersClient) ListByReplicationFabric
 }
 
 // listByReplicationFabricsNextResults retrieves the next set of results, if any.
-func (client ReplicationRecoveryServicesProvidersClient) listByReplicationFabricsNextResults(lastResults RecoveryServicesProviderCollection) (result RecoveryServicesProviderCollection, err error) {
-	req, err := lastResults.recoveryServicesProviderCollectionPreparer()
+func (client ReplicationRecoveryServicesProvidersClient) listByReplicationFabricsNextResults(ctx context.Context, lastResults RecoveryServicesProviderCollection) (result RecoveryServicesProviderCollection, err error) {
+	req, err := lastResults.recoveryServicesProviderCollectionPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "siterecovery.ReplicationRecoveryServicesProvidersClient", "listByReplicationFabricsNextResults", nil, "Failure preparing next results request")
 	}
@@ -362,14 +413,35 @@ func (client ReplicationRecoveryServicesProvidersClient) listByReplicationFabric
 
 // ListByReplicationFabricsComplete enumerates all values, automatically crossing page boundaries as required.
 func (client ReplicationRecoveryServicesProvidersClient) ListByReplicationFabricsComplete(ctx context.Context, fabricName string) (result RecoveryServicesProviderCollectionIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationRecoveryServicesProvidersClient.ListByReplicationFabrics")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListByReplicationFabrics(ctx, fabricName)
 	return
 }
 
 // Purge the operation to purge(force delete) a recovery services provider from the vault.
-//
-// fabricName is fabric name. providerName is recovery services provider name.
+// Parameters:
+// fabricName - fabric name.
+// providerName - recovery services provider name.
 func (client ReplicationRecoveryServicesProvidersClient) Purge(ctx context.Context, fabricName string, providerName string) (result ReplicationRecoveryServicesProvidersPurgeFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationRecoveryServicesProvidersClient.Purge")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.PurgePreparer(ctx, fabricName, providerName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationRecoveryServicesProvidersClient", "Purge", nil, "Failure preparing request")
@@ -411,15 +483,13 @@ func (client ReplicationRecoveryServicesProvidersClient) PurgePreparer(ctx conte
 // PurgeSender sends the Purge request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationRecoveryServicesProvidersClient) PurgeSender(req *http.Request) (future ReplicationRecoveryServicesProvidersPurgeFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -436,9 +506,20 @@ func (client ReplicationRecoveryServicesProvidersClient) PurgeResponder(resp *ht
 }
 
 // RefreshProvider the operation to refresh the information from the recovery services provider.
-//
-// fabricName is fabric name. providerName is recovery services provider name.
+// Parameters:
+// fabricName - fabric name.
+// providerName - recovery services provider name.
 func (client ReplicationRecoveryServicesProvidersClient) RefreshProvider(ctx context.Context, fabricName string, providerName string) (result ReplicationRecoveryServicesProvidersRefreshProviderFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationRecoveryServicesProvidersClient.RefreshProvider")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.RefreshProviderPreparer(ctx, fabricName, providerName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationRecoveryServicesProvidersClient", "RefreshProvider", nil, "Failure preparing request")
@@ -480,15 +561,13 @@ func (client ReplicationRecoveryServicesProvidersClient) RefreshProviderPreparer
 // RefreshProviderSender sends the RefreshProvider request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationRecoveryServicesProvidersClient) RefreshProviderSender(req *http.Request) (future ReplicationRecoveryServicesProvidersRefreshProviderFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 

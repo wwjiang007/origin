@@ -21,6 +21,7 @@ import (
 	"context"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -41,15 +42,26 @@ func NewProtectableItemsClientWithBaseURI(baseURI string, subscriptionID string)
 
 // List based on the query filter and the pagination parameters, this operation provides a pageable list of objects
 // within the subscription that can be protected.
-//
-// vaultName is the name of the Recovery Services vault. resourceGroupName is the name of the resource group
-// associated with the Recovery Services vault. filter is using the following query filters, you can sort a
-// specific backup item based on: type of backup item, status, name of the item, and more.  providerType eq {
-// AzureIaasVM, MAB, DPM, AzureBackupServer, AzureSql } and status eq { NotProtected , Protecting , Protected } and
-// friendlyName {name} and skipToken eq {string which provides the next set of list} and topToken eq {int} and
-// backupManagementType eq { AzureIaasVM, MAB, DPM, AzureBackupServer, AzureSql }. skipToken is the Skip Token
-// filter.
+// Parameters:
+// vaultName - the name of the Recovery Services vault.
+// resourceGroupName - the name of the resource group associated with the Recovery Services vault.
+// filter - using the following query filters, you can sort a specific backup item based on: type of backup
+// item, status, name of the item, and more.  providerType eq { AzureIaasVM, MAB, DPM, AzureBackupServer,
+// AzureSql } and status eq { NotProtected , Protecting , Protected } and friendlyName {name} and skipToken eq
+// {string which provides the next set of list} and topToken eq {int} and backupManagementType eq {
+// AzureIaasVM, MAB, DPM, AzureBackupServer, AzureSql }.
+// skipToken - the Skip Token filter.
 func (client ProtectableItemsClient) List(ctx context.Context, vaultName string, resourceGroupName string, filter string, skipToken string) (result WorkloadProtectableItemResourceListPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProtectableItemsClient.List")
+		defer func() {
+			sc := -1
+			if result.wpirl.Response.Response != nil {
+				sc = result.wpirl.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listNextResults
 	req, err := client.ListPreparer(ctx, vaultName, resourceGroupName, filter, skipToken)
 	if err != nil {
@@ -102,8 +114,8 @@ func (client ProtectableItemsClient) ListPreparer(ctx context.Context, vaultName
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client ProtectableItemsClient) ListSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -120,8 +132,8 @@ func (client ProtectableItemsClient) ListResponder(resp *http.Response) (result 
 }
 
 // listNextResults retrieves the next set of results, if any.
-func (client ProtectableItemsClient) listNextResults(lastResults WorkloadProtectableItemResourceList) (result WorkloadProtectableItemResourceList, err error) {
-	req, err := lastResults.workloadProtectableItemResourceListPreparer()
+func (client ProtectableItemsClient) listNextResults(ctx context.Context, lastResults WorkloadProtectableItemResourceList) (result WorkloadProtectableItemResourceList, err error) {
+	req, err := lastResults.workloadProtectableItemResourceListPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "backup.ProtectableItemsClient", "listNextResults", nil, "Failure preparing next results request")
 	}
@@ -142,6 +154,16 @@ func (client ProtectableItemsClient) listNextResults(lastResults WorkloadProtect
 
 // ListComplete enumerates all values, automatically crossing page boundaries as required.
 func (client ProtectableItemsClient) ListComplete(ctx context.Context, vaultName string, resourceGroupName string, filter string, skipToken string) (result WorkloadProtectableItemResourceListIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProtectableItemsClient.List")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.List(ctx, vaultName, resourceGroupName, filter, skipToken)
 	return
 }

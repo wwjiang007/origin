@@ -14,9 +14,8 @@ import (
 
 func TestJSON(t *testing.T) {
 	var buf bytes.Buffer
-	c := fakeNetConn{&buf, &buf}
-	wc := newConn(c, true, 1024, 1024)
-	rc := newConn(c, false, 1024, 1024)
+	wc := newTestConn(nil, &buf, true)
+	rc := newTestConn(&buf, nil, false)
 
 	var actual, expect struct {
 		A int
@@ -38,11 +37,10 @@ func TestJSON(t *testing.T) {
 	}
 }
 
-func TestPartialJsonRead(t *testing.T) {
-	var buf bytes.Buffer
-	c := fakeNetConn{&buf, &buf}
-	wc := newConn(c, true, 1024, 1024)
-	rc := newConn(c, false, 1024, 1024)
+func TestPartialJSONRead(t *testing.T) {
+	var buf0, buf1 bytes.Buffer
+	wc := newTestConn(nil, &buf0, true)
+	rc := newTestConn(&buf0, &buf1, false)
 
 	var v struct {
 		A int
@@ -87,16 +85,15 @@ func TestPartialJsonRead(t *testing.T) {
 	}
 
 	err = rc.ReadJSON(&v)
-	if err != io.EOF {
+	if _, ok := err.(*CloseError); !ok {
 		t.Error("final", err)
 	}
 }
 
 func TestDeprecatedJSON(t *testing.T) {
 	var buf bytes.Buffer
-	c := fakeNetConn{&buf, &buf}
-	wc := newConn(c, true, 1024, 1024)
-	rc := newConn(c, false, 1024, 1024)
+	wc := newTestConn(nil, &buf, true)
+	rc := newTestConn(&buf, nil, false)
 
 	var actual, expect struct {
 		A int

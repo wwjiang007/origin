@@ -21,6 +21,7 @@ import (
 	"context"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -41,10 +42,22 @@ func NewReplicationNetworkMappingsClientWithBaseURI(baseURI string, subscription
 }
 
 // Create the operation to create an ASR network mapping.
-//
-// fabricName is primary fabric name. networkName is primary network name. networkMappingName is network mapping
-// name. input is create network mapping input.
+// Parameters:
+// fabricName - primary fabric name.
+// networkName - primary network name.
+// networkMappingName - network mapping name.
+// input - create network mapping input.
 func (client ReplicationNetworkMappingsClient) Create(ctx context.Context, fabricName string, networkName string, networkMappingName string, input CreateNetworkMappingInput) (result ReplicationNetworkMappingsCreateFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationNetworkMappingsClient.Create")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.CreatePreparer(ctx, fabricName, networkName, networkMappingName, input)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationNetworkMappingsClient", "Create", nil, "Failure preparing request")
@@ -77,7 +90,7 @@ func (client ReplicationNetworkMappingsClient) CreatePreparer(ctx context.Contex
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/Subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.RecoveryServices/vaults/{resourceName}/replicationFabrics/{fabricName}/replicationNetworks/{networkName}/replicationNetworkMappings/{networkMappingName}", pathParameters),
@@ -89,15 +102,13 @@ func (client ReplicationNetworkMappingsClient) CreatePreparer(ctx context.Contex
 // CreateSender sends the Create request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationNetworkMappingsClient) CreateSender(req *http.Request) (future ReplicationNetworkMappingsCreateFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -115,10 +126,21 @@ func (client ReplicationNetworkMappingsClient) CreateResponder(resp *http.Respon
 }
 
 // Delete the operation to delete a network mapping.
-//
-// fabricName is primary fabric name. networkName is primary network name. networkMappingName is ARM Resource Name
-// for network mapping.
+// Parameters:
+// fabricName - primary fabric name.
+// networkName - primary network name.
+// networkMappingName - ARM Resource Name for network mapping.
 func (client ReplicationNetworkMappingsClient) Delete(ctx context.Context, fabricName string, networkName string, networkMappingName string) (result ReplicationNetworkMappingsDeleteFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationNetworkMappingsClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeletePreparer(ctx, fabricName, networkName, networkMappingName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationNetworkMappingsClient", "Delete", nil, "Failure preparing request")
@@ -161,15 +183,13 @@ func (client ReplicationNetworkMappingsClient) DeletePreparer(ctx context.Contex
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationNetworkMappingsClient) DeleteSender(req *http.Request) (future ReplicationNetworkMappingsDeleteFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -186,10 +206,21 @@ func (client ReplicationNetworkMappingsClient) DeleteResponder(resp *http.Respon
 }
 
 // Get gets the details of an ASR network mapping
-//
-// fabricName is primary fabric name. networkName is primary network name. networkMappingName is network mapping
-// name.
+// Parameters:
+// fabricName - primary fabric name.
+// networkName - primary network name.
+// networkMappingName - network mapping name.
 func (client ReplicationNetworkMappingsClient) Get(ctx context.Context, fabricName string, networkName string, networkMappingName string) (result NetworkMapping, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationNetworkMappingsClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, fabricName, networkName, networkMappingName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationNetworkMappingsClient", "Get", nil, "Failure preparing request")
@@ -238,8 +269,8 @@ func (client ReplicationNetworkMappingsClient) GetPreparer(ctx context.Context, 
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationNetworkMappingsClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -257,6 +288,16 @@ func (client ReplicationNetworkMappingsClient) GetResponder(resp *http.Response)
 
 // List lists all ASR network mappings in the vault.
 func (client ReplicationNetworkMappingsClient) List(ctx context.Context) (result NetworkMappingCollectionPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationNetworkMappingsClient.List")
+		defer func() {
+			sc := -1
+			if result.nmc.Response.Response != nil {
+				sc = result.nmc.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listNextResults
 	req, err := client.ListPreparer(ctx)
 	if err != nil {
@@ -303,8 +344,8 @@ func (client ReplicationNetworkMappingsClient) ListPreparer(ctx context.Context)
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationNetworkMappingsClient) ListSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -321,8 +362,8 @@ func (client ReplicationNetworkMappingsClient) ListResponder(resp *http.Response
 }
 
 // listNextResults retrieves the next set of results, if any.
-func (client ReplicationNetworkMappingsClient) listNextResults(lastResults NetworkMappingCollection) (result NetworkMappingCollection, err error) {
-	req, err := lastResults.networkMappingCollectionPreparer()
+func (client ReplicationNetworkMappingsClient) listNextResults(ctx context.Context, lastResults NetworkMappingCollection) (result NetworkMappingCollection, err error) {
+	req, err := lastResults.networkMappingCollectionPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "siterecovery.ReplicationNetworkMappingsClient", "listNextResults", nil, "Failure preparing next results request")
 	}
@@ -343,14 +384,35 @@ func (client ReplicationNetworkMappingsClient) listNextResults(lastResults Netwo
 
 // ListComplete enumerates all values, automatically crossing page boundaries as required.
 func (client ReplicationNetworkMappingsClient) ListComplete(ctx context.Context) (result NetworkMappingCollectionIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationNetworkMappingsClient.List")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.List(ctx)
 	return
 }
 
 // ListByReplicationNetworks lists all ASR network mappings for the specified network.
-//
-// fabricName is primary fabric name. networkName is primary network name.
+// Parameters:
+// fabricName - primary fabric name.
+// networkName - primary network name.
 func (client ReplicationNetworkMappingsClient) ListByReplicationNetworks(ctx context.Context, fabricName string, networkName string) (result NetworkMappingCollectionPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationNetworkMappingsClient.ListByReplicationNetworks")
+		defer func() {
+			sc := -1
+			if result.nmc.Response.Response != nil {
+				sc = result.nmc.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listByReplicationNetworksNextResults
 	req, err := client.ListByReplicationNetworksPreparer(ctx, fabricName, networkName)
 	if err != nil {
@@ -399,8 +461,8 @@ func (client ReplicationNetworkMappingsClient) ListByReplicationNetworksPreparer
 // ListByReplicationNetworksSender sends the ListByReplicationNetworks request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationNetworkMappingsClient) ListByReplicationNetworksSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByReplicationNetworksResponder handles the response to the ListByReplicationNetworks request. The method always
@@ -417,8 +479,8 @@ func (client ReplicationNetworkMappingsClient) ListByReplicationNetworksResponde
 }
 
 // listByReplicationNetworksNextResults retrieves the next set of results, if any.
-func (client ReplicationNetworkMappingsClient) listByReplicationNetworksNextResults(lastResults NetworkMappingCollection) (result NetworkMappingCollection, err error) {
-	req, err := lastResults.networkMappingCollectionPreparer()
+func (client ReplicationNetworkMappingsClient) listByReplicationNetworksNextResults(ctx context.Context, lastResults NetworkMappingCollection) (result NetworkMappingCollection, err error) {
+	req, err := lastResults.networkMappingCollectionPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "siterecovery.ReplicationNetworkMappingsClient", "listByReplicationNetworksNextResults", nil, "Failure preparing next results request")
 	}
@@ -439,15 +501,37 @@ func (client ReplicationNetworkMappingsClient) listByReplicationNetworksNextResu
 
 // ListByReplicationNetworksComplete enumerates all values, automatically crossing page boundaries as required.
 func (client ReplicationNetworkMappingsClient) ListByReplicationNetworksComplete(ctx context.Context, fabricName string, networkName string) (result NetworkMappingCollectionIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationNetworkMappingsClient.ListByReplicationNetworks")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListByReplicationNetworks(ctx, fabricName, networkName)
 	return
 }
 
 // Update the operation to update an ASR network mapping.
-//
-// fabricName is primary fabric name. networkName is primary network name. networkMappingName is network mapping
-// name. input is update network mapping input.
+// Parameters:
+// fabricName - primary fabric name.
+// networkName - primary network name.
+// networkMappingName - network mapping name.
+// input - update network mapping input.
 func (client ReplicationNetworkMappingsClient) Update(ctx context.Context, fabricName string, networkName string, networkMappingName string, input UpdateNetworkMappingInput) (result ReplicationNetworkMappingsUpdateFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationNetworkMappingsClient.Update")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UpdatePreparer(ctx, fabricName, networkName, networkMappingName, input)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationNetworkMappingsClient", "Update", nil, "Failure preparing request")
@@ -480,7 +564,7 @@ func (client ReplicationNetworkMappingsClient) UpdatePreparer(ctx context.Contex
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/Subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.RecoveryServices/vaults/{resourceName}/replicationFabrics/{fabricName}/replicationNetworks/{networkName}/replicationNetworkMappings/{networkMappingName}", pathParameters),
@@ -492,15 +576,13 @@ func (client ReplicationNetworkMappingsClient) UpdatePreparer(ctx context.Contex
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationNetworkMappingsClient) UpdateSender(req *http.Request) (future ReplicationNetworkMappingsUpdateFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 

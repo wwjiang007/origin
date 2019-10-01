@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -43,10 +44,22 @@ func NewRoleAssignmentsClientWithBaseURI(baseURI string, subscriptionID string) 
 }
 
 // CreateOrUpdate creates or updates a role assignment in the hub.
-//
-// resourceGroupName is the name of the resource group. hubName is the name of the hub. assignmentName is the
-// assignment name parameters is parameters supplied to the CreateOrUpdate RoleAssignment operation.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// hubName - the name of the hub.
+// assignmentName - the assignment name
+// parameters - parameters supplied to the CreateOrUpdate RoleAssignment operation.
 func (client RoleAssignmentsClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, hubName string, assignmentName string, parameters RoleAssignmentResourceFormat) (result RoleAssignmentsCreateOrUpdateFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RoleAssignmentsClient.CreateOrUpdate")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: assignmentName,
 			Constraints: []validation.Constraint{{Target: "assignmentName", Name: validation.MaxLength, Rule: 128, Chain: nil},
@@ -88,7 +101,7 @@ func (client RoleAssignmentsClient) CreateOrUpdatePreparer(ctx context.Context, 
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.CustomerInsights/hubs/{hubName}/roleAssignments/{assignmentName}", pathParameters),
@@ -100,15 +113,13 @@ func (client RoleAssignmentsClient) CreateOrUpdatePreparer(ctx context.Context, 
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client RoleAssignmentsClient) CreateOrUpdateSender(req *http.Request) (future RoleAssignmentsCreateOrUpdateFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -126,10 +137,21 @@ func (client RoleAssignmentsClient) CreateOrUpdateResponder(resp *http.Response)
 }
 
 // Delete deletes the role assignment in the hub.
-//
-// resourceGroupName is the name of the resource group. hubName is the name of the hub. assignmentName is the name
-// of the role assignment.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// hubName - the name of the hub.
+// assignmentName - the name of the role assignment.
 func (client RoleAssignmentsClient) Delete(ctx context.Context, resourceGroupName string, hubName string, assignmentName string) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RoleAssignmentsClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeletePreparer(ctx, resourceGroupName, hubName, assignmentName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "customerinsights.RoleAssignmentsClient", "Delete", nil, "Failure preparing request")
@@ -176,8 +198,8 @@ func (client RoleAssignmentsClient) DeletePreparer(ctx context.Context, resource
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client RoleAssignmentsClient) DeleteSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
@@ -193,10 +215,21 @@ func (client RoleAssignmentsClient) DeleteResponder(resp *http.Response) (result
 }
 
 // Get gets the role assignment in the hub.
-//
-// resourceGroupName is the name of the resource group. hubName is the name of the hub. assignmentName is the name
-// of the role assignment.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// hubName - the name of the hub.
+// assignmentName - the name of the role assignment.
 func (client RoleAssignmentsClient) Get(ctx context.Context, resourceGroupName string, hubName string, assignmentName string) (result RoleAssignmentResourceFormat, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RoleAssignmentsClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, resourceGroupName, hubName, assignmentName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "customerinsights.RoleAssignmentsClient", "Get", nil, "Failure preparing request")
@@ -243,8 +276,8 @@ func (client RoleAssignmentsClient) GetPreparer(ctx context.Context, resourceGro
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client RoleAssignmentsClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -261,9 +294,20 @@ func (client RoleAssignmentsClient) GetResponder(resp *http.Response) (result Ro
 }
 
 // ListByHub gets all the role assignments for the specified hub.
-//
-// resourceGroupName is the name of the resource group. hubName is the name of the hub.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// hubName - the name of the hub.
 func (client RoleAssignmentsClient) ListByHub(ctx context.Context, resourceGroupName string, hubName string) (result RoleAssignmentListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RoleAssignmentsClient.ListByHub")
+		defer func() {
+			sc := -1
+			if result.ralr.Response.Response != nil {
+				sc = result.ralr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listByHubNextResults
 	req, err := client.ListByHubPreparer(ctx, resourceGroupName, hubName)
 	if err != nil {
@@ -310,8 +354,8 @@ func (client RoleAssignmentsClient) ListByHubPreparer(ctx context.Context, resou
 // ListByHubSender sends the ListByHub request. The method will close the
 // http.Response Body if it receives an error.
 func (client RoleAssignmentsClient) ListByHubSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByHubResponder handles the response to the ListByHub request. The method always
@@ -328,8 +372,8 @@ func (client RoleAssignmentsClient) ListByHubResponder(resp *http.Response) (res
 }
 
 // listByHubNextResults retrieves the next set of results, if any.
-func (client RoleAssignmentsClient) listByHubNextResults(lastResults RoleAssignmentListResult) (result RoleAssignmentListResult, err error) {
-	req, err := lastResults.roleAssignmentListResultPreparer()
+func (client RoleAssignmentsClient) listByHubNextResults(ctx context.Context, lastResults RoleAssignmentListResult) (result RoleAssignmentListResult, err error) {
+	req, err := lastResults.roleAssignmentListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "customerinsights.RoleAssignmentsClient", "listByHubNextResults", nil, "Failure preparing next results request")
 	}
@@ -350,6 +394,16 @@ func (client RoleAssignmentsClient) listByHubNextResults(lastResults RoleAssignm
 
 // ListByHubComplete enumerates all values, automatically crossing page boundaries as required.
 func (client RoleAssignmentsClient) ListByHubComplete(ctx context.Context, resourceGroupName string, hubName string) (result RoleAssignmentListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RoleAssignmentsClient.ListByHub")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListByHub(ctx, resourceGroupName, hubName)
 	return
 }

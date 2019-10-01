@@ -21,6 +21,7 @@ import (
 	"context"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -40,9 +41,20 @@ func NewProfilesClientWithBaseURI(baseURI string, subscriptionID string) Profile
 }
 
 // CheckTrafficManagerRelativeDNSNameAvailability checks the availability of a Traffic Manager Relative DNS name.
-//
-// parameters is the Traffic Manager name parameters supplied to the CheckTrafficManagerNameAvailability operation.
+// Parameters:
+// parameters - the Traffic Manager name parameters supplied to the CheckTrafficManagerNameAvailability
+// operation.
 func (client ProfilesClient) CheckTrafficManagerRelativeDNSNameAvailability(ctx context.Context, parameters CheckTrafficManagerRelativeDNSNameAvailabilityParameters) (result NameAvailability, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProfilesClient.CheckTrafficManagerRelativeDNSNameAvailability")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.CheckTrafficManagerRelativeDNSNameAvailabilityPreparer(ctx, parameters)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "trafficmanager.ProfilesClient", "CheckTrafficManagerRelativeDNSNameAvailability", nil, "Failure preparing request")
@@ -72,7 +84,7 @@ func (client ProfilesClient) CheckTrafficManagerRelativeDNSNameAvailabilityPrepa
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPath("/providers/Microsoft.Network/checkTrafficManagerNameAvailability"),
@@ -84,8 +96,8 @@ func (client ProfilesClient) CheckTrafficManagerRelativeDNSNameAvailabilityPrepa
 // CheckTrafficManagerRelativeDNSNameAvailabilitySender sends the CheckTrafficManagerRelativeDNSNameAvailability request. The method will close the
 // http.Response Body if it receives an error.
 func (client ProfilesClient) CheckTrafficManagerRelativeDNSNameAvailabilitySender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CheckTrafficManagerRelativeDNSNameAvailabilityResponder handles the response to the CheckTrafficManagerRelativeDNSNameAvailability request. The method always
@@ -102,11 +114,21 @@ func (client ProfilesClient) CheckTrafficManagerRelativeDNSNameAvailabilityRespo
 }
 
 // CreateOrUpdate create or update a Traffic Manager profile.
-//
-// resourceGroupName is the name of the resource group containing the Traffic Manager profile. profileName is the
-// name of the Traffic Manager profile. parameters is the Traffic Manager profile parameters supplied to the
-// CreateOrUpdate operation.
+// Parameters:
+// resourceGroupName - the name of the resource group containing the Traffic Manager profile.
+// profileName - the name of the Traffic Manager profile.
+// parameters - the Traffic Manager profile parameters supplied to the CreateOrUpdate operation.
 func (client ProfilesClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, profileName string, parameters Profile) (result Profile, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProfilesClient.CreateOrUpdate")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.CreateOrUpdatePreparer(ctx, resourceGroupName, profileName, parameters)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "trafficmanager.ProfilesClient", "CreateOrUpdate", nil, "Failure preparing request")
@@ -142,7 +164,7 @@ func (client ProfilesClient) CreateOrUpdatePreparer(ctx context.Context, resourc
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/trafficmanagerprofiles/{profileName}", pathParameters),
@@ -154,8 +176,8 @@ func (client ProfilesClient) CreateOrUpdatePreparer(ctx context.Context, resourc
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client ProfilesClient) CreateOrUpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateOrUpdateResponder handles the response to the CreateOrUpdate request. The method always
@@ -172,10 +194,20 @@ func (client ProfilesClient) CreateOrUpdateResponder(resp *http.Response) (resul
 }
 
 // Delete deletes a Traffic Manager profile.
-//
-// resourceGroupName is the name of the resource group containing the Traffic Manager profile to be deleted.
-// profileName is the name of the Traffic Manager profile to be deleted.
+// Parameters:
+// resourceGroupName - the name of the resource group containing the Traffic Manager profile to be deleted.
+// profileName - the name of the Traffic Manager profile to be deleted.
 func (client ProfilesClient) Delete(ctx context.Context, resourceGroupName string, profileName string) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProfilesClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeletePreparer(ctx, resourceGroupName, profileName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "trafficmanager.ProfilesClient", "Delete", nil, "Failure preparing request")
@@ -221,8 +253,8 @@ func (client ProfilesClient) DeletePreparer(ctx context.Context, resourceGroupNa
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client ProfilesClient) DeleteSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
@@ -238,10 +270,20 @@ func (client ProfilesClient) DeleteResponder(resp *http.Response) (result autore
 }
 
 // Get gets a Traffic Manager profile.
-//
-// resourceGroupName is the name of the resource group containing the Traffic Manager profile. profileName is the
-// name of the Traffic Manager profile.
+// Parameters:
+// resourceGroupName - the name of the resource group containing the Traffic Manager profile.
+// profileName - the name of the Traffic Manager profile.
 func (client ProfilesClient) Get(ctx context.Context, resourceGroupName string, profileName string) (result Profile, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProfilesClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, resourceGroupName, profileName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "trafficmanager.ProfilesClient", "Get", nil, "Failure preparing request")
@@ -287,8 +329,8 @@ func (client ProfilesClient) GetPreparer(ctx context.Context, resourceGroupName 
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client ProfilesClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -306,6 +348,16 @@ func (client ProfilesClient) GetResponder(resp *http.Response) (result Profile, 
 
 // ListAll lists all Traffic Manager profiles within a subscription.
 func (client ProfilesClient) ListAll(ctx context.Context) (result ProfileListResult, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProfilesClient.ListAll")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.ListAllPreparer(ctx)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "trafficmanager.ProfilesClient", "ListAll", nil, "Failure preparing request")
@@ -349,8 +401,8 @@ func (client ProfilesClient) ListAllPreparer(ctx context.Context) (*http.Request
 // ListAllSender sends the ListAll request. The method will close the
 // http.Response Body if it receives an error.
 func (client ProfilesClient) ListAllSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListAllResponder handles the response to the ListAll request. The method always
@@ -367,9 +419,19 @@ func (client ProfilesClient) ListAllResponder(resp *http.Response) (result Profi
 }
 
 // ListAllInResourceGroup lists all Traffic Manager profiles within a resource group.
-//
-// resourceGroupName is the name of the resource group containing the Traffic Manager profiles to be listed.
+// Parameters:
+// resourceGroupName - the name of the resource group containing the Traffic Manager profiles to be listed.
 func (client ProfilesClient) ListAllInResourceGroup(ctx context.Context, resourceGroupName string) (result ProfileListResult, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProfilesClient.ListAllInResourceGroup")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.ListAllInResourceGroupPreparer(ctx, resourceGroupName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "trafficmanager.ProfilesClient", "ListAllInResourceGroup", nil, "Failure preparing request")
@@ -414,8 +476,8 @@ func (client ProfilesClient) ListAllInResourceGroupPreparer(ctx context.Context,
 // ListAllInResourceGroupSender sends the ListAllInResourceGroup request. The method will close the
 // http.Response Body if it receives an error.
 func (client ProfilesClient) ListAllInResourceGroupSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListAllInResourceGroupResponder handles the response to the ListAllInResourceGroup request. The method always
@@ -432,11 +494,21 @@ func (client ProfilesClient) ListAllInResourceGroupResponder(resp *http.Response
 }
 
 // Update update a Traffic Manager profile.
-//
-// resourceGroupName is the name of the resource group containing the Traffic Manager profile. profileName is the
-// name of the Traffic Manager profile. parameters is the Traffic Manager profile parameters supplied to the Update
-// operation.
+// Parameters:
+// resourceGroupName - the name of the resource group containing the Traffic Manager profile.
+// profileName - the name of the Traffic Manager profile.
+// parameters - the Traffic Manager profile parameters supplied to the Update operation.
 func (client ProfilesClient) Update(ctx context.Context, resourceGroupName string, profileName string, parameters Profile) (result Profile, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProfilesClient.Update")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UpdatePreparer(ctx, resourceGroupName, profileName, parameters)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "trafficmanager.ProfilesClient", "Update", nil, "Failure preparing request")
@@ -472,7 +544,7 @@ func (client ProfilesClient) UpdatePreparer(ctx context.Context, resourceGroupNa
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/trafficmanagerprofiles/{profileName}", pathParameters),
@@ -484,8 +556,8 @@ func (client ProfilesClient) UpdatePreparer(ctx context.Context, resourceGroupNa
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client ProfilesClient) UpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateResponder handles the response to the Update request. The method always

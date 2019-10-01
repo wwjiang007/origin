@@ -51,6 +51,13 @@ func TestConstantMaps(t *testing.T) {
 			t.Errorf("versions map has %s not in tls package", k)
 		}
 	}
+
+	for k := range supportedVersions {
+		if _, ok := discoveredVersions[k]; !ok {
+			t.Errorf("supported versions map has %s not in tls package", k)
+		}
+	}
+
 }
 
 func TestCrypto(t *testing.T) {
@@ -116,6 +123,22 @@ func TestCrypto(t *testing.T) {
 		Intermediates: intermediates,
 		KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 	}, true, 4)
+}
+
+// Can be used for CA or intermediate signing certs
+func newSigningCertificateTemplate(subject pkix.Name, expireDays int, currentTime func() time.Time) *x509.Certificate {
+	var caLifetimeInDays = DefaultCACertificateLifetimeInDays
+	if expireDays > 0 {
+		caLifetimeInDays = expireDays
+	}
+
+	if caLifetimeInDays > DefaultCACertificateLifetimeInDays {
+		warnAboutCertificateLifeTime(subject.CommonName, DefaultCACertificateLifetimeInDays)
+	}
+
+	caLifetime := time.Duration(caLifetimeInDays) * 24 * time.Hour
+
+	return newSigningCertificateTemplateForDuration(subject, caLifetime, currentTime)
 }
 
 func buildCA(t *testing.T) (crypto.PrivateKey, *x509.Certificate) {

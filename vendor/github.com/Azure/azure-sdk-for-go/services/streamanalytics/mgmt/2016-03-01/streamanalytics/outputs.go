@@ -21,6 +21,7 @@ import (
 	"context"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -40,15 +41,28 @@ func NewOutputsClientWithBaseURI(baseURI string, subscriptionID string) OutputsC
 }
 
 // CreateOrReplace creates an output or replaces an already existing output under an existing streaming job.
-//
-// output is the definition of the output that will be used to create a new output or replace the existing one
-// under the streaming job. resourceGroupName is the name of the resource group that contains the resource. You can
-// obtain this value from the Azure Resource Manager API or the portal. jobName is the name of the streaming job.
-// outputName is the name of the output. ifMatch is the ETag of the output. Omit this value to always overwrite the
-// current output. Specify the last-seen ETag value to prevent accidentally overwritting concurrent changes.
-// ifNoneMatch is set to '*' to allow a new output to be created, but to prevent updating an existing output. Other
-// values will result in a 412 Pre-condition Failed response.
+// Parameters:
+// output - the definition of the output that will be used to create a new output or replace the existing one
+// under the streaming job.
+// resourceGroupName - the name of the resource group that contains the resource. You can obtain this value
+// from the Azure Resource Manager API or the portal.
+// jobName - the name of the streaming job.
+// outputName - the name of the output.
+// ifMatch - the ETag of the output. Omit this value to always overwrite the current output. Specify the
+// last-seen ETag value to prevent accidentally overwriting concurrent changes.
+// ifNoneMatch - set to '*' to allow a new output to be created, but to prevent updating an existing output.
+// Other values will result in a 412 Pre-condition Failed response.
 func (client OutputsClient) CreateOrReplace(ctx context.Context, output Output, resourceGroupName string, jobName string, outputName string, ifMatch string, ifNoneMatch string) (result Output, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OutputsClient.CreateOrReplace")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.CreateOrReplacePreparer(ctx, output, resourceGroupName, jobName, outputName, ifMatch, ifNoneMatch)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "streamanalytics.OutputsClient", "CreateOrReplace", nil, "Failure preparing request")
@@ -85,7 +99,7 @@ func (client OutputsClient) CreateOrReplacePreparer(ctx context.Context, output 
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}/providers/Microsoft.StreamAnalytics/streamingjobs/{jobName}/outputs/{outputName}", pathParameters),
@@ -105,8 +119,8 @@ func (client OutputsClient) CreateOrReplacePreparer(ctx context.Context, output 
 // CreateOrReplaceSender sends the CreateOrReplace request. The method will close the
 // http.Response Body if it receives an error.
 func (client OutputsClient) CreateOrReplaceSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateOrReplaceResponder handles the response to the CreateOrReplace request. The method always
@@ -123,11 +137,22 @@ func (client OutputsClient) CreateOrReplaceResponder(resp *http.Response) (resul
 }
 
 // Delete deletes an output from the streaming job.
-//
-// resourceGroupName is the name of the resource group that contains the resource. You can obtain this value from
-// the Azure Resource Manager API or the portal. jobName is the name of the streaming job. outputName is the name
-// of the output.
+// Parameters:
+// resourceGroupName - the name of the resource group that contains the resource. You can obtain this value
+// from the Azure Resource Manager API or the portal.
+// jobName - the name of the streaming job.
+// outputName - the name of the output.
 func (client OutputsClient) Delete(ctx context.Context, resourceGroupName string, jobName string, outputName string) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OutputsClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeletePreparer(ctx, resourceGroupName, jobName, outputName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "streamanalytics.OutputsClient", "Delete", nil, "Failure preparing request")
@@ -174,8 +199,8 @@ func (client OutputsClient) DeletePreparer(ctx context.Context, resourceGroupNam
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client OutputsClient) DeleteSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
@@ -191,11 +216,22 @@ func (client OutputsClient) DeleteResponder(resp *http.Response) (result autores
 }
 
 // Get gets details about the specified output.
-//
-// resourceGroupName is the name of the resource group that contains the resource. You can obtain this value from
-// the Azure Resource Manager API or the portal. jobName is the name of the streaming job. outputName is the name
-// of the output.
+// Parameters:
+// resourceGroupName - the name of the resource group that contains the resource. You can obtain this value
+// from the Azure Resource Manager API or the portal.
+// jobName - the name of the streaming job.
+// outputName - the name of the output.
 func (client OutputsClient) Get(ctx context.Context, resourceGroupName string, jobName string, outputName string) (result Output, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OutputsClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, resourceGroupName, jobName, outputName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "streamanalytics.OutputsClient", "Get", nil, "Failure preparing request")
@@ -242,8 +278,8 @@ func (client OutputsClient) GetPreparer(ctx context.Context, resourceGroupName s
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client OutputsClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -260,13 +296,24 @@ func (client OutputsClient) GetResponder(resp *http.Response) (result Output, er
 }
 
 // ListByStreamingJob lists all of the outputs under the specified streaming job.
-//
-// resourceGroupName is the name of the resource group that contains the resource. You can obtain this value from
-// the Azure Resource Manager API or the portal. jobName is the name of the streaming job. selectParameter is the
-// $select OData query parameter. This is a comma-separated list of structural properties to include in the
-// response, or “*” to include all properties. By default, all properties are returned except diagnostics.
-// Currently only accepts '*' as a valid value.
+// Parameters:
+// resourceGroupName - the name of the resource group that contains the resource. You can obtain this value
+// from the Azure Resource Manager API or the portal.
+// jobName - the name of the streaming job.
+// selectParameter - the $select OData query parameter. This is a comma-separated list of structural properties
+// to include in the response, or "*" to include all properties. By default, all properties are returned except
+// diagnostics. Currently only accepts '*' as a valid value.
 func (client OutputsClient) ListByStreamingJob(ctx context.Context, resourceGroupName string, jobName string, selectParameter string) (result OutputListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OutputsClient.ListByStreamingJob")
+		defer func() {
+			sc := -1
+			if result.olr.Response.Response != nil {
+				sc = result.olr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listByStreamingJobNextResults
 	req, err := client.ListByStreamingJobPreparer(ctx, resourceGroupName, jobName, selectParameter)
 	if err != nil {
@@ -316,8 +363,8 @@ func (client OutputsClient) ListByStreamingJobPreparer(ctx context.Context, reso
 // ListByStreamingJobSender sends the ListByStreamingJob request. The method will close the
 // http.Response Body if it receives an error.
 func (client OutputsClient) ListByStreamingJobSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByStreamingJobResponder handles the response to the ListByStreamingJob request. The method always
@@ -334,8 +381,8 @@ func (client OutputsClient) ListByStreamingJobResponder(resp *http.Response) (re
 }
 
 // listByStreamingJobNextResults retrieves the next set of results, if any.
-func (client OutputsClient) listByStreamingJobNextResults(lastResults OutputListResult) (result OutputListResult, err error) {
-	req, err := lastResults.outputListResultPreparer()
+func (client OutputsClient) listByStreamingJobNextResults(ctx context.Context, lastResults OutputListResult) (result OutputListResult, err error) {
+	req, err := lastResults.outputListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "streamanalytics.OutputsClient", "listByStreamingJobNextResults", nil, "Failure preparing next results request")
 	}
@@ -356,19 +403,41 @@ func (client OutputsClient) listByStreamingJobNextResults(lastResults OutputList
 
 // ListByStreamingJobComplete enumerates all values, automatically crossing page boundaries as required.
 func (client OutputsClient) ListByStreamingJobComplete(ctx context.Context, resourceGroupName string, jobName string, selectParameter string) (result OutputListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OutputsClient.ListByStreamingJob")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListByStreamingJob(ctx, resourceGroupName, jobName, selectParameter)
 	return
 }
 
 // Test tests whether an output’s datasource is reachable and usable by the Azure Stream Analytics service.
-//
-// resourceGroupName is the name of the resource group that contains the resource. You can obtain this value from
-// the Azure Resource Manager API or the portal. jobName is the name of the streaming job. outputName is the name
-// of the output. output is if the output specified does not already exist, this parameter must contain the full
-// output definition intended to be tested. If the output specified already exists, this parameter can be left null
-// to test the existing output as is or if specified, the properties specified will overwrite the corresponding
+// Parameters:
+// resourceGroupName - the name of the resource group that contains the resource. You can obtain this value
+// from the Azure Resource Manager API or the portal.
+// jobName - the name of the streaming job.
+// outputName - the name of the output.
+// output - if the output specified does not already exist, this parameter must contain the full output
+// definition intended to be tested. If the output specified already exists, this parameter can be left null to
+// test the existing output as is or if specified, the properties specified will overwrite the corresponding
 // properties in the existing output (exactly like a PATCH operation) and the resulting output will be tested.
 func (client OutputsClient) Test(ctx context.Context, resourceGroupName string, jobName string, outputName string, output *Output) (result OutputsTestFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OutputsClient.Test")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.TestPreparer(ctx, resourceGroupName, jobName, outputName, output)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "streamanalytics.OutputsClient", "Test", nil, "Failure preparing request")
@@ -399,7 +468,7 @@ func (client OutputsClient) TestPreparer(ctx context.Context, resourceGroupName 
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}/providers/Microsoft.StreamAnalytics/streamingjobs/{jobName}/outputs/{outputName}/test", pathParameters),
@@ -414,15 +483,13 @@ func (client OutputsClient) TestPreparer(ctx context.Context, resourceGroupName 
 // TestSender sends the Test request. The method will close the
 // http.Response Body if it receives an error.
 func (client OutputsClient) TestSender(req *http.Request) (future OutputsTestFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -441,15 +508,28 @@ func (client OutputsClient) TestResponder(resp *http.Response) (result ResourceT
 
 // Update updates an existing output under an existing streaming job. This can be used to partially update (ie. update
 // one or two properties) an output without affecting the rest the job or output definition.
-//
-// output is an Output object. The properties specified here will overwrite the corresponding properties in the
-// existing output (ie. Those properties will be updated). Any properties that are set to null here will mean that
-// the corresponding property in the existing output will remain the same and not change as a result of this PATCH
-// operation. resourceGroupName is the name of the resource group that contains the resource. You can obtain this
-// value from the Azure Resource Manager API or the portal. jobName is the name of the streaming job. outputName is
-// the name of the output. ifMatch is the ETag of the output. Omit this value to always overwrite the current
-// output. Specify the last-seen ETag value to prevent accidentally overwritting concurrent changes.
+// Parameters:
+// output - an Output object. The properties specified here will overwrite the corresponding properties in the
+// existing output (ie. Those properties will be updated). Any properties that are set to null here will mean
+// that the corresponding property in the existing output will remain the same and not change as a result of
+// this PATCH operation.
+// resourceGroupName - the name of the resource group that contains the resource. You can obtain this value
+// from the Azure Resource Manager API or the portal.
+// jobName - the name of the streaming job.
+// outputName - the name of the output.
+// ifMatch - the ETag of the output. Omit this value to always overwrite the current output. Specify the
+// last-seen ETag value to prevent accidentally overwriting concurrent changes.
 func (client OutputsClient) Update(ctx context.Context, output Output, resourceGroupName string, jobName string, outputName string, ifMatch string) (result Output, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OutputsClient.Update")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UpdatePreparer(ctx, output, resourceGroupName, jobName, outputName, ifMatch)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "streamanalytics.OutputsClient", "Update", nil, "Failure preparing request")
@@ -486,7 +566,7 @@ func (client OutputsClient) UpdatePreparer(ctx context.Context, output Output, r
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}/providers/Microsoft.StreamAnalytics/streamingjobs/{jobName}/outputs/{outputName}", pathParameters),
@@ -502,8 +582,8 @@ func (client OutputsClient) UpdatePreparer(ctx context.Context, output Output, r
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client OutputsClient) UpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateResponder handles the response to the Update request. The method always

@@ -2,12 +2,14 @@ package builds
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	g "github.com/onsi/ginkgo"
 	o "github.com/onsi/gomega"
 
 	e2e "k8s.io/kubernetes/test/e2e/framework"
+	"k8s.io/kubernetes/test/e2e/framework/pod"
 
 	exutil "github.com/openshift/origin/test/extended/util"
 )
@@ -28,42 +30,34 @@ var _ = g.Describe("[Feature:Builds][Slow] incremental s2i build", func() {
 
 	g.Context("", func() {
 		g.BeforeEach(func() {
-			exutil.DumpDockerInfo()
-		})
-
-		g.JustBeforeEach(func() {
-			g.By("waiting for default service account")
-			err := exutil.WaitForServiceAccount(oc.KubeClient().Core().ServiceAccounts(oc.Namespace()), "default")
-			o.Expect(err).NotTo(o.HaveOccurred())
-			g.By("waiting for builder service account")
-			err = exutil.WaitForServiceAccount(oc.KubeClient().Core().ServiceAccounts(oc.Namespace()), "builder")
-			o.Expect(err).NotTo(o.HaveOccurred())
+			exutil.PreTestDump()
 		})
 
 		g.AfterEach(func() {
 			if g.CurrentGinkgoTestDescription().Failed {
 				exutil.DumpPodStates(oc)
+				exutil.DumpConfigMapStates(oc)
 				exutil.DumpPodLogsStartingWith("", oc)
 			}
 		})
 
 		g.Describe("Building from a template", func() {
-			g.It(fmt.Sprintf("should create a build from %q template and run it", templateFixture), func() {
+			g.It(fmt.Sprintf("should create a build from %q template and run it", filepath.Base(templateFixture)), func() {
 
 				g.By(fmt.Sprintf("calling oc new-app -f %q", templateFixture))
 				err := oc.Run("new-app").Args("-f", templateFixture).Execute()
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				g.By("starting a test build")
-				br, _ := exutil.StartBuildAndWait(oc, "initial-build")
+				br, _ := exutil.StartBuildAndWait(oc, "incremental-build")
 				br.AssertSuccess()
 
 				g.By("starting a test build using the image produced by the last build")
-				br2, _ := exutil.StartBuildAndWait(oc, "internal-build")
+				br2, _ := exutil.StartBuildAndWait(oc, "incremental-build")
 				br2.AssertSuccess()
 
-				g.By("getting the Docker image reference from ImageStream")
-				imageName, err := exutil.GetDockerImageReference(oc.ImageClient().Image().ImageStreams(oc.Namespace()), "internal-image", "latest")
+				g.By("getting the container image reference from ImageStream")
+				imageName, err := exutil.GetDockerImageReference(oc.ImageClient().ImageV1().ImageStreams(oc.Namespace()), "incremental-image", "latest")
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				g.By("instantiating a pod and service with the new image")
@@ -71,11 +65,11 @@ var _ = g.Describe("[Feature:Builds][Slow] incremental s2i build", func() {
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				g.By("waiting for the pod to be running")
-				err = e2e.WaitForPodNameRunningInNamespace(oc.KubeFramework().ClientSet, "build-test-pod", oc.Namespace())
+				err = pod.WaitForPodNameRunningInNamespace(oc.KubeFramework().ClientSet, "build-test-pod", oc.Namespace())
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				g.By("waiting for the service to become available")
-				err = e2e.WaitForEndpoint(oc.KubeFramework().ClientSet, oc.Namespace(), buildTestService)
+				err = exutil.WaitForEndpoint(oc.KubeFramework().ClientSet, oc.Namespace(), buildTestService)
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				g.By("expecting the pod container has saved artifacts")

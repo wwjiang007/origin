@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -41,11 +42,22 @@ func NewFirewallRuleClientWithBaseURI(baseURI string, subscriptionID string) Fir
 }
 
 // CreateOrUpdate create or update a redis cache firewall rule
-//
-// resourceGroupName is the name of the resource group. cacheName is the name of the Redis cache. ruleName is the
-// name of the firewall rule. parameters is parameters supplied to the create or update redis firewall rule
-// operation.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// cacheName - the name of the Redis cache.
+// ruleName - the name of the firewall rule.
+// parameters - parameters supplied to the create or update redis firewall rule operation.
 func (client FirewallRuleClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, cacheName string, ruleName string, parameters FirewallRule) (result FirewallRule, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/FirewallRuleClient.CreateOrUpdate")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameters,
 			Constraints: []validation.Constraint{{Target: "parameters.FirewallRuleProperties", Name: validation.Null, Rule: true,
@@ -90,8 +102,11 @@ func (client FirewallRuleClient) CreateOrUpdatePreparer(ctx context.Context, res
 		"api-version": APIVersion,
 	}
 
+	parameters.ID = nil
+	parameters.Name = nil
+	parameters.Type = nil
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Cache/Redis/{cacheName}/firewallRules/{ruleName}", pathParameters),
@@ -103,8 +118,8 @@ func (client FirewallRuleClient) CreateOrUpdatePreparer(ctx context.Context, res
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client FirewallRuleClient) CreateOrUpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateOrUpdateResponder handles the response to the CreateOrUpdate request. The method always
@@ -121,10 +136,21 @@ func (client FirewallRuleClient) CreateOrUpdateResponder(resp *http.Response) (r
 }
 
 // Delete deletes a single firewall rule in a specified redis cache.
-//
-// resourceGroupName is the name of the resource group. cacheName is the name of the Redis cache. ruleName is the
-// name of the firewall rule.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// cacheName - the name of the Redis cache.
+// ruleName - the name of the firewall rule.
 func (client FirewallRuleClient) Delete(ctx context.Context, resourceGroupName string, cacheName string, ruleName string) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/FirewallRuleClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeletePreparer(ctx, resourceGroupName, cacheName, ruleName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "redis.FirewallRuleClient", "Delete", nil, "Failure preparing request")
@@ -171,8 +197,8 @@ func (client FirewallRuleClient) DeletePreparer(ctx context.Context, resourceGro
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client FirewallRuleClient) DeleteSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
@@ -188,10 +214,21 @@ func (client FirewallRuleClient) DeleteResponder(resp *http.Response) (result au
 }
 
 // Get gets a single firewall rule in a specified redis cache.
-//
-// resourceGroupName is the name of the resource group. cacheName is the name of the Redis cache. ruleName is the
-// name of the firewall rule.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// cacheName - the name of the Redis cache.
+// ruleName - the name of the firewall rule.
 func (client FirewallRuleClient) Get(ctx context.Context, resourceGroupName string, cacheName string, ruleName string) (result FirewallRule, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/FirewallRuleClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, resourceGroupName, cacheName, ruleName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "redis.FirewallRuleClient", "Get", nil, "Failure preparing request")
@@ -238,8 +275,8 @@ func (client FirewallRuleClient) GetPreparer(ctx context.Context, resourceGroupN
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client FirewallRuleClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This library holds functions that are used to clean up local
 # system state after other scripts have run.
@@ -72,6 +72,9 @@ readonly -f os::cleanup::dump_etcd
 #  - API_SCHEME
 #  - API_HOST
 #  - ETCD_PORT
+#  - ETCD_CLIENT_CERT
+#  - ETCD_CLIENT_KEY
+#  - ETCD_CA_BUNDLE
 # Arguments:
 #  None
 # Returns:
@@ -79,14 +82,10 @@ readonly -f os::cleanup::dump_etcd
 function os::cleanup::internal::dump_etcd_v3() {
 	local full_url="${API_SCHEME}://${API_HOST}:${ETCD_PORT}"
 
-	local etcd_client_cert="${MASTER_CONFIG_DIR}/master.etcd-client.crt"
-	local etcd_client_key="${MASTER_CONFIG_DIR}/master.etcd-client.key"
-	local ca_bundle="${MASTER_CONFIG_DIR}/ca-bundle.crt"
-
 	os::util::ensure::built_binary_exists 'etcdhelper' >&2
 
-	etcdhelper --cert "${etcd_client_cert}" --key "${etcd_client_key}" \
-	           --cacert "${ca_bundle}" --endpoint "${full_url}" dump
+	etcdhelper --cert "${ETCD_CLIENT_CERT}" --key "${ETCD_CLIENT_KEY}" \
+	           --cacert "${ETCD_CA_BUNDLE}" --endpoint "${full_url}" dump || true
 }
 readonly -f os::cleanup::internal::dump_etcd_v3
 
@@ -121,7 +120,7 @@ function os::cleanup::containers() {
 		return
 	fi
 
-	os::log::info "[CLEANUP] Stopping docker containers"
+	os::log::info "[CLEANUP] Stopping containers"
 	for id in $( os::cleanup::internal::list_our_containers ); do
 		os::log::debug "Stopping ${id}"
 		docker stop "${id}" >/dev/null
@@ -131,7 +130,7 @@ function os::cleanup::containers() {
 		return
 	fi
 
-	os::log::info "[CLEANUP] Removing docker containers"
+	os::log::info "[CLEANUP] Removing containers"
 	for id in $( os::cleanup::internal::list_our_containers ); do
 		os::log::debug "Removing ${id}"
 		docker rm --volumes "${id}" >/dev/null
@@ -167,7 +166,7 @@ function os::cleanup::dump_container_logs() {
 readonly -f os::cleanup::dump_container_logs
 
 # os::cleanup::internal::list_our_containers returns a space-delimited list of
-# docker containers that belonged to some part of the Origin deployment.
+# containers that belonged to some part of the Origin deployment.
 #
 # Globals:
 #  None
@@ -182,7 +181,7 @@ function os::cleanup::internal::list_our_containers() {
 readonly -f os::cleanup::internal::list_our_containers
 
 # os::cleanup::internal::list_k8s_containers returns a space-delimited list of
-# docker containers that belonged to k8s.
+# containers that belonged to k8s.
 #
 # Globals:
 #  None
@@ -196,7 +195,7 @@ function os::cleanup::internal::list_k8s_containers() {
 readonly -f os::cleanup::internal::list_k8s_containers
 
 # os::cleanup::internal::list_containers returns a space-delimited list of
-# docker containers that match a name regex.
+# containers that match a name regex.
 #
 # Globals:
 #  None

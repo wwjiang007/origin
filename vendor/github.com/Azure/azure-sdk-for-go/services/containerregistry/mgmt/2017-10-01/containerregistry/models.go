@@ -18,13 +18,61 @@ package containerregistry
 // Changes may cause incorrect behavior and will be lost if the code is regenerated.
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
+
+// The package's fully qualified name.
+const fqdn = "github.com/Azure/azure-sdk-for-go/services/containerregistry/mgmt/2017-10-01/containerregistry"
+
+// Action enumerates the values for action.
+type Action string
+
+const (
+	// Allow ...
+	Allow Action = "Allow"
+)
+
+// PossibleActionValues returns an array of possible values for the Action const type.
+func PossibleActionValues() []Action {
+	return []Action{Allow}
+}
+
+// DefaultAction enumerates the values for default action.
+type DefaultAction string
+
+const (
+	// DefaultActionAllow ...
+	DefaultActionAllow DefaultAction = "Allow"
+	// DefaultActionDeny ...
+	DefaultActionDeny DefaultAction = "Deny"
+)
+
+// PossibleDefaultActionValues returns an array of possible values for the DefaultAction const type.
+func PossibleDefaultActionValues() []DefaultAction {
+	return []DefaultAction{DefaultActionAllow, DefaultActionDeny}
+}
+
+// ImportMode enumerates the values for import mode.
+type ImportMode string
+
+const (
+	// Force ...
+	Force ImportMode = "Force"
+	// NoForce ...
+	NoForce ImportMode = "NoForce"
+)
+
+// PossibleImportModeValues returns an array of possible values for the ImportMode const type.
+func PossibleImportModeValues() []ImportMode {
+	return []ImportMode{Force, NoForce}
+}
 
 // PasswordName enumerates the values for password name.
 type PasswordName string
@@ -35,6 +83,26 @@ const (
 	// Password2 ...
 	Password2 PasswordName = "password2"
 )
+
+// PossiblePasswordNameValues returns an array of possible values for the PasswordName const type.
+func PossiblePasswordNameValues() []PasswordName {
+	return []PasswordName{Password, Password2}
+}
+
+// PolicyStatus enumerates the values for policy status.
+type PolicyStatus string
+
+const (
+	// Disabled ...
+	Disabled PolicyStatus = "disabled"
+	// Enabled ...
+	Enabled PolicyStatus = "enabled"
+)
+
+// PossiblePolicyStatusValues returns an array of possible values for the PolicyStatus const type.
+func PossiblePolicyStatusValues() []PolicyStatus {
+	return []PolicyStatus{Disabled, Enabled}
+}
 
 // ProvisioningState enumerates the values for provisioning state.
 type ProvisioningState string
@@ -54,6 +122,11 @@ const (
 	Updating ProvisioningState = "Updating"
 )
 
+// PossibleProvisioningStateValues returns an array of possible values for the ProvisioningState const type.
+func PossibleProvisioningStateValues() []ProvisioningState {
+	return []ProvisioningState{Canceled, Creating, Deleting, Failed, Succeeded, Updating}
+}
+
 // RegistryUsageUnit enumerates the values for registry usage unit.
 type RegistryUsageUnit string
 
@@ -63,6 +136,11 @@ const (
 	// Count ...
 	Count RegistryUsageUnit = "Count"
 )
+
+// PossibleRegistryUsageUnitValues returns an array of possible values for the RegistryUsageUnit const type.
+func PossibleRegistryUsageUnitValues() []RegistryUsageUnit {
+	return []RegistryUsageUnit{Bytes, Count}
+}
 
 // SkuName enumerates the values for sku name.
 type SkuName string
@@ -78,6 +156,11 @@ const (
 	Standard SkuName = "Standard"
 )
 
+// PossibleSkuNameValues returns an array of possible values for the SkuName const type.
+func PossibleSkuNameValues() []SkuName {
+	return []SkuName{Basic, Classic, Premium, Standard}
+}
+
 // SkuTier enumerates the values for sku tier.
 type SkuTier string
 
@@ -92,28 +175,62 @@ const (
 	SkuTierStandard SkuTier = "Standard"
 )
 
+// PossibleSkuTierValues returns an array of possible values for the SkuTier const type.
+func PossibleSkuTierValues() []SkuTier {
+	return []SkuTier{SkuTierBasic, SkuTierClassic, SkuTierPremium, SkuTierStandard}
+}
+
+// TrustPolicyType enumerates the values for trust policy type.
+type TrustPolicyType string
+
+const (
+	// Notary ...
+	Notary TrustPolicyType = "Notary"
+)
+
+// PossibleTrustPolicyTypeValues returns an array of possible values for the TrustPolicyType const type.
+func PossibleTrustPolicyTypeValues() []TrustPolicyType {
+	return []TrustPolicyType{Notary}
+}
+
 // WebhookAction enumerates the values for webhook action.
 type WebhookAction string
 
 const (
+	// ChartDelete ...
+	ChartDelete WebhookAction = "chart_delete"
+	// ChartPush ...
+	ChartPush WebhookAction = "chart_push"
 	// Delete ...
 	Delete WebhookAction = "delete"
 	// Push ...
 	Push WebhookAction = "push"
+	// Quarantine ...
+	Quarantine WebhookAction = "quarantine"
 )
+
+// PossibleWebhookActionValues returns an array of possible values for the WebhookAction const type.
+func PossibleWebhookActionValues() []WebhookAction {
+	return []WebhookAction{ChartDelete, ChartPush, Delete, Push, Quarantine}
+}
 
 // WebhookStatus enumerates the values for webhook status.
 type WebhookStatus string
 
 const (
-	// Disabled ...
-	Disabled WebhookStatus = "disabled"
-	// Enabled ...
-	Enabled WebhookStatus = "enabled"
+	// WebhookStatusDisabled ...
+	WebhookStatusDisabled WebhookStatus = "disabled"
+	// WebhookStatusEnabled ...
+	WebhookStatusEnabled WebhookStatus = "enabled"
 )
 
-// Actor the agent that initiated the event. For most situations, this could be from the authorization context of
-// the request.
+// PossibleWebhookStatusValues returns an array of possible values for the WebhookStatus const type.
+func PossibleWebhookStatusValues() []WebhookStatus {
+	return []WebhookStatus{WebhookStatusDisabled, WebhookStatusEnabled}
+}
+
+// Actor the agent that initiated the event. For most situations, this could be from the authorization
+// context of the request.
 type Actor struct {
 	// Name - The subject or username associated with the request context that generated the event.
 	Name *string `json:"name,omitempty"`
@@ -190,20 +307,37 @@ type EventListResultIterator struct {
 	page EventListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *EventListResultIterator) Next() error {
+func (iter *EventListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/EventListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *EventListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -225,6 +359,11 @@ func (iter EventListResultIterator) Value() Event {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the EventListResultIterator type.
+func NewEventListResultIterator(page EventListResultPage) EventListResultIterator {
+	return EventListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (elr EventListResult) IsEmpty() bool {
 	return elr.Value == nil || len(*elr.Value) == 0
@@ -232,11 +371,11 @@ func (elr EventListResult) IsEmpty() bool {
 
 // eventListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (elr EventListResult) eventListResultPreparer() (*http.Request, error) {
+func (elr EventListResult) eventListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if elr.NextLink == nil || len(to.String(elr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(elr.NextLink)))
@@ -244,19 +383,36 @@ func (elr EventListResult) eventListResultPreparer() (*http.Request, error) {
 
 // EventListResultPage contains a page of Event values.
 type EventListResultPage struct {
-	fn  func(EventListResult) (EventListResult, error)
+	fn  func(context.Context, EventListResult) (EventListResult, error)
 	elr EventListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *EventListResultPage) Next() error {
-	next, err := page.fn(page.elr)
+func (page *EventListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/EventListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.elr)
 	if err != nil {
 		return err
 	}
 	page.elr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *EventListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -275,6 +431,11 @@ func (page EventListResultPage) Values() []Event {
 		return nil
 	}
 	return *page.elr.Value
+}
+
+// Creates a new instance of the EventListResultPage type.
+func NewEventListResultPage(getNextPage func(context.Context, EventListResult) (EventListResult, error)) EventListResultPage {
+	return EventListResultPage{fn: getNextPage}
 }
 
 // EventRequestMessage the event request message sent to the service URI.
@@ -347,12 +508,138 @@ func (erm EventResponseMessage) MarshalJSON() ([]byte, error) {
 	return json.Marshal(objectMap)
 }
 
+// ImportImageParameters ...
+type ImportImageParameters struct {
+	// Source - The source of the image.
+	Source *ImportSource `json:"source,omitempty"`
+	// TargetTags - List of strings of the form repo[:tag]. When tag is omitted the source will be used (or 'latest' if source tag is also omitted).
+	TargetTags *[]string `json:"targetTags,omitempty"`
+	// UntaggedTargetRepositories - List of strings of repository names to do a manifest only copy. No tag will be created.
+	UntaggedTargetRepositories *[]string `json:"untaggedTargetRepositories,omitempty"`
+	// Mode - When Force, any existing target tags will be overwritten. When NoForce, any existing target tags will fail the operation before any copying begins. Possible values include: 'NoForce', 'Force'
+	Mode ImportMode `json:"mode,omitempty"`
+}
+
+// ImportSource ...
+type ImportSource struct {
+	// ResourceID - The resource identifier of the source Azure Container Registry.
+	ResourceID *string `json:"resourceId,omitempty"`
+	// RegistryURI - The address of the source registry (e.g. 'mcr.microsoft.com').
+	RegistryURI *string `json:"registryUri,omitempty"`
+	// Credentials - Credentials used when importing from a registry uri.
+	Credentials *ImportSourceCredentials `json:"credentials,omitempty"`
+	// SourceImage - Repository name of the source image.
+	// Specify an image by repository ('hello-world'). This will use the 'latest' tag.
+	// Specify an image by tag ('hello-world:latest').
+	// Specify an image by sha256-based manifest digest ('hello-world@sha256:abc123').
+	SourceImage *string `json:"sourceImage,omitempty"`
+}
+
+// ImportSourceCredentials ...
+type ImportSourceCredentials struct {
+	// Username - The username to authenticate with the source registry.
+	Username *string `json:"username,omitempty"`
+	// Password - The password used to authenticate with the source registry.
+	Password *string `json:"password,omitempty"`
+}
+
+// IPRule IP rule with specific IP or IP range in CIDR format.
+type IPRule struct {
+	// Action - The action of IP ACL rule. Possible values include: 'Allow'
+	Action Action `json:"action,omitempty"`
+	// IPAddressOrRange - Specifies the IP or IP range in CIDR format. Only IPV4 address is allowed.
+	IPAddressOrRange *string `json:"value,omitempty"`
+}
+
+// NetworkRuleSet the network rule set for a container registry.
+type NetworkRuleSet struct {
+	// DefaultAction - The default action of allow or deny when no other rules match. Possible values include: 'DefaultActionAllow', 'DefaultActionDeny'
+	DefaultAction DefaultAction `json:"defaultAction,omitempty"`
+	// VirtualNetworkRules - The virtual network rules.
+	VirtualNetworkRules *[]VirtualNetworkRule `json:"virtualNetworkRules,omitempty"`
+	// IPRules - The IP ACL rules.
+	IPRules *[]IPRule `json:"ipRules,omitempty"`
+}
+
 // OperationDefinition the definition of a container registry operation.
 type OperationDefinition struct {
+	// Origin - The origin information of the container registry operation.
+	Origin *string `json:"origin,omitempty"`
 	// Name - Operation name: {provider}/{resource}/{operation}.
 	Name *string `json:"name,omitempty"`
 	// Display - The display information for the container registry operation.
 	Display *OperationDisplayDefinition `json:"display,omitempty"`
+	// OperationPropertiesDefinition - The properties information for the container registry operation.
+	*OperationPropertiesDefinition `json:"properties,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for OperationDefinition.
+func (od OperationDefinition) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if od.Origin != nil {
+		objectMap["origin"] = od.Origin
+	}
+	if od.Name != nil {
+		objectMap["name"] = od.Name
+	}
+	if od.Display != nil {
+		objectMap["display"] = od.Display
+	}
+	if od.OperationPropertiesDefinition != nil {
+		objectMap["properties"] = od.OperationPropertiesDefinition
+	}
+	return json.Marshal(objectMap)
+}
+
+// UnmarshalJSON is the custom unmarshaler for OperationDefinition struct.
+func (od *OperationDefinition) UnmarshalJSON(body []byte) error {
+	var m map[string]*json.RawMessage
+	err := json.Unmarshal(body, &m)
+	if err != nil {
+		return err
+	}
+	for k, v := range m {
+		switch k {
+		case "origin":
+			if v != nil {
+				var origin string
+				err = json.Unmarshal(*v, &origin)
+				if err != nil {
+					return err
+				}
+				od.Origin = &origin
+			}
+		case "name":
+			if v != nil {
+				var name string
+				err = json.Unmarshal(*v, &name)
+				if err != nil {
+					return err
+				}
+				od.Name = &name
+			}
+		case "display":
+			if v != nil {
+				var display OperationDisplayDefinition
+				err = json.Unmarshal(*v, &display)
+				if err != nil {
+					return err
+				}
+				od.Display = &display
+			}
+		case "properties":
+			if v != nil {
+				var operationPropertiesDefinition OperationPropertiesDefinition
+				err = json.Unmarshal(*v, &operationPropertiesDefinition)
+				if err != nil {
+					return err
+				}
+				od.OperationPropertiesDefinition = &operationPropertiesDefinition
+			}
+		}
+	}
+
+	return nil
 }
 
 // OperationDisplayDefinition the display information for a container registry operation.
@@ -382,20 +669,37 @@ type OperationListResultIterator struct {
 	page OperationListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *OperationListResultIterator) Next() error {
+func (iter *OperationListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OperationListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *OperationListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -417,6 +721,11 @@ func (iter OperationListResultIterator) Value() OperationDefinition {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the OperationListResultIterator type.
+func NewOperationListResultIterator(page OperationListResultPage) OperationListResultIterator {
+	return OperationListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (olr OperationListResult) IsEmpty() bool {
 	return olr.Value == nil || len(*olr.Value) == 0
@@ -424,11 +733,11 @@ func (olr OperationListResult) IsEmpty() bool {
 
 // operationListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (olr OperationListResult) operationListResultPreparer() (*http.Request, error) {
+func (olr OperationListResult) operationListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if olr.NextLink == nil || len(to.String(olr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(olr.NextLink)))
@@ -436,19 +745,36 @@ func (olr OperationListResult) operationListResultPreparer() (*http.Request, err
 
 // OperationListResultPage contains a page of OperationDefinition values.
 type OperationListResultPage struct {
-	fn  func(OperationListResult) (OperationListResult, error)
+	fn  func(context.Context, OperationListResult) (OperationListResult, error)
 	olr OperationListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *OperationListResultPage) Next() error {
-	next, err := page.fn(page.olr)
+func (page *OperationListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OperationListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.olr)
 	if err != nil {
 		return err
 	}
 	page.olr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *OperationListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -469,152 +795,180 @@ func (page OperationListResultPage) Values() []OperationDefinition {
 	return *page.olr.Value
 }
 
+// Creates a new instance of the OperationListResultPage type.
+func NewOperationListResultPage(getNextPage func(context.Context, OperationListResult) (OperationListResult, error)) OperationListResultPage {
+	return OperationListResultPage{fn: getNextPage}
+}
+
+// OperationMetricSpecificationDefinition the definition of Azure Monitoring metric.
+type OperationMetricSpecificationDefinition struct {
+	// Name - Metric name.
+	Name *string `json:"name,omitempty"`
+	// DisplayName - Metric display name.
+	DisplayName *string `json:"displayName,omitempty"`
+	// DisplayDescription - Metric description.
+	DisplayDescription *string `json:"displayDescription,omitempty"`
+	// Unit - Metric unit.
+	Unit *string `json:"unit,omitempty"`
+	// AggregationType - Metric aggregation type.
+	AggregationType *string `json:"aggregationType,omitempty"`
+	// InternalMetricName - Internal metric name.
+	InternalMetricName *string `json:"internalMetricName,omitempty"`
+}
+
+// OperationPropertiesDefinition the definition of Azure Monitoring properties.
+type OperationPropertiesDefinition struct {
+	// ServiceSpecification - The definition of Azure Monitoring service.
+	ServiceSpecification *OperationServiceSpecificationDefinition `json:"serviceSpecification,omitempty"`
+}
+
+// OperationServiceSpecificationDefinition the definition of Azure Monitoring metrics list.
+type OperationServiceSpecificationDefinition struct {
+	// MetricSpecifications - A list of Azure Monitoring metrics definition.
+	MetricSpecifications *[]OperationMetricSpecificationDefinition `json:"metricSpecifications,omitempty"`
+}
+
+// QuarantinePolicy an object that represents quarantine policy for a container registry.
+type QuarantinePolicy struct {
+	// Status - The value that indicates whether the policy is enabled or not. Possible values include: 'Enabled', 'Disabled'
+	Status PolicyStatus `json:"status,omitempty"`
+}
+
 // RegenerateCredentialParameters the parameters used to regenerate the login credential.
 type RegenerateCredentialParameters struct {
 	// Name - Specifies name of the password which should be regenerated -- password or password2. Possible values include: 'Password', 'Password2'
 	Name PasswordName `json:"name,omitempty"`
 }
 
-// RegistriesCreateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// RegistriesCreateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type RegistriesCreateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future RegistriesCreateFuture) Result(client RegistriesClient) (r Registry, err error) {
+func (future *RegistriesCreateFuture) Result(client RegistriesClient) (r Registry, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "containerregistry.RegistriesCreateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return r, azure.NewAsyncOpIncompleteError("containerregistry.RegistriesCreateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		r, err = client.CreateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "containerregistry.RegistriesCreateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("containerregistry.RegistriesCreateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if r.Response.Response, err = future.GetResult(sender); err == nil && r.Response.Response.StatusCode != http.StatusNoContent {
+		r, err = client.CreateResponder(r.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "containerregistry.RegistriesCreateFuture", "Result", r.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "containerregistry.RegistriesCreateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	r, err = client.CreateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "containerregistry.RegistriesCreateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// RegistriesDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// RegistriesDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type RegistriesDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future RegistriesDeleteFuture) Result(client RegistriesClient) (ar autorest.Response, err error) {
+func (future *RegistriesDeleteFuture) Result(client RegistriesClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "containerregistry.RegistriesDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("containerregistry.RegistriesDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "containerregistry.RegistriesDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("containerregistry.RegistriesDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "containerregistry.RegistriesDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "containerregistry.RegistriesDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
-// RegistriesUpdateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
-type RegistriesUpdateFuture struct {
+// RegistriesImportImageFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
+type RegistriesImportImageFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future RegistriesUpdateFuture) Result(client RegistriesClient) (r Registry, err error) {
+func (future *RegistriesImportImageFuture) Result(client RegistriesClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "containerregistry.RegistriesImportImageFuture", "Result", future.Response(), "Polling failure")
+		return
+	}
+	if !done {
+		err = azure.NewAsyncOpIncompleteError("containerregistry.RegistriesImportImageFuture")
+		return
+	}
+	ar.Response = future.Response()
+	return
+}
+
+// RegistriesUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
+type RegistriesUpdateFuture struct {
+	azure.Future
+}
+
+// Result returns the result of the asynchronous operation.
+// If the operation has not completed it will return an error.
+func (future *RegistriesUpdateFuture) Result(client RegistriesClient) (r Registry, err error) {
+	var done bool
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "containerregistry.RegistriesUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return r, azure.NewAsyncOpIncompleteError("containerregistry.RegistriesUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		r, err = client.UpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "containerregistry.RegistriesUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("containerregistry.RegistriesUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if r.Response.Response, err = future.GetResult(sender); err == nil && r.Response.Response.StatusCode != http.StatusNoContent {
+		r, err = client.UpdateResponder(r.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "containerregistry.RegistriesUpdateFuture", "Result", r.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
 	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return
+}
+
+// RegistriesUpdatePoliciesFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
+type RegistriesUpdatePoliciesFuture struct {
+	azure.Future
+}
+
+// Result returns the result of the asynchronous operation.
+// If the operation has not completed it will return an error.
+func (future *RegistriesUpdatePoliciesFuture) Result(client RegistriesClient) (rp RegistryPolicies, err error) {
+	var done bool
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
-		err = autorest.NewErrorWithError(err, "containerregistry.RegistriesUpdateFuture", "Result", resp, "Failure sending request")
+		err = autorest.NewErrorWithError(err, "containerregistry.RegistriesUpdatePoliciesFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
-	r, err = client.UpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "containerregistry.RegistriesUpdateFuture", "Result", resp, "Failure responding to request")
+	if !done {
+		err = azure.NewAsyncOpIncompleteError("containerregistry.RegistriesUpdatePoliciesFuture")
+		return
+	}
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if rp.Response.Response, err = future.GetResult(sender); err == nil && rp.Response.Response.StatusCode != http.StatusNoContent {
+		rp, err = client.UpdatePoliciesResponder(rp.Response.Response)
+		if err != nil {
+			err = autorest.NewErrorWithError(err, "containerregistry.RegistriesUpdatePoliciesFuture", "Result", rp.Response.Response, "Failure responding to request")
+		}
 	}
 	return
 }
@@ -624,13 +978,15 @@ type Registry struct {
 	autorest.Response `json:"-"`
 	// Sku - The SKU of the container registry.
 	Sku *Sku `json:"sku,omitempty"`
+	// Identity - The identity of the container registry.
+	Identity *RegistryIdentity `json:"identity,omitempty"`
 	// RegistryProperties - The properties of the container registry.
 	*RegistryProperties `json:"properties,omitempty"`
-	// ID - The resource ID.
+	// ID - READ-ONLY; The resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - The name of the resource.
+	// Name - READ-ONLY; The name of the resource.
 	Name *string `json:"name,omitempty"`
-	// Type - The type of the resource.
+	// Type - READ-ONLY; The type of the resource.
 	Type *string `json:"type,omitempty"`
 	// Location - The location of the resource. This cannot be changed after the resource is created.
 	Location *string `json:"location,omitempty"`
@@ -644,17 +1000,11 @@ func (r Registry) MarshalJSON() ([]byte, error) {
 	if r.Sku != nil {
 		objectMap["sku"] = r.Sku
 	}
+	if r.Identity != nil {
+		objectMap["identity"] = r.Identity
+	}
 	if r.RegistryProperties != nil {
 		objectMap["properties"] = r.RegistryProperties
-	}
-	if r.ID != nil {
-		objectMap["id"] = r.ID
-	}
-	if r.Name != nil {
-		objectMap["name"] = r.Name
-	}
-	if r.Type != nil {
-		objectMap["type"] = r.Type
 	}
 	if r.Location != nil {
 		objectMap["location"] = r.Location
@@ -682,6 +1032,15 @@ func (r *Registry) UnmarshalJSON(body []byte) error {
 					return err
 				}
 				r.Sku = &sku
+			}
+		case "identity":
+			if v != nil {
+				var identity RegistryIdentity
+				err = json.Unmarshal(*v, &identity)
+				if err != nil {
+					return err
+				}
+				r.Identity = &identity
 			}
 		case "properties":
 			if v != nil {
@@ -743,6 +1102,16 @@ func (r *Registry) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
+// RegistryIdentity the identity of the container registry.
+type RegistryIdentity struct {
+	// Type - The type of identity used for the registry.
+	Type *string `json:"type,omitempty"`
+	// PrincipalID - The principal ID of registry identity.
+	PrincipalID *string `json:"principalId,omitempty"`
+	// TenantID - The tenant ID associated with the registry.
+	TenantID *string `json:"tenantId,omitempty"`
+}
+
 // RegistryListCredentialsResult the response from the ListCredentials operation.
 type RegistryListCredentialsResult struct {
 	autorest.Response `json:"-"`
@@ -767,20 +1136,37 @@ type RegistryListResultIterator struct {
 	page RegistryListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *RegistryListResultIterator) Next() error {
+func (iter *RegistryListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RegistryListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *RegistryListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -802,6 +1188,11 @@ func (iter RegistryListResultIterator) Value() Registry {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the RegistryListResultIterator type.
+func NewRegistryListResultIterator(page RegistryListResultPage) RegistryListResultIterator {
+	return RegistryListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (rlr RegistryListResult) IsEmpty() bool {
 	return rlr.Value == nil || len(*rlr.Value) == 0
@@ -809,11 +1200,11 @@ func (rlr RegistryListResult) IsEmpty() bool {
 
 // registryListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (rlr RegistryListResult) registryListResultPreparer() (*http.Request, error) {
+func (rlr RegistryListResult) registryListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if rlr.NextLink == nil || len(to.String(rlr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(rlr.NextLink)))
@@ -821,19 +1212,36 @@ func (rlr RegistryListResult) registryListResultPreparer() (*http.Request, error
 
 // RegistryListResultPage contains a page of Registry values.
 type RegistryListResultPage struct {
-	fn  func(RegistryListResult) (RegistryListResult, error)
+	fn  func(context.Context, RegistryListResult) (RegistryListResult, error)
 	rlr RegistryListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *RegistryListResultPage) Next() error {
-	next, err := page.fn(page.rlr)
+func (page *RegistryListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RegistryListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.rlr)
 	if err != nil {
 		return err
 	}
 	page.rlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *RegistryListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -852,6 +1260,11 @@ func (page RegistryListResultPage) Values() []Registry {
 		return nil
 	}
 	return *page.rlr.Value
+}
+
+// Creates a new instance of the RegistryListResultPage type.
+func NewRegistryListResultPage(getNextPage func(context.Context, RegistryListResult) (RegistryListResult, error)) RegistryListResultPage {
+	return RegistryListResultPage{fn: getNextPage}
 }
 
 // RegistryNameCheckRequest a request to check whether a container registry name is available.
@@ -881,20 +1294,31 @@ type RegistryPassword struct {
 	Value *string `json:"value,omitempty"`
 }
 
+// RegistryPolicies an object that represents policies for a container registry.
+type RegistryPolicies struct {
+	autorest.Response `json:"-"`
+	// QuarantinePolicy - An object that represents quarantine policy for a container registry.
+	QuarantinePolicy *QuarantinePolicy `json:"quarantinePolicy,omitempty"`
+	// TrustPolicy - An object that represents content trust policy for a container registry.
+	TrustPolicy *TrustPolicy `json:"trustPolicy,omitempty"`
+}
+
 // RegistryProperties the properties of a container registry.
 type RegistryProperties struct {
-	// LoginServer - The URL that can be used to log into the container registry.
+	// LoginServer - READ-ONLY; The URL that can be used to log into the container registry.
 	LoginServer *string `json:"loginServer,omitempty"`
-	// CreationDate - The creation date of the container registry in ISO8601 format.
+	// CreationDate - READ-ONLY; The creation date of the container registry in ISO8601 format.
 	CreationDate *date.Time `json:"creationDate,omitempty"`
-	// ProvisioningState - The provisioning state of the container registry at the time the operation was called. Possible values include: 'Creating', 'Updating', 'Deleting', 'Succeeded', 'Failed', 'Canceled'
+	// ProvisioningState - READ-ONLY; The provisioning state of the container registry at the time the operation was called. Possible values include: 'Creating', 'Updating', 'Deleting', 'Succeeded', 'Failed', 'Canceled'
 	ProvisioningState ProvisioningState `json:"provisioningState,omitempty"`
-	// Status - The status of the container registry at the time the operation was called.
+	// Status - READ-ONLY; The status of the container registry at the time the operation was called.
 	Status *Status `json:"status,omitempty"`
 	// AdminUserEnabled - The value that indicates whether the admin user is enabled.
 	AdminUserEnabled *bool `json:"adminUserEnabled,omitempty"`
 	// StorageAccount - The properties of the storage account for the container registry. Only applicable to Classic SKU.
 	StorageAccount *StorageAccountProperties `json:"storageAccount,omitempty"`
+	// NetworkRuleSet - The network rule set for a container registry.
+	NetworkRuleSet *NetworkRuleSet `json:"networkRuleSet,omitempty"`
 }
 
 // RegistryPropertiesUpdateParameters the parameters for updating the properties of a container registry.
@@ -903,6 +1327,8 @@ type RegistryPropertiesUpdateParameters struct {
 	AdminUserEnabled *bool `json:"adminUserEnabled,omitempty"`
 	// StorageAccount - The parameters of a storage account for the container registry. Only applicable to Classic SKU. If specified, the storage account must be in the same physical location as the container registry.
 	StorageAccount *StorageAccountProperties `json:"storageAccount,omitempty"`
+	// NetworkRuleSet - The network rule set for a container registry.
+	NetworkRuleSet *NetworkRuleSet `json:"networkRuleSet,omitempty"`
 }
 
 // RegistryUpdateParameters the parameters for updating a container registry.
@@ -911,6 +1337,8 @@ type RegistryUpdateParameters struct {
 	Tags map[string]*string `json:"tags"`
 	// Sku - The SKU of the container registry.
 	Sku *Sku `json:"sku,omitempty"`
+	// Identity - The identity of the container registry.
+	Identity *RegistryIdentity `json:"identity,omitempty"`
 	// RegistryPropertiesUpdateParameters - The properties that the container registry will be updated with.
 	*RegistryPropertiesUpdateParameters `json:"properties,omitempty"`
 }
@@ -923,6 +1351,9 @@ func (rup RegistryUpdateParameters) MarshalJSON() ([]byte, error) {
 	}
 	if rup.Sku != nil {
 		objectMap["sku"] = rup.Sku
+	}
+	if rup.Identity != nil {
+		objectMap["identity"] = rup.Identity
 	}
 	if rup.RegistryPropertiesUpdateParameters != nil {
 		objectMap["properties"] = rup.RegistryPropertiesUpdateParameters
@@ -956,6 +1387,15 @@ func (rup *RegistryUpdateParameters) UnmarshalJSON(body []byte) error {
 					return err
 				}
 				rup.Sku = &sku
+			}
+		case "identity":
+			if v != nil {
+				var identity RegistryIdentity
+				err = json.Unmarshal(*v, &identity)
+				if err != nil {
+					return err
+				}
+				rup.Identity = &identity
 			}
 		case "properties":
 			if v != nil {
@@ -996,11 +1436,11 @@ type Replication struct {
 	autorest.Response `json:"-"`
 	// ReplicationProperties - The properties of the replication.
 	*ReplicationProperties `json:"properties,omitempty"`
-	// ID - The resource ID.
+	// ID - READ-ONLY; The resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - The name of the resource.
+	// Name - READ-ONLY; The name of the resource.
 	Name *string `json:"name,omitempty"`
-	// Type - The type of the resource.
+	// Type - READ-ONLY; The type of the resource.
 	Type *string `json:"type,omitempty"`
 	// Location - The location of the resource. This cannot be changed after the resource is created.
 	Location *string `json:"location,omitempty"`
@@ -1013,15 +1453,6 @@ func (r Replication) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
 	if r.ReplicationProperties != nil {
 		objectMap["properties"] = r.ReplicationProperties
-	}
-	if r.ID != nil {
-		objectMap["id"] = r.ID
-	}
-	if r.Name != nil {
-		objectMap["name"] = r.Name
-	}
-	if r.Type != nil {
-		objectMap["type"] = r.Type
 	}
 	if r.Location != nil {
 		objectMap["location"] = r.Location
@@ -1116,20 +1547,37 @@ type ReplicationListResultIterator struct {
 	page ReplicationListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *ReplicationListResultIterator) Next() error {
+func (iter *ReplicationListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *ReplicationListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -1151,6 +1599,11 @@ func (iter ReplicationListResultIterator) Value() Replication {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the ReplicationListResultIterator type.
+func NewReplicationListResultIterator(page ReplicationListResultPage) ReplicationListResultIterator {
+	return ReplicationListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (rlr ReplicationListResult) IsEmpty() bool {
 	return rlr.Value == nil || len(*rlr.Value) == 0
@@ -1158,11 +1611,11 @@ func (rlr ReplicationListResult) IsEmpty() bool {
 
 // replicationListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (rlr ReplicationListResult) replicationListResultPreparer() (*http.Request, error) {
+func (rlr ReplicationListResult) replicationListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if rlr.NextLink == nil || len(to.String(rlr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(rlr.NextLink)))
@@ -1170,19 +1623,36 @@ func (rlr ReplicationListResult) replicationListResultPreparer() (*http.Request,
 
 // ReplicationListResultPage contains a page of Replication values.
 type ReplicationListResultPage struct {
-	fn  func(ReplicationListResult) (ReplicationListResult, error)
+	fn  func(context.Context, ReplicationListResult) (ReplicationListResult, error)
 	rlr ReplicationListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *ReplicationListResultPage) Next() error {
-	next, err := page.fn(page.rlr)
+func (page *ReplicationListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.rlr)
 	if err != nil {
 		return err
 	}
 	page.rlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *ReplicationListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -1203,154 +1673,96 @@ func (page ReplicationListResultPage) Values() []Replication {
 	return *page.rlr.Value
 }
 
+// Creates a new instance of the ReplicationListResultPage type.
+func NewReplicationListResultPage(getNextPage func(context.Context, ReplicationListResult) (ReplicationListResult, error)) ReplicationListResultPage {
+	return ReplicationListResultPage{fn: getNextPage}
+}
+
 // ReplicationProperties the properties of a replication.
 type ReplicationProperties struct {
-	// ProvisioningState - The provisioning state of the replication at the time the operation was called. Possible values include: 'Creating', 'Updating', 'Deleting', 'Succeeded', 'Failed', 'Canceled'
+	// ProvisioningState - READ-ONLY; The provisioning state of the replication at the time the operation was called. Possible values include: 'Creating', 'Updating', 'Deleting', 'Succeeded', 'Failed', 'Canceled'
 	ProvisioningState ProvisioningState `json:"provisioningState,omitempty"`
-	// Status - The status of the replication at the time the operation was called.
+	// Status - READ-ONLY; The status of the replication at the time the operation was called.
 	Status *Status `json:"status,omitempty"`
 }
 
-// ReplicationsCreateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// ReplicationsCreateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type ReplicationsCreateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ReplicationsCreateFuture) Result(client ReplicationsClient) (r Replication, err error) {
+func (future *ReplicationsCreateFuture) Result(client ReplicationsClient) (r Replication, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "containerregistry.ReplicationsCreateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return r, azure.NewAsyncOpIncompleteError("containerregistry.ReplicationsCreateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		r, err = client.CreateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "containerregistry.ReplicationsCreateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("containerregistry.ReplicationsCreateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if r.Response.Response, err = future.GetResult(sender); err == nil && r.Response.Response.StatusCode != http.StatusNoContent {
+		r, err = client.CreateResponder(r.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "containerregistry.ReplicationsCreateFuture", "Result", r.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "containerregistry.ReplicationsCreateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	r, err = client.CreateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "containerregistry.ReplicationsCreateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// ReplicationsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// ReplicationsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type ReplicationsDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ReplicationsDeleteFuture) Result(client ReplicationsClient) (ar autorest.Response, err error) {
+func (future *ReplicationsDeleteFuture) Result(client ReplicationsClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "containerregistry.ReplicationsDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("containerregistry.ReplicationsDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "containerregistry.ReplicationsDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("containerregistry.ReplicationsDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "containerregistry.ReplicationsDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "containerregistry.ReplicationsDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
-// ReplicationsUpdateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// ReplicationsUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type ReplicationsUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ReplicationsUpdateFuture) Result(client ReplicationsClient) (r Replication, err error) {
+func (future *ReplicationsUpdateFuture) Result(client ReplicationsClient) (r Replication, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "containerregistry.ReplicationsUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return r, azure.NewAsyncOpIncompleteError("containerregistry.ReplicationsUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		r, err = client.UpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "containerregistry.ReplicationsUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("containerregistry.ReplicationsUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if r.Response.Response, err = future.GetResult(sender); err == nil && r.Response.Response.StatusCode != http.StatusNoContent {
+		r, err = client.UpdateResponder(r.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "containerregistry.ReplicationsUpdateFuture", "Result", r.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "containerregistry.ReplicationsUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	r, err = client.UpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "containerregistry.ReplicationsUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -1386,11 +1798,11 @@ type Request struct {
 
 // Resource an Azure resource.
 type Resource struct {
-	// ID - The resource ID.
+	// ID - READ-ONLY; The resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - The name of the resource.
+	// Name - READ-ONLY; The name of the resource.
 	Name *string `json:"name,omitempty"`
-	// Type - The type of the resource.
+	// Type - READ-ONLY; The type of the resource.
 	Type *string `json:"type,omitempty"`
 	// Location - The location of the resource. This cannot be changed after the resource is created.
 	Location *string `json:"location,omitempty"`
@@ -1401,15 +1813,6 @@ type Resource struct {
 // MarshalJSON is the custom marshaler for Resource.
 func (r Resource) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
-	if r.ID != nil {
-		objectMap["id"] = r.ID
-	}
-	if r.Name != nil {
-		objectMap["name"] = r.Name
-	}
-	if r.Type != nil {
-		objectMap["type"] = r.Type
-	}
 	if r.Location != nil {
 		objectMap["location"] = r.Location
 	}
@@ -1423,12 +1826,12 @@ func (r Resource) MarshalJSON() ([]byte, error) {
 type Sku struct {
 	// Name - The SKU name of the container registry. Required for registry creation. Possible values include: 'Classic', 'Basic', 'Standard', 'Premium'
 	Name SkuName `json:"name,omitempty"`
-	// Tier - The SKU tier based on the SKU name. Possible values include: 'SkuTierClassic', 'SkuTierBasic', 'SkuTierStandard', 'SkuTierPremium'
+	// Tier - READ-ONLY; The SKU tier based on the SKU name. Possible values include: 'SkuTierClassic', 'SkuTierBasic', 'SkuTierStandard', 'SkuTierPremium'
 	Tier SkuTier `json:"tier,omitempty"`
 }
 
-// Source the registry node that generated the event. Put differently, while the actor initiates the event, the
-// source generates it.
+// Source the registry node that generated the event. Put differently, while the actor initiates the event,
+// the source generates it.
 type Source struct {
 	// Addr - The IP or hostname and the port of the registry node that generated the event. Generally, this will be resolved by os.Hostname() along with the running port.
 	Addr *string `json:"addr,omitempty"`
@@ -1438,16 +1841,16 @@ type Source struct {
 
 // Status the status of an Azure resource at the time the operation was called.
 type Status struct {
-	// DisplayStatus - The short label for the status.
+	// DisplayStatus - READ-ONLY; The short label for the status.
 	DisplayStatus *string `json:"displayStatus,omitempty"`
-	// Message - The detailed message for the status, including alerts and error messages.
+	// Message - READ-ONLY; The detailed message for the status, including alerts and error messages.
 	Message *string `json:"message,omitempty"`
-	// Timestamp - The timestamp when the status was changed to the current value.
+	// Timestamp - READ-ONLY; The timestamp when the status was changed to the current value.
 	Timestamp *date.Time `json:"timestamp,omitempty"`
 }
 
-// StorageAccountProperties the properties of a storage account for a container registry. Only applicable to
-// Classic SKU.
+// StorageAccountProperties the properties of a storage account for a container registry. Only applicable
+// to Classic SKU.
 type StorageAccountProperties struct {
 	// ID - The resource ID of the storage account.
 	ID *string `json:"id,omitempty"`
@@ -1469,6 +1872,26 @@ type Target struct {
 	URL *string `json:"url,omitempty"`
 	// Tag - The tag name.
 	Tag *string `json:"tag,omitempty"`
+	// Name - The name of the artifact.
+	Name *string `json:"name,omitempty"`
+	// Version - The version of the artifact.
+	Version *string `json:"version,omitempty"`
+}
+
+// TrustPolicy an object that represents content trust policy for a container registry.
+type TrustPolicy struct {
+	// Type - The type of trust policy. Possible values include: 'Notary'
+	Type TrustPolicyType `json:"type,omitempty"`
+	// Status - The value that indicates whether the policy is enabled or not. Possible values include: 'Enabled', 'Disabled'
+	Status PolicyStatus `json:"status,omitempty"`
+}
+
+// VirtualNetworkRule virtual network rule.
+type VirtualNetworkRule struct {
+	// Action - The action of virtual network rule. Possible values include: 'Allow'
+	Action Action `json:"action,omitempty"`
+	// VirtualNetworkResourceID - Resource ID of a subnet, for example: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{vnetName}/subnets/{subnetName}.
+	VirtualNetworkResourceID *string `json:"id,omitempty"`
 }
 
 // Webhook an object that represents a webhook for a container registry.
@@ -1476,11 +1899,11 @@ type Webhook struct {
 	autorest.Response `json:"-"`
 	// WebhookProperties - The properties of the webhook.
 	*WebhookProperties `json:"properties,omitempty"`
-	// ID - The resource ID.
+	// ID - READ-ONLY; The resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - The name of the resource.
+	// Name - READ-ONLY; The name of the resource.
 	Name *string `json:"name,omitempty"`
-	// Type - The type of the resource.
+	// Type - READ-ONLY; The type of the resource.
 	Type *string `json:"type,omitempty"`
 	// Location - The location of the resource. This cannot be changed after the resource is created.
 	Location *string `json:"location,omitempty"`
@@ -1493,15 +1916,6 @@ func (w Webhook) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
 	if w.WebhookProperties != nil {
 		objectMap["properties"] = w.WebhookProperties
-	}
-	if w.ID != nil {
-		objectMap["id"] = w.ID
-	}
-	if w.Name != nil {
-		objectMap["name"] = w.Name
-	}
-	if w.Type != nil {
-		objectMap["type"] = w.Type
 	}
 	if w.Location != nil {
 		objectMap["location"] = w.Location
@@ -1663,20 +2077,37 @@ type WebhookListResultIterator struct {
 	page WebhookListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *WebhookListResultIterator) Next() error {
+func (iter *WebhookListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/WebhookListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *WebhookListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -1698,6 +2129,11 @@ func (iter WebhookListResultIterator) Value() Webhook {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the WebhookListResultIterator type.
+func NewWebhookListResultIterator(page WebhookListResultPage) WebhookListResultIterator {
+	return WebhookListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (wlr WebhookListResult) IsEmpty() bool {
 	return wlr.Value == nil || len(*wlr.Value) == 0
@@ -1705,11 +2141,11 @@ func (wlr WebhookListResult) IsEmpty() bool {
 
 // webhookListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (wlr WebhookListResult) webhookListResultPreparer() (*http.Request, error) {
+func (wlr WebhookListResult) webhookListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if wlr.NextLink == nil || len(to.String(wlr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(wlr.NextLink)))
@@ -1717,19 +2153,36 @@ func (wlr WebhookListResult) webhookListResultPreparer() (*http.Request, error) 
 
 // WebhookListResultPage contains a page of Webhook values.
 type WebhookListResultPage struct {
-	fn  func(WebhookListResult) (WebhookListResult, error)
+	fn  func(context.Context, WebhookListResult) (WebhookListResult, error)
 	wlr WebhookListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *WebhookListResultPage) Next() error {
-	next, err := page.fn(page.wlr)
+func (page *WebhookListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/WebhookListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.wlr)
 	if err != nil {
 		return err
 	}
 	page.wlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *WebhookListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -1750,15 +2203,20 @@ func (page WebhookListResultPage) Values() []Webhook {
 	return *page.wlr.Value
 }
 
+// Creates a new instance of the WebhookListResultPage type.
+func NewWebhookListResultPage(getNextPage func(context.Context, WebhookListResult) (WebhookListResult, error)) WebhookListResultPage {
+	return WebhookListResultPage{fn: getNextPage}
+}
+
 // WebhookProperties the properties of a webhook.
 type WebhookProperties struct {
-	// Status - The status of the webhook at the time the operation was called. Possible values include: 'Enabled', 'Disabled'
+	// Status - The status of the webhook at the time the operation was called. Possible values include: 'WebhookStatusEnabled', 'WebhookStatusDisabled'
 	Status WebhookStatus `json:"status,omitempty"`
 	// Scope - The scope of repositories where the event can be triggered. For example, 'foo:*' means events for all tags under repository 'foo'. 'foo:bar' means events for 'foo:bar' only. 'foo' is equivalent to 'foo:latest'. Empty means all events.
 	Scope *string `json:"scope,omitempty"`
 	// Actions - The list of actions that trigger the webhook to post notifications.
 	Actions *[]WebhookAction `json:"actions,omitempty"`
-	// ProvisioningState - The provisioning state of the webhook at the time the operation was called. Possible values include: 'Creating', 'Updating', 'Deleting', 'Succeeded', 'Failed', 'Canceled'
+	// ProvisioningState - READ-ONLY; The provisioning state of the webhook at the time the operation was called. Possible values include: 'Creating', 'Updating', 'Deleting', 'Succeeded', 'Failed', 'Canceled'
 	ProvisioningState ProvisioningState `json:"provisioningState,omitempty"`
 }
 
@@ -1768,7 +2226,7 @@ type WebhookPropertiesCreateParameters struct {
 	ServiceURI *string `json:"serviceUri,omitempty"`
 	// CustomHeaders - Custom headers that will be added to the webhook notifications.
 	CustomHeaders map[string]*string `json:"customHeaders"`
-	// Status - The status of the webhook at the time the operation was called. Possible values include: 'Enabled', 'Disabled'
+	// Status - The status of the webhook at the time the operation was called. Possible values include: 'WebhookStatusEnabled', 'WebhookStatusDisabled'
 	Status WebhookStatus `json:"status,omitempty"`
 	// Scope - The scope of repositories where the event can be triggered. For example, 'foo:*' means events for all tags under repository 'foo'. 'foo:bar' means events for 'foo:bar' only. 'foo' is equivalent to 'foo:latest'. Empty means all events.
 	Scope *string `json:"scope,omitempty"`
@@ -1785,7 +2243,9 @@ func (wpcp WebhookPropertiesCreateParameters) MarshalJSON() ([]byte, error) {
 	if wpcp.CustomHeaders != nil {
 		objectMap["customHeaders"] = wpcp.CustomHeaders
 	}
-	objectMap["status"] = wpcp.Status
+	if wpcp.Status != "" {
+		objectMap["status"] = wpcp.Status
+	}
 	if wpcp.Scope != nil {
 		objectMap["scope"] = wpcp.Scope
 	}
@@ -1801,7 +2261,7 @@ type WebhookPropertiesUpdateParameters struct {
 	ServiceURI *string `json:"serviceUri,omitempty"`
 	// CustomHeaders - Custom headers that will be added to the webhook notifications.
 	CustomHeaders map[string]*string `json:"customHeaders"`
-	// Status - The status of the webhook at the time the operation was called. Possible values include: 'Enabled', 'Disabled'
+	// Status - The status of the webhook at the time the operation was called. Possible values include: 'WebhookStatusEnabled', 'WebhookStatusDisabled'
 	Status WebhookStatus `json:"status,omitempty"`
 	// Scope - The scope of repositories where the event can be triggered. For example, 'foo:*' means events for all tags under repository 'foo'. 'foo:bar' means events for 'foo:bar' only. 'foo' is equivalent to 'foo:latest'. Empty means all events.
 	Scope *string `json:"scope,omitempty"`
@@ -1818,7 +2278,9 @@ func (wpup WebhookPropertiesUpdateParameters) MarshalJSON() ([]byte, error) {
 	if wpup.CustomHeaders != nil {
 		objectMap["customHeaders"] = wpup.CustomHeaders
 	}
-	objectMap["status"] = wpup.Status
+	if wpup.Status != "" {
+		objectMap["status"] = wpup.Status
+	}
 	if wpup.Scope != nil {
 		objectMap["scope"] = wpup.Scope
 	}
@@ -1828,146 +2290,83 @@ func (wpup WebhookPropertiesUpdateParameters) MarshalJSON() ([]byte, error) {
 	return json.Marshal(objectMap)
 }
 
-// WebhooksCreateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// WebhooksCreateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type WebhooksCreateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future WebhooksCreateFuture) Result(client WebhooksClient) (w Webhook, err error) {
+func (future *WebhooksCreateFuture) Result(client WebhooksClient) (w Webhook, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "containerregistry.WebhooksCreateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return w, azure.NewAsyncOpIncompleteError("containerregistry.WebhooksCreateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		w, err = client.CreateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "containerregistry.WebhooksCreateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("containerregistry.WebhooksCreateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if w.Response.Response, err = future.GetResult(sender); err == nil && w.Response.Response.StatusCode != http.StatusNoContent {
+		w, err = client.CreateResponder(w.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "containerregistry.WebhooksCreateFuture", "Result", w.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "containerregistry.WebhooksCreateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	w, err = client.CreateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "containerregistry.WebhooksCreateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// WebhooksDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// WebhooksDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type WebhooksDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future WebhooksDeleteFuture) Result(client WebhooksClient) (ar autorest.Response, err error) {
+func (future *WebhooksDeleteFuture) Result(client WebhooksClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "containerregistry.WebhooksDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("containerregistry.WebhooksDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "containerregistry.WebhooksDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("containerregistry.WebhooksDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "containerregistry.WebhooksDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "containerregistry.WebhooksDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
-// WebhooksUpdateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// WebhooksUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type WebhooksUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future WebhooksUpdateFuture) Result(client WebhooksClient) (w Webhook, err error) {
+func (future *WebhooksUpdateFuture) Result(client WebhooksClient) (w Webhook, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "containerregistry.WebhooksUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return w, azure.NewAsyncOpIncompleteError("containerregistry.WebhooksUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		w, err = client.UpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "containerregistry.WebhooksUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("containerregistry.WebhooksUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if w.Response.Response, err = future.GetResult(sender); err == nil && w.Response.Response.StatusCode != http.StatusNoContent {
+		w, err = client.UpdateResponder(w.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "containerregistry.WebhooksUpdateFuture", "Result", w.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "containerregistry.WebhooksUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	w, err = client.UpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "containerregistry.WebhooksUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }

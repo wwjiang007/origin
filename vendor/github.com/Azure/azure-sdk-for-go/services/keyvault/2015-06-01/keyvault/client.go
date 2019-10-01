@@ -25,6 +25,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -46,9 +47,20 @@ func NewWithoutDefaults() BaseClient {
 }
 
 // BackupKey requests that a backup of the specified key be downloaded to the client.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net keyName is the name of the key
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// keyName - the name of the key
 func (client BaseClient) BackupKey(ctx context.Context, vaultBaseURL string, keyName string) (result BackupKeyResult, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.BackupKey")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.BackupKeyPreparer(ctx, vaultBaseURL, keyName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "keyvault.BaseClient", "BackupKey", nil, "Failure preparing request")
@@ -96,8 +108,8 @@ func (client BaseClient) BackupKeyPreparer(ctx context.Context, vaultBaseURL str
 // BackupKeySender sends the BackupKey request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) BackupKeySender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // BackupKeyResponder handles the response to the BackupKey request. The method always
@@ -115,10 +127,21 @@ func (client BaseClient) BackupKeyResponder(resp *http.Response) (result BackupK
 
 // CreateCertificate creates a new certificate version. If this is the first version, the certificate resource is
 // created.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net certificateName is the name of the
-// certificate parameters is the parameters to create certificate.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// certificateName - the name of the certificate
+// parameters - the parameters to create certificate.
 func (client BaseClient) CreateCertificate(ctx context.Context, vaultBaseURL string, certificateName string, parameters CertificateCreateParameters) (result CertificateOperation, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.CreateCertificate")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: certificateName,
 			Constraints: []validation.Constraint{{Target: "certificateName", Name: validation.Pattern, Rule: `^[0-9a-zA-Z-]+$`, Chain: nil}}},
@@ -169,7 +192,7 @@ func (client BaseClient) CreateCertificatePreparer(ctx context.Context, vaultBas
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithCustomBaseURL("{vaultBaseUrl}", urlParameters),
 		autorest.WithPathParameters("/certificates/{certificate-name}/create", pathParameters),
@@ -181,8 +204,8 @@ func (client BaseClient) CreateCertificatePreparer(ctx context.Context, vaultBas
 // CreateCertificateSender sends the CreateCertificate request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) CreateCertificateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateCertificateResponder handles the response to the CreateCertificate request. The method always
@@ -199,10 +222,21 @@ func (client BaseClient) CreateCertificateResponder(resp *http.Response) (result
 }
 
 // CreateKey creates a new, named, key in the specified vault.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net keyName is the name of the key parameters
-// is the parameters to create key.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// keyName - the name of the key
+// parameters - the parameters to create key.
 func (client BaseClient) CreateKey(ctx context.Context, vaultBaseURL string, keyName string, parameters KeyCreateParameters) (result KeyBundle, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.CreateKey")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: keyName,
 			Constraints: []validation.Constraint{{Target: "keyName", Name: validation.Pattern, Rule: `^[0-9a-zA-Z-]+$`, Chain: nil}}}}); err != nil {
@@ -246,7 +280,7 @@ func (client BaseClient) CreateKeyPreparer(ctx context.Context, vaultBaseURL str
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithCustomBaseURL("{vaultBaseUrl}", urlParameters),
 		autorest.WithPathParameters("/keys/{key-name}/create", pathParameters),
@@ -258,8 +292,8 @@ func (client BaseClient) CreateKeyPreparer(ctx context.Context, vaultBaseURL str
 // CreateKeySender sends the CreateKey request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) CreateKeySender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateKeyResponder handles the response to the CreateKey request. The method always
@@ -276,10 +310,22 @@ func (client BaseClient) CreateKeyResponder(resp *http.Response) (result KeyBund
 }
 
 // Decrypt decrypts a single block of encrypted data
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net keyName is the name of the key keyVersion
-// is the version of the key parameters is the parameters for key operations.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// keyName - the name of the key
+// keyVersion - the version of the key
+// parameters - the parameters for key operations.
 func (client BaseClient) Decrypt(ctx context.Context, vaultBaseURL string, keyName string, keyVersion string, parameters KeyOperationsParameters) (result KeyOperationResult, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.Decrypt")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameters,
 			Constraints: []validation.Constraint{{Target: "parameters.Value", Name: validation.Null, Rule: true, Chain: nil}}}}); err != nil {
@@ -324,7 +370,7 @@ func (client BaseClient) DecryptPreparer(ctx context.Context, vaultBaseURL strin
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithCustomBaseURL("{vaultBaseUrl}", urlParameters),
 		autorest.WithPathParameters("/keys/{key-name}/{key-version}/decrypt", pathParameters),
@@ -336,8 +382,8 @@ func (client BaseClient) DecryptPreparer(ctx context.Context, vaultBaseURL strin
 // DecryptSender sends the Decrypt request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) DecryptSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DecryptResponder handles the response to the Decrypt request. The method always
@@ -354,10 +400,20 @@ func (client BaseClient) DecryptResponder(resp *http.Response) (result KeyOperat
 }
 
 // DeleteCertificate deletes a certificate from the specified vault.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net certificateName is the name of the
-// certificate in the given vault
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// certificateName - the name of the certificate in the given vault
 func (client BaseClient) DeleteCertificate(ctx context.Context, vaultBaseURL string, certificateName string) (result CertificateBundle, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.DeleteCertificate")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeleteCertificatePreparer(ctx, vaultBaseURL, certificateName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "keyvault.BaseClient", "DeleteCertificate", nil, "Failure preparing request")
@@ -405,8 +461,8 @@ func (client BaseClient) DeleteCertificatePreparer(ctx context.Context, vaultBas
 // DeleteCertificateSender sends the DeleteCertificate request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) DeleteCertificateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteCertificateResponder handles the response to the DeleteCertificate request. The method always
@@ -423,9 +479,19 @@ func (client BaseClient) DeleteCertificateResponder(resp *http.Response) (result
 }
 
 // DeleteCertificateContacts deletes the certificate contacts for the specified vault.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
 func (client BaseClient) DeleteCertificateContacts(ctx context.Context, vaultBaseURL string) (result Contacts, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.DeleteCertificateContacts")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeleteCertificateContactsPreparer(ctx, vaultBaseURL)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "keyvault.BaseClient", "DeleteCertificateContacts", nil, "Failure preparing request")
@@ -469,8 +535,8 @@ func (client BaseClient) DeleteCertificateContactsPreparer(ctx context.Context, 
 // DeleteCertificateContactsSender sends the DeleteCertificateContacts request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) DeleteCertificateContactsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteCertificateContactsResponder handles the response to the DeleteCertificateContacts request. The method always
@@ -487,9 +553,20 @@ func (client BaseClient) DeleteCertificateContactsResponder(resp *http.Response)
 }
 
 // DeleteCertificateIssuer deletes the specified certificate issuer.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net issuerName is the name of the issuer.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// issuerName - the name of the issuer.
 func (client BaseClient) DeleteCertificateIssuer(ctx context.Context, vaultBaseURL string, issuerName string) (result IssuerBundle, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.DeleteCertificateIssuer")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeleteCertificateIssuerPreparer(ctx, vaultBaseURL, issuerName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "keyvault.BaseClient", "DeleteCertificateIssuer", nil, "Failure preparing request")
@@ -537,8 +614,8 @@ func (client BaseClient) DeleteCertificateIssuerPreparer(ctx context.Context, va
 // DeleteCertificateIssuerSender sends the DeleteCertificateIssuer request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) DeleteCertificateIssuerSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteCertificateIssuerResponder handles the response to the DeleteCertificateIssuer request. The method always
@@ -555,10 +632,20 @@ func (client BaseClient) DeleteCertificateIssuerResponder(resp *http.Response) (
 }
 
 // DeleteCertificateOperation deletes the certificate operation.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net certificateName is the name of the
-// certificate
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// certificateName - the name of the certificate
 func (client BaseClient) DeleteCertificateOperation(ctx context.Context, vaultBaseURL string, certificateName string) (result CertificateOperation, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.DeleteCertificateOperation")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeleteCertificateOperationPreparer(ctx, vaultBaseURL, certificateName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "keyvault.BaseClient", "DeleteCertificateOperation", nil, "Failure preparing request")
@@ -606,8 +693,8 @@ func (client BaseClient) DeleteCertificateOperationPreparer(ctx context.Context,
 // DeleteCertificateOperationSender sends the DeleteCertificateOperation request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) DeleteCertificateOperationSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteCertificateOperationResponder handles the response to the DeleteCertificateOperation request. The method always
@@ -624,9 +711,20 @@ func (client BaseClient) DeleteCertificateOperationResponder(resp *http.Response
 }
 
 // DeleteKey deletes the specified key
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net keyName is the name of the key
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// keyName - the name of the key
 func (client BaseClient) DeleteKey(ctx context.Context, vaultBaseURL string, keyName string) (result KeyBundle, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.DeleteKey")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeleteKeyPreparer(ctx, vaultBaseURL, keyName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "keyvault.BaseClient", "DeleteKey", nil, "Failure preparing request")
@@ -674,8 +772,8 @@ func (client BaseClient) DeleteKeyPreparer(ctx context.Context, vaultBaseURL str
 // DeleteKeySender sends the DeleteKey request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) DeleteKeySender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteKeyResponder handles the response to the DeleteKey request. The method always
@@ -692,10 +790,20 @@ func (client BaseClient) DeleteKeyResponder(resp *http.Response) (result KeyBund
 }
 
 // DeleteSecret deletes a secret from the specified vault.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net secretName is the name of the secret in the
-// given vault
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// secretName - the name of the secret in the given vault
 func (client BaseClient) DeleteSecret(ctx context.Context, vaultBaseURL string, secretName string) (result SecretBundle, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.DeleteSecret")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeleteSecretPreparer(ctx, vaultBaseURL, secretName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "keyvault.BaseClient", "DeleteSecret", nil, "Failure preparing request")
@@ -743,8 +851,8 @@ func (client BaseClient) DeleteSecretPreparer(ctx context.Context, vaultBaseURL 
 // DeleteSecretSender sends the DeleteSecret request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) DeleteSecretSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteSecretResponder handles the response to the DeleteSecret request. The method always
@@ -761,10 +869,22 @@ func (client BaseClient) DeleteSecretResponder(resp *http.Response) (result Secr
 }
 
 // Encrypt encrypts an arbitrary sequence of bytes using an encryption key that is stored in Azure Key Vault.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net keyName is the name of the key keyVersion
-// is the version of the key parameters is the parameters for key operations.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// keyName - the name of the key
+// keyVersion - the version of the key
+// parameters - the parameters for key operations.
 func (client BaseClient) Encrypt(ctx context.Context, vaultBaseURL string, keyName string, keyVersion string, parameters KeyOperationsParameters) (result KeyOperationResult, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.Encrypt")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameters,
 			Constraints: []validation.Constraint{{Target: "parameters.Value", Name: validation.Null, Rule: true, Chain: nil}}}}); err != nil {
@@ -809,7 +929,7 @@ func (client BaseClient) EncryptPreparer(ctx context.Context, vaultBaseURL strin
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithCustomBaseURL("{vaultBaseUrl}", urlParameters),
 		autorest.WithPathParameters("/keys/{key-name}/{key-version}/encrypt", pathParameters),
@@ -821,8 +941,8 @@ func (client BaseClient) EncryptPreparer(ctx context.Context, vaultBaseURL strin
 // EncryptSender sends the Encrypt request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) EncryptSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // EncryptResponder handles the response to the Encrypt request. The method always
@@ -839,10 +959,21 @@ func (client BaseClient) EncryptResponder(resp *http.Response) (result KeyOperat
 }
 
 // GetCertificate gets a Certificate.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net certificateName is the name of the
-// certificate in the given vault certificateVersion is the version of the certificate
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// certificateName - the name of the certificate in the given vault
+// certificateVersion - the version of the certificate
 func (client BaseClient) GetCertificate(ctx context.Context, vaultBaseURL string, certificateName string, certificateVersion string) (result CertificateBundle, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.GetCertificate")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetCertificatePreparer(ctx, vaultBaseURL, certificateName, certificateVersion)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "keyvault.BaseClient", "GetCertificate", nil, "Failure preparing request")
@@ -891,8 +1022,8 @@ func (client BaseClient) GetCertificatePreparer(ctx context.Context, vaultBaseUR
 // GetCertificateSender sends the GetCertificate request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) GetCertificateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetCertificateResponder handles the response to the GetCertificate request. The method always
@@ -909,9 +1040,19 @@ func (client BaseClient) GetCertificateResponder(resp *http.Response) (result Ce
 }
 
 // GetCertificateContacts gets the certificate contacts for the specified vault.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
 func (client BaseClient) GetCertificateContacts(ctx context.Context, vaultBaseURL string) (result Contacts, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.GetCertificateContacts")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetCertificateContactsPreparer(ctx, vaultBaseURL)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "keyvault.BaseClient", "GetCertificateContacts", nil, "Failure preparing request")
@@ -955,8 +1096,8 @@ func (client BaseClient) GetCertificateContactsPreparer(ctx context.Context, vau
 // GetCertificateContactsSender sends the GetCertificateContacts request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) GetCertificateContactsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetCertificateContactsResponder handles the response to the GetCertificateContacts request. The method always
@@ -973,9 +1114,20 @@ func (client BaseClient) GetCertificateContactsResponder(resp *http.Response) (r
 }
 
 // GetCertificateIssuer gets the specified certificate issuer.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net issuerName is the name of the issuer.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// issuerName - the name of the issuer.
 func (client BaseClient) GetCertificateIssuer(ctx context.Context, vaultBaseURL string, issuerName string) (result IssuerBundle, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.GetCertificateIssuer")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetCertificateIssuerPreparer(ctx, vaultBaseURL, issuerName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "keyvault.BaseClient", "GetCertificateIssuer", nil, "Failure preparing request")
@@ -1023,8 +1175,8 @@ func (client BaseClient) GetCertificateIssuerPreparer(ctx context.Context, vault
 // GetCertificateIssuerSender sends the GetCertificateIssuer request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) GetCertificateIssuerSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetCertificateIssuerResponder handles the response to the GetCertificateIssuer request. The method always
@@ -1041,14 +1193,25 @@ func (client BaseClient) GetCertificateIssuerResponder(resp *http.Response) (res
 }
 
 // GetCertificateIssuers list certificate issuers for the specified vault.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net maxresults is maximum number of results to
-// return in a page. If not specified the service will return up to 25 results.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// maxresults - maximum number of results to return in a page. If not specified the service will return up to
+// 25 results.
 func (client BaseClient) GetCertificateIssuers(ctx context.Context, vaultBaseURL string, maxresults *int32) (result CertificateIssuerListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.GetCertificateIssuers")
+		defer func() {
+			sc := -1
+			if result.cilr.Response.Response != nil {
+				sc = result.cilr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: maxresults,
 			Constraints: []validation.Constraint{{Target: "maxresults", Name: validation.Null, Rule: false,
-				Chain: []validation.Constraint{{Target: "maxresults", Name: validation.InclusiveMaximum, Rule: 25, Chain: nil},
+				Chain: []validation.Constraint{{Target: "maxresults", Name: validation.InclusiveMaximum, Rule: int64(25), Chain: nil},
 					{Target: "maxresults", Name: validation.InclusiveMinimum, Rule: 1, Chain: nil},
 				}}}}}); err != nil {
 		return result, validation.NewError("keyvault.BaseClient", "GetCertificateIssuers", err.Error())
@@ -1101,8 +1264,8 @@ func (client BaseClient) GetCertificateIssuersPreparer(ctx context.Context, vaul
 // GetCertificateIssuersSender sends the GetCertificateIssuers request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) GetCertificateIssuersSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetCertificateIssuersResponder handles the response to the GetCertificateIssuers request. The method always
@@ -1119,8 +1282,8 @@ func (client BaseClient) GetCertificateIssuersResponder(resp *http.Response) (re
 }
 
 // getCertificateIssuersNextResults retrieves the next set of results, if any.
-func (client BaseClient) getCertificateIssuersNextResults(lastResults CertificateIssuerListResult) (result CertificateIssuerListResult, err error) {
-	req, err := lastResults.certificateIssuerListResultPreparer()
+func (client BaseClient) getCertificateIssuersNextResults(ctx context.Context, lastResults CertificateIssuerListResult) (result CertificateIssuerListResult, err error) {
+	req, err := lastResults.certificateIssuerListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "keyvault.BaseClient", "getCertificateIssuersNextResults", nil, "Failure preparing next results request")
 	}
@@ -1141,15 +1304,35 @@ func (client BaseClient) getCertificateIssuersNextResults(lastResults Certificat
 
 // GetCertificateIssuersComplete enumerates all values, automatically crossing page boundaries as required.
 func (client BaseClient) GetCertificateIssuersComplete(ctx context.Context, vaultBaseURL string, maxresults *int32) (result CertificateIssuerListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.GetCertificateIssuers")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.GetCertificateIssuers(ctx, vaultBaseURL, maxresults)
 	return
 }
 
 // GetCertificateOperation gets the certificate operation response.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net certificateName is the name of the
-// certificate
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// certificateName - the name of the certificate
 func (client BaseClient) GetCertificateOperation(ctx context.Context, vaultBaseURL string, certificateName string) (result CertificateOperation, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.GetCertificateOperation")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetCertificateOperationPreparer(ctx, vaultBaseURL, certificateName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "keyvault.BaseClient", "GetCertificateOperation", nil, "Failure preparing request")
@@ -1197,8 +1380,8 @@ func (client BaseClient) GetCertificateOperationPreparer(ctx context.Context, va
 // GetCertificateOperationSender sends the GetCertificateOperation request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) GetCertificateOperationSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetCertificateOperationResponder handles the response to the GetCertificateOperation request. The method always
@@ -1215,10 +1398,20 @@ func (client BaseClient) GetCertificateOperationResponder(resp *http.Response) (
 }
 
 // GetCertificatePolicy gets the policy for a certificate.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net certificateName is the name of the
-// certificate in the given vault.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// certificateName - the name of the certificate in the given vault.
 func (client BaseClient) GetCertificatePolicy(ctx context.Context, vaultBaseURL string, certificateName string) (result CertificatePolicy, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.GetCertificatePolicy")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetCertificatePolicyPreparer(ctx, vaultBaseURL, certificateName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "keyvault.BaseClient", "GetCertificatePolicy", nil, "Failure preparing request")
@@ -1266,8 +1459,8 @@ func (client BaseClient) GetCertificatePolicyPreparer(ctx context.Context, vault
 // GetCertificatePolicySender sends the GetCertificatePolicy request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) GetCertificatePolicySender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetCertificatePolicyResponder handles the response to the GetCertificatePolicy request. The method always
@@ -1284,14 +1477,25 @@ func (client BaseClient) GetCertificatePolicyResponder(resp *http.Response) (res
 }
 
 // GetCertificates list certificates in the specified vault
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net maxresults is maximum number of results to
-// return in a page. If not specified the service will return up to 25 results.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// maxresults - maximum number of results to return in a page. If not specified the service will return up to
+// 25 results.
 func (client BaseClient) GetCertificates(ctx context.Context, vaultBaseURL string, maxresults *int32) (result CertificateListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.GetCertificates")
+		defer func() {
+			sc := -1
+			if result.clr.Response.Response != nil {
+				sc = result.clr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: maxresults,
 			Constraints: []validation.Constraint{{Target: "maxresults", Name: validation.Null, Rule: false,
-				Chain: []validation.Constraint{{Target: "maxresults", Name: validation.InclusiveMaximum, Rule: 25, Chain: nil},
+				Chain: []validation.Constraint{{Target: "maxresults", Name: validation.InclusiveMaximum, Rule: int64(25), Chain: nil},
 					{Target: "maxresults", Name: validation.InclusiveMinimum, Rule: 1, Chain: nil},
 				}}}}}); err != nil {
 		return result, validation.NewError("keyvault.BaseClient", "GetCertificates", err.Error())
@@ -1344,8 +1548,8 @@ func (client BaseClient) GetCertificatesPreparer(ctx context.Context, vaultBaseU
 // GetCertificatesSender sends the GetCertificates request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) GetCertificatesSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetCertificatesResponder handles the response to the GetCertificates request. The method always
@@ -1362,8 +1566,8 @@ func (client BaseClient) GetCertificatesResponder(resp *http.Response) (result C
 }
 
 // getCertificatesNextResults retrieves the next set of results, if any.
-func (client BaseClient) getCertificatesNextResults(lastResults CertificateListResult) (result CertificateListResult, err error) {
-	req, err := lastResults.certificateListResultPreparer()
+func (client BaseClient) getCertificatesNextResults(ctx context.Context, lastResults CertificateListResult) (result CertificateListResult, err error) {
+	req, err := lastResults.certificateListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "keyvault.BaseClient", "getCertificatesNextResults", nil, "Failure preparing next results request")
 	}
@@ -1384,20 +1588,41 @@ func (client BaseClient) getCertificatesNextResults(lastResults CertificateListR
 
 // GetCertificatesComplete enumerates all values, automatically crossing page boundaries as required.
 func (client BaseClient) GetCertificatesComplete(ctx context.Context, vaultBaseURL string, maxresults *int32) (result CertificateListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.GetCertificates")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.GetCertificates(ctx, vaultBaseURL, maxresults)
 	return
 }
 
 // GetCertificateVersions list the versions of a certificate.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net certificateName is the name of the
-// certificate maxresults is maximum number of results to return in a page. If not specified the service will
-// return up to 25 results.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// certificateName - the name of the certificate
+// maxresults - maximum number of results to return in a page. If not specified the service will return up to
+// 25 results.
 func (client BaseClient) GetCertificateVersions(ctx context.Context, vaultBaseURL string, certificateName string, maxresults *int32) (result CertificateListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.GetCertificateVersions")
+		defer func() {
+			sc := -1
+			if result.clr.Response.Response != nil {
+				sc = result.clr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: maxresults,
 			Constraints: []validation.Constraint{{Target: "maxresults", Name: validation.Null, Rule: false,
-				Chain: []validation.Constraint{{Target: "maxresults", Name: validation.InclusiveMaximum, Rule: 25, Chain: nil},
+				Chain: []validation.Constraint{{Target: "maxresults", Name: validation.InclusiveMaximum, Rule: int64(25), Chain: nil},
 					{Target: "maxresults", Name: validation.InclusiveMinimum, Rule: 1, Chain: nil},
 				}}}}}); err != nil {
 		return result, validation.NewError("keyvault.BaseClient", "GetCertificateVersions", err.Error())
@@ -1454,8 +1679,8 @@ func (client BaseClient) GetCertificateVersionsPreparer(ctx context.Context, vau
 // GetCertificateVersionsSender sends the GetCertificateVersions request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) GetCertificateVersionsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetCertificateVersionsResponder handles the response to the GetCertificateVersions request. The method always
@@ -1472,8 +1697,8 @@ func (client BaseClient) GetCertificateVersionsResponder(resp *http.Response) (r
 }
 
 // getCertificateVersionsNextResults retrieves the next set of results, if any.
-func (client BaseClient) getCertificateVersionsNextResults(lastResults CertificateListResult) (result CertificateListResult, err error) {
-	req, err := lastResults.certificateListResultPreparer()
+func (client BaseClient) getCertificateVersionsNextResults(ctx context.Context, lastResults CertificateListResult) (result CertificateListResult, err error) {
+	req, err := lastResults.certificateListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "keyvault.BaseClient", "getCertificateVersionsNextResults", nil, "Failure preparing next results request")
 	}
@@ -1494,15 +1719,36 @@ func (client BaseClient) getCertificateVersionsNextResults(lastResults Certifica
 
 // GetCertificateVersionsComplete enumerates all values, automatically crossing page boundaries as required.
 func (client BaseClient) GetCertificateVersionsComplete(ctx context.Context, vaultBaseURL string, certificateName string, maxresults *int32) (result CertificateListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.GetCertificateVersions")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.GetCertificateVersions(ctx, vaultBaseURL, certificateName, maxresults)
 	return
 }
 
 // GetKey retrieves the public portion of a key plus its attributes
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net keyName is the name of the key keyVersion
-// is the version of the key
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// keyName - the name of the key
+// keyVersion - the version of the key
 func (client BaseClient) GetKey(ctx context.Context, vaultBaseURL string, keyName string, keyVersion string) (result KeyBundle, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.GetKey")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetKeyPreparer(ctx, vaultBaseURL, keyName, keyVersion)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "keyvault.BaseClient", "GetKey", nil, "Failure preparing request")
@@ -1551,8 +1797,8 @@ func (client BaseClient) GetKeyPreparer(ctx context.Context, vaultBaseURL string
 // GetKeySender sends the GetKey request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) GetKeySender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetKeyResponder handles the response to the GetKey request. The method always
@@ -1569,14 +1815,25 @@ func (client BaseClient) GetKeyResponder(resp *http.Response) (result KeyBundle,
 }
 
 // GetKeys list keys in the specified vault
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net maxresults is maximum number of results to
-// return in a page. If not specified the service will return up to 25 results.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// maxresults - maximum number of results to return in a page. If not specified the service will return up to
+// 25 results.
 func (client BaseClient) GetKeys(ctx context.Context, vaultBaseURL string, maxresults *int32) (result KeyListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.GetKeys")
+		defer func() {
+			sc := -1
+			if result.klr.Response.Response != nil {
+				sc = result.klr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: maxresults,
 			Constraints: []validation.Constraint{{Target: "maxresults", Name: validation.Null, Rule: false,
-				Chain: []validation.Constraint{{Target: "maxresults", Name: validation.InclusiveMaximum, Rule: 25, Chain: nil},
+				Chain: []validation.Constraint{{Target: "maxresults", Name: validation.InclusiveMaximum, Rule: int64(25), Chain: nil},
 					{Target: "maxresults", Name: validation.InclusiveMinimum, Rule: 1, Chain: nil},
 				}}}}}); err != nil {
 		return result, validation.NewError("keyvault.BaseClient", "GetKeys", err.Error())
@@ -1629,8 +1886,8 @@ func (client BaseClient) GetKeysPreparer(ctx context.Context, vaultBaseURL strin
 // GetKeysSender sends the GetKeys request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) GetKeysSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetKeysResponder handles the response to the GetKeys request. The method always
@@ -1647,8 +1904,8 @@ func (client BaseClient) GetKeysResponder(resp *http.Response) (result KeyListRe
 }
 
 // getKeysNextResults retrieves the next set of results, if any.
-func (client BaseClient) getKeysNextResults(lastResults KeyListResult) (result KeyListResult, err error) {
-	req, err := lastResults.keyListResultPreparer()
+func (client BaseClient) getKeysNextResults(ctx context.Context, lastResults KeyListResult) (result KeyListResult, err error) {
+	req, err := lastResults.keyListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "keyvault.BaseClient", "getKeysNextResults", nil, "Failure preparing next results request")
 	}
@@ -1669,19 +1926,41 @@ func (client BaseClient) getKeysNextResults(lastResults KeyListResult) (result K
 
 // GetKeysComplete enumerates all values, automatically crossing page boundaries as required.
 func (client BaseClient) GetKeysComplete(ctx context.Context, vaultBaseURL string, maxresults *int32) (result KeyListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.GetKeys")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.GetKeys(ctx, vaultBaseURL, maxresults)
 	return
 }
 
 // GetKeyVersions list the versions of the specified key
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net keyName is the name of the key maxresults
-// is maximum number of results to return in a page. If not specified the service will return up to 25 results.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// keyName - the name of the key
+// maxresults - maximum number of results to return in a page. If not specified the service will return up to
+// 25 results.
 func (client BaseClient) GetKeyVersions(ctx context.Context, vaultBaseURL string, keyName string, maxresults *int32) (result KeyListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.GetKeyVersions")
+		defer func() {
+			sc := -1
+			if result.klr.Response.Response != nil {
+				sc = result.klr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: maxresults,
 			Constraints: []validation.Constraint{{Target: "maxresults", Name: validation.Null, Rule: false,
-				Chain: []validation.Constraint{{Target: "maxresults", Name: validation.InclusiveMaximum, Rule: 25, Chain: nil},
+				Chain: []validation.Constraint{{Target: "maxresults", Name: validation.InclusiveMaximum, Rule: int64(25), Chain: nil},
 					{Target: "maxresults", Name: validation.InclusiveMinimum, Rule: 1, Chain: nil},
 				}}}}}); err != nil {
 		return result, validation.NewError("keyvault.BaseClient", "GetKeyVersions", err.Error())
@@ -1738,8 +2017,8 @@ func (client BaseClient) GetKeyVersionsPreparer(ctx context.Context, vaultBaseUR
 // GetKeyVersionsSender sends the GetKeyVersions request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) GetKeyVersionsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetKeyVersionsResponder handles the response to the GetKeyVersions request. The method always
@@ -1756,8 +2035,8 @@ func (client BaseClient) GetKeyVersionsResponder(resp *http.Response) (result Ke
 }
 
 // getKeyVersionsNextResults retrieves the next set of results, if any.
-func (client BaseClient) getKeyVersionsNextResults(lastResults KeyListResult) (result KeyListResult, err error) {
-	req, err := lastResults.keyListResultPreparer()
+func (client BaseClient) getKeyVersionsNextResults(ctx context.Context, lastResults KeyListResult) (result KeyListResult, err error) {
+	req, err := lastResults.keyListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "keyvault.BaseClient", "getKeyVersionsNextResults", nil, "Failure preparing next results request")
 	}
@@ -1778,15 +2057,36 @@ func (client BaseClient) getKeyVersionsNextResults(lastResults KeyListResult) (r
 
 // GetKeyVersionsComplete enumerates all values, automatically crossing page boundaries as required.
 func (client BaseClient) GetKeyVersionsComplete(ctx context.Context, vaultBaseURL string, keyName string, maxresults *int32) (result KeyListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.GetKeyVersions")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.GetKeyVersions(ctx, vaultBaseURL, keyName, maxresults)
 	return
 }
 
 // GetSecret gets a secret.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net secretName is the name of the secret in the
-// given vault secretVersion is the version of the secret
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// secretName - the name of the secret in the given vault
+// secretVersion - the version of the secret
 func (client BaseClient) GetSecret(ctx context.Context, vaultBaseURL string, secretName string, secretVersion string) (result SecretBundle, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.GetSecret")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetSecretPreparer(ctx, vaultBaseURL, secretName, secretVersion)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "keyvault.BaseClient", "GetSecret", nil, "Failure preparing request")
@@ -1835,8 +2135,8 @@ func (client BaseClient) GetSecretPreparer(ctx context.Context, vaultBaseURL str
 // GetSecretSender sends the GetSecret request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) GetSecretSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetSecretResponder handles the response to the GetSecret request. The method always
@@ -1853,14 +2153,25 @@ func (client BaseClient) GetSecretResponder(resp *http.Response) (result SecretB
 }
 
 // GetSecrets list secrets in the specified vault
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net maxresults is maximum number of results to
-// return in a page. If not specified the service will return up to 25 results.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// maxresults - maximum number of results to return in a page. If not specified the service will return up to
+// 25 results.
 func (client BaseClient) GetSecrets(ctx context.Context, vaultBaseURL string, maxresults *int32) (result SecretListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.GetSecrets")
+		defer func() {
+			sc := -1
+			if result.slr.Response.Response != nil {
+				sc = result.slr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: maxresults,
 			Constraints: []validation.Constraint{{Target: "maxresults", Name: validation.Null, Rule: false,
-				Chain: []validation.Constraint{{Target: "maxresults", Name: validation.InclusiveMaximum, Rule: 25, Chain: nil},
+				Chain: []validation.Constraint{{Target: "maxresults", Name: validation.InclusiveMaximum, Rule: int64(25), Chain: nil},
 					{Target: "maxresults", Name: validation.InclusiveMinimum, Rule: 1, Chain: nil},
 				}}}}}); err != nil {
 		return result, validation.NewError("keyvault.BaseClient", "GetSecrets", err.Error())
@@ -1913,8 +2224,8 @@ func (client BaseClient) GetSecretsPreparer(ctx context.Context, vaultBaseURL st
 // GetSecretsSender sends the GetSecrets request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) GetSecretsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetSecretsResponder handles the response to the GetSecrets request. The method always
@@ -1931,8 +2242,8 @@ func (client BaseClient) GetSecretsResponder(resp *http.Response) (result Secret
 }
 
 // getSecretsNextResults retrieves the next set of results, if any.
-func (client BaseClient) getSecretsNextResults(lastResults SecretListResult) (result SecretListResult, err error) {
-	req, err := lastResults.secretListResultPreparer()
+func (client BaseClient) getSecretsNextResults(ctx context.Context, lastResults SecretListResult) (result SecretListResult, err error) {
+	req, err := lastResults.secretListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "keyvault.BaseClient", "getSecretsNextResults", nil, "Failure preparing next results request")
 	}
@@ -1953,20 +2264,41 @@ func (client BaseClient) getSecretsNextResults(lastResults SecretListResult) (re
 
 // GetSecretsComplete enumerates all values, automatically crossing page boundaries as required.
 func (client BaseClient) GetSecretsComplete(ctx context.Context, vaultBaseURL string, maxresults *int32) (result SecretListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.GetSecrets")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.GetSecrets(ctx, vaultBaseURL, maxresults)
 	return
 }
 
 // GetSecretVersions list the versions of the specified secret
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net secretName is the name of the secret in the
-// given vault maxresults is maximum number of results to return in a page. If not specified the service will
-// return up to 25 results.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// secretName - the name of the secret in the given vault
+// maxresults - maximum number of results to return in a page. If not specified the service will return up to
+// 25 results.
 func (client BaseClient) GetSecretVersions(ctx context.Context, vaultBaseURL string, secretName string, maxresults *int32) (result SecretListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.GetSecretVersions")
+		defer func() {
+			sc := -1
+			if result.slr.Response.Response != nil {
+				sc = result.slr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: maxresults,
 			Constraints: []validation.Constraint{{Target: "maxresults", Name: validation.Null, Rule: false,
-				Chain: []validation.Constraint{{Target: "maxresults", Name: validation.InclusiveMaximum, Rule: 25, Chain: nil},
+				Chain: []validation.Constraint{{Target: "maxresults", Name: validation.InclusiveMaximum, Rule: int64(25), Chain: nil},
 					{Target: "maxresults", Name: validation.InclusiveMinimum, Rule: 1, Chain: nil},
 				}}}}}); err != nil {
 		return result, validation.NewError("keyvault.BaseClient", "GetSecretVersions", err.Error())
@@ -2023,8 +2355,8 @@ func (client BaseClient) GetSecretVersionsPreparer(ctx context.Context, vaultBas
 // GetSecretVersionsSender sends the GetSecretVersions request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) GetSecretVersionsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetSecretVersionsResponder handles the response to the GetSecretVersions request. The method always
@@ -2041,8 +2373,8 @@ func (client BaseClient) GetSecretVersionsResponder(resp *http.Response) (result
 }
 
 // getSecretVersionsNextResults retrieves the next set of results, if any.
-func (client BaseClient) getSecretVersionsNextResults(lastResults SecretListResult) (result SecretListResult, err error) {
-	req, err := lastResults.secretListResultPreparer()
+func (client BaseClient) getSecretVersionsNextResults(ctx context.Context, lastResults SecretListResult) (result SecretListResult, err error) {
+	req, err := lastResults.secretListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "keyvault.BaseClient", "getSecretVersionsNextResults", nil, "Failure preparing next results request")
 	}
@@ -2063,15 +2395,36 @@ func (client BaseClient) getSecretVersionsNextResults(lastResults SecretListResu
 
 // GetSecretVersionsComplete enumerates all values, automatically crossing page boundaries as required.
 func (client BaseClient) GetSecretVersionsComplete(ctx context.Context, vaultBaseURL string, secretName string, maxresults *int32) (result SecretListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.GetSecretVersions")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.GetSecretVersions(ctx, vaultBaseURL, secretName, maxresults)
 	return
 }
 
 // ImportCertificate imports a certificate into the specified vault
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net certificateName is the name of the
-// certificate parameters is the parameters to import certificate.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// certificateName - the name of the certificate
+// parameters - the parameters to import certificate.
 func (client BaseClient) ImportCertificate(ctx context.Context, vaultBaseURL string, certificateName string, parameters CertificateImportParameters) (result CertificateBundle, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.ImportCertificate")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: certificateName,
 			Constraints: []validation.Constraint{{Target: "certificateName", Name: validation.Pattern, Rule: `^[0-9a-zA-Z-]+$`, Chain: nil}}},
@@ -2123,7 +2476,7 @@ func (client BaseClient) ImportCertificatePreparer(ctx context.Context, vaultBas
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithCustomBaseURL("{vaultBaseUrl}", urlParameters),
 		autorest.WithPathParameters("/certificates/{certificate-name}/import", pathParameters),
@@ -2135,8 +2488,8 @@ func (client BaseClient) ImportCertificatePreparer(ctx context.Context, vaultBas
 // ImportCertificateSender sends the ImportCertificate request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) ImportCertificateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ImportCertificateResponder handles the response to the ImportCertificate request. The method always
@@ -2153,10 +2506,21 @@ func (client BaseClient) ImportCertificateResponder(resp *http.Response) (result
 }
 
 // ImportKey imports a key into the specified vault
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net keyName is the name of the key parameters
-// is the parameters to import key.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// keyName - the name of the key
+// parameters - the parameters to import key.
 func (client BaseClient) ImportKey(ctx context.Context, vaultBaseURL string, keyName string, parameters KeyImportParameters) (result KeyBundle, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.ImportKey")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: keyName,
 			Constraints: []validation.Constraint{{Target: "keyName", Name: validation.Pattern, Rule: `^[0-9a-zA-Z-]+$`, Chain: nil}}},
@@ -2202,7 +2566,7 @@ func (client BaseClient) ImportKeyPreparer(ctx context.Context, vaultBaseURL str
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithCustomBaseURL("{vaultBaseUrl}", urlParameters),
 		autorest.WithPathParameters("/keys/{key-name}", pathParameters),
@@ -2214,8 +2578,8 @@ func (client BaseClient) ImportKeyPreparer(ctx context.Context, vaultBaseURL str
 // ImportKeySender sends the ImportKey request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) ImportKeySender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ImportKeyResponder handles the response to the ImportKey request. The method always
@@ -2232,10 +2596,21 @@ func (client BaseClient) ImportKeyResponder(resp *http.Response) (result KeyBund
 }
 
 // MergeCertificate merges a certificate or a certificate chain with a key pair existing on the server.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net certificateName is the name of the
-// certificate parameters is the parameters to merge certificate.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// certificateName - the name of the certificate
+// parameters - the parameters to merge certificate.
 func (client BaseClient) MergeCertificate(ctx context.Context, vaultBaseURL string, certificateName string, parameters CertificateMergeParameters) (result CertificateBundle, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.MergeCertificate")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameters,
 			Constraints: []validation.Constraint{{Target: "parameters.X509Certificates", Name: validation.Null, Rule: true, Chain: nil}}}}); err != nil {
@@ -2279,7 +2654,7 @@ func (client BaseClient) MergeCertificatePreparer(ctx context.Context, vaultBase
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithCustomBaseURL("{vaultBaseUrl}", urlParameters),
 		autorest.WithPathParameters("/certificates/{certificate-name}/pending/merge", pathParameters),
@@ -2291,8 +2666,8 @@ func (client BaseClient) MergeCertificatePreparer(ctx context.Context, vaultBase
 // MergeCertificateSender sends the MergeCertificate request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) MergeCertificateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // MergeCertificateResponder handles the response to the MergeCertificate request. The method always
@@ -2309,9 +2684,20 @@ func (client BaseClient) MergeCertificateResponder(resp *http.Response) (result 
 }
 
 // RestoreKey restores the backup key in to a vault
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net parameters is the parameters to restore key
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// parameters - the parameters to restore key
 func (client BaseClient) RestoreKey(ctx context.Context, vaultBaseURL string, parameters KeyRestoreParameters) (result KeyBundle, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.RestoreKey")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameters,
 			Constraints: []validation.Constraint{{Target: "parameters.KeyBundleBackup", Name: validation.Null, Rule: true, Chain: nil}}}}); err != nil {
@@ -2351,7 +2737,7 @@ func (client BaseClient) RestoreKeyPreparer(ctx context.Context, vaultBaseURL st
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithCustomBaseURL("{vaultBaseUrl}", urlParameters),
 		autorest.WithPath("/keys/restore"),
@@ -2363,8 +2749,8 @@ func (client BaseClient) RestoreKeyPreparer(ctx context.Context, vaultBaseURL st
 // RestoreKeySender sends the RestoreKey request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) RestoreKeySender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // RestoreKeyResponder handles the response to the RestoreKey request. The method always
@@ -2381,10 +2767,20 @@ func (client BaseClient) RestoreKeyResponder(resp *http.Response) (result KeyBun
 }
 
 // SetCertificateContacts sets the certificate contacts for the specified vault.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net contacts is the contacts for the vault
-// certificates.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// contacts - the contacts for the vault certificates.
 func (client BaseClient) SetCertificateContacts(ctx context.Context, vaultBaseURL string, contacts Contacts) (result Contacts, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.SetCertificateContacts")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.SetCertificateContactsPreparer(ctx, vaultBaseURL, contacts)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "keyvault.BaseClient", "SetCertificateContacts", nil, "Failure preparing request")
@@ -2417,8 +2813,9 @@ func (client BaseClient) SetCertificateContactsPreparer(ctx context.Context, vau
 		"api-version": APIVersion,
 	}
 
+	contacts.ID = nil
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithCustomBaseURL("{vaultBaseUrl}", urlParameters),
 		autorest.WithPath("/certificates/contacts"),
@@ -2430,8 +2827,8 @@ func (client BaseClient) SetCertificateContactsPreparer(ctx context.Context, vau
 // SetCertificateContactsSender sends the SetCertificateContacts request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) SetCertificateContactsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // SetCertificateContactsResponder handles the response to the SetCertificateContacts request. The method always
@@ -2448,10 +2845,21 @@ func (client BaseClient) SetCertificateContactsResponder(resp *http.Response) (r
 }
 
 // SetCertificateIssuer sets the specified certificate issuer.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net issuerName is the name of the issuer.
-// parameter is certificate issuer set parameter.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// issuerName - the name of the issuer.
+// parameter - certificate issuer set parameter.
 func (client BaseClient) SetCertificateIssuer(ctx context.Context, vaultBaseURL string, issuerName string, parameter CertificateIssuerSetParameters) (result IssuerBundle, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.SetCertificateIssuer")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameter,
 			Constraints: []validation.Constraint{{Target: "parameter.Provider", Name: validation.Null, Rule: true, Chain: nil}}}}); err != nil {
@@ -2495,7 +2903,7 @@ func (client BaseClient) SetCertificateIssuerPreparer(ctx context.Context, vault
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithCustomBaseURL("{vaultBaseUrl}", urlParameters),
 		autorest.WithPathParameters("/certificates/issuers/{issuer-name}", pathParameters),
@@ -2507,8 +2915,8 @@ func (client BaseClient) SetCertificateIssuerPreparer(ctx context.Context, vault
 // SetCertificateIssuerSender sends the SetCertificateIssuer request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) SetCertificateIssuerSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // SetCertificateIssuerResponder handles the response to the SetCertificateIssuer request. The method always
@@ -2525,10 +2933,21 @@ func (client BaseClient) SetCertificateIssuerResponder(resp *http.Response) (res
 }
 
 // SetSecret sets a secret in the specified vault.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net secretName is the name of the secret in the
-// given vault parameters is the parameters for secret set
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// secretName - the name of the secret in the given vault
+// parameters - the parameters for secret set
 func (client BaseClient) SetSecret(ctx context.Context, vaultBaseURL string, secretName string, parameters SecretSetParameters) (result SecretBundle, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.SetSecret")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: secretName,
 			Constraints: []validation.Constraint{{Target: "secretName", Name: validation.Pattern, Rule: `^[0-9a-zA-Z-]+$`, Chain: nil}}},
@@ -2574,7 +2993,7 @@ func (client BaseClient) SetSecretPreparer(ctx context.Context, vaultBaseURL str
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithCustomBaseURL("{vaultBaseUrl}", urlParameters),
 		autorest.WithPathParameters("/secrets/{secret-name}", pathParameters),
@@ -2586,8 +3005,8 @@ func (client BaseClient) SetSecretPreparer(ctx context.Context, vaultBaseURL str
 // SetSecretSender sends the SetSecret request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) SetSecretSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // SetSecretResponder handles the response to the SetSecret request. The method always
@@ -2604,10 +3023,22 @@ func (client BaseClient) SetSecretResponder(resp *http.Response) (result SecretB
 }
 
 // Sign creates a signature from a digest using the specified key in the vault
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net keyName is the name of the key keyVersion
-// is the version of the key parameters is the parameters for key operations.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// keyName - the name of the key
+// keyVersion - the version of the key
+// parameters - the parameters for key operations.
 func (client BaseClient) Sign(ctx context.Context, vaultBaseURL string, keyName string, keyVersion string, parameters KeySignParameters) (result KeyOperationResult, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.Sign")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameters,
 			Constraints: []validation.Constraint{{Target: "parameters.Value", Name: validation.Null, Rule: true, Chain: nil}}}}); err != nil {
@@ -2652,7 +3083,7 @@ func (client BaseClient) SignPreparer(ctx context.Context, vaultBaseURL string, 
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithCustomBaseURL("{vaultBaseUrl}", urlParameters),
 		autorest.WithPathParameters("/keys/{key-name}/{key-version}/sign", pathParameters),
@@ -2664,8 +3095,8 @@ func (client BaseClient) SignPreparer(ctx context.Context, vaultBaseURL string, 
 // SignSender sends the Sign request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) SignSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // SignResponder handles the response to the Sign request. The method always
@@ -2683,10 +3114,22 @@ func (client BaseClient) SignResponder(resp *http.Response) (result KeyOperation
 
 // UnwrapKey unwraps a symmetric key using the specified key in the vault that has initially been used for wrapping the
 // key.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net keyName is the name of the key keyVersion
-// is the version of the key parameters is the parameters for key operations.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// keyName - the name of the key
+// keyVersion - the version of the key
+// parameters - the parameters for key operations.
 func (client BaseClient) UnwrapKey(ctx context.Context, vaultBaseURL string, keyName string, keyVersion string, parameters KeyOperationsParameters) (result KeyOperationResult, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.UnwrapKey")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameters,
 			Constraints: []validation.Constraint{{Target: "parameters.Value", Name: validation.Null, Rule: true, Chain: nil}}}}); err != nil {
@@ -2731,7 +3174,7 @@ func (client BaseClient) UnwrapKeyPreparer(ctx context.Context, vaultBaseURL str
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithCustomBaseURL("{vaultBaseUrl}", urlParameters),
 		autorest.WithPathParameters("/keys/{key-name}/{key-version}/unwrapkey", pathParameters),
@@ -2743,8 +3186,8 @@ func (client BaseClient) UnwrapKeyPreparer(ctx context.Context, vaultBaseURL str
 // UnwrapKeySender sends the UnwrapKey request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) UnwrapKeySender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UnwrapKeyResponder handles the response to the UnwrapKey request. The method always
@@ -2761,10 +3204,21 @@ func (client BaseClient) UnwrapKeyResponder(resp *http.Response) (result KeyOper
 }
 
 // UpdateCertificate updates the attributes associated with the specified certificate
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net certificateName is the name of the
-// certificate in the given vault certificateVersion is the version of the certificate
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// certificateName - the name of the certificate in the given vault
+// certificateVersion - the version of the certificate
 func (client BaseClient) UpdateCertificate(ctx context.Context, vaultBaseURL string, certificateName string, certificateVersion string, parameters CertificateUpdateParameters) (result CertificateBundle, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.UpdateCertificate")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UpdateCertificatePreparer(ctx, vaultBaseURL, certificateName, certificateVersion, parameters)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "keyvault.BaseClient", "UpdateCertificate", nil, "Failure preparing request")
@@ -2803,7 +3257,7 @@ func (client BaseClient) UpdateCertificatePreparer(ctx context.Context, vaultBas
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithCustomBaseURL("{vaultBaseUrl}", urlParameters),
 		autorest.WithPathParameters("/certificates/{certificate-name}/{certificate-version}", pathParameters),
@@ -2815,8 +3269,8 @@ func (client BaseClient) UpdateCertificatePreparer(ctx context.Context, vaultBas
 // UpdateCertificateSender sends the UpdateCertificate request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) UpdateCertificateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateCertificateResponder handles the response to the UpdateCertificate request. The method always
@@ -2833,10 +3287,21 @@ func (client BaseClient) UpdateCertificateResponder(resp *http.Response) (result
 }
 
 // UpdateCertificateIssuer updates the specified certificate issuer.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net issuerName is the name of the issuer.
-// parameter is certificate issuer update parameter.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// issuerName - the name of the issuer.
+// parameter - certificate issuer update parameter.
 func (client BaseClient) UpdateCertificateIssuer(ctx context.Context, vaultBaseURL string, issuerName string, parameter CertificateIssuerUpdateParameters) (result IssuerBundle, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.UpdateCertificateIssuer")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UpdateCertificateIssuerPreparer(ctx, vaultBaseURL, issuerName, parameter)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "keyvault.BaseClient", "UpdateCertificateIssuer", nil, "Failure preparing request")
@@ -2874,7 +3339,7 @@ func (client BaseClient) UpdateCertificateIssuerPreparer(ctx context.Context, va
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithCustomBaseURL("{vaultBaseUrl}", urlParameters),
 		autorest.WithPathParameters("/certificates/issuers/{issuer-name}", pathParameters),
@@ -2886,8 +3351,8 @@ func (client BaseClient) UpdateCertificateIssuerPreparer(ctx context.Context, va
 // UpdateCertificateIssuerSender sends the UpdateCertificateIssuer request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) UpdateCertificateIssuerSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateCertificateIssuerResponder handles the response to the UpdateCertificateIssuer request. The method always
@@ -2904,10 +3369,21 @@ func (client BaseClient) UpdateCertificateIssuerResponder(resp *http.Response) (
 }
 
 // UpdateCertificateOperation updates a certificate operation.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net certificateName is the name of the
-// certificate certificateOperation is the certificate operation response.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// certificateName - the name of the certificate
+// certificateOperation - the certificate operation response.
 func (client BaseClient) UpdateCertificateOperation(ctx context.Context, vaultBaseURL string, certificateName string, certificateOperation CertificateOperationUpdateParameter) (result CertificateOperation, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.UpdateCertificateOperation")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UpdateCertificateOperationPreparer(ctx, vaultBaseURL, certificateName, certificateOperation)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "keyvault.BaseClient", "UpdateCertificateOperation", nil, "Failure preparing request")
@@ -2945,7 +3421,7 @@ func (client BaseClient) UpdateCertificateOperationPreparer(ctx context.Context,
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithCustomBaseURL("{vaultBaseUrl}", urlParameters),
 		autorest.WithPathParameters("/certificates/{certificate-name}/pending", pathParameters),
@@ -2957,8 +3433,8 @@ func (client BaseClient) UpdateCertificateOperationPreparer(ctx context.Context,
 // UpdateCertificateOperationSender sends the UpdateCertificateOperation request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) UpdateCertificateOperationSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateCertificateOperationResponder handles the response to the UpdateCertificateOperation request. The method always
@@ -2976,10 +3452,21 @@ func (client BaseClient) UpdateCertificateOperationResponder(resp *http.Response
 
 // UpdateCertificatePolicy updates the policy for a certificate. Set appropriate members in the certificatePolicy that
 // must be updated. Leave others as null.
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net certificateName is the name of the
-// certificate in the given vault. certificatePolicy is the policy for the certificate.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// certificateName - the name of the certificate in the given vault.
+// certificatePolicy - the policy for the certificate.
 func (client BaseClient) UpdateCertificatePolicy(ctx context.Context, vaultBaseURL string, certificateName string, certificatePolicy CertificatePolicy) (result CertificatePolicy, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.UpdateCertificatePolicy")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UpdateCertificatePolicyPreparer(ctx, vaultBaseURL, certificateName, certificatePolicy)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "keyvault.BaseClient", "UpdateCertificatePolicy", nil, "Failure preparing request")
@@ -3016,8 +3503,9 @@ func (client BaseClient) UpdateCertificatePolicyPreparer(ctx context.Context, va
 		"api-version": APIVersion,
 	}
 
+	certificatePolicy.ID = nil
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithCustomBaseURL("{vaultBaseUrl}", urlParameters),
 		autorest.WithPathParameters("/certificates/{certificate-name}/policy", pathParameters),
@@ -3029,8 +3517,8 @@ func (client BaseClient) UpdateCertificatePolicyPreparer(ctx context.Context, va
 // UpdateCertificatePolicySender sends the UpdateCertificatePolicy request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) UpdateCertificatePolicySender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateCertificatePolicyResponder handles the response to the UpdateCertificatePolicy request. The method always
@@ -3047,10 +3535,22 @@ func (client BaseClient) UpdateCertificatePolicyResponder(resp *http.Response) (
 }
 
 // UpdateKey updates the Key Attributes associated with the specified key
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net keyName is the name of the key keyVersion
-// is the version of the key parameters is the parameters to update key.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// keyName - the name of the key
+// keyVersion - the version of the key
+// parameters - the parameters to update key.
 func (client BaseClient) UpdateKey(ctx context.Context, vaultBaseURL string, keyName string, keyVersion string, parameters KeyUpdateParameters) (result KeyBundle, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.UpdateKey")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UpdateKeyPreparer(ctx, vaultBaseURL, keyName, keyVersion, parameters)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "keyvault.BaseClient", "UpdateKey", nil, "Failure preparing request")
@@ -3089,7 +3589,7 @@ func (client BaseClient) UpdateKeyPreparer(ctx context.Context, vaultBaseURL str
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithCustomBaseURL("{vaultBaseUrl}", urlParameters),
 		autorest.WithPathParameters("/keys/{key-name}/{key-version}", pathParameters),
@@ -3101,8 +3601,8 @@ func (client BaseClient) UpdateKeyPreparer(ctx context.Context, vaultBaseURL str
 // UpdateKeySender sends the UpdateKey request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) UpdateKeySender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateKeyResponder handles the response to the UpdateKey request. The method always
@@ -3119,10 +3619,21 @@ func (client BaseClient) UpdateKeyResponder(resp *http.Response) (result KeyBund
 }
 
 // UpdateSecret updates the attributes associated with the specified secret
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net secretName is the name of the secret in the
-// given vault secretVersion is the version of the secret
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// secretName - the name of the secret in the given vault
+// secretVersion - the version of the secret
 func (client BaseClient) UpdateSecret(ctx context.Context, vaultBaseURL string, secretName string, secretVersion string, parameters SecretUpdateParameters) (result SecretBundle, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.UpdateSecret")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UpdateSecretPreparer(ctx, vaultBaseURL, secretName, secretVersion, parameters)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "keyvault.BaseClient", "UpdateSecret", nil, "Failure preparing request")
@@ -3161,7 +3672,7 @@ func (client BaseClient) UpdateSecretPreparer(ctx context.Context, vaultBaseURL 
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithCustomBaseURL("{vaultBaseUrl}", urlParameters),
 		autorest.WithPathParameters("/secrets/{secret-name}/{secret-version}", pathParameters),
@@ -3173,8 +3684,8 @@ func (client BaseClient) UpdateSecretPreparer(ctx context.Context, vaultBaseURL 
 // UpdateSecretSender sends the UpdateSecret request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) UpdateSecretSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateSecretResponder handles the response to the UpdateSecret request. The method always
@@ -3191,10 +3702,22 @@ func (client BaseClient) UpdateSecretResponder(resp *http.Response) (result Secr
 }
 
 // Verify verifies a signature using the specified key
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net keyName is the name of the key keyVersion
-// is the version of the key parameters is the parameters for key operations.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// keyName - the name of the key
+// keyVersion - the version of the key
+// parameters - the parameters for key operations.
 func (client BaseClient) Verify(ctx context.Context, vaultBaseURL string, keyName string, keyVersion string, parameters KeyVerifyParameters) (result KeyVerifyResult, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.Verify")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameters,
 			Constraints: []validation.Constraint{{Target: "parameters.Digest", Name: validation.Null, Rule: true, Chain: nil},
@@ -3240,7 +3763,7 @@ func (client BaseClient) VerifyPreparer(ctx context.Context, vaultBaseURL string
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithCustomBaseURL("{vaultBaseUrl}", urlParameters),
 		autorest.WithPathParameters("/keys/{key-name}/{key-version}/verify", pathParameters),
@@ -3252,8 +3775,8 @@ func (client BaseClient) VerifyPreparer(ctx context.Context, vaultBaseURL string
 // VerifySender sends the Verify request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) VerifySender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // VerifyResponder handles the response to the Verify request. The method always
@@ -3270,10 +3793,22 @@ func (client BaseClient) VerifyResponder(resp *http.Response) (result KeyVerifyR
 }
 
 // WrapKey wraps a symmetric key using the specified key
-//
-// vaultBaseURL is the vault name, e.g. https://myvault.vault.azure.net keyName is the name of the key keyVersion
-// is the version of the key parameters is the parameters for key operations.
+// Parameters:
+// vaultBaseURL - the vault name, e.g. https://myvault.vault.azure.net
+// keyName - the name of the key
+// keyVersion - the version of the key
+// parameters - the parameters for key operations.
 func (client BaseClient) WrapKey(ctx context.Context, vaultBaseURL string, keyName string, keyVersion string, parameters KeyOperationsParameters) (result KeyOperationResult, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BaseClient.WrapKey")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameters,
 			Constraints: []validation.Constraint{{Target: "parameters.Value", Name: validation.Null, Rule: true, Chain: nil}}}}); err != nil {
@@ -3318,7 +3853,7 @@ func (client BaseClient) WrapKeyPreparer(ctx context.Context, vaultBaseURL strin
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithCustomBaseURL("{vaultBaseUrl}", urlParameters),
 		autorest.WithPathParameters("/keys/{key-name}/{key-version}/wrapkey", pathParameters),
@@ -3330,8 +3865,8 @@ func (client BaseClient) WrapKeyPreparer(ctx context.Context, vaultBaseURL strin
 // WrapKeySender sends the WrapKey request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) WrapKeySender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // WrapKeyResponder handles the response to the WrapKey request. The method always

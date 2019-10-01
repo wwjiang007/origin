@@ -18,14 +18,19 @@ package keyvault
 // Changes may cause incorrect behavior and will be lost if the code is regenerated.
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/go-autorest/tracing"
 	"github.com/satori/go.uuid"
 	"net/http"
 )
+
+// The package's fully qualified name.
+const fqdn = "github.com/Azure/azure-sdk-for-go/services/keyvault/mgmt/2016-10-01/keyvault"
 
 // AccessPolicyUpdateKind enumerates the values for access policy update kind.
 type AccessPolicyUpdateKind string
@@ -38,6 +43,11 @@ const (
 	// Replace ...
 	Replace AccessPolicyUpdateKind = "replace"
 )
+
+// PossibleAccessPolicyUpdateKindValues returns an array of possible values for the AccessPolicyUpdateKind const type.
+func PossibleAccessPolicyUpdateKindValues() []AccessPolicyUpdateKind {
+	return []AccessPolicyUpdateKind{Add, Remove, Replace}
+}
 
 // CertificatePermissions enumerates the values for certificate permissions.
 type CertificatePermissions string
@@ -73,6 +83,11 @@ const (
 	Update CertificatePermissions = "update"
 )
 
+// PossibleCertificatePermissionsValues returns an array of possible values for the CertificatePermissions const type.
+func PossibleCertificatePermissionsValues() []CertificatePermissions {
+	return []CertificatePermissions{Create, Delete, Deleteissuers, Get, Getissuers, Import, List, Listissuers, Managecontacts, Manageissuers, Purge, Recover, Setissuers, Update}
+}
+
 // CreateMode enumerates the values for create mode.
 type CreateMode string
 
@@ -82,6 +97,11 @@ const (
 	// CreateModeRecover ...
 	CreateModeRecover CreateMode = "recover"
 )
+
+// PossibleCreateModeValues returns an array of possible values for the CreateMode const type.
+func PossibleCreateModeValues() []CreateMode {
+	return []CreateMode{CreateModeDefault, CreateModeRecover}
+}
 
 // KeyPermissions enumerates the values for key permissions.
 type KeyPermissions string
@@ -121,6 +141,11 @@ const (
 	KeyPermissionsWrapKey KeyPermissions = "wrapKey"
 )
 
+// PossibleKeyPermissionsValues returns an array of possible values for the KeyPermissions const type.
+func PossibleKeyPermissionsValues() []KeyPermissions {
+	return []KeyPermissions{KeyPermissionsBackup, KeyPermissionsCreate, KeyPermissionsDecrypt, KeyPermissionsDelete, KeyPermissionsEncrypt, KeyPermissionsGet, KeyPermissionsImport, KeyPermissionsList, KeyPermissionsPurge, KeyPermissionsRecover, KeyPermissionsRestore, KeyPermissionsSign, KeyPermissionsUnwrapKey, KeyPermissionsUpdate, KeyPermissionsVerify, KeyPermissionsWrapKey}
+}
+
 // Reason enumerates the values for reason.
 type Reason string
 
@@ -130,6 +155,11 @@ const (
 	// AlreadyExists ...
 	AlreadyExists Reason = "AlreadyExists"
 )
+
+// PossibleReasonValues returns an array of possible values for the Reason const type.
+func PossibleReasonValues() []Reason {
+	return []Reason{AccountNameInvalid, AlreadyExists}
+}
 
 // SecretPermissions enumerates the values for secret permissions.
 type SecretPermissions string
@@ -153,6 +183,11 @@ const (
 	SecretPermissionsSet SecretPermissions = "set"
 )
 
+// PossibleSecretPermissionsValues returns an array of possible values for the SecretPermissions const type.
+func PossibleSecretPermissionsValues() []SecretPermissions {
+	return []SecretPermissions{SecretPermissionsBackup, SecretPermissionsDelete, SecretPermissionsGet, SecretPermissionsList, SecretPermissionsPurge, SecretPermissionsRecover, SecretPermissionsRestore, SecretPermissionsSet}
+}
+
 // SkuName enumerates the values for sku name.
 type SkuName string
 
@@ -162,6 +197,11 @@ const (
 	// Standard ...
 	Standard SkuName = "standard"
 )
+
+// PossibleSkuNameValues returns an array of possible values for the SkuName const type.
+func PossibleSkuNameValues() []SkuName {
+	return []SkuName{Premium, Standard}
+}
 
 // StoragePermissions enumerates the values for storage permissions.
 type StoragePermissions string
@@ -197,8 +237,13 @@ const (
 	StoragePermissionsUpdate StoragePermissions = "update"
 )
 
-// AccessPolicyEntry an identity that have access to the key vault. All identities in the array must use the same
-// tenant ID as the key vault's tenant ID.
+// PossibleStoragePermissionsValues returns an array of possible values for the StoragePermissions const type.
+func PossibleStoragePermissionsValues() []StoragePermissions {
+	return []StoragePermissions{StoragePermissionsBackup, StoragePermissionsDelete, StoragePermissionsDeletesas, StoragePermissionsGet, StoragePermissionsGetsas, StoragePermissionsList, StoragePermissionsListsas, StoragePermissionsPurge, StoragePermissionsRecover, StoragePermissionsRegeneratekey, StoragePermissionsRestore, StoragePermissionsSet, StoragePermissionsSetsas, StoragePermissionsUpdate}
+}
+
+// AccessPolicyEntry an identity that have access to the key vault. All identities in the array must use
+// the same tenant ID as the key vault's tenant ID.
 type AccessPolicyEntry struct {
 	// TenantID - The Azure Active Directory tenant ID that should be used for authenticating requests to the key vault.
 	TenantID *uuid.UUID `json:"tenantId,omitempty"`
@@ -213,22 +258,22 @@ type AccessPolicyEntry struct {
 // CheckNameAvailabilityResult the CheckNameAvailability operation response.
 type CheckNameAvailabilityResult struct {
 	autorest.Response `json:"-"`
-	// NameAvailable - A boolean value that indicates whether the name is available for you to use. If true, the name is available. If false, the name has already been taken or is invalid and cannot be used.
+	// NameAvailable - READ-ONLY; A boolean value that indicates whether the name is available for you to use. If true, the name is available. If false, the name has already been taken or is invalid and cannot be used.
 	NameAvailable *bool `json:"nameAvailable,omitempty"`
-	// Reason - The reason that a vault name could not be used. The Reason element is only returned if NameAvailable is false. Possible values include: 'AccountNameInvalid', 'AlreadyExists'
+	// Reason - READ-ONLY; The reason that a vault name could not be used. The Reason element is only returned if NameAvailable is false. Possible values include: 'AccountNameInvalid', 'AlreadyExists'
 	Reason Reason `json:"reason,omitempty"`
-	// Message - An error message explaining the Reason value in more detail.
+	// Message - READ-ONLY; An error message explaining the Reason value in more detail.
 	Message *string `json:"message,omitempty"`
 }
 
 // DeletedVault deleted vault information with extended details.
 type DeletedVault struct {
 	autorest.Response `json:"-"`
-	// ID - The resource ID for the deleted key vault.
+	// ID - READ-ONLY; The resource ID for the deleted key vault.
 	ID *string `json:"id,omitempty"`
-	// Name - The name of the key vault.
+	// Name - READ-ONLY; The name of the key vault.
 	Name *string `json:"name,omitempty"`
-	// Type - The resource type of the key vault.
+	// Type - READ-ONLY; The resource type of the key vault.
 	Type *string `json:"type,omitempty"`
 	// Properties - Properties of the vault
 	Properties *DeletedVaultProperties `json:"properties,omitempty"`
@@ -249,20 +294,37 @@ type DeletedVaultListResultIterator struct {
 	page DeletedVaultListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *DeletedVaultListResultIterator) Next() error {
+func (iter *DeletedVaultListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/DeletedVaultListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *DeletedVaultListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -284,6 +346,11 @@ func (iter DeletedVaultListResultIterator) Value() DeletedVault {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the DeletedVaultListResultIterator type.
+func NewDeletedVaultListResultIterator(page DeletedVaultListResultPage) DeletedVaultListResultIterator {
+	return DeletedVaultListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (dvlr DeletedVaultListResult) IsEmpty() bool {
 	return dvlr.Value == nil || len(*dvlr.Value) == 0
@@ -291,11 +358,11 @@ func (dvlr DeletedVaultListResult) IsEmpty() bool {
 
 // deletedVaultListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (dvlr DeletedVaultListResult) deletedVaultListResultPreparer() (*http.Request, error) {
+func (dvlr DeletedVaultListResult) deletedVaultListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if dvlr.NextLink == nil || len(to.String(dvlr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(dvlr.NextLink)))
@@ -303,19 +370,36 @@ func (dvlr DeletedVaultListResult) deletedVaultListResultPreparer() (*http.Reque
 
 // DeletedVaultListResultPage contains a page of DeletedVault values.
 type DeletedVaultListResultPage struct {
-	fn   func(DeletedVaultListResult) (DeletedVaultListResult, error)
+	fn   func(context.Context, DeletedVaultListResult) (DeletedVaultListResult, error)
 	dvlr DeletedVaultListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *DeletedVaultListResultPage) Next() error {
-	next, err := page.fn(page.dvlr)
+func (page *DeletedVaultListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/DeletedVaultListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.dvlr)
 	if err != nil {
 		return err
 	}
 	page.dvlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *DeletedVaultListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -336,38 +420,28 @@ func (page DeletedVaultListResultPage) Values() []DeletedVault {
 	return *page.dvlr.Value
 }
 
+// Creates a new instance of the DeletedVaultListResultPage type.
+func NewDeletedVaultListResultPage(getNextPage func(context.Context, DeletedVaultListResult) (DeletedVaultListResult, error)) DeletedVaultListResultPage {
+	return DeletedVaultListResultPage{fn: getNextPage}
+}
+
 // DeletedVaultProperties properties of the deleted vault.
 type DeletedVaultProperties struct {
-	// VaultID - The resource id of the original vault.
+	// VaultID - READ-ONLY; The resource id of the original vault.
 	VaultID *string `json:"vaultId,omitempty"`
-	// Location - The location of the original vault.
+	// Location - READ-ONLY; The location of the original vault.
 	Location *string `json:"location,omitempty"`
-	// DeletionDate - The deleted date.
+	// DeletionDate - READ-ONLY; The deleted date.
 	DeletionDate *date.Time `json:"deletionDate,omitempty"`
-	// ScheduledPurgeDate - The scheduled purged date.
+	// ScheduledPurgeDate - READ-ONLY; The scheduled purged date.
 	ScheduledPurgeDate *date.Time `json:"scheduledPurgeDate,omitempty"`
-	// Tags - Tags of the original vault.
+	// Tags - READ-ONLY; Tags of the original vault.
 	Tags map[string]*string `json:"tags"`
 }
 
 // MarshalJSON is the custom marshaler for DeletedVaultProperties.
 func (dvp DeletedVaultProperties) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
-	if dvp.VaultID != nil {
-		objectMap["vaultId"] = dvp.VaultID
-	}
-	if dvp.Location != nil {
-		objectMap["location"] = dvp.Location
-	}
-	if dvp.DeletionDate != nil {
-		objectMap["deletionDate"] = dvp.DeletionDate
-	}
-	if dvp.ScheduledPurgeDate != nil {
-		objectMap["scheduledPurgeDate"] = dvp.ScheduledPurgeDate
-	}
-	if dvp.Tags != nil {
-		objectMap["tags"] = dvp.Tags
-	}
 	return json.Marshal(objectMap)
 }
 
@@ -391,6 +465,24 @@ type Operation struct {
 	Origin *string `json:"origin,omitempty"`
 	// OperationProperties - Properties of operation, include metric specifications.
 	*OperationProperties `json:"properties,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for Operation.
+func (o Operation) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if o.Name != nil {
+		objectMap["name"] = o.Name
+	}
+	if o.Display != nil {
+		objectMap["display"] = o.Display
+	}
+	if o.Origin != nil {
+		objectMap["origin"] = o.Origin
+	}
+	if o.OperationProperties != nil {
+		objectMap["properties"] = o.OperationProperties
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for Operation struct.
@@ -452,12 +544,12 @@ type OperationDisplay struct {
 	Resource *string `json:"resource,omitempty"`
 	// Operation - Type of operation: get, read, delete, etc.
 	Operation *string `json:"operation,omitempty"`
-	// Description - Decription of operation.
+	// Description - Description of operation.
 	Description *string `json:"description,omitempty"`
 }
 
-// OperationListResult result of the request to list Storage operations. It contains a list of operations and a URL
-// link to get the next set of results.
+// OperationListResult result of the request to list Storage operations. It contains a list of operations
+// and a URL link to get the next set of results.
 type OperationListResult struct {
 	autorest.Response `json:"-"`
 	// Value - List of Storage operations supported by the Storage resource provider.
@@ -472,20 +564,37 @@ type OperationListResultIterator struct {
 	page OperationListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *OperationListResultIterator) Next() error {
+func (iter *OperationListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OperationListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *OperationListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -507,6 +616,11 @@ func (iter OperationListResultIterator) Value() Operation {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the OperationListResultIterator type.
+func NewOperationListResultIterator(page OperationListResultPage) OperationListResultIterator {
+	return OperationListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (olr OperationListResult) IsEmpty() bool {
 	return olr.Value == nil || len(*olr.Value) == 0
@@ -514,11 +628,11 @@ func (olr OperationListResult) IsEmpty() bool {
 
 // operationListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (olr OperationListResult) operationListResultPreparer() (*http.Request, error) {
+func (olr OperationListResult) operationListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if olr.NextLink == nil || len(to.String(olr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(olr.NextLink)))
@@ -526,19 +640,36 @@ func (olr OperationListResult) operationListResultPreparer() (*http.Request, err
 
 // OperationListResultPage contains a page of Operation values.
 type OperationListResultPage struct {
-	fn  func(OperationListResult) (OperationListResult, error)
+	fn  func(context.Context, OperationListResult) (OperationListResult, error)
 	olr OperationListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *OperationListResultPage) Next() error {
-	next, err := page.fn(page.olr)
+func (page *OperationListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OperationListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.olr)
 	if err != nil {
 		return err
 	}
 	page.olr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *OperationListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -557,6 +688,11 @@ func (page OperationListResultPage) Values() []Operation {
 		return nil
 	}
 	return *page.olr.Value
+}
+
+// Creates a new instance of the OperationListResultPage type.
+func NewOperationListResultPage(getNextPage func(context.Context, OperationListResult) (OperationListResult, error)) OperationListResultPage {
+	return OperationListResultPage{fn: getNextPage}
 }
 
 // OperationProperties properties of operation, include metric specifications.
@@ -579,11 +715,11 @@ type Permissions struct {
 
 // Resource key Vault resource
 type Resource struct {
-	// ID - The Azure Resource Manager resource ID for the key vault.
+	// ID - READ-ONLY; The Azure Resource Manager resource ID for the key vault.
 	ID *string `json:"id,omitempty"`
-	// Name - The name of the key vault.
+	// Name - READ-ONLY; The name of the key vault.
 	Name *string `json:"name,omitempty"`
-	// Type - The resource type of the key vault.
+	// Type - READ-ONLY; The resource type of the key vault.
 	Type *string `json:"type,omitempty"`
 	// Location - The supported Azure location where the key vault should be created.
 	Location *string `json:"location,omitempty"`
@@ -594,15 +730,6 @@ type Resource struct {
 // MarshalJSON is the custom marshaler for Resource.
 func (r Resource) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
-	if r.ID != nil {
-		objectMap["id"] = r.ID
-	}
-	if r.Name != nil {
-		objectMap["name"] = r.Name
-	}
-	if r.Type != nil {
-		objectMap["type"] = r.Type
-	}
 	if r.Location != nil {
 		objectMap["location"] = r.Location
 	}
@@ -627,20 +754,37 @@ type ResourceListResultIterator struct {
 	page ResourceListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *ResourceListResultIterator) Next() error {
+func (iter *ResourceListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ResourceListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *ResourceListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -662,6 +806,11 @@ func (iter ResourceListResultIterator) Value() Resource {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the ResourceListResultIterator type.
+func NewResourceListResultIterator(page ResourceListResultPage) ResourceListResultIterator {
+	return ResourceListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (rlr ResourceListResult) IsEmpty() bool {
 	return rlr.Value == nil || len(*rlr.Value) == 0
@@ -669,11 +818,11 @@ func (rlr ResourceListResult) IsEmpty() bool {
 
 // resourceListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (rlr ResourceListResult) resourceListResultPreparer() (*http.Request, error) {
+func (rlr ResourceListResult) resourceListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if rlr.NextLink == nil || len(to.String(rlr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(rlr.NextLink)))
@@ -681,19 +830,36 @@ func (rlr ResourceListResult) resourceListResultPreparer() (*http.Request, error
 
 // ResourceListResultPage contains a page of Resource values.
 type ResourceListResultPage struct {
-	fn  func(ResourceListResult) (ResourceListResult, error)
+	fn  func(context.Context, ResourceListResult) (ResourceListResult, error)
 	rlr ResourceListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *ResourceListResultPage) Next() error {
-	next, err := page.fn(page.rlr)
+func (page *ResourceListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ResourceListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.rlr)
 	if err != nil {
 		return err
 	}
 	page.rlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *ResourceListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -712,6 +878,11 @@ func (page ResourceListResultPage) Values() []Resource {
 		return nil
 	}
 	return *page.rlr.Value
+}
+
+// Creates a new instance of the ResourceListResultPage type.
+func NewResourceListResultPage(getNextPage func(context.Context, ResourceListResult) (ResourceListResult, error)) ResourceListResultPage {
+	return ResourceListResultPage{fn: getNextPage}
 }
 
 // ServiceSpecification one property of operation, include log specifications.
@@ -733,11 +904,11 @@ type Vault struct {
 	autorest.Response `json:"-"`
 	// Properties - Properties of the vault
 	Properties *VaultProperties `json:"properties,omitempty"`
-	// ID - The Azure Resource Manager resource ID for the key vault.
+	// ID - READ-ONLY; The Azure Resource Manager resource ID for the key vault.
 	ID *string `json:"id,omitempty"`
-	// Name - The name of the key vault.
+	// Name - READ-ONLY; The name of the key vault.
 	Name *string `json:"name,omitempty"`
-	// Type - The resource type of the key vault.
+	// Type - READ-ONLY; The resource type of the key vault.
 	Type *string `json:"type,omitempty"`
 	// Location - The supported Azure location where the key vault should be created.
 	Location *string `json:"location,omitempty"`
@@ -751,15 +922,6 @@ func (vVar Vault) MarshalJSON() ([]byte, error) {
 	if vVar.Properties != nil {
 		objectMap["properties"] = vVar.Properties
 	}
-	if vVar.ID != nil {
-		objectMap["id"] = vVar.ID
-	}
-	if vVar.Name != nil {
-		objectMap["name"] = vVar.Name
-	}
-	if vVar.Type != nil {
-		objectMap["type"] = vVar.Type
-	}
 	if vVar.Location != nil {
 		objectMap["location"] = vVar.Location
 	}
@@ -772,13 +934,13 @@ func (vVar Vault) MarshalJSON() ([]byte, error) {
 // VaultAccessPolicyParameters parameters for updating the access policy in a vault
 type VaultAccessPolicyParameters struct {
 	autorest.Response `json:"-"`
-	// ID - The resource id of the access policy.
+	// ID - READ-ONLY; The resource id of the access policy.
 	ID *string `json:"id,omitempty"`
-	// Name - The resource name of the access policy.
+	// Name - READ-ONLY; The resource name of the access policy.
 	Name *string `json:"name,omitempty"`
-	// Type - The resource name of the access policy.
+	// Type - READ-ONLY; The resource name of the access policy.
 	Type *string `json:"type,omitempty"`
-	// Location - The resource type of the the access policy.
+	// Location - READ-ONLY; The resource type of the access policy.
 	Location *string `json:"location,omitempty"`
 	// Properties - Properties of the access policy
 	Properties *VaultAccessPolicyProperties `json:"properties,omitempty"`
@@ -790,7 +952,7 @@ type VaultAccessPolicyProperties struct {
 	AccessPolicies *[]AccessPolicyEntry `json:"accessPolicies,omitempty"`
 }
 
-// VaultCheckNameAvailabilityParameters the parameters used to check the availabity of the vault name.
+// VaultCheckNameAvailabilityParameters the parameters used to check the availability of the vault name.
 type VaultCheckNameAvailabilityParameters struct {
 	// Name - The vault name.
 	Name *string `json:"name,omitempty"`
@@ -838,20 +1000,37 @@ type VaultListResultIterator struct {
 	page VaultListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *VaultListResultIterator) Next() error {
+func (iter *VaultListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/VaultListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *VaultListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -873,6 +1052,11 @@ func (iter VaultListResultIterator) Value() Vault {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the VaultListResultIterator type.
+func NewVaultListResultIterator(page VaultListResultPage) VaultListResultIterator {
+	return VaultListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (vlr VaultListResult) IsEmpty() bool {
 	return vlr.Value == nil || len(*vlr.Value) == 0
@@ -880,11 +1064,11 @@ func (vlr VaultListResult) IsEmpty() bool {
 
 // vaultListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (vlr VaultListResult) vaultListResultPreparer() (*http.Request, error) {
+func (vlr VaultListResult) vaultListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if vlr.NextLink == nil || len(to.String(vlr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(vlr.NextLink)))
@@ -892,19 +1076,36 @@ func (vlr VaultListResult) vaultListResultPreparer() (*http.Request, error) {
 
 // VaultListResultPage contains a page of Vault values.
 type VaultListResultPage struct {
-	fn  func(VaultListResult) (VaultListResult, error)
+	fn  func(context.Context, VaultListResult) (VaultListResult, error)
 	vlr VaultListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *VaultListResultPage) Next() error {
-	next, err := page.fn(page.vlr)
+func (page *VaultListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/VaultListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.vlr)
 	if err != nil {
 		return err
 	}
 	page.vlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *VaultListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -923,6 +1124,11 @@ func (page VaultListResultPage) Values() []Vault {
 		return nil
 	}
 	return *page.vlr.Value
+}
+
+// Creates a new instance of the VaultListResultPage type.
+func NewVaultListResultPage(getNextPage func(context.Context, VaultListResult) (VaultListResult, error)) VaultListResultPage {
+	return VaultListResultPage{fn: getNextPage}
 }
 
 // VaultPatchParameters parameters for creating or updating a vault
@@ -959,10 +1165,12 @@ type VaultPatchProperties struct {
 	EnabledForDiskEncryption *bool `json:"enabledForDiskEncryption,omitempty"`
 	// EnabledForTemplateDeployment - Property to specify whether Azure Resource Manager is permitted to retrieve secrets from the key vault.
 	EnabledForTemplateDeployment *bool `json:"enabledForTemplateDeployment,omitempty"`
-	// EnableSoftDelete - Property to specify whether the 'soft delete' functionality is enabled for this key vault. It does not accept false value.
+	// EnableSoftDelete - Property specifying whether recoverable deletion ('soft' delete) is enabled for this key vault. The property may not be set to false.
 	EnableSoftDelete *bool `json:"enableSoftDelete,omitempty"`
 	// CreateMode - The vault's create mode to indicate whether the vault need to be recovered or not. Possible values include: 'CreateModeRecover', 'CreateModeDefault'
 	CreateMode CreateMode `json:"createMode,omitempty"`
+	// EnablePurgeProtection - Property specifying whether protection against purge is enabled for this vault; it is only effective if soft delete is also enabled. Once activated, the property may no longer be reset to false.
+	EnablePurgeProtection *bool `json:"enablePurgeProtection,omitempty"`
 }
 
 // VaultProperties properties of the vault
@@ -971,7 +1179,7 @@ type VaultProperties struct {
 	TenantID *uuid.UUID `json:"tenantId,omitempty"`
 	// Sku - SKU details
 	Sku *Sku `json:"sku,omitempty"`
-	// AccessPolicies - An array of 0 to 16 identities that have access to the key vault. All identities in the array must use the same tenant ID as the key vault's tenant ID.
+	// AccessPolicies - An array of 0 to 16 identities that have access to the key vault. All identities in the array must use the same tenant ID as the key vault's tenant ID. When `createMode` is set to `recover`, access policies are not required. Otherwise, access policies are required.
 	AccessPolicies *[]AccessPolicyEntry `json:"accessPolicies,omitempty"`
 	// VaultURI - The URI of the vault for performing operations on keys and secrets.
 	VaultURI *string `json:"vaultUri,omitempty"`
@@ -981,56 +1189,33 @@ type VaultProperties struct {
 	EnabledForDiskEncryption *bool `json:"enabledForDiskEncryption,omitempty"`
 	// EnabledForTemplateDeployment - Property to specify whether Azure Resource Manager is permitted to retrieve secrets from the key vault.
 	EnabledForTemplateDeployment *bool `json:"enabledForTemplateDeployment,omitempty"`
-	// EnableSoftDelete - Property to specify whether the 'soft delete' functionality is enabled for this key vault. It does not accept false value.
+	// EnableSoftDelete - Property specifying whether recoverable deletion is enabled for this key vault. Setting this property to true activates the soft delete feature, whereby vaults or vault entities can be recovered after deletion. Enabling this functionality is irreversible - that is, the property does not accept false as its value.
 	EnableSoftDelete *bool `json:"enableSoftDelete,omitempty"`
 	// CreateMode - The vault's create mode to indicate whether the vault need to be recovered or not. Possible values include: 'CreateModeRecover', 'CreateModeDefault'
 	CreateMode CreateMode `json:"createMode,omitempty"`
+	// EnablePurgeProtection - Property specifying whether protection against purge is enabled for this vault. Setting this property to true activates protection against purge for this vault and its content - only the Key Vault service may initiate a hard, irrecoverable deletion. The setting is effective only if soft delete is also enabled. Enabling this functionality is irreversible - that is, the property does not accept false as its value.
+	EnablePurgeProtection *bool `json:"enablePurgeProtection,omitempty"`
 }
 
-// VaultsPurgeDeletedFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// VaultsPurgeDeletedFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type VaultsPurgeDeletedFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future VaultsPurgeDeletedFuture) Result(client VaultsClient) (ar autorest.Response, err error) {
+func (future *VaultsPurgeDeletedFuture) Result(client VaultsClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "keyvault.VaultsPurgeDeletedFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("keyvault.VaultsPurgeDeletedFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.PurgeDeletedResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "keyvault.VaultsPurgeDeletedFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("keyvault.VaultsPurgeDeletedFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "keyvault.VaultsPurgeDeletedFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.PurgeDeletedResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "keyvault.VaultsPurgeDeletedFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }

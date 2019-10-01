@@ -21,6 +21,7 @@ import (
 	"context"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -42,10 +43,21 @@ func NewOperationStatusesClientWithBaseURI(baseURI string, subscriptionID string
 // Get gets the status of an operation such as triggering a backup or restore. The status can be In progress, Completed
 // or Failed. You can refer to the OperationStatus enum for all the possible states of an operation. Some operations
 // create jobs. This method returns the list of jobs when the operation is complete.
-//
-// vaultName is the name of the Recovery Services vault. resourceGroupName is the name of the resource group
-// associated with the Recovery Services vault. operationID is the ID of the operation.
+// Parameters:
+// vaultName - the name of the Recovery Services vault.
+// resourceGroupName - the name of the resource group associated with the Recovery Services vault.
+// operationID - the ID of the operation.
 func (client OperationStatusesClient) Get(ctx context.Context, vaultName string, resourceGroupName string, operationID string) (result OperationStatus, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OperationStatusesClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, vaultName, resourceGroupName, operationID)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "backup.OperationStatusesClient", "Get", nil, "Failure preparing request")
@@ -92,8 +104,8 @@ func (client OperationStatusesClient) GetPreparer(ctx context.Context, vaultName
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client OperationStatusesClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always

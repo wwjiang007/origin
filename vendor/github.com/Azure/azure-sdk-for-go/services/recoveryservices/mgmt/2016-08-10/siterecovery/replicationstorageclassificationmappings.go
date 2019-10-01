@@ -21,6 +21,7 @@ import (
 	"context"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -43,10 +44,22 @@ func NewReplicationStorageClassificationMappingsClientWithBaseURI(baseURI string
 }
 
 // Create the operation to create a storage classification mapping.
-//
-// fabricName is fabric name. storageClassificationName is storage classification name.
-// storageClassificationMappingName is storage classification mapping name. pairingInput is pairing input.
+// Parameters:
+// fabricName - fabric name.
+// storageClassificationName - storage classification name.
+// storageClassificationMappingName - storage classification mapping name.
+// pairingInput - pairing input.
 func (client ReplicationStorageClassificationMappingsClient) Create(ctx context.Context, fabricName string, storageClassificationName string, storageClassificationMappingName string, pairingInput StorageClassificationMappingInput) (result ReplicationStorageClassificationMappingsCreateFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationStorageClassificationMappingsClient.Create")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.CreatePreparer(ctx, fabricName, storageClassificationName, storageClassificationMappingName, pairingInput)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationStorageClassificationMappingsClient", "Create", nil, "Failure preparing request")
@@ -79,7 +92,7 @@ func (client ReplicationStorageClassificationMappingsClient) CreatePreparer(ctx 
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/Subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.RecoveryServices/vaults/{resourceName}/replicationFabrics/{fabricName}/replicationStorageClassifications/{storageClassificationName}/replicationStorageClassificationMappings/{storageClassificationMappingName}", pathParameters),
@@ -91,15 +104,13 @@ func (client ReplicationStorageClassificationMappingsClient) CreatePreparer(ctx 
 // CreateSender sends the Create request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationStorageClassificationMappingsClient) CreateSender(req *http.Request) (future ReplicationStorageClassificationMappingsCreateFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -117,10 +128,21 @@ func (client ReplicationStorageClassificationMappingsClient) CreateResponder(res
 }
 
 // Delete the operation to delete a storage classification mapping.
-//
-// fabricName is fabric name. storageClassificationName is storage classification name.
-// storageClassificationMappingName is storage classification mapping name.
+// Parameters:
+// fabricName - fabric name.
+// storageClassificationName - storage classification name.
+// storageClassificationMappingName - storage classification mapping name.
 func (client ReplicationStorageClassificationMappingsClient) Delete(ctx context.Context, fabricName string, storageClassificationName string, storageClassificationMappingName string) (result ReplicationStorageClassificationMappingsDeleteFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationStorageClassificationMappingsClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeletePreparer(ctx, fabricName, storageClassificationName, storageClassificationMappingName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationStorageClassificationMappingsClient", "Delete", nil, "Failure preparing request")
@@ -163,15 +185,13 @@ func (client ReplicationStorageClassificationMappingsClient) DeletePreparer(ctx 
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationStorageClassificationMappingsClient) DeleteSender(req *http.Request) (future ReplicationStorageClassificationMappingsDeleteFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -188,10 +208,21 @@ func (client ReplicationStorageClassificationMappingsClient) DeleteResponder(res
 }
 
 // Get gets the details of the specified storage classification mapping.
-//
-// fabricName is fabric name. storageClassificationName is storage classification name.
-// storageClassificationMappingName is storage classification mapping name.
+// Parameters:
+// fabricName - fabric name.
+// storageClassificationName - storage classification name.
+// storageClassificationMappingName - storage classification mapping name.
 func (client ReplicationStorageClassificationMappingsClient) Get(ctx context.Context, fabricName string, storageClassificationName string, storageClassificationMappingName string) (result StorageClassificationMapping, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationStorageClassificationMappingsClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, fabricName, storageClassificationName, storageClassificationMappingName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "siterecovery.ReplicationStorageClassificationMappingsClient", "Get", nil, "Failure preparing request")
@@ -240,8 +271,8 @@ func (client ReplicationStorageClassificationMappingsClient) GetPreparer(ctx con
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationStorageClassificationMappingsClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -259,6 +290,16 @@ func (client ReplicationStorageClassificationMappingsClient) GetResponder(resp *
 
 // List lists the storage classification mappings in the vault.
 func (client ReplicationStorageClassificationMappingsClient) List(ctx context.Context) (result StorageClassificationMappingCollectionPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationStorageClassificationMappingsClient.List")
+		defer func() {
+			sc := -1
+			if result.scmc.Response.Response != nil {
+				sc = result.scmc.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listNextResults
 	req, err := client.ListPreparer(ctx)
 	if err != nil {
@@ -305,8 +346,8 @@ func (client ReplicationStorageClassificationMappingsClient) ListPreparer(ctx co
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationStorageClassificationMappingsClient) ListSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -323,8 +364,8 @@ func (client ReplicationStorageClassificationMappingsClient) ListResponder(resp 
 }
 
 // listNextResults retrieves the next set of results, if any.
-func (client ReplicationStorageClassificationMappingsClient) listNextResults(lastResults StorageClassificationMappingCollection) (result StorageClassificationMappingCollection, err error) {
-	req, err := lastResults.storageClassificationMappingCollectionPreparer()
+func (client ReplicationStorageClassificationMappingsClient) listNextResults(ctx context.Context, lastResults StorageClassificationMappingCollection) (result StorageClassificationMappingCollection, err error) {
+	req, err := lastResults.storageClassificationMappingCollectionPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "siterecovery.ReplicationStorageClassificationMappingsClient", "listNextResults", nil, "Failure preparing next results request")
 	}
@@ -345,14 +386,35 @@ func (client ReplicationStorageClassificationMappingsClient) listNextResults(las
 
 // ListComplete enumerates all values, automatically crossing page boundaries as required.
 func (client ReplicationStorageClassificationMappingsClient) ListComplete(ctx context.Context) (result StorageClassificationMappingCollectionIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationStorageClassificationMappingsClient.List")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.List(ctx)
 	return
 }
 
 // ListByReplicationStorageClassifications lists the storage classification mappings for the fabric.
-//
-// fabricName is fabric name. storageClassificationName is storage classfication name.
+// Parameters:
+// fabricName - fabric name.
+// storageClassificationName - storage classification name.
 func (client ReplicationStorageClassificationMappingsClient) ListByReplicationStorageClassifications(ctx context.Context, fabricName string, storageClassificationName string) (result StorageClassificationMappingCollectionPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationStorageClassificationMappingsClient.ListByReplicationStorageClassifications")
+		defer func() {
+			sc := -1
+			if result.scmc.Response.Response != nil {
+				sc = result.scmc.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listByReplicationStorageClassificationsNextResults
 	req, err := client.ListByReplicationStorageClassificationsPreparer(ctx, fabricName, storageClassificationName)
 	if err != nil {
@@ -401,8 +463,8 @@ func (client ReplicationStorageClassificationMappingsClient) ListByReplicationSt
 // ListByReplicationStorageClassificationsSender sends the ListByReplicationStorageClassifications request. The method will close the
 // http.Response Body if it receives an error.
 func (client ReplicationStorageClassificationMappingsClient) ListByReplicationStorageClassificationsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByReplicationStorageClassificationsResponder handles the response to the ListByReplicationStorageClassifications request. The method always
@@ -419,8 +481,8 @@ func (client ReplicationStorageClassificationMappingsClient) ListByReplicationSt
 }
 
 // listByReplicationStorageClassificationsNextResults retrieves the next set of results, if any.
-func (client ReplicationStorageClassificationMappingsClient) listByReplicationStorageClassificationsNextResults(lastResults StorageClassificationMappingCollection) (result StorageClassificationMappingCollection, err error) {
-	req, err := lastResults.storageClassificationMappingCollectionPreparer()
+func (client ReplicationStorageClassificationMappingsClient) listByReplicationStorageClassificationsNextResults(ctx context.Context, lastResults StorageClassificationMappingCollection) (result StorageClassificationMappingCollection, err error) {
+	req, err := lastResults.storageClassificationMappingCollectionPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "siterecovery.ReplicationStorageClassificationMappingsClient", "listByReplicationStorageClassificationsNextResults", nil, "Failure preparing next results request")
 	}
@@ -441,6 +503,16 @@ func (client ReplicationStorageClassificationMappingsClient) listByReplicationSt
 
 // ListByReplicationStorageClassificationsComplete enumerates all values, automatically crossing page boundaries as required.
 func (client ReplicationStorageClassificationMappingsClient) ListByReplicationStorageClassificationsComplete(ctx context.Context, fabricName string, storageClassificationName string) (result StorageClassificationMappingCollectionIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ReplicationStorageClassificationMappingsClient.ListByReplicationStorageClassifications")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListByReplicationStorageClassifications(ctx, fabricName, storageClassificationName)
 	return
 }

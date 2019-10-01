@@ -1,6 +1,6 @@
 // +build go1.9
 
-// Copyright 2018 Microsoft Corporation
+// Copyright 2019 Microsoft Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,38 +19,15 @@
 
 package streamanalytics
 
-import original "github.com/Azure/azure-sdk-for-go/services/streamanalytics/mgmt/2016-03-01/streamanalytics"
+import (
+	"context"
+
+	original "github.com/Azure/azure-sdk-for-go/services/streamanalytics/mgmt/2016-03-01/streamanalytics"
+)
 
 const (
 	DefaultBaseURI = original.DefaultBaseURI
 )
-
-type BaseClient = original.BaseClient
-
-func New(subscriptionID string) BaseClient {
-	return original.New(subscriptionID)
-}
-func NewWithBaseURI(baseURI string, subscriptionID string) BaseClient {
-	return original.NewWithBaseURI(baseURI, subscriptionID)
-}
-
-type FunctionsClient = original.FunctionsClient
-
-func NewFunctionsClient(subscriptionID string) FunctionsClient {
-	return original.NewFunctionsClient(subscriptionID)
-}
-func NewFunctionsClientWithBaseURI(baseURI string, subscriptionID string) FunctionsClient {
-	return original.NewFunctionsClientWithBaseURI(baseURI, subscriptionID)
-}
-
-type InputsClient = original.InputsClient
-
-func NewInputsClient(subscriptionID string) InputsClient {
-	return original.NewInputsClient(subscriptionID)
-}
-func NewInputsClientWithBaseURI(baseURI string, subscriptionID string) InputsClient {
-	return original.NewInputsClientWithBaseURI(baseURI, subscriptionID)
-}
 
 type BindingType = original.BindingType
 
@@ -191,6 +168,15 @@ type AzureSQLDatabaseOutputDataSource = original.AzureSQLDatabaseOutputDataSourc
 type AzureSQLDatabaseOutputDataSourceProperties = original.AzureSQLDatabaseOutputDataSourceProperties
 type AzureTableOutputDataSource = original.AzureTableOutputDataSource
 type AzureTableOutputDataSourceProperties = original.AzureTableOutputDataSourceProperties
+type BaseClient = original.BaseClient
+type BasicFunctionBinding = original.BasicFunctionBinding
+type BasicFunctionProperties = original.BasicFunctionProperties
+type BasicFunctionRetrieveDefaultDefinitionParameters = original.BasicFunctionRetrieveDefaultDefinitionParameters
+type BasicInputProperties = original.BasicInputProperties
+type BasicOutputDataSource = original.BasicOutputDataSource
+type BasicReferenceInputDataSource = original.BasicReferenceInputDataSource
+type BasicSerialization = original.BasicSerialization
+type BasicStreamInputDataSource = original.BasicStreamInputDataSource
 type BlobDataSourceProperties = original.BlobDataSourceProperties
 type BlobOutputDataSource = original.BlobOutputDataSource
 type BlobOutputDataSourceProperties = original.BlobOutputDataSourceProperties
@@ -211,57 +197,54 @@ type EventHubOutputDataSourceProperties = original.EventHubOutputDataSourcePrope
 type EventHubStreamInputDataSource = original.EventHubStreamInputDataSource
 type EventHubStreamInputDataSourceProperties = original.EventHubStreamInputDataSourceProperties
 type Function = original.Function
-type BasicFunctionBinding = original.BasicFunctionBinding
 type FunctionBinding = original.FunctionBinding
 type FunctionInput = original.FunctionInput
 type FunctionListResult = original.FunctionListResult
 type FunctionListResultIterator = original.FunctionListResultIterator
 type FunctionListResultPage = original.FunctionListResultPage
 type FunctionOutput = original.FunctionOutput
-type BasicFunctionProperties = original.BasicFunctionProperties
 type FunctionProperties = original.FunctionProperties
-type BasicFunctionRetrieveDefaultDefinitionParameters = original.BasicFunctionRetrieveDefaultDefinitionParameters
 type FunctionRetrieveDefaultDefinitionParameters = original.FunctionRetrieveDefaultDefinitionParameters
+type FunctionsClient = original.FunctionsClient
 type FunctionsTestFuture = original.FunctionsTestFuture
 type Input = original.Input
 type InputListResult = original.InputListResult
 type InputListResultIterator = original.InputListResultIterator
 type InputListResultPage = original.InputListResultPage
-type BasicInputProperties = original.BasicInputProperties
 type InputProperties = original.InputProperties
+type InputsClient = original.InputsClient
 type InputsTestFuture = original.InputsTestFuture
 type IoTHubStreamInputDataSource = original.IoTHubStreamInputDataSource
 type IoTHubStreamInputDataSourceProperties = original.IoTHubStreamInputDataSourceProperties
+type JSONSerialization = original.JSONSerialization
+type JSONSerializationProperties = original.JSONSerializationProperties
 type JavaScriptFunctionBinding = original.JavaScriptFunctionBinding
 type JavaScriptFunctionBindingProperties = original.JavaScriptFunctionBindingProperties
 type JavaScriptFunctionBindingRetrievalProperties = original.JavaScriptFunctionBindingRetrievalProperties
 type JavaScriptFunctionRetrieveDefaultDefinitionParameters = original.JavaScriptFunctionRetrieveDefaultDefinitionParameters
-type JSONSerialization = original.JSONSerialization
-type JSONSerializationProperties = original.JSONSerializationProperties
 type OAuthBasedDataSourceProperties = original.OAuthBasedDataSourceProperties
 type Operation = original.Operation
 type OperationDisplay = original.OperationDisplay
 type OperationListResult = original.OperationListResult
 type OperationListResultIterator = original.OperationListResultIterator
 type OperationListResultPage = original.OperationListResultPage
+type OperationsClient = original.OperationsClient
 type Output = original.Output
-type BasicOutputDataSource = original.BasicOutputDataSource
 type OutputDataSource = original.OutputDataSource
 type OutputListResult = original.OutputListResult
 type OutputListResultIterator = original.OutputListResultIterator
 type OutputListResultPage = original.OutputListResultPage
 type OutputProperties = original.OutputProperties
+type OutputsClient = original.OutputsClient
 type OutputsTestFuture = original.OutputsTestFuture
 type PowerBIOutputDataSource = original.PowerBIOutputDataSource
 type PowerBIOutputDataSourceProperties = original.PowerBIOutputDataSourceProperties
-type BasicReferenceInputDataSource = original.BasicReferenceInputDataSource
 type ReferenceInputDataSource = original.ReferenceInputDataSource
 type ReferenceInputProperties = original.ReferenceInputProperties
 type Resource = original.Resource
 type ResourceTestStatus = original.ResourceTestStatus
 type ScalarFunctionConfiguration = original.ScalarFunctionConfiguration
 type ScalarFunctionProperties = original.ScalarFunctionProperties
-type BasicSerialization = original.BasicSerialization
 type Serialization = original.Serialization
 type ServiceBusDataSourceProperties = original.ServiceBusDataSourceProperties
 type ServiceBusQueueOutputDataSource = original.ServiceBusQueueOutputDataSource
@@ -271,67 +254,152 @@ type ServiceBusTopicOutputDataSourceProperties = original.ServiceBusTopicOutputD
 type Sku = original.Sku
 type StartStreamingJobParameters = original.StartStreamingJobParameters
 type StorageAccount = original.StorageAccount
+type StreamInputDataSource = original.StreamInputDataSource
+type StreamInputProperties = original.StreamInputProperties
 type StreamingJob = original.StreamingJob
 type StreamingJobListResult = original.StreamingJobListResult
 type StreamingJobListResultIterator = original.StreamingJobListResultIterator
 type StreamingJobListResultPage = original.StreamingJobListResultPage
 type StreamingJobProperties = original.StreamingJobProperties
+type StreamingJobsClient = original.StreamingJobsClient
 type StreamingJobsCreateOrReplaceFuture = original.StreamingJobsCreateOrReplaceFuture
 type StreamingJobsDeleteFuture = original.StreamingJobsDeleteFuture
 type StreamingJobsStartFuture = original.StreamingJobsStartFuture
 type StreamingJobsStopFuture = original.StreamingJobsStopFuture
-type BasicStreamInputDataSource = original.BasicStreamInputDataSource
-type StreamInputDataSource = original.StreamInputDataSource
-type StreamInputProperties = original.StreamInputProperties
 type SubResource = original.SubResource
 type SubscriptionQuota = original.SubscriptionQuota
 type SubscriptionQuotaProperties = original.SubscriptionQuotaProperties
 type SubscriptionQuotasListResult = original.SubscriptionQuotasListResult
+type SubscriptionsClient = original.SubscriptionsClient
 type Transformation = original.Transformation
 type TransformationProperties = original.TransformationProperties
-type OperationsClient = original.OperationsClient
+type TransformationsClient = original.TransformationsClient
 
+func New(subscriptionID string) BaseClient {
+	return original.New(subscriptionID)
+}
+func NewFunctionListResultIterator(page FunctionListResultPage) FunctionListResultIterator {
+	return original.NewFunctionListResultIterator(page)
+}
+func NewFunctionListResultPage(getNextPage func(context.Context, FunctionListResult) (FunctionListResult, error)) FunctionListResultPage {
+	return original.NewFunctionListResultPage(getNextPage)
+}
+func NewFunctionsClient(subscriptionID string) FunctionsClient {
+	return original.NewFunctionsClient(subscriptionID)
+}
+func NewFunctionsClientWithBaseURI(baseURI string, subscriptionID string) FunctionsClient {
+	return original.NewFunctionsClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewInputListResultIterator(page InputListResultPage) InputListResultIterator {
+	return original.NewInputListResultIterator(page)
+}
+func NewInputListResultPage(getNextPage func(context.Context, InputListResult) (InputListResult, error)) InputListResultPage {
+	return original.NewInputListResultPage(getNextPage)
+}
+func NewInputsClient(subscriptionID string) InputsClient {
+	return original.NewInputsClient(subscriptionID)
+}
+func NewInputsClientWithBaseURI(baseURI string, subscriptionID string) InputsClient {
+	return original.NewInputsClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewOperationListResultIterator(page OperationListResultPage) OperationListResultIterator {
+	return original.NewOperationListResultIterator(page)
+}
+func NewOperationListResultPage(getNextPage func(context.Context, OperationListResult) (OperationListResult, error)) OperationListResultPage {
+	return original.NewOperationListResultPage(getNextPage)
+}
 func NewOperationsClient(subscriptionID string) OperationsClient {
 	return original.NewOperationsClient(subscriptionID)
 }
 func NewOperationsClientWithBaseURI(baseURI string, subscriptionID string) OperationsClient {
 	return original.NewOperationsClientWithBaseURI(baseURI, subscriptionID)
 }
-
-type OutputsClient = original.OutputsClient
-
+func NewOutputListResultIterator(page OutputListResultPage) OutputListResultIterator {
+	return original.NewOutputListResultIterator(page)
+}
+func NewOutputListResultPage(getNextPage func(context.Context, OutputListResult) (OutputListResult, error)) OutputListResultPage {
+	return original.NewOutputListResultPage(getNextPage)
+}
 func NewOutputsClient(subscriptionID string) OutputsClient {
 	return original.NewOutputsClient(subscriptionID)
 }
 func NewOutputsClientWithBaseURI(baseURI string, subscriptionID string) OutputsClient {
 	return original.NewOutputsClientWithBaseURI(baseURI, subscriptionID)
 }
-
-type StreamingJobsClient = original.StreamingJobsClient
-
+func NewStreamingJobListResultIterator(page StreamingJobListResultPage) StreamingJobListResultIterator {
+	return original.NewStreamingJobListResultIterator(page)
+}
+func NewStreamingJobListResultPage(getNextPage func(context.Context, StreamingJobListResult) (StreamingJobListResult, error)) StreamingJobListResultPage {
+	return original.NewStreamingJobListResultPage(getNextPage)
+}
 func NewStreamingJobsClient(subscriptionID string) StreamingJobsClient {
 	return original.NewStreamingJobsClient(subscriptionID)
 }
 func NewStreamingJobsClientWithBaseURI(baseURI string, subscriptionID string) StreamingJobsClient {
 	return original.NewStreamingJobsClientWithBaseURI(baseURI, subscriptionID)
 }
-
-type SubscriptionsClient = original.SubscriptionsClient
-
 func NewSubscriptionsClient(subscriptionID string) SubscriptionsClient {
 	return original.NewSubscriptionsClient(subscriptionID)
 }
 func NewSubscriptionsClientWithBaseURI(baseURI string, subscriptionID string) SubscriptionsClient {
 	return original.NewSubscriptionsClientWithBaseURI(baseURI, subscriptionID)
 }
-
-type TransformationsClient = original.TransformationsClient
-
 func NewTransformationsClient(subscriptionID string) TransformationsClient {
 	return original.NewTransformationsClient(subscriptionID)
 }
 func NewTransformationsClientWithBaseURI(baseURI string, subscriptionID string) TransformationsClient {
 	return original.NewTransformationsClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewWithBaseURI(baseURI string, subscriptionID string) BaseClient {
+	return original.NewWithBaseURI(baseURI, subscriptionID)
+}
+func PossibleBindingTypeValues() []BindingType {
+	return original.PossibleBindingTypeValues()
+}
+func PossibleCompatibilityLevelValues() []CompatibilityLevel {
+	return original.PossibleCompatibilityLevelValues()
+}
+func PossibleEncodingValues() []Encoding {
+	return original.PossibleEncodingValues()
+}
+func PossibleEventsOutOfOrderPolicyValues() []EventsOutOfOrderPolicy {
+	return original.PossibleEventsOutOfOrderPolicyValues()
+}
+func PossibleJSONOutputSerializationFormatValues() []JSONOutputSerializationFormat {
+	return original.PossibleJSONOutputSerializationFormatValues()
+}
+func PossibleOutputErrorPolicyValues() []OutputErrorPolicy {
+	return original.PossibleOutputErrorPolicyValues()
+}
+func PossibleOutputStartModeValues() []OutputStartMode {
+	return original.PossibleOutputStartModeValues()
+}
+func PossibleSkuNameValues() []SkuName {
+	return original.PossibleSkuNameValues()
+}
+func PossibleTypeBasicFunctionBindingValues() []TypeBasicFunctionBinding {
+	return original.PossibleTypeBasicFunctionBindingValues()
+}
+func PossibleTypeBasicFunctionPropertiesValues() []TypeBasicFunctionProperties {
+	return original.PossibleTypeBasicFunctionPropertiesValues()
+}
+func PossibleTypeBasicInputPropertiesValues() []TypeBasicInputProperties {
+	return original.PossibleTypeBasicInputPropertiesValues()
+}
+func PossibleTypeBasicOutputDataSourceValues() []TypeBasicOutputDataSource {
+	return original.PossibleTypeBasicOutputDataSourceValues()
+}
+func PossibleTypeBasicReferenceInputDataSourceValues() []TypeBasicReferenceInputDataSource {
+	return original.PossibleTypeBasicReferenceInputDataSourceValues()
+}
+func PossibleTypeBasicStreamInputDataSourceValues() []TypeBasicStreamInputDataSource {
+	return original.PossibleTypeBasicStreamInputDataSourceValues()
+}
+func PossibleTypeValues() []Type {
+	return original.PossibleTypeValues()
+}
+func PossibleUdfTypeValues() []UdfType {
+	return original.PossibleUdfTypeValues()
 }
 func UserAgent() string {
 	return original.UserAgent() + " profiles/latest"

@@ -9,10 +9,13 @@ import (
 	appsinformers "k8s.io/client-go/informers/apps/v1"
 	coreinformers "k8s.io/client-go/informers/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/util/flowcontrol"
+
+	projectv1 "github.com/openshift/api/project/v1"
 )
 
-func NewNodeSelectorAwareDaemonSetsController(openshiftDefaultNodeSelectorString, kubeDefaultNodeSelectorString string, namepaceInformer coreinformers.NamespaceInformer, daemonSetInformer appsinformers.DaemonSetInformer, historyInformer appsinformers.ControllerRevisionInformer, podInformer coreinformers.PodInformer, nodeInformer coreinformers.NodeInformer, kubeClient clientset.Interface) (*DaemonSetsController, error) {
-	controller, err := NewDaemonSetsController(daemonSetInformer, historyInformer, podInformer, nodeInformer, kubeClient)
+func NewNodeSelectorAwareDaemonSetsController(openshiftDefaultNodeSelectorString, kubeDefaultNodeSelectorString string, namepaceInformer coreinformers.NamespaceInformer, daemonSetInformer appsinformers.DaemonSetInformer, historyInformer appsinformers.ControllerRevisionInformer, podInformer coreinformers.PodInformer, nodeInformer coreinformers.NodeInformer, kubeClient clientset.Interface, failedPodsBackoff *flowcontrol.Backoff) (*DaemonSetsController, error) {
+	controller, err := NewDaemonSetsController(daemonSetInformer, historyInformer, podInformer, nodeInformer, kubeClient, failedPodsBackoff)
 	if err != nil {
 		return controller, err
 	}
@@ -56,22 +59,24 @@ func (dsc *DaemonSetsController) namespaceNodeSelectorMatches(node *v1.Node, ds 
 }
 
 func (dsc *DaemonSetsController) nodeSelectorMatches(node *v1.Node, ns *v1.Namespace) bool {
-	originNodeSelector, ok := ns.Annotations["openshift.io/node-selector"]
-	switch {
-	case ok:
-		selector, err := labels.Parse(originNodeSelector)
-		if err == nil {
-			if !selector.Matches(labels.Set(node.Labels)) {
+	kubeNodeSelector, ok := ns.Annotations["scheduler.alpha.kubernetes.io/node-selector"]
+	if !ok {
+		originNodeSelector, ok := ns.Annotations[projectv1.ProjectNodeSelector]
+		switch {
+		case ok:
+			selector, err := labels.Parse(originNodeSelector)
+			if err == nil {
+				if !selector.Matches(labels.Set(node.Labels)) {
+					return false
+				}
+			}
+		case !ok && len(dsc.openshiftDefaultNodeSelectorString) > 0:
+			if !dsc.openshiftDefaultNodeSelector.Matches(labels.Set(node.Labels)) {
 				return false
 			}
 		}
-	case !ok && len(dsc.openshiftDefaultNodeSelectorString) > 0:
-		if !dsc.openshiftDefaultNodeSelector.Matches(labels.Set(node.Labels)) {
-			return false
-		}
 	}
 
-	kubeNodeSelector, ok := ns.Annotations["scheduler.alpha.kubernetes.io/node-selector"]
 	switch {
 	case ok:
 		selector, err := labels.Parse(kubeNodeSelector)

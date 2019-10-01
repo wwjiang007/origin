@@ -23,6 +23,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"github.com/satori/go.uuid"
 	"net/http"
 )
@@ -44,14 +45,27 @@ func NewTaskClientWithBaseURI(baseURI string) TaskClient {
 
 // Add the maximum lifetime of a task from addition to completion is 7 days. If a task has not completed within 7 days
 // of being added it will be terminated by the Batch service and left in whatever state it was in at that time.
-//
-// jobID is the ID of the job to which the task is to be added. task is the task to be added. timeout is the
-// maximum time that the server can spend processing the request, in seconds. The default is 30 seconds.
-// clientRequestID is the caller-generated request identity, in the form of a GUID with no decoration such as curly
-// braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0. returnClientRequestID is whether the server should return the
-// client-request-id in the response. ocpDate is the time the request was issued. Client libraries typically set
-// this to the current system clock time; set it explicitly if you are calling the REST API directly.
+// Parameters:
+// jobID - the ID of the job to which the task is to be added.
+// task - the task to be added.
+// timeout - the maximum time that the server can spend processing the request, in seconds. The default is 30
+// seconds.
+// clientRequestID - the caller-generated request identity, in the form of a GUID with no decoration such as
+// curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0.
+// returnClientRequestID - whether the server should return the client-request-id in the response.
+// ocpDate - the time the request was issued. Client libraries typically set this to the current system clock
+// time; set it explicitly if you are calling the REST API directly.
 func (client TaskClient) Add(ctx context.Context, jobID string, task TaskAddParameter, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/TaskClient.Add")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: task,
 			Constraints: []validation.Constraint{{Target: "task.ID", Name: validation.Null, Rule: true, Chain: nil},
@@ -135,8 +149,8 @@ func (client TaskClient) AddPreparer(ctx context.Context, jobID string, task Tas
 // AddSender sends the Add request. The method will close the
 // http.Response Body if it receives an error.
 func (client TaskClient) AddSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // AddResponder handles the response to the Add request. The method always
@@ -161,14 +175,27 @@ func (client TaskClient) AddResponder(resp *http.Response) (result autorest.Resp
 // successfully added on the first attempt. The maximum lifetime of a task from addition to completion is 7 days. If a
 // task has not completed within 7 days of being added it will be terminated by the Batch service and left in whatever
 // state it was in at that time.
-//
-// jobID is the ID of the job to which the task collection is to be added. taskCollection is the tasks to be added.
-// timeout is the maximum time that the server can spend processing the request, in seconds. The default is 30
-// seconds. clientRequestID is the caller-generated request identity, in the form of a GUID with no decoration such
-// as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0. returnClientRequestID is whether the server should
-// return the client-request-id in the response. ocpDate is the time the request was issued. Client libraries
-// typically set this to the current system clock time; set it explicitly if you are calling the REST API directly.
+// Parameters:
+// jobID - the ID of the job to which the task collection is to be added.
+// taskCollection - the tasks to be added.
+// timeout - the maximum time that the server can spend processing the request, in seconds. The default is 30
+// seconds.
+// clientRequestID - the caller-generated request identity, in the form of a GUID with no decoration such as
+// curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0.
+// returnClientRequestID - whether the server should return the client-request-id in the response.
+// ocpDate - the time the request was issued. Client libraries typically set this to the current system clock
+// time; set it explicitly if you are calling the REST API directly.
 func (client TaskClient) AddCollection(ctx context.Context, jobID string, taskCollection TaskAddCollectionParameter, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123) (result TaskAddCollectionResult, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/TaskClient.AddCollection")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: taskCollection,
 			Constraints: []validation.Constraint{{Target: "taskCollection.Value", Name: validation.Null, Rule: true,
@@ -241,8 +268,8 @@ func (client TaskClient) AddCollectionPreparer(ctx context.Context, jobID string
 // AddCollectionSender sends the AddCollection request. The method will close the
 // http.Response Body if it receives an error.
 func (client TaskClient) AddCollectionSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // AddCollectionResponder handles the response to the AddCollection request. The method always
@@ -261,22 +288,38 @@ func (client TaskClient) AddCollectionResponder(resp *http.Response) (result Tas
 // Delete when a task is deleted, all of the files in its directory on the compute node where it ran are also deleted
 // (regardless of the retention time). For multi-instance tasks, the delete task operation applies synchronously to the
 // primary task; subtasks and their files are then deleted asynchronously in the background.
-//
-// jobID is the ID of the job from which to delete the task. taskID is the ID of the task to delete. timeout is the
-// maximum time that the server can spend processing the request, in seconds. The default is 30 seconds.
-// clientRequestID is the caller-generated request identity, in the form of a GUID with no decoration such as curly
-// braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0. returnClientRequestID is whether the server should return the
-// client-request-id in the response. ocpDate is the time the request was issued. Client libraries typically set
-// this to the current system clock time; set it explicitly if you are calling the REST API directly. ifMatch is an
-// ETag value associated with the version of the resource known to the client. The operation will be performed only
-// if the resource's current ETag on the service exactly matches the value specified by the client. ifNoneMatch is
-// an ETag value associated with the version of the resource known to the client. The operation will be performed
-// only if the resource's current ETag on the service does not match the value specified by the client.
-// ifModifiedSince is a timestamp indicating the last modified time of the resource known to the client. The
+// Parameters:
+// jobID - the ID of the job from which to delete the task.
+// taskID - the ID of the task to delete.
+// timeout - the maximum time that the server can spend processing the request, in seconds. The default is 30
+// seconds.
+// clientRequestID - the caller-generated request identity, in the form of a GUID with no decoration such as
+// curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0.
+// returnClientRequestID - whether the server should return the client-request-id in the response.
+// ocpDate - the time the request was issued. Client libraries typically set this to the current system clock
+// time; set it explicitly if you are calling the REST API directly.
+// ifMatch - an ETag value associated with the version of the resource known to the client. The operation will
+// be performed only if the resource's current ETag on the service exactly matches the value specified by the
+// client.
+// ifNoneMatch - an ETag value associated with the version of the resource known to the client. The operation
+// will be performed only if the resource's current ETag on the service does not match the value specified by
+// the client.
+// ifModifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
 // operation will be performed only if the resource on the service has been modified since the specified time.
-// ifUnmodifiedSince is a timestamp indicating the last modified time of the resource known to the client. The
-// operation will be performed only if the resource on the service has not been modified since the specified time.
+// ifUnmodifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
+// operation will be performed only if the resource on the service has not been modified since the specified
+// time.
 func (client TaskClient) Delete(ctx context.Context, jobID string, taskID string, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123, ifMatch string, ifNoneMatch string, ifModifiedSince *date.TimeRFC1123, ifUnmodifiedSince *date.TimeRFC1123) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/TaskClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeletePreparer(ctx, jobID, taskID, timeout, clientRequestID, returnClientRequestID, ocpDate, ifMatch, ifNoneMatch, ifModifiedSince, ifUnmodifiedSince)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "batch.TaskClient", "Delete", nil, "Failure preparing request")
@@ -357,8 +400,8 @@ func (client TaskClient) DeletePreparer(ctx context.Context, jobID string, taskI
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client TaskClient) DeleteSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
@@ -375,23 +418,40 @@ func (client TaskClient) DeleteResponder(resp *http.Response) (result autorest.R
 
 // Get for multi-instance tasks, information such as affinityId, executionInfo and nodeInfo refer to the primary task.
 // Use the list subtasks API to retrieve information about subtasks.
-//
-// jobID is the ID of the job that contains the task. taskID is the ID of the task to get information about.
-// selectParameter is an OData $select clause. expand is an OData $expand clause. timeout is the maximum time that
-// the server can spend processing the request, in seconds. The default is 30 seconds. clientRequestID is the
-// caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g.
-// 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0. returnClientRequestID is whether the server should return the
-// client-request-id in the response. ocpDate is the time the request was issued. Client libraries typically set
-// this to the current system clock time; set it explicitly if you are calling the REST API directly. ifMatch is an
-// ETag value associated with the version of the resource known to the client. The operation will be performed only
-// if the resource's current ETag on the service exactly matches the value specified by the client. ifNoneMatch is
-// an ETag value associated with the version of the resource known to the client. The operation will be performed
-// only if the resource's current ETag on the service does not match the value specified by the client.
-// ifModifiedSince is a timestamp indicating the last modified time of the resource known to the client. The
+// Parameters:
+// jobID - the ID of the job that contains the task.
+// taskID - the ID of the task to get information about.
+// selectParameter - an OData $select clause.
+// expand - an OData $expand clause.
+// timeout - the maximum time that the server can spend processing the request, in seconds. The default is 30
+// seconds.
+// clientRequestID - the caller-generated request identity, in the form of a GUID with no decoration such as
+// curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0.
+// returnClientRequestID - whether the server should return the client-request-id in the response.
+// ocpDate - the time the request was issued. Client libraries typically set this to the current system clock
+// time; set it explicitly if you are calling the REST API directly.
+// ifMatch - an ETag value associated with the version of the resource known to the client. The operation will
+// be performed only if the resource's current ETag on the service exactly matches the value specified by the
+// client.
+// ifNoneMatch - an ETag value associated with the version of the resource known to the client. The operation
+// will be performed only if the resource's current ETag on the service does not match the value specified by
+// the client.
+// ifModifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
 // operation will be performed only if the resource on the service has been modified since the specified time.
-// ifUnmodifiedSince is a timestamp indicating the last modified time of the resource known to the client. The
-// operation will be performed only if the resource on the service has not been modified since the specified time.
+// ifUnmodifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
+// operation will be performed only if the resource on the service has not been modified since the specified
+// time.
 func (client TaskClient) Get(ctx context.Context, jobID string, taskID string, selectParameter string, expand string, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123, ifMatch string, ifNoneMatch string, ifModifiedSince *date.TimeRFC1123, ifUnmodifiedSince *date.TimeRFC1123) (result CloudTask, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/TaskClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, jobID, taskID, selectParameter, expand, timeout, clientRequestID, returnClientRequestID, ocpDate, ifMatch, ifNoneMatch, ifModifiedSince, ifUnmodifiedSince)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "batch.TaskClient", "Get", nil, "Failure preparing request")
@@ -478,8 +538,8 @@ func (client TaskClient) GetPreparer(ctx context.Context, jobID string, taskID s
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client TaskClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -497,21 +557,35 @@ func (client TaskClient) GetResponder(resp *http.Response) (result CloudTask, er
 
 // List for multi-instance tasks, information such as affinityId, executionInfo and nodeInfo refer to the primary task.
 // Use the list subtasks API to retrieve information about subtasks.
-//
-// jobID is the ID of the job. filter is an OData $filter clause. For more information on constructing this filter,
-// see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-tasks. selectParameter is
-// an OData $select clause. expand is an OData $expand clause. maxResults is the maximum number of items to return
-// in the response. A maximum of 1000 tasks can be returned. timeout is the maximum time that the server can spend
-// processing the request, in seconds. The default is 30 seconds. clientRequestID is the caller-generated request
-// identity, in the form of a GUID with no decoration such as curly braces, e.g.
-// 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0. returnClientRequestID is whether the server should return the
-// client-request-id in the response. ocpDate is the time the request was issued. Client libraries typically set
-// this to the current system clock time; set it explicitly if you are calling the REST API directly.
+// Parameters:
+// jobID - the ID of the job.
+// filter - an OData $filter clause. For more information on constructing this filter, see
+// https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-tasks.
+// selectParameter - an OData $select clause.
+// expand - an OData $expand clause.
+// maxResults - the maximum number of items to return in the response. A maximum of 1000 tasks can be returned.
+// timeout - the maximum time that the server can spend processing the request, in seconds. The default is 30
+// seconds.
+// clientRequestID - the caller-generated request identity, in the form of a GUID with no decoration such as
+// curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0.
+// returnClientRequestID - whether the server should return the client-request-id in the response.
+// ocpDate - the time the request was issued. Client libraries typically set this to the current system clock
+// time; set it explicitly if you are calling the REST API directly.
 func (client TaskClient) List(ctx context.Context, jobID string, filter string, selectParameter string, expand string, maxResults *int32, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123) (result CloudTaskListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/TaskClient.List")
+		defer func() {
+			sc := -1
+			if result.ctlr.Response.Response != nil {
+				sc = result.ctlr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: maxResults,
 			Constraints: []validation.Constraint{{Target: "maxResults", Name: validation.Null, Rule: false,
-				Chain: []validation.Constraint{{Target: "maxResults", Name: validation.InclusiveMaximum, Rule: 1000, Chain: nil},
+				Chain: []validation.Constraint{{Target: "maxResults", Name: validation.InclusiveMaximum, Rule: int64(1000), Chain: nil},
 					{Target: "maxResults", Name: validation.InclusiveMinimum, Rule: 1, Chain: nil},
 				}}}}}); err != nil {
 		return result, validation.NewError("batch.TaskClient", "List", err.Error())
@@ -595,8 +669,8 @@ func (client TaskClient) ListPreparer(ctx context.Context, jobID string, filter 
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client TaskClient) ListSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -613,8 +687,8 @@ func (client TaskClient) ListResponder(resp *http.Response) (result CloudTaskLis
 }
 
 // listNextResults retrieves the next set of results, if any.
-func (client TaskClient) listNextResults(lastResults CloudTaskListResult) (result CloudTaskListResult, err error) {
-	req, err := lastResults.cloudTaskListResultPreparer()
+func (client TaskClient) listNextResults(ctx context.Context, lastResults CloudTaskListResult) (result CloudTaskListResult, err error) {
+	req, err := lastResults.cloudTaskListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "batch.TaskClient", "listNextResults", nil, "Failure preparing next results request")
 	}
@@ -635,19 +709,43 @@ func (client TaskClient) listNextResults(lastResults CloudTaskListResult) (resul
 
 // ListComplete enumerates all values, automatically crossing page boundaries as required.
 func (client TaskClient) ListComplete(ctx context.Context, jobID string, filter string, selectParameter string, expand string, maxResults *int32, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123) (result CloudTaskListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/TaskClient.List")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.List(ctx, jobID, filter, selectParameter, expand, maxResults, timeout, clientRequestID, returnClientRequestID, ocpDate)
 	return
 }
 
 // ListSubtasks if the task is not a multi-instance task then this returns an empty collection.
-//
-// jobID is the ID of the job. taskID is the ID of the task. selectParameter is an OData $select clause. timeout is
-// the maximum time that the server can spend processing the request, in seconds. The default is 30 seconds.
-// clientRequestID is the caller-generated request identity, in the form of a GUID with no decoration such as curly
-// braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0. returnClientRequestID is whether the server should return the
-// client-request-id in the response. ocpDate is the time the request was issued. Client libraries typically set
-// this to the current system clock time; set it explicitly if you are calling the REST API directly.
+// Parameters:
+// jobID - the ID of the job.
+// taskID - the ID of the task.
+// selectParameter - an OData $select clause.
+// timeout - the maximum time that the server can spend processing the request, in seconds. The default is 30
+// seconds.
+// clientRequestID - the caller-generated request identity, in the form of a GUID with no decoration such as
+// curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0.
+// returnClientRequestID - whether the server should return the client-request-id in the response.
+// ocpDate - the time the request was issued. Client libraries typically set this to the current system clock
+// time; set it explicitly if you are calling the REST API directly.
 func (client TaskClient) ListSubtasks(ctx context.Context, jobID string, taskID string, selectParameter string, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123) (result CloudTaskListSubtasksResult, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/TaskClient.ListSubtasks")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.ListSubtasksPreparer(ctx, jobID, taskID, selectParameter, timeout, clientRequestID, returnClientRequestID, ocpDate)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "batch.TaskClient", "ListSubtasks", nil, "Failure preparing request")
@@ -715,8 +813,8 @@ func (client TaskClient) ListSubtasksPreparer(ctx context.Context, jobID string,
 // ListSubtasksSender sends the ListSubtasks request. The method will close the
 // http.Response Body if it receives an error.
 func (client TaskClient) ListSubtasksSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListSubtasksResponder handles the response to the ListSubtasks request. The method always
@@ -737,22 +835,38 @@ func (client TaskClient) ListSubtasksResponder(resp *http.Response) (result Clou
 // no longer available after reactivation. Each time a task is reactivated, its retry count is reset to 0. Reactivation
 // will fail for tasks that are not completed or that previously completed successfully (with an exit code of 0).
 // Additionally, it will fail if the job has completed (or is terminating or deleting).
-//
-// jobID is the ID of the job containing the task. taskID is the ID of the task to reactivate. timeout is the
-// maximum time that the server can spend processing the request, in seconds. The default is 30 seconds.
-// clientRequestID is the caller-generated request identity, in the form of a GUID with no decoration such as curly
-// braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0. returnClientRequestID is whether the server should return the
-// client-request-id in the response. ocpDate is the time the request was issued. Client libraries typically set
-// this to the current system clock time; set it explicitly if you are calling the REST API directly. ifMatch is an
-// ETag value associated with the version of the resource known to the client. The operation will be performed only
-// if the resource's current ETag on the service exactly matches the value specified by the client. ifNoneMatch is
-// an ETag value associated with the version of the resource known to the client. The operation will be performed
-// only if the resource's current ETag on the service does not match the value specified by the client.
-// ifModifiedSince is a timestamp indicating the last modified time of the resource known to the client. The
+// Parameters:
+// jobID - the ID of the job containing the task.
+// taskID - the ID of the task to reactivate.
+// timeout - the maximum time that the server can spend processing the request, in seconds. The default is 30
+// seconds.
+// clientRequestID - the caller-generated request identity, in the form of a GUID with no decoration such as
+// curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0.
+// returnClientRequestID - whether the server should return the client-request-id in the response.
+// ocpDate - the time the request was issued. Client libraries typically set this to the current system clock
+// time; set it explicitly if you are calling the REST API directly.
+// ifMatch - an ETag value associated with the version of the resource known to the client. The operation will
+// be performed only if the resource's current ETag on the service exactly matches the value specified by the
+// client.
+// ifNoneMatch - an ETag value associated with the version of the resource known to the client. The operation
+// will be performed only if the resource's current ETag on the service does not match the value specified by
+// the client.
+// ifModifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
 // operation will be performed only if the resource on the service has been modified since the specified time.
-// ifUnmodifiedSince is a timestamp indicating the last modified time of the resource known to the client. The
-// operation will be performed only if the resource on the service has not been modified since the specified time.
+// ifUnmodifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
+// operation will be performed only if the resource on the service has not been modified since the specified
+// time.
 func (client TaskClient) Reactivate(ctx context.Context, jobID string, taskID string, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123, ifMatch string, ifNoneMatch string, ifModifiedSince *date.TimeRFC1123, ifUnmodifiedSince *date.TimeRFC1123) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/TaskClient.Reactivate")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.ReactivatePreparer(ctx, jobID, taskID, timeout, clientRequestID, returnClientRequestID, ocpDate, ifMatch, ifNoneMatch, ifModifiedSince, ifUnmodifiedSince)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "batch.TaskClient", "Reactivate", nil, "Failure preparing request")
@@ -833,8 +947,8 @@ func (client TaskClient) ReactivatePreparer(ctx context.Context, jobID string, t
 // ReactivateSender sends the Reactivate request. The method will close the
 // http.Response Body if it receives an error.
 func (client TaskClient) ReactivateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ReactivateResponder handles the response to the Reactivate request. The method always
@@ -852,22 +966,38 @@ func (client TaskClient) ReactivateResponder(resp *http.Response) (result autore
 // Terminate when the task has been terminated, it moves to the completed state. For multi-instance tasks, the
 // terminate task operation applies synchronously to the primary task; subtasks are then terminated asynchronously in
 // the background.
-//
-// jobID is the ID of the job containing the task. taskID is the ID of the task to terminate. timeout is the
-// maximum time that the server can spend processing the request, in seconds. The default is 30 seconds.
-// clientRequestID is the caller-generated request identity, in the form of a GUID with no decoration such as curly
-// braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0. returnClientRequestID is whether the server should return the
-// client-request-id in the response. ocpDate is the time the request was issued. Client libraries typically set
-// this to the current system clock time; set it explicitly if you are calling the REST API directly. ifMatch is an
-// ETag value associated with the version of the resource known to the client. The operation will be performed only
-// if the resource's current ETag on the service exactly matches the value specified by the client. ifNoneMatch is
-// an ETag value associated with the version of the resource known to the client. The operation will be performed
-// only if the resource's current ETag on the service does not match the value specified by the client.
-// ifModifiedSince is a timestamp indicating the last modified time of the resource known to the client. The
+// Parameters:
+// jobID - the ID of the job containing the task.
+// taskID - the ID of the task to terminate.
+// timeout - the maximum time that the server can spend processing the request, in seconds. The default is 30
+// seconds.
+// clientRequestID - the caller-generated request identity, in the form of a GUID with no decoration such as
+// curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0.
+// returnClientRequestID - whether the server should return the client-request-id in the response.
+// ocpDate - the time the request was issued. Client libraries typically set this to the current system clock
+// time; set it explicitly if you are calling the REST API directly.
+// ifMatch - an ETag value associated with the version of the resource known to the client. The operation will
+// be performed only if the resource's current ETag on the service exactly matches the value specified by the
+// client.
+// ifNoneMatch - an ETag value associated with the version of the resource known to the client. The operation
+// will be performed only if the resource's current ETag on the service does not match the value specified by
+// the client.
+// ifModifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
 // operation will be performed only if the resource on the service has been modified since the specified time.
-// ifUnmodifiedSince is a timestamp indicating the last modified time of the resource known to the client. The
-// operation will be performed only if the resource on the service has not been modified since the specified time.
+// ifUnmodifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
+// operation will be performed only if the resource on the service has not been modified since the specified
+// time.
 func (client TaskClient) Terminate(ctx context.Context, jobID string, taskID string, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123, ifMatch string, ifNoneMatch string, ifModifiedSince *date.TimeRFC1123, ifUnmodifiedSince *date.TimeRFC1123) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/TaskClient.Terminate")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.TerminatePreparer(ctx, jobID, taskID, timeout, clientRequestID, returnClientRequestID, ocpDate, ifMatch, ifNoneMatch, ifModifiedSince, ifUnmodifiedSince)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "batch.TaskClient", "Terminate", nil, "Failure preparing request")
@@ -948,8 +1078,8 @@ func (client TaskClient) TerminatePreparer(ctx context.Context, jobID string, ta
 // TerminateSender sends the Terminate request. The method will close the
 // http.Response Body if it receives an error.
 func (client TaskClient) TerminateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // TerminateResponder handles the response to the Terminate request. The method always
@@ -965,23 +1095,39 @@ func (client TaskClient) TerminateResponder(resp *http.Response) (result autores
 }
 
 // Update updates the properties of the specified task.
-//
-// jobID is the ID of the job containing the task. taskID is the ID of the task to update. taskUpdateParameter is
-// the parameters for the request. timeout is the maximum time that the server can spend processing the request, in
-// seconds. The default is 30 seconds. clientRequestID is the caller-generated request identity, in the form of a
-// GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0. returnClientRequestID
-// is whether the server should return the client-request-id in the response. ocpDate is the time the request was
-// issued. Client libraries typically set this to the current system clock time; set it explicitly if you are
-// calling the REST API directly. ifMatch is an ETag value associated with the version of the resource known to the
-// client. The operation will be performed only if the resource's current ETag on the service exactly matches the
-// value specified by the client. ifNoneMatch is an ETag value associated with the version of the resource known to
-// the client. The operation will be performed only if the resource's current ETag on the service does not match
-// the value specified by the client. ifModifiedSince is a timestamp indicating the last modified time of the
-// resource known to the client. The operation will be performed only if the resource on the service has been
-// modified since the specified time. ifUnmodifiedSince is a timestamp indicating the last modified time of the
-// resource known to the client. The operation will be performed only if the resource on the service has not been
-// modified since the specified time.
+// Parameters:
+// jobID - the ID of the job containing the task.
+// taskID - the ID of the task to update.
+// taskUpdateParameter - the parameters for the request.
+// timeout - the maximum time that the server can spend processing the request, in seconds. The default is 30
+// seconds.
+// clientRequestID - the caller-generated request identity, in the form of a GUID with no decoration such as
+// curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0.
+// returnClientRequestID - whether the server should return the client-request-id in the response.
+// ocpDate - the time the request was issued. Client libraries typically set this to the current system clock
+// time; set it explicitly if you are calling the REST API directly.
+// ifMatch - an ETag value associated with the version of the resource known to the client. The operation will
+// be performed only if the resource's current ETag on the service exactly matches the value specified by the
+// client.
+// ifNoneMatch - an ETag value associated with the version of the resource known to the client. The operation
+// will be performed only if the resource's current ETag on the service does not match the value specified by
+// the client.
+// ifModifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
+// operation will be performed only if the resource on the service has been modified since the specified time.
+// ifUnmodifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
+// operation will be performed only if the resource on the service has not been modified since the specified
+// time.
 func (client TaskClient) Update(ctx context.Context, jobID string, taskID string, taskUpdateParameter TaskUpdateParameter, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123, ifMatch string, ifNoneMatch string, ifModifiedSince *date.TimeRFC1123, ifUnmodifiedSince *date.TimeRFC1123) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/TaskClient.Update")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UpdatePreparer(ctx, jobID, taskID, taskUpdateParameter, timeout, clientRequestID, returnClientRequestID, ocpDate, ifMatch, ifNoneMatch, ifModifiedSince, ifUnmodifiedSince)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "batch.TaskClient", "Update", nil, "Failure preparing request")
@@ -1064,8 +1210,8 @@ func (client TaskClient) UpdatePreparer(ctx context.Context, jobID string, taskI
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client TaskClient) UpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateResponder handles the response to the Update request. The method always

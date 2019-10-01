@@ -1,6 +1,6 @@
 // +build go1.9
 
-// Copyright 2018 Microsoft Corporation
+// Copyright 2019 Microsoft Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,17 +22,8 @@ package newssearch
 import original "github.com/Azure/azure-sdk-for-go/services/cognitiveservices/v1.0/newssearch"
 
 const (
-	DefaultBaseURI = original.DefaultBaseURI
+	DefaultEndpoint = original.DefaultEndpoint
 )
-
-type BaseClient = original.BaseClient
-
-func New() BaseClient {
-	return original.New()
-}
-func NewWithBaseURI(baseURI string) BaseClient {
-	return original.NewWithBaseURI(baseURI)
-}
 
 type ErrorCode = original.ErrorCode
 
@@ -106,41 +97,63 @@ const (
 	TypeVideoObject         Type = original.TypeVideoObject
 )
 
-type BasicAnswer = original.BasicAnswer
 type Answer = original.Answer
-type BasicArticle = original.BasicArticle
 type Article = original.Article
+type BaseClient = original.BaseClient
+type BasicAnswer = original.BasicAnswer
+type BasicArticle = original.BasicArticle
 type BasicCreativeWork = original.BasicCreativeWork
+type BasicIdentifiable = original.BasicIdentifiable
+type BasicMediaObject = original.BasicMediaObject
+type BasicResponse = original.BasicResponse
+type BasicResponseBase = original.BasicResponseBase
+type BasicSearchResultsAnswer = original.BasicSearchResultsAnswer
+type BasicThing = original.BasicThing
 type CreativeWork = original.CreativeWork
 type Error = original.Error
 type ErrorResponse = original.ErrorResponse
-type BasicIdentifiable = original.BasicIdentifiable
 type Identifiable = original.Identifiable
 type ImageObject = original.ImageObject
-type BasicMediaObject = original.BasicMediaObject
 type MediaObject = original.MediaObject
 type News = original.News
 type NewsArticle = original.NewsArticle
+type NewsClient = original.NewsClient
 type NewsTopic = original.NewsTopic
 type Organization = original.Organization
 type Query = original.Query
-type BasicResponse = original.BasicResponse
 type Response = original.Response
-type BasicResponseBase = original.BasicResponseBase
 type ResponseBase = original.ResponseBase
-type BasicSearchResultsAnswer = original.BasicSearchResultsAnswer
 type SearchResultsAnswer = original.SearchResultsAnswer
-type BasicThing = original.BasicThing
 type Thing = original.Thing
 type TrendingTopics = original.TrendingTopics
 type VideoObject = original.VideoObject
-type NewsClient = original.NewsClient
 
+func New() BaseClient {
+	return original.New()
+}
 func NewNewsClient() NewsClient {
 	return original.NewNewsClient()
 }
-func NewNewsClientWithBaseURI(baseURI string) NewsClient {
-	return original.NewNewsClientWithBaseURI(baseURI)
+func NewWithoutDefaults(endpoint string) BaseClient {
+	return original.NewWithoutDefaults(endpoint)
+}
+func PossibleErrorCodeValues() []ErrorCode {
+	return original.PossibleErrorCodeValues()
+}
+func PossibleErrorSubCodeValues() []ErrorSubCode {
+	return original.PossibleErrorSubCodeValues()
+}
+func PossibleFreshnessValues() []Freshness {
+	return original.PossibleFreshnessValues()
+}
+func PossibleSafeSearchValues() []SafeSearch {
+	return original.PossibleSafeSearchValues()
+}
+func PossibleTextFormatValues() []TextFormat {
+	return original.PossibleTextFormatValues()
+}
+func PossibleTypeValues() []Type {
+	return original.PossibleTypeValues()
 }
 func UserAgent() string {
 	return original.UserAgent() + " profiles/latest"

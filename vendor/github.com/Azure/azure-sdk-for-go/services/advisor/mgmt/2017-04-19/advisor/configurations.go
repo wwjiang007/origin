@@ -21,6 +21,7 @@ import (
 	"context"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -40,10 +41,20 @@ func NewConfigurationsClientWithBaseURI(baseURI string, subscriptionID string) C
 }
 
 // CreateInResourceGroup sends the create in resource group request.
-//
-// configContract is the Azure Advisor configuration data structure. resourceGroup is the name of the Azure
-// resource group.
+// Parameters:
+// configContract - the Azure Advisor configuration data structure.
+// resourceGroup - the name of the Azure resource group.
 func (client ConfigurationsClient) CreateInResourceGroup(ctx context.Context, configContract ConfigData, resourceGroup string) (result ARMErrorResponseBody, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ConfigurationsClient.CreateInResourceGroup")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.CreateInResourceGroupPreparer(ctx, configContract, resourceGroup)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "advisor.ConfigurationsClient", "CreateInResourceGroup", nil, "Failure preparing request")
@@ -78,7 +89,7 @@ func (client ConfigurationsClient) CreateInResourceGroupPreparer(ctx context.Con
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Advisor/configurations", pathParameters),
@@ -90,8 +101,8 @@ func (client ConfigurationsClient) CreateInResourceGroupPreparer(ctx context.Con
 // CreateInResourceGroupSender sends the CreateInResourceGroup request. The method will close the
 // http.Response Body if it receives an error.
 func (client ConfigurationsClient) CreateInResourceGroupSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateInResourceGroupResponder handles the response to the CreateInResourceGroup request. The method always
@@ -109,9 +120,19 @@ func (client ConfigurationsClient) CreateInResourceGroupResponder(resp *http.Res
 
 // CreateInSubscription create/Overwrite Azure Advisor configuration and also delete all configurations of contained
 // resource groups.
-//
-// configContract is the Azure Advisor configuration data structure.
+// Parameters:
+// configContract - the Azure Advisor configuration data structure.
 func (client ConfigurationsClient) CreateInSubscription(ctx context.Context, configContract ConfigData) (result ARMErrorResponseBody, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ConfigurationsClient.CreateInSubscription")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.CreateInSubscriptionPreparer(ctx, configContract)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "advisor.ConfigurationsClient", "CreateInSubscription", nil, "Failure preparing request")
@@ -145,7 +166,7 @@ func (client ConfigurationsClient) CreateInSubscriptionPreparer(ctx context.Cont
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/providers/Microsoft.Advisor/configurations", pathParameters),
@@ -157,8 +178,8 @@ func (client ConfigurationsClient) CreateInSubscriptionPreparer(ctx context.Cont
 // CreateInSubscriptionSender sends the CreateInSubscription request. The method will close the
 // http.Response Body if it receives an error.
 func (client ConfigurationsClient) CreateInSubscriptionSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateInSubscriptionResponder handles the response to the CreateInSubscription request. The method always
@@ -175,9 +196,19 @@ func (client ConfigurationsClient) CreateInSubscriptionResponder(resp *http.Resp
 }
 
 // ListByResourceGroup sends the list by resource group request.
-//
-// resourceGroup is the name of the Azure resource group.
+// Parameters:
+// resourceGroup - the name of the Azure resource group.
 func (client ConfigurationsClient) ListByResourceGroup(ctx context.Context, resourceGroup string) (result ConfigurationListResult, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ConfigurationsClient.ListByResourceGroup")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.ListByResourceGroupPreparer(ctx, resourceGroup)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "advisor.ConfigurationsClient", "ListByResourceGroup", nil, "Failure preparing request")
@@ -222,8 +253,8 @@ func (client ConfigurationsClient) ListByResourceGroupPreparer(ctx context.Conte
 // ListByResourceGroupSender sends the ListByResourceGroup request. The method will close the
 // http.Response Body if it receives an error.
 func (client ConfigurationsClient) ListByResourceGroupSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByResourceGroupResponder handles the response to the ListByResourceGroup request. The method always
@@ -241,7 +272,18 @@ func (client ConfigurationsClient) ListByResourceGroupResponder(resp *http.Respo
 
 // ListBySubscription retrieve Azure Advisor configurations and also retrieve configurations of contained resource
 // groups.
-func (client ConfigurationsClient) ListBySubscription(ctx context.Context) (result ConfigurationListResult, err error) {
+func (client ConfigurationsClient) ListBySubscription(ctx context.Context) (result ConfigurationListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ConfigurationsClient.ListBySubscription")
+		defer func() {
+			sc := -1
+			if result.clr.Response.Response != nil {
+				sc = result.clr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	result.fn = client.listBySubscriptionNextResults
 	req, err := client.ListBySubscriptionPreparer(ctx)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "advisor.ConfigurationsClient", "ListBySubscription", nil, "Failure preparing request")
@@ -250,12 +292,12 @@ func (client ConfigurationsClient) ListBySubscription(ctx context.Context) (resu
 
 	resp, err := client.ListBySubscriptionSender(req)
 	if err != nil {
-		result.Response = autorest.Response{Response: resp}
+		result.clr.Response = autorest.Response{Response: resp}
 		err = autorest.NewErrorWithError(err, "advisor.ConfigurationsClient", "ListBySubscription", resp, "Failure sending request")
 		return
 	}
 
-	result, err = client.ListBySubscriptionResponder(resp)
+	result.clr, err = client.ListBySubscriptionResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "advisor.ConfigurationsClient", "ListBySubscription", resp, "Failure responding to request")
 	}
@@ -285,8 +327,8 @@ func (client ConfigurationsClient) ListBySubscriptionPreparer(ctx context.Contex
 // ListBySubscriptionSender sends the ListBySubscription request. The method will close the
 // http.Response Body if it receives an error.
 func (client ConfigurationsClient) ListBySubscriptionSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListBySubscriptionResponder handles the response to the ListBySubscription request. The method always
@@ -299,5 +341,42 @@ func (client ConfigurationsClient) ListBySubscriptionResponder(resp *http.Respon
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
 	result.Response = autorest.Response{Response: resp}
+	return
+}
+
+// listBySubscriptionNextResults retrieves the next set of results, if any.
+func (client ConfigurationsClient) listBySubscriptionNextResults(ctx context.Context, lastResults ConfigurationListResult) (result ConfigurationListResult, err error) {
+	req, err := lastResults.configurationListResultPreparer(ctx)
+	if err != nil {
+		return result, autorest.NewErrorWithError(err, "advisor.ConfigurationsClient", "listBySubscriptionNextResults", nil, "Failure preparing next results request")
+	}
+	if req == nil {
+		return
+	}
+	resp, err := client.ListBySubscriptionSender(req)
+	if err != nil {
+		result.Response = autorest.Response{Response: resp}
+		return result, autorest.NewErrorWithError(err, "advisor.ConfigurationsClient", "listBySubscriptionNextResults", resp, "Failure sending next results request")
+	}
+	result, err = client.ListBySubscriptionResponder(resp)
+	if err != nil {
+		err = autorest.NewErrorWithError(err, "advisor.ConfigurationsClient", "listBySubscriptionNextResults", resp, "Failure responding to next results request")
+	}
+	return
+}
+
+// ListBySubscriptionComplete enumerates all values, automatically crossing page boundaries as required.
+func (client ConfigurationsClient) ListBySubscriptionComplete(ctx context.Context) (result ConfigurationListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ConfigurationsClient.ListBySubscription")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	result.page, err = client.ListBySubscription(ctx)
 	return
 }

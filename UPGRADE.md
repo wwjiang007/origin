@@ -23,7 +23,7 @@ when that change will happen.
 1. The `/ns/namespace-name/subjectaccessreview` endpoint is deprecated, use `/subjectaccessreview`
 (with the `namespace` field set) or `/ns/namespace-name/localsubjectaccessreview`.  In
 Origin 1.y / OSE 3.y, support for `/ns/namespace-name/subjectaccessreview` will be removed.
-At that time, the openshift docker registry image must be upgraded in order to continue functioning.
+At that time, the openshift container image registry image must be upgraded in order to continue functioning.
 
 1. The `deploymentConfig.spec.strategy.rollingParams.updatePercent` field is deprecated in
   favor of `deploymentConfig.spec.strategy.rollingParams.maxUnavailable` and
@@ -33,30 +33,30 @@ At that time, the openshift docker registry image must be upgraded in order to c
 1. The `volume.metadata` field is deprecated as of Origin 1.0.6 in favor of `volume.downwardAPI`.
 
 1. New SCCs and additional fields on SCCs have been added in Origin 1.0.8.  To pick up the new SCCs
-you may [reset your default SCCs](https://docs.openshift.org/latest/admin_guide/manage_scc.html#updating-the-default-security-context-constraints).
+you may [reset your default SCCs](https://docs.okd.io/latest/admin_guide/manage_scc.html#updating-the-default-security-context-constraints).
 
 New Fields:
 
   1.  allowHostPID - defaults to false.  You may wish to change this to true on any privileged SCCs or
-  [reset your default SCCs](https://docs.openshift.org/latest/admin_guide/manage_scc.html#updating-the-default-security-context-constraints)
+  [reset your default SCCs](https://docs.okd.io/latest/admin_guide/manage_scc.html#updating-the-default-security-context-constraints)
   which will set this field to true for the privileged SCC and false for the restricted SCC.
   1.  allowHostIPC - defaults to false.  You may wish to change this to true on any privileged SCCs or
-  [reset your default SCCs](https://docs.openshift.org/latest/admin_guide/manage_scc.html#updating-the-default-security-context-constraints)
+  [reset your default SCCs](https://docs.okd.io/latest/admin_guide/manage_scc.html#updating-the-default-security-context-constraints)
   which will set this field to true for the privileged SCC and false for the restricted SCC.
   1.  allowHostNetwork - defaults to false.  You may wish to change this to true on any privileged SCCs or
-  [reset your default SCCs](https://docs.openshift.org/latest/admin_guide/manage_scc.html#updating-the-default-security-context-constraints)
+  [reset your default SCCs](https://docs.okd.io/latest/admin_guide/manage_scc.html#updating-the-default-security-context-constraints)
   which will set this field to true for the privileged SCC and false for the restricted SCC.
   1.  allowHostPorts - defaults to false.  You may wish to change this to true on any privileged SCCs or
-  [reset your default SCCs](https://docs.openshift.org/latest/admin_guide/manage_scc.html#updating-the-default-security-context-constraints)
+  [reset your default SCCs](https://docs.okd.io/latest/admin_guide/manage_scc.html#updating-the-default-security-context-constraints)
   which will set this field to true for the privileged SCC and false for the restricted SCC.
   1.  fsGroup - if the strategy type is unset this field will default to RunAsAny.  For more information 
    about using fsGroup with annotations please see [annotation
-  configuration](https://docs.openshift.org/latest/architecture/additional_concepts/authorization.html#understanding-pre-allocated-values-and-security-context-constraints).
+  configuration](https://docs.okd.io/latest/architecture/additional_concepts/authorization.html#understanding-pre-allocated-values-and-security-context-constraints).
   1.  supplementalGroups - if the strategy type is unset this field will default to RunAsAny.  For more information 
   about using supplementalGroups with annotations please see [annotation
-  configuration](https://docs.openshift.org/latest/architecture/additional_concepts/authorization.html#understanding-pre-allocated-values-and-security-context-constraints).
+  configuration](https://docs.okd.io/latest/architecture/additional_concepts/authorization.html#understanding-pre-allocated-values-and-security-context-constraints).
   1.  priority - defaults to nil for existing SCCs.  Please refer to the
-  [SCC Documentation](https://docs.openshift.org/latest/architecture/additional_concepts/authorization.html#security-context-constraints)
+  [SCC Documentation](https://docs.okd.io/latest/architecture/additional_concepts/authorization.html#security-context-constraints)
   for more information on how this affects admission.
 
 
@@ -86,10 +86,10 @@ references:
 
 1.  Field names in `yaml` and `json` files will now follow strict rules for case sensitivity.  
   Incorrectly cased field names will now be rejected.  Please ensure all `yaml` and `json` files
-  conform to the naming conventions defined in [REST API](https://docs.openshift.org/latest/rest_api/index.html) 
+  conform to the naming conventions defined in [REST API](https://docs.okd.io/latest/rest_api/index.html) 
 
-1.  The existing docker registry images will not be able to support auto-provisioning of image streams based on docker pushes against new API servers.
-  Upgrade your docker registry image to make auto-provisioning work again.
+1.  The existing container image registry images will not be able to support auto-provisioning of image streams based on docker pushes against new API servers.
+  Upgrade your container image registry image to make auto-provisioning work again.
 1. New service accounts specific to the PersistentVolume operations of binding, recycling, and provisioning were added.  Run `oc adm policy reconcile-sccs --confirm` to update your SecurityContextConstraints.
 
 ## Origin 1.3.x / OSE 3.3.x

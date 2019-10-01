@@ -1,6 +1,6 @@
 // +build go1.9
 
-// Copyright 2018 Microsoft Corporation
+// Copyright 2019 Microsoft Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,20 +19,15 @@
 
 package dns
 
-import original "github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2017-09-01/dns"
+import (
+	"context"
+
+	original "github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2018-05-01/dns"
+)
 
 const (
 	DefaultBaseURI = original.DefaultBaseURI
 )
-
-type BaseClient = original.BaseClient
-
-func New(subscriptionID string) BaseClient {
-	return original.New(subscriptionID)
-}
-func NewWithBaseURI(baseURI string, subscriptionID string) BaseClient {
-	return original.NewWithBaseURI(baseURI, subscriptionID)
-}
 
 type RecordType = original.RecordType
 
@@ -49,8 +44,16 @@ const (
 	TXT   RecordType = original.TXT
 )
 
-type AaaaRecord = original.AaaaRecord
+type ZoneType = original.ZoneType
+
+const (
+	Private ZoneType = original.Private
+	Public  ZoneType = original.Public
+)
+
 type ARecord = original.ARecord
+type AaaaRecord = original.AaaaRecord
+type BaseClient = original.BaseClient
 type CaaRecord = original.CaaRecord
 type CloudError = original.CloudError
 type CloudErrorBody = original.CloudErrorBody
@@ -64,7 +67,14 @@ type RecordSetListResultIterator = original.RecordSetListResultIterator
 type RecordSetListResultPage = original.RecordSetListResultPage
 type RecordSetProperties = original.RecordSetProperties
 type RecordSetUpdateParameters = original.RecordSetUpdateParameters
+type RecordSetsClient = original.RecordSetsClient
 type Resource = original.Resource
+type ResourceReference = original.ResourceReference
+type ResourceReferenceClient = original.ResourceReferenceClient
+type ResourceReferenceRequest = original.ResourceReferenceRequest
+type ResourceReferenceRequestProperties = original.ResourceReferenceRequestProperties
+type ResourceReferenceResult = original.ResourceReferenceResult
+type ResourceReferenceResultProperties = original.ResourceReferenceResultProperties
 type SoaRecord = original.SoaRecord
 type SrvRecord = original.SrvRecord
 type SubResource = original.SubResource
@@ -74,27 +84,55 @@ type ZoneListResult = original.ZoneListResult
 type ZoneListResultIterator = original.ZoneListResultIterator
 type ZoneListResultPage = original.ZoneListResultPage
 type ZoneProperties = original.ZoneProperties
+type ZoneUpdate = original.ZoneUpdate
+type ZonesClient = original.ZonesClient
 type ZonesDeleteFuture = original.ZonesDeleteFuture
-type RecordSetsClient = original.RecordSetsClient
 
+func New(subscriptionID string) BaseClient {
+	return original.New(subscriptionID)
+}
+func NewRecordSetListResultIterator(page RecordSetListResultPage) RecordSetListResultIterator {
+	return original.NewRecordSetListResultIterator(page)
+}
+func NewRecordSetListResultPage(getNextPage func(context.Context, RecordSetListResult) (RecordSetListResult, error)) RecordSetListResultPage {
+	return original.NewRecordSetListResultPage(getNextPage)
+}
 func NewRecordSetsClient(subscriptionID string) RecordSetsClient {
 	return original.NewRecordSetsClient(subscriptionID)
 }
 func NewRecordSetsClientWithBaseURI(baseURI string, subscriptionID string) RecordSetsClient {
 	return original.NewRecordSetsClientWithBaseURI(baseURI, subscriptionID)
 }
-func UserAgent() string {
-	return original.UserAgent() + " profiles/latest"
+func NewResourceReferenceClient(subscriptionID string) ResourceReferenceClient {
+	return original.NewResourceReferenceClient(subscriptionID)
 }
-func Version() string {
-	return original.Version()
+func NewResourceReferenceClientWithBaseURI(baseURI string, subscriptionID string) ResourceReferenceClient {
+	return original.NewResourceReferenceClientWithBaseURI(baseURI, subscriptionID)
 }
-
-type ZonesClient = original.ZonesClient
-
+func NewWithBaseURI(baseURI string, subscriptionID string) BaseClient {
+	return original.NewWithBaseURI(baseURI, subscriptionID)
+}
+func NewZoneListResultIterator(page ZoneListResultPage) ZoneListResultIterator {
+	return original.NewZoneListResultIterator(page)
+}
+func NewZoneListResultPage(getNextPage func(context.Context, ZoneListResult) (ZoneListResult, error)) ZoneListResultPage {
+	return original.NewZoneListResultPage(getNextPage)
+}
 func NewZonesClient(subscriptionID string) ZonesClient {
 	return original.NewZonesClient(subscriptionID)
 }
 func NewZonesClientWithBaseURI(baseURI string, subscriptionID string) ZonesClient {
 	return original.NewZonesClientWithBaseURI(baseURI, subscriptionID)
+}
+func PossibleRecordTypeValues() []RecordType {
+	return original.PossibleRecordTypeValues()
+}
+func PossibleZoneTypeValues() []ZoneType {
+	return original.PossibleZoneTypeValues()
+}
+func UserAgent() string {
+	return original.UserAgent() + " profiles/latest"
+}
+func Version() string {
+	return original.Version()
 }

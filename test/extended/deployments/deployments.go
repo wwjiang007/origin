@@ -18,11 +18,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
+	watchtools "k8s.io/client-go/tools/watch"
 	e2e "k8s.io/kubernetes/test/e2e/framework"
 
 	appsv1 "github.com/openshift/api/apps/v1"
-	appsutil "github.com/openshift/origin/pkg/apps/util"
-	imageapi "github.com/openshift/origin/pkg/image/apis/image"
+	imagev1 "github.com/openshift/api/image/v1"
+	"github.com/openshift/library-go/pkg/apps/appsutil"
+	"github.com/openshift/library-go/pkg/image/imageutil"
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
@@ -55,10 +57,6 @@ var _ = g.Describe("[Feature:DeploymentConfig] deploymentconfigs", func() {
 			ctx:    ctx,
 			cancel: cancel,
 		}
-
-		// FIXME: remove this when https://github.com/openshift/origin/issues/20225 gets fixed
-		err := exutil.WaitForServiceAccount(oc.KubeClient().CoreV1().ServiceAccounts(oc.Namespace()), "default")
-		o.Expect(err).NotTo(o.HaveOccurred())
 	})
 
 	// This have to be registered before we create kube framework (NewCLI).
@@ -201,11 +199,21 @@ var _ = g.Describe("[Feature:DeploymentConfig] deploymentconfigs", func() {
 			dc, err := createDeploymentConfig(oc, simpleDeploymentFixture)
 			o.Expect(err).NotTo(o.HaveOccurred())
 
+			g.By(fmt.Sprintf("by checking that the deployment config has the correct version"))
+			err = wait.PollImmediate(500*time.Millisecond, time.Minute, func() (bool, error) {
+				dc, _, _, err := deploymentInfo(oc, dc.Name)
+				if err != nil {
+					return false, nil
+				}
+				return dc.Status.LatestVersion == 1, nil
+			})
+			o.Expect(err).NotTo(o.HaveOccurred())
+
 			_, err = oc.Run("set", "env").Args("dc/"+dc.Name, "TRY=ONCE").Output()
 			o.Expect(err).NotTo(o.HaveOccurred())
 
 			g.By(fmt.Sprintf("by checking that the deployment config has the correct version"))
-			err = wait.PollImmediate(500*time.Millisecond, 5*time.Second, func() (bool, error) {
+			err = wait.PollImmediate(500*time.Millisecond, time.Minute, func() (bool, error) {
 				dc, _, _, err := deploymentInfo(oc, dc.Name)
 				if err != nil {
 					return false, nil
@@ -215,7 +223,7 @@ var _ = g.Describe("[Feature:DeploymentConfig] deploymentconfigs", func() {
 			o.Expect(err).NotTo(o.HaveOccurred())
 
 			g.By(fmt.Sprintf("by checking that the second deployment exists"))
-			err = wait.PollImmediate(500*time.Millisecond, 30*time.Second, func() (bool, error) {
+			err = wait.PollImmediate(500*time.Millisecond, time.Minute, func() (bool, error) {
 				_, rcs, _, err := deploymentInfo(oc, dcName)
 				if err != nil {
 					return false, nil
@@ -234,7 +242,7 @@ var _ = g.Describe("[Feature:DeploymentConfig] deploymentconfigs", func() {
 			o.Expect(err).NotTo(o.HaveOccurred())
 
 			g.By(fmt.Sprintf("by checking that the first deployer was deleted and the second deployer exists"))
-			err = wait.PollImmediate(500*time.Millisecond, 10*time.Second, func() (bool, error) {
+			err = wait.PollImmediate(500*time.Millisecond, time.Minute, func() (bool, error) {
 				_, _, pods, err := deploymentInfo(oc, dcName)
 				if err != nil {
 					return false, nil
@@ -285,19 +293,23 @@ var _ = g.Describe("[Feature:DeploymentConfig] deploymentconfigs", func() {
 			name := "deployment-image-resolution"
 			o.Expect(waitForLatestCondition(oc, name, deploymentRunTimeout, deploymentImageTriggersResolved(2))).NotTo(o.HaveOccurred())
 
-			is, err := oc.ImageClient().Image().ImageStreams(oc.Namespace()).Get(name, metav1.GetOptions{})
+			is, err := oc.ImageClient().ImageV1().ImageStreams(oc.Namespace()).Get(name, metav1.GetOptions{})
 			o.Expect(err).NotTo(o.HaveOccurred())
 			o.Expect(is.Status.DockerImageRepository).NotTo(o.BeEmpty())
-			o.Expect(is.Status.Tags["direct"].Items).NotTo(o.BeEmpty())
-			o.Expect(is.Status.Tags["pullthrough"].Items).NotTo(o.BeEmpty())
+			directTag, ok := imageutil.StatusHasTag(is, "direct")
+			o.Expect(ok).To(o.BeTrue())
+			o.Expect(directTag.Items).NotTo(o.BeEmpty())
+			pullthroughTag, ok := imageutil.StatusHasTag(is, "pullthrough")
+			o.Expect(ok).To(o.BeTrue())
+			o.Expect(pullthroughTag.Items).NotTo(o.BeEmpty())
 
 			dc, err = oc.AppsClient().AppsV1().DeploymentConfigs(oc.Namespace()).Get(name, metav1.GetOptions{})
 			o.Expect(err).NotTo(o.HaveOccurred())
 			o.Expect(dc.Spec.Triggers).To(o.HaveLen(3))
 
-			imageID := is.Status.Tags["pullthrough"].Items[0].Image
+			imageID := pullthroughTag.Items[0].Image
 			resolvedReference := fmt.Sprintf("%s@%s", is.Status.DockerImageRepository, imageID)
-			directReference := is.Status.Tags["direct"].Items[0].DockerImageReference
+			directReference := directTag.Items[0].DockerImageReference
 
 			// controller should be using pullthrough for this (pointing to local registry)
 			o.Expect(dc.Spec.Triggers[1].ImageChangeParams).NotTo(o.BeNil())
@@ -320,18 +332,17 @@ var _ = g.Describe("[Feature:DeploymentConfig] deploymentconfigs", func() {
 		g.It("should run a deployment to completion and then scale to zero", func() {
 			namespace := oc.Namespace()
 
-			dc, err := readDCFixture(deploymentFixture)
-			o.Expect(err).NotTo(o.HaveOccurred())
+			dc := exutil.ReadFixtureOrFail(deploymentFixture).(*appsv1.DeploymentConfig)
 			o.Expect(dc.Name).To(o.Equal(dcName))
 
-			dc, err = oc.AppsClient().AppsV1().DeploymentConfigs(namespace).Create(dc)
+			dc, err := oc.AppsClient().AppsV1().DeploymentConfigs(namespace).Create(dc)
 			o.Expect(err).NotTo(o.HaveOccurred())
 			o.Expect(dc.Name).To(o.Equal(dcName))
 			e2e.Logf("created DC, creationTimestamp: %v", dc.CreationTimestamp)
 
-			o.Expect(waitForLatestCondition(oc, "deployment-test", deploymentRunTimeout, deploymentRunning)).NotTo(o.HaveOccurred())
+			o.Expect(waitForLatestCondition(oc, "deployment-test", deploymentRunTimeout, deploymentReachedCompletion)).NotTo(o.HaveOccurred())
 
-			out, err := oc.Run("logs").Args("-f", "dc/deployment-test").Output()
+			out, err := oc.Run("logs").Args("pod/deployment-test-1-deploy").Output()
 			o.Expect(err).NotTo(o.HaveOccurred())
 			e2e.Logf("oc logs finished")
 
@@ -370,7 +381,10 @@ var _ = g.Describe("[Feature:DeploymentConfig] deploymentconfigs", func() {
 					defer g.GinkgoRecover()
 					defer close(rolloutCompleteWithLogs)
 					var err error
-					out, err = waitForDeployerToComplete(oc, fmt.Sprintf("deployment-test-%d", rolloutNumber), deploymentRunTimeout)
+					dcName := fmt.Sprintf("deployment-test-%d", rolloutNumber)
+					_, err = waitForDeployerToComplete(oc, dcName, deploymentRunTimeout)
+					o.Expect(err).NotTo(o.HaveOccurred())
+					out, err = oc.Run("logs").Args(fmt.Sprintf("pod/%s-deploy", dcName)).Output()
 					o.Expect(err).NotTo(o.HaveOccurred())
 				}(i + 2) // we already did 2 rollouts previously.
 
@@ -405,8 +419,8 @@ var _ = g.Describe("[Feature:DeploymentConfig] deploymentconfigs", func() {
 			o.Expect(dc.Name).To(o.Equal(dcName))
 			o.Expect(waitForSyncedConfig(oc, dcName, deploymentRunTimeout)).NotTo(o.HaveOccurred())
 
-			g.By("tagging the busybox:latest as test:v1 image")
-			_, err = oc.Run("tag").Args("docker.io/busybox:latest", "test:v1").Output()
+			g.By("tagging the ubi-minimal:latest as test:v1 image")
+			_, err = oc.Run("tag").Args("registry.access.redhat.com/ubi8/ubi-minimal:latest", "test:v1").Output()
 			o.Expect(err).NotTo(o.HaveOccurred())
 
 			expectLatestVersion := func(version int) {
@@ -436,8 +450,8 @@ var _ = g.Describe("[Feature:DeploymentConfig] deploymentconfigs", func() {
 			o.Expect(err).NotTo(o.HaveOccurred())
 			o.Expect(waitForSyncedConfig(oc, dcName, deploymentRunTimeout)).NotTo(o.HaveOccurred())
 
-			g.By("tagging the busybox:1.25 as test:v2 image")
-			_, err = oc.Run("tag").Args("docker.io/busybox:1.25", "test:v2").Output()
+			g.By("tagging the ubi-minimal:8.0-127 as test:v2 image")
+			_, err = oc.Run("tag").Args("registry.access.redhat.com/ubi8/ubi-minimal:8.0-127", "test:v2").Output()
 			o.Expect(err).NotTo(o.HaveOccurred())
 
 			g.By("ensuring the deployment config latest version is 2 and rollout completed")
@@ -467,9 +481,9 @@ var _ = g.Describe("[Feature:DeploymentConfig] deploymentconfigs", func() {
 			o.Expect(err).NotTo(o.HaveOccurred())
 
 			g.By("verifying the post deployment action happened: tag is set")
-			var istag *imageapi.ImageStreamTag
+			var istag *imagev1.ImageStreamTag
 			pollErr := wait.PollImmediate(100*time.Millisecond, 1*time.Minute, func() (bool, error) {
-				istag, err = oc.ImageClient().Image().ImageStreamTags(oc.Namespace()).Get("sample-stream:deployed", metav1.GetOptions{})
+				istag, err = oc.ImageClient().ImageV1().ImageStreamTags(oc.Namespace()).Get("sample-stream:deployed", metav1.GetOptions{})
 				if kerrors.IsNotFound(err) {
 					return false, nil
 				}
@@ -585,18 +599,17 @@ var _ = g.Describe("[Feature:DeploymentConfig] deploymentconfigs", func() {
 		g.It("should run the custom deployment steps", func() {
 			namespace := oc.Namespace()
 
-			dc, err := readDCFixture(customDeploymentFixture)
-			o.Expect(err).NotTo(o.HaveOccurred())
+			dc := exutil.ReadFixtureOrFail(customDeploymentFixture).(*appsv1.DeploymentConfig)
 			o.Expect(dc.Name).To(o.Equal(dcName))
 
-			dc, err = oc.AppsClient().AppsV1().DeploymentConfigs(namespace).Create(dc)
+			dc, err := oc.AppsClient().AppsV1().DeploymentConfigs(namespace).Create(dc)
 			o.Expect(err).NotTo(o.HaveOccurred())
 			o.Expect(dc.Name).To(o.Equal(dcName))
 			e2e.Logf("created DC, creationTimestamp: %v", dc.CreationTimestamp)
 
-			o.Expect(waitForLatestCondition(oc, dcName, deploymentRunTimeout, deploymentRunning)).NotTo(o.HaveOccurred())
+			o.Expect(waitForLatestCondition(oc, dcName, deploymentRunTimeout, deploymentReachedCompletion)).NotTo(o.HaveOccurred())
 
-			out, err := oc.Run("logs").Args("--follow", "dc/custom-deployment").Output()
+			out, err := oc.Run("logs").Args("pod/custom-deployment-1-deploy").Output()
 			o.Expect(err).NotTo(o.HaveOccurred())
 			e2e.Logf("oc logs finished")
 
@@ -658,7 +671,7 @@ var _ = g.Describe("[Feature:DeploymentConfig] deploymentconfigs", func() {
 			out, err := oc.Run("rollout").Args("history", "dc/"+dcName).Output()
 			o.Expect(err).NotTo(o.HaveOccurred())
 			g.By(fmt.Sprintf("checking the history for substrings\n%s", out))
-			o.Expect(out).To(o.ContainSubstring("deploymentconfigs \"deployment-simple\""))
+			o.Expect(out).To(o.ContainSubstring("deploymentconfig.apps.openshift.io/deployment-simple"))
 			o.Expect(out).To(o.ContainSubstring("REVISION	STATUS		CAUSE"))
 			o.Expect(out).To(o.ContainSubstring("1		Complete	config change"))
 			o.Expect(out).To(o.ContainSubstring("2		Complete	config change"))
@@ -1017,8 +1030,7 @@ var _ = g.Describe("[Feature:DeploymentConfig] deploymentconfigs", func() {
 		})
 
 		g.It("should not transition the deployment to Complete before satisfied", func() {
-			dc, err := readDCFixture(minReadySecondsFixture)
-			o.Expect(err).NotTo(o.HaveOccurred())
+			dc := exutil.ReadFixtureOrFail(minReadySecondsFixture).(*appsv1.DeploymentConfig)
 			o.Expect(dc.Name).To(o.Equal(dcName))
 
 			rcName := func(i int) string { return fmt.Sprintf("%s-%d", dc.Name, i) }
@@ -1033,7 +1045,9 @@ var _ = g.Describe("[Feature:DeploymentConfig] deploymentconfigs", func() {
 			o.Expect(err).NotTo(o.HaveOccurred())
 
 			g.By("verifying the deployment is created")
-			rcEvent, err := watch.Until(deploymentChangeTimeout, watcher, func(event watch.Event) (bool, error) {
+			ctx, cancel := context.WithTimeout(context.Background(), deploymentChangeTimeout)
+			defer cancel()
+			rcEvent, err := watchtools.UntilWithoutRetry(ctx, watcher, func(event watch.Event) (bool, error) {
 				if event.Type == watch.Added {
 					return true, nil
 				}
@@ -1152,8 +1166,7 @@ var _ = g.Describe("[Feature:DeploymentConfig] deploymentconfigs", func() {
 			var err error
 
 			g.By("should create ControllerRef in RCs it creates", func() {
-				dc, err = readDCFixture(simpleDeploymentFixture)
-				o.Expect(err).NotTo(o.HaveOccurred())
+				dc := exutil.ReadFixtureOrFail(simpleDeploymentFixture).(*appsv1.DeploymentConfig)
 				// Having more replicas will make us more resilient to pod failures
 				dc.Spec.Replicas = 3
 				dc, err = oc.AppsClient().AppsV1().DeploymentConfigs(namespace).Create(dc)
@@ -1251,14 +1264,13 @@ var _ = g.Describe("[Feature:DeploymentConfig] deploymentconfigs", func() {
 			namespace := oc.Namespace()
 
 			g.By("creating DC")
-			dc, err := readDCFixture(simpleDeploymentFixture)
-			o.Expect(err).NotTo(o.HaveOccurred())
+			dc := exutil.ReadFixtureOrFail(simpleDeploymentFixture).(*appsv1.DeploymentConfig)
 			o.Expect(dc.Name).To(o.Equal(dcName))
 
 			dc.Spec.Replicas = 1
 			// Make sure the deployer pod doesn't end too soon
 			dc.Spec.MinReadySeconds = 60
-			dc, err = oc.AppsClient().AppsV1().DeploymentConfigs(namespace).Create(dc)
+			dc, err := oc.AppsClient().AppsV1().DeploymentConfigs(namespace).Create(dc)
 			o.Expect(err).NotTo(o.HaveOccurred())
 
 			g.By("waiting for RC to be created")
@@ -1322,14 +1334,13 @@ var _ = g.Describe("[Feature:DeploymentConfig] deploymentconfigs", func() {
 			namespace := oc.Namespace()
 
 			g.By("creating DC")
-			dc, err := readDCFixture(simpleDeploymentFixture)
-			o.Expect(err).NotTo(o.HaveOccurred())
+			dc := exutil.ReadFixtureOrFail(simpleDeploymentFixture).(*appsv1.DeploymentConfig)
 			o.Expect(dc.Name).To(o.Equal(dcName))
 
 			dc.Spec.Replicas = 1
 			// Make sure the deployer pod doesn't end too soon
 			dc.Spec.MinReadySeconds = 60
-			dc, err = oc.AppsClient().AppsV1().DeploymentConfigs(namespace).Create(dc)
+			dc, err := oc.AppsClient().AppsV1().DeploymentConfigs(namespace).Create(dc)
 			o.Expect(err).NotTo(o.HaveOccurred())
 
 			g.By("waiting for RC to be created")
@@ -1388,14 +1399,13 @@ var _ = g.Describe("[Feature:DeploymentConfig] deploymentconfigs", func() {
 			)
 
 			g.By("creating DC")
-			dc, err := readDCFixture(simpleDeploymentFixture)
-			o.Expect(err).NotTo(o.HaveOccurred())
+			dc := exutil.ReadFixtureOrFail(simpleDeploymentFixture).(*appsv1.DeploymentConfig)
 			o.Expect(dc.Name).To(o.Equal(dcName))
 
 			dc.Spec.Replicas = 1
 			// Make sure the deployer pod doesn't immediately
 			dc.Spec.MinReadySeconds = 3
-			dc, err = oc.AppsClient().AppsV1().DeploymentConfigs(namespace).Create(dc)
+			dc, err := oc.AppsClient().AppsV1().DeploymentConfigs(namespace).Create(dc)
 			o.Expect(err).NotTo(o.HaveOccurred())
 
 			g.By("waiting for RC to be created")
@@ -1480,8 +1490,7 @@ var _ = g.Describe("[Feature:DeploymentConfig] deploymentconfigs", func() {
 			namespace := oc.Namespace()
 
 			g.By("creating DC")
-			dc, err := readDCFixture(imageChangeTriggerFixture)
-			o.Expect(err).NotTo(o.HaveOccurred())
+			dc := exutil.ReadFixtureOrFail(imageChangeTriggerFixture).(*appsv1.DeploymentConfig)
 			o.Expect(dc.Name).To(o.Equal(dcName))
 
 			rcList, err := oc.KubeClient().CoreV1().ReplicationControllers(namespace).List(metav1.ListOptions{})
@@ -1491,8 +1500,8 @@ var _ = g.Describe("[Feature:DeploymentConfig] deploymentconfigs", func() {
 			dc, err = oc.AppsClient().AppsV1().DeploymentConfigs(namespace).Create(dc)
 			o.Expect(err).NotTo(o.HaveOccurred())
 
-			g.By("tagging the busybox:latest as test:v1 image to create ImageStream")
-			out, err := oc.Run("tag").Args("docker.io/busybox:latest", "test:v1").Output()
+			g.By("tagging the ubi-minimal:latest as test:v1 image to create ImageStream")
+			out, err := oc.Run("tag").Args("registry.access.redhat.com/ubi8/ubi-minimal:latest", "test:v1").Output()
 			e2e.Logf("%s", out)
 			o.Expect(err).NotTo(o.HaveOccurred())
 
@@ -1543,6 +1552,132 @@ var _ = g.Describe("[Feature:DeploymentConfig] deploymentconfigs", func() {
 			})
 			o.Expect(rcs.Items).To(o.HaveLen(1))
 			o.Expect(strings.TrimSpace(rcs.Items[0].Spec.Template.Spec.Containers[0].Image)).NotTo(o.BeEmpty())
+		})
+	})
+
+	g.Describe("adoption [Conformance]", func() {
+		dcName := "deployment-simple"
+		g.AfterEach(func() {
+			failureTrap(oc, dcName, g.CurrentGinkgoTestDescription().Failed)
+		})
+
+		g.It("will orphan all RCs and adopt them back when recreated", func() {
+			namespace := oc.Namespace()
+
+			g.By("creating DC")
+			dc := exutil.ReadFixtureOrFail(simpleDeploymentFixture).(*appsv1.DeploymentConfig)
+			o.Expect(dc.Name).To(o.Equal(dcName))
+
+			dc, err := oc.AppsClient().AppsV1().DeploymentConfigs(namespace).Create(dc)
+			o.Expect(err).NotTo(o.HaveOccurred())
+
+			o.Expect(dc.Status.LatestVersion).To(o.BeEquivalentTo(0))
+
+			g.By("waiting for initial deployment to complete")
+			o.Expect(waitForLatestCondition(oc, dcName, deploymentRunTimeout, deploymentReachedCompletion)).NotTo(o.HaveOccurred())
+
+			g.By("modifying the template and triggering new deployment")
+			dc, err = oc.AppsClient().AppsV1().DeploymentConfigs(oc.Namespace()).Patch(dcName, types.StrategicMergePatchType, []byte(`{"spec": {"template": {"metadata": {"labels": {"rev": "2"}}}}}`))
+			o.Expect(err).NotTo(o.HaveOccurred())
+			// LatestVersion is always 1 behind on api calls before the controller detects the change and raises it
+			o.Expect(dc.Status.LatestVersion).To(o.BeEquivalentTo(1))
+
+			g.By("waiting for the second deployment to complete")
+			o.Expect(waitForLatestCondition(oc, dcName, deploymentRunTimeout, deploymentReachedCompletion)).NotTo(o.HaveOccurred())
+
+			g.By("verifying the second deployment")
+			dc, err = oc.AppsClient().AppsV1().DeploymentConfigs(namespace).Get(dc.Name, metav1.GetOptions{})
+			o.Expect(err).NotTo(o.HaveOccurred())
+			o.Expect(dc.Status.LatestVersion).To(o.BeEquivalentTo(2))
+
+			g.By("deleting the DC and orphaning RCs")
+			deletePropagationOrphan := metav1.DeletePropagationOrphan
+			err = oc.AppsClient().AppsV1().DeploymentConfigs(namespace).Delete(dc.Name, &metav1.DeleteOptions{
+				PropagationPolicy: &deletePropagationOrphan,
+			})
+			o.Expect(err).NotTo(o.HaveOccurred())
+
+			// Wait for deletion
+			w, err := oc.AppsClient().AppsV1().DeploymentConfigs(namespace).Watch(metav1.SingleObject(dc.ObjectMeta))
+			o.Expect(err).NotTo(o.HaveOccurred())
+			ctx1, cancel1 := context.WithTimeout(context.TODO(), deploymentChangeTimeout)
+			defer cancel1()
+			_, err = watchtools.UntilWithoutRetry(ctx1, w, func(e watch.Event) (bool, error) {
+				switch e.Type {
+				case watch.Added, watch.Modified:
+					e2e.Logf("delete: LatestVersion: %d", e.Object.(*appsv1.DeploymentConfig).Status.LatestVersion)
+					return false, nil
+				case watch.Deleted:
+					return true, nil
+				case watch.Error:
+					return true, kerrors.FromObject(e.Object)
+				default:
+					return true, fmt.Errorf("unexpected event %#v", e)
+				}
+			})
+			o.Expect(err).NotTo(o.HaveOccurred())
+
+			g.By("recreating the DC")
+			dc.ResourceVersion = ""
+			dc, err = oc.AppsClient().AppsV1().DeploymentConfigs(namespace).Create(dc)
+			o.Expect(err).NotTo(o.HaveOccurred())
+			// When a DC is recreated it has LatestVersion 0, it will get updated after adopting the Rcs
+			o.Expect(dc.Status.LatestVersion).To(o.BeEquivalentTo(0))
+
+			g.By("waiting for DC.status.latestVersion to be raised after adopting RCs and availableReplicas to match replicas")
+			w, err = oc.AppsClient().AppsV1().DeploymentConfigs(namespace).Watch(metav1.SingleObject(dc.ObjectMeta))
+			o.Expect(err).NotTo(o.HaveOccurred())
+			ctx2, cancel2 := context.WithTimeout(context.TODO(), deploymentChangeTimeout)
+			defer cancel2()
+			event, err := watchtools.UntilWithoutRetry(ctx2, w, func(e watch.Event) (bool, error) {
+				switch e.Type {
+				case watch.Added, watch.Modified:
+					evDC := e.Object.(*appsv1.DeploymentConfig)
+					e2e.Logf("wait: LatestVersion: %d", e.Object.(*appsv1.DeploymentConfig).Status.LatestVersion)
+					return evDC.Status.LatestVersion == 2 && evDC.Status.AvailableReplicas == evDC.Spec.Replicas, nil
+				case watch.Deleted:
+					return true, fmt.Errorf("dc deleted while waiting for latestVersion to be raised")
+				case watch.Error:
+					return true, kerrors.FromObject(e.Object)
+				default:
+					return true, fmt.Errorf("unexpected event %#v", e)
+				}
+			})
+			o.Expect(err).NotTo(o.HaveOccurred())
+			dc = event.Object.(*appsv1.DeploymentConfig)
+
+			g.By("making sure DC can be scaled")
+			newScale := dc.Spec.Replicas + 2
+			dc, err = oc.AppsClient().AppsV1().DeploymentConfigs(oc.Namespace()).Patch(dcName, types.StrategicMergePatchType, []byte(fmt.Sprintf(`{"spec": {"replicas": %d}}`, newScale)))
+			o.Expect(err).NotTo(o.HaveOccurred())
+
+			w, err = oc.AppsClient().AppsV1().DeploymentConfigs(namespace).Watch(metav1.SingleObject(dc.ObjectMeta))
+			o.Expect(err).NotTo(o.HaveOccurred())
+			ctx3, cancel3 := context.WithTimeout(context.TODO(), deploymentChangeTimeout)
+			defer cancel3()
+			event, err = watchtools.UntilWithoutRetry(ctx3, w, func(e watch.Event) (bool, error) {
+				switch e.Type {
+				case watch.Added, watch.Modified:
+					evDC := e.Object.(*appsv1.DeploymentConfig)
+					return evDC.Status.AvailableReplicas == evDC.Spec.Replicas, nil
+				case watch.Deleted:
+					return true, fmt.Errorf("dc deleted while waiting for latestVersion to be raised")
+				case watch.Error:
+					return true, kerrors.FromObject(e.Object)
+				default:
+					return true, fmt.Errorf("unexpected event %#v", e)
+				}
+			})
+			o.Expect(err).NotTo(o.HaveOccurred())
+			dc = event.Object.(*appsv1.DeploymentConfig)
+
+			g.By("rolling out new version")
+			o.Expect(dc.Status.LatestVersion).To(o.BeEquivalentTo(2))
+
+			dc, err = oc.AppsClient().AppsV1().DeploymentConfigs(oc.Namespace()).Patch(dcName, types.StrategicMergePatchType, []byte(fmt.Sprintf(`{"spec": {"template": {"metadata": {"labels": {"rev": "%d"}}}}}`, dc.Status.LatestVersion+1)))
+			o.Expect(err).NotTo(o.HaveOccurred())
+
+			o.Expect(waitForLatestCondition(oc, dcName, deploymentRunTimeout, deploymentReachedCompletion)).NotTo(o.HaveOccurred())
 		})
 	})
 })

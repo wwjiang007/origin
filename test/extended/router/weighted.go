@@ -10,6 +10,7 @@ import (
 
 	g "github.com/onsi/ginkgo"
 	o "github.com/onsi/gomega"
+	"k8s.io/kubernetes/test/e2e/framework/pod"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -21,12 +22,12 @@ import (
 var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 	defer g.GinkgoRecover()
 	var (
-		configPath = exutil.FixturePath("testdata", "weighted-router.yaml")
+		configPath = exutil.FixturePath("testdata", "router", "weighted-router.yaml")
 		oc         = exutil.NewCLI("weighted-router", exutil.KubeConfigPath())
 	)
 
 	g.BeforeEach(func() {
-		routerImage, _ := exutil.FindImageFormatString(oc)
+		routerImage, _ := exutil.FindRouterImage(oc)
 		routerImage = strings.Replace(routerImage, "${component}", "haproxy-router", -1)
 		err := oc.AsAdmin().Run("new-app").Args("-f", configPath, "-p", "IMAGE="+routerImage).Execute()
 		o.Expect(err).NotTo(o.HaveOccurred())
@@ -41,14 +42,14 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 			}()
 
 			ns := oc.KubeFramework().Namespace.Name
-			execPodName := exutil.CreateExecPodOrFail(oc.AdminKubeClient().Core(), ns, "execpod")
-			defer func() { oc.AdminKubeClient().Core().Pods(ns).Delete(execPodName, metav1.NewDeleteOptions(1)) }()
+			execPodName := exutil.CreateExecPodOrFail(oc.AdminKubeClient().CoreV1(), ns, "execpod")
+			defer func() { oc.AdminKubeClient().CoreV1().Pods(ns).Delete(execPodName, metav1.NewDeleteOptions(1)) }()
 
 			g.By(fmt.Sprintf("creating a weighted router from a config file %q", configPath))
 
 			var routerIP string
 			err := wait.Poll(time.Second, changeTimeoutSeconds*time.Second, func() (bool, error) {
-				pod, err := oc.KubeFramework().ClientSet.Core().Pods(oc.KubeFramework().Namespace.Name).Get("weighted-router", metav1.GetOptions{})
+				pod, err := oc.KubeFramework().ClientSet.CoreV1().Pods(oc.KubeFramework().Namespace.Name).Get("weighted-router", metav1.GetOptions{})
 				if err != nil {
 					return false, err
 				}
@@ -126,6 +127,6 @@ func parseStats(stats string, backendSubstr string, statsField int) ([]string, e
 }
 
 func dumpWeightedRouterLogs(oc *exutil.CLI, name string) {
-	log, _ := e2e.GetPodLogs(oc.AdminKubeClient(), oc.KubeFramework().Namespace.Name, "weighted-router", "router")
+	log, _ := pod.GetPodLogs(oc.AdminKubeClient(), oc.KubeFramework().Namespace.Name, "weighted-router", "router")
 	e2e.Logf("Weighted Router test %s logs:\n %s", name, log)
 }

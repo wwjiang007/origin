@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -41,11 +42,23 @@ func NewJobsClientWithBaseURI(baseURI string, subscriptionID string, acceptLangu
 }
 
 // Create creates a new job or updates an existing job in the specified subscription.
-//
-// jobName is the name of the import/export job. resourceGroupName is the resource group name uniquely identifies
-// the resource group within the user subscription. body is the parameters used for creating the job clientTenantID
-// is the tenant ID of the client making the request.
+// Parameters:
+// jobName - the name of the import/export job.
+// resourceGroupName - the resource group name uniquely identifies the resource group within the user
+// subscription.
+// body - the parameters used for creating the job
+// clientTenantID - the tenant ID of the client making the request.
 func (client JobsClient) Create(ctx context.Context, jobName string, resourceGroupName string, body PutJobParameters, clientTenantID string) (result JobResponse, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobsClient.Create")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: body,
 			Constraints: []validation.Constraint{{Target: "body.Properties", Name: validation.Null, Rule: false,
@@ -121,7 +134,7 @@ func (client JobsClient) CreatePreparer(ctx context.Context, jobName string, res
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ImportExport/jobs/{jobName}", pathParameters),
@@ -141,8 +154,8 @@ func (client JobsClient) CreatePreparer(ctx context.Context, jobName string, res
 // CreateSender sends the Create request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobsClient) CreateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateResponder handles the response to the Create request. The method always
@@ -159,10 +172,21 @@ func (client JobsClient) CreateResponder(resp *http.Response) (result JobRespons
 }
 
 // Delete deletes an existing job. Only jobs in the Creating or Completed states can be deleted.
-//
-// jobName is the name of the import/export job. resourceGroupName is the resource group name uniquely identifies
-// the resource group within the user subscription.
+// Parameters:
+// jobName - the name of the import/export job.
+// resourceGroupName - the resource group name uniquely identifies the resource group within the user
+// subscription.
 func (client JobsClient) Delete(ctx context.Context, jobName string, resourceGroupName string) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobsClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeletePreparer(ctx, jobName, resourceGroupName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "storageimportexport.JobsClient", "Delete", nil, "Failure preparing request")
@@ -212,8 +236,8 @@ func (client JobsClient) DeletePreparer(ctx context.Context, jobName string, res
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobsClient) DeleteSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
@@ -229,10 +253,21 @@ func (client JobsClient) DeleteResponder(resp *http.Response) (result autorest.R
 }
 
 // Get gets information about an existing job.
-//
-// jobName is the name of the import/export job. resourceGroupName is the resource group name uniquely identifies
-// the resource group within the user subscription.
+// Parameters:
+// jobName - the name of the import/export job.
+// resourceGroupName - the resource group name uniquely identifies the resource group within the user
+// subscription.
 func (client JobsClient) Get(ctx context.Context, jobName string, resourceGroupName string) (result JobResponse, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobsClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, jobName, resourceGroupName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "storageimportexport.JobsClient", "Get", nil, "Failure preparing request")
@@ -282,8 +317,8 @@ func (client JobsClient) GetPreparer(ctx context.Context, jobName string, resour
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobsClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -300,11 +335,22 @@ func (client JobsClient) GetResponder(resp *http.Response) (result JobResponse, 
 }
 
 // ListByResourceGroup returns all active and completed jobs in a resource group.
-//
-// resourceGroupName is the resource group name uniquely identifies the resource group within the user
-// subscription. top is an integer value that specifies how many jobs at most should be returned. The value cannot
-// exceed 100. filter is can be used to restrict the results to certain conditions.
+// Parameters:
+// resourceGroupName - the resource group name uniquely identifies the resource group within the user
+// subscription.
+// top - an integer value that specifies how many jobs at most should be returned. The value cannot exceed 100.
+// filter - can be used to restrict the results to certain conditions.
 func (client JobsClient) ListByResourceGroup(ctx context.Context, resourceGroupName string, top *int32, filter string) (result ListJobsResponsePage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobsClient.ListByResourceGroup")
+		defer func() {
+			sc := -1
+			if result.ljr.Response.Response != nil {
+				sc = result.ljr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listByResourceGroupNextResults
 	req, err := client.ListByResourceGroupPreparer(ctx, resourceGroupName, top, filter)
 	if err != nil {
@@ -360,8 +406,8 @@ func (client JobsClient) ListByResourceGroupPreparer(ctx context.Context, resour
 // ListByResourceGroupSender sends the ListByResourceGroup request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobsClient) ListByResourceGroupSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByResourceGroupResponder handles the response to the ListByResourceGroup request. The method always
@@ -378,8 +424,8 @@ func (client JobsClient) ListByResourceGroupResponder(resp *http.Response) (resu
 }
 
 // listByResourceGroupNextResults retrieves the next set of results, if any.
-func (client JobsClient) listByResourceGroupNextResults(lastResults ListJobsResponse) (result ListJobsResponse, err error) {
-	req, err := lastResults.listJobsResponsePreparer()
+func (client JobsClient) listByResourceGroupNextResults(ctx context.Context, lastResults ListJobsResponse) (result ListJobsResponse, err error) {
+	req, err := lastResults.listJobsResponsePreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "storageimportexport.JobsClient", "listByResourceGroupNextResults", nil, "Failure preparing next results request")
 	}
@@ -400,15 +446,35 @@ func (client JobsClient) listByResourceGroupNextResults(lastResults ListJobsResp
 
 // ListByResourceGroupComplete enumerates all values, automatically crossing page boundaries as required.
 func (client JobsClient) ListByResourceGroupComplete(ctx context.Context, resourceGroupName string, top *int32, filter string) (result ListJobsResponseIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobsClient.ListByResourceGroup")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListByResourceGroup(ctx, resourceGroupName, top, filter)
 	return
 }
 
 // ListBySubscription returns all active and completed jobs in a subscription.
-//
-// top is an integer value that specifies how many jobs at most should be returned. The value cannot exceed 100.
-// filter is can be used to restrict the results to certain conditions.
+// Parameters:
+// top - an integer value that specifies how many jobs at most should be returned. The value cannot exceed 100.
+// filter - can be used to restrict the results to certain conditions.
 func (client JobsClient) ListBySubscription(ctx context.Context, top *int32, filter string) (result ListJobsResponsePage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobsClient.ListBySubscription")
+		defer func() {
+			sc := -1
+			if result.ljr.Response.Response != nil {
+				sc = result.ljr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listBySubscriptionNextResults
 	req, err := client.ListBySubscriptionPreparer(ctx, top, filter)
 	if err != nil {
@@ -463,8 +529,8 @@ func (client JobsClient) ListBySubscriptionPreparer(ctx context.Context, top *in
 // ListBySubscriptionSender sends the ListBySubscription request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobsClient) ListBySubscriptionSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListBySubscriptionResponder handles the response to the ListBySubscription request. The method always
@@ -481,8 +547,8 @@ func (client JobsClient) ListBySubscriptionResponder(resp *http.Response) (resul
 }
 
 // listBySubscriptionNextResults retrieves the next set of results, if any.
-func (client JobsClient) listBySubscriptionNextResults(lastResults ListJobsResponse) (result ListJobsResponse, err error) {
-	req, err := lastResults.listJobsResponsePreparer()
+func (client JobsClient) listBySubscriptionNextResults(ctx context.Context, lastResults ListJobsResponse) (result ListJobsResponse, err error) {
+	req, err := lastResults.listJobsResponsePreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "storageimportexport.JobsClient", "listBySubscriptionNextResults", nil, "Failure preparing next results request")
 	}
@@ -503,6 +569,16 @@ func (client JobsClient) listBySubscriptionNextResults(lastResults ListJobsRespo
 
 // ListBySubscriptionComplete enumerates all values, automatically crossing page boundaries as required.
 func (client JobsClient) ListBySubscriptionComplete(ctx context.Context, top *int32, filter string) (result ListJobsResponseIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobsClient.ListBySubscription")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListBySubscription(ctx, top, filter)
 	return
 }
@@ -510,10 +586,22 @@ func (client JobsClient) ListBySubscriptionComplete(ctx context.Context, top *in
 // Update updates specific properties of a job. You can call this operation to notify the Import/Export service that
 // the hard drives comprising the import or export job have been shipped to the Microsoft data center. It can also be
 // used to cancel an existing job.
-//
-// jobName is the name of the import/export job. resourceGroupName is the resource group name uniquely identifies
-// the resource group within the user subscription. body is the parameters to update in the job
+// Parameters:
+// jobName - the name of the import/export job.
+// resourceGroupName - the resource group name uniquely identifies the resource group within the user
+// subscription.
+// body - the parameters to update in the job
 func (client JobsClient) Update(ctx context.Context, jobName string, resourceGroupName string, body UpdateJobParameters) (result JobResponse, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobsClient.Update")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UpdatePreparer(ctx, jobName, resourceGroupName, body)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "storageimportexport.JobsClient", "Update", nil, "Failure preparing request")
@@ -549,7 +637,7 @@ func (client JobsClient) UpdatePreparer(ctx context.Context, jobName string, res
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ImportExport/jobs/{jobName}", pathParameters),
@@ -565,8 +653,8 @@ func (client JobsClient) UpdatePreparer(ctx context.Context, jobName string, res
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobsClient) UpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateResponder handles the response to the Update request. The method always

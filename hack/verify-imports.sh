@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script verifies that package trees
 # conform to our import restrictions
@@ -19,5 +19,10 @@ os::cmd::expect_success "import-verifier ${OS_ROOT}/hack/import-restrictions.jso
 
 # quick and dirty check that nothing under vendored kubernetes imports something from origin
 os::cmd::expect_failure "egrep -r '\"github.com/openshift/origin/[^\"]+\"$' vendor/k8s.io/kubernetes"
+os::cmd::expect_failure "egrep -r '\"github.com/openshift/openshift-apiserver/[^\"]+\"$' vendor/k8s.io/kubernetes"
+os::cmd::expect_failure "egrep -r '\"github.com/openshift/openshift-controller-manager/[^\"]+\"$' vendor/k8s.io/kubernetes"
+os::cmd::expect_failure "egrep -r '\"github.com/openshift/oc/[^\"]+\"$' vendor/k8s.io/kubernetes"
+os::cmd::expect_failure "egrep -r '\"github.com/openshift/template-service-broker/[^\"]+\"$' vendor/k8s.io/kubernetes"
 
 os::test::junit::declare_suite_end
+

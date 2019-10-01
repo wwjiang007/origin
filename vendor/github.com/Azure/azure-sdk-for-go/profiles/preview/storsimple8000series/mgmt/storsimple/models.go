@@ -1,6 +1,6 @@
 // +build go1.9
 
-// Copyright 2018 Microsoft Corporation
+// Copyright 2019 Microsoft Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,128 +19,15 @@
 
 package storsimple
 
-import original "github.com/Azure/azure-sdk-for-go/services/storsimple8000series/mgmt/2017-06-01/storsimple"
+import (
+	"context"
 
-type AccessControlRecordsClient = original.AccessControlRecordsClient
-
-func NewAccessControlRecordsClient(subscriptionID string) AccessControlRecordsClient {
-	return original.NewAccessControlRecordsClient(subscriptionID)
-}
-func NewAccessControlRecordsClientWithBaseURI(baseURI string, subscriptionID string) AccessControlRecordsClient {
-	return original.NewAccessControlRecordsClientWithBaseURI(baseURI, subscriptionID)
-}
-
-type AlertsClient = original.AlertsClient
-
-func NewAlertsClient(subscriptionID string) AlertsClient {
-	return original.NewAlertsClient(subscriptionID)
-}
-func NewAlertsClientWithBaseURI(baseURI string, subscriptionID string) AlertsClient {
-	return original.NewAlertsClientWithBaseURI(baseURI, subscriptionID)
-}
-
-type BackupPoliciesClient = original.BackupPoliciesClient
-
-func NewBackupPoliciesClient(subscriptionID string) BackupPoliciesClient {
-	return original.NewBackupPoliciesClient(subscriptionID)
-}
-func NewBackupPoliciesClientWithBaseURI(baseURI string, subscriptionID string) BackupPoliciesClient {
-	return original.NewBackupPoliciesClientWithBaseURI(baseURI, subscriptionID)
-}
-
-type BackupsClient = original.BackupsClient
-
-func NewBackupsClient(subscriptionID string) BackupsClient {
-	return original.NewBackupsClient(subscriptionID)
-}
-func NewBackupsClientWithBaseURI(baseURI string, subscriptionID string) BackupsClient {
-	return original.NewBackupsClientWithBaseURI(baseURI, subscriptionID)
-}
-
-type BackupSchedulesClient = original.BackupSchedulesClient
-
-func NewBackupSchedulesClient(subscriptionID string) BackupSchedulesClient {
-	return original.NewBackupSchedulesClient(subscriptionID)
-}
-func NewBackupSchedulesClientWithBaseURI(baseURI string, subscriptionID string) BackupSchedulesClient {
-	return original.NewBackupSchedulesClientWithBaseURI(baseURI, subscriptionID)
-}
-
-type BandwidthSettingsClient = original.BandwidthSettingsClient
-
-func NewBandwidthSettingsClient(subscriptionID string) BandwidthSettingsClient {
-	return original.NewBandwidthSettingsClient(subscriptionID)
-}
-func NewBandwidthSettingsClientWithBaseURI(baseURI string, subscriptionID string) BandwidthSettingsClient {
-	return original.NewBandwidthSettingsClientWithBaseURI(baseURI, subscriptionID)
-}
+	original "github.com/Azure/azure-sdk-for-go/services/storsimple8000series/mgmt/2017-06-01/storsimple"
+)
 
 const (
 	DefaultBaseURI = original.DefaultBaseURI
 )
-
-type BaseClient = original.BaseClient
-
-func New(subscriptionID string) BaseClient {
-	return original.New(subscriptionID)
-}
-func NewWithBaseURI(baseURI string, subscriptionID string) BaseClient {
-	return original.NewWithBaseURI(baseURI, subscriptionID)
-}
-
-type CloudAppliancesClient = original.CloudAppliancesClient
-
-func NewCloudAppliancesClient(subscriptionID string) CloudAppliancesClient {
-	return original.NewCloudAppliancesClient(subscriptionID)
-}
-func NewCloudAppliancesClientWithBaseURI(baseURI string, subscriptionID string) CloudAppliancesClient {
-	return original.NewCloudAppliancesClientWithBaseURI(baseURI, subscriptionID)
-}
-
-type DevicesClient = original.DevicesClient
-
-func NewDevicesClient(subscriptionID string) DevicesClient {
-	return original.NewDevicesClient(subscriptionID)
-}
-func NewDevicesClientWithBaseURI(baseURI string, subscriptionID string) DevicesClient {
-	return original.NewDevicesClientWithBaseURI(baseURI, subscriptionID)
-}
-
-type DeviceSettingsClient = original.DeviceSettingsClient
-
-func NewDeviceSettingsClient(subscriptionID string) DeviceSettingsClient {
-	return original.NewDeviceSettingsClient(subscriptionID)
-}
-func NewDeviceSettingsClientWithBaseURI(baseURI string, subscriptionID string) DeviceSettingsClient {
-	return original.NewDeviceSettingsClientWithBaseURI(baseURI, subscriptionID)
-}
-
-type HardwareComponentGroupsClient = original.HardwareComponentGroupsClient
-
-func NewHardwareComponentGroupsClient(subscriptionID string) HardwareComponentGroupsClient {
-	return original.NewHardwareComponentGroupsClient(subscriptionID)
-}
-func NewHardwareComponentGroupsClientWithBaseURI(baseURI string, subscriptionID string) HardwareComponentGroupsClient {
-	return original.NewHardwareComponentGroupsClientWithBaseURI(baseURI, subscriptionID)
-}
-
-type JobsClient = original.JobsClient
-
-func NewJobsClient(subscriptionID string) JobsClient {
-	return original.NewJobsClient(subscriptionID)
-}
-func NewJobsClientWithBaseURI(baseURI string, subscriptionID string) JobsClient {
-	return original.NewJobsClientWithBaseURI(baseURI, subscriptionID)
-}
-
-type ManagersClient = original.ManagersClient
-
-func NewManagersClient(subscriptionID string) ManagersClient {
-	return original.NewManagersClient(subscriptionID)
-}
-func NewManagersClientWithBaseURI(baseURI string, subscriptionID string) ManagersClient {
-	return original.NewManagersClientWithBaseURI(baseURI, subscriptionID)
-}
 
 type AlertEmailNotificationStatus = original.AlertEmailNotificationStatus
 
@@ -336,14 +223,6 @@ const (
 	HardwareComponentStatusWarning    HardwareComponentStatus = original.HardwareComponentStatusWarning
 )
 
-type InEligibilityCategory = original.InEligibilityCategory
-
-const (
-	DeviceNotOnline       InEligibilityCategory = original.DeviceNotOnline
-	NotSupportedAppliance InEligibilityCategory = original.NotSupportedAppliance
-	RolloverPending       InEligibilityCategory = original.RolloverPending
-)
-
 type ISCSIAndCloudStatus = original.ISCSIAndCloudStatus
 
 const (
@@ -351,6 +230,14 @@ const (
 	ISCSIAndCloudStatusDisabled             ISCSIAndCloudStatus = original.ISCSIAndCloudStatusDisabled
 	ISCSIAndCloudStatusIscsiAndCloudEnabled ISCSIAndCloudStatus = original.ISCSIAndCloudStatusIscsiAndCloudEnabled
 	ISCSIAndCloudStatusIscsiEnabled         ISCSIAndCloudStatus = original.ISCSIAndCloudStatusIscsiEnabled
+)
+
+type InEligibilityCategory = original.InEligibilityCategory
+
+const (
+	DeviceNotOnline       InEligibilityCategory = original.DeviceNotOnline
+	NotSupportedAppliance InEligibilityCategory = original.NotSupportedAppliance
+	RolloverPending       InEligibilityCategory = original.RolloverPending
 )
 
 type JobStatus = original.JobStatus
@@ -488,18 +375,18 @@ const (
 	RemoteManagementModeConfigurationUnknown             RemoteManagementModeConfiguration = original.RemoteManagementModeConfigurationUnknown
 )
 
-type ScheduledBackupStatus = original.ScheduledBackupStatus
-
-const (
-	ScheduledBackupStatusDisabled ScheduledBackupStatus = original.ScheduledBackupStatusDisabled
-	ScheduledBackupStatusEnabled  ScheduledBackupStatus = original.ScheduledBackupStatusEnabled
-)
-
 type ScheduleStatus = original.ScheduleStatus
 
 const (
 	ScheduleStatusDisabled ScheduleStatus = original.ScheduleStatusDisabled
 	ScheduleStatusEnabled  ScheduleStatus = original.ScheduleStatusEnabled
+)
+
+type ScheduledBackupStatus = original.ScheduledBackupStatus
+
+const (
+	ScheduledBackupStatusDisabled ScheduledBackupStatus = original.ScheduledBackupStatusDisabled
+	ScheduledBackupStatusEnabled  ScheduledBackupStatus = original.ScheduledBackupStatusEnabled
 )
 
 type SslStatus = original.SslStatus
@@ -553,6 +440,7 @@ const (
 type AccessControlRecord = original.AccessControlRecord
 type AccessControlRecordList = original.AccessControlRecordList
 type AccessControlRecordProperties = original.AccessControlRecordProperties
+type AccessControlRecordsClient = original.AccessControlRecordsClient
 type AccessControlRecordsCreateOrUpdateFuture = original.AccessControlRecordsCreateOrUpdateFuture
 type AccessControlRecordsDeleteFuture = original.AccessControlRecordsDeleteFuture
 type AcsConfiguration = original.AcsConfiguration
@@ -566,6 +454,7 @@ type AlertNotificationProperties = original.AlertNotificationProperties
 type AlertProperties = original.AlertProperties
 type AlertSettings = original.AlertSettings
 type AlertSource = original.AlertSource
+type AlertsClient = original.AlertsClient
 type AsymmetricEncryptedSecret = original.AsymmetricEncryptedSecret
 type AvailableProviderOperation = original.AvailableProviderOperation
 type AvailableProviderOperationDisplay = original.AvailableProviderOperationDisplay
@@ -579,6 +468,7 @@ type BackupList = original.BackupList
 type BackupListIterator = original.BackupListIterator
 type BackupListPage = original.BackupListPage
 type BackupPoliciesBackupNowFuture = original.BackupPoliciesBackupNowFuture
+type BackupPoliciesClient = original.BackupPoliciesClient
 type BackupPoliciesCreateOrUpdateFuture = original.BackupPoliciesCreateOrUpdateFuture
 type BackupPoliciesDeleteFuture = original.BackupPoliciesDeleteFuture
 type BackupPolicy = original.BackupPolicy
@@ -588,8 +478,10 @@ type BackupProperties = original.BackupProperties
 type BackupSchedule = original.BackupSchedule
 type BackupScheduleList = original.BackupScheduleList
 type BackupScheduleProperties = original.BackupScheduleProperties
+type BackupSchedulesClient = original.BackupSchedulesClient
 type BackupSchedulesCreateOrUpdateFuture = original.BackupSchedulesCreateOrUpdateFuture
 type BackupSchedulesDeleteFuture = original.BackupSchedulesDeleteFuture
+type BackupsClient = original.BackupsClient
 type BackupsCloneFuture = original.BackupsCloneFuture
 type BackupsDeleteFuture = original.BackupsDeleteFuture
 type BackupsRestoreFuture = original.BackupsRestoreFuture
@@ -597,8 +489,10 @@ type BandwidthRateSettingProperties = original.BandwidthRateSettingProperties
 type BandwidthSchedule = original.BandwidthSchedule
 type BandwidthSetting = original.BandwidthSetting
 type BandwidthSettingList = original.BandwidthSettingList
+type BandwidthSettingsClient = original.BandwidthSettingsClient
 type BandwidthSettingsCreateOrUpdateFuture = original.BandwidthSettingsCreateOrUpdateFuture
 type BandwidthSettingsDeleteFuture = original.BandwidthSettingsDeleteFuture
+type BaseClient = original.BaseClient
 type BaseModel = original.BaseModel
 type ChapSettings = original.ChapSettings
 type ClearAlertRequest = original.ClearAlertRequest
@@ -608,11 +502,13 @@ type CloudApplianceConfiguration = original.CloudApplianceConfiguration
 type CloudApplianceConfigurationList = original.CloudApplianceConfigurationList
 type CloudApplianceConfigurationProperties = original.CloudApplianceConfigurationProperties
 type CloudApplianceSettings = original.CloudApplianceSettings
+type CloudAppliancesClient = original.CloudAppliancesClient
 type CloudAppliancesProvisionFuture = original.CloudAppliancesProvisionFuture
 type ConfigureDeviceRequest = original.ConfigureDeviceRequest
 type ConfigureDeviceRequestProperties = original.ConfigureDeviceRequestProperties
 type ControllerPowerStateChangeRequest = original.ControllerPowerStateChangeRequest
 type ControllerPowerStateChangeRequestProperties = original.ControllerPowerStateChangeRequestProperties
+type DNSSettings = original.DNSSettings
 type DataStatistics = original.DataStatistics
 type Device = original.Device
 type DeviceDetails = original.DeviceDetails
@@ -621,19 +517,20 @@ type DevicePatch = original.DevicePatch
 type DevicePatchProperties = original.DevicePatchProperties
 type DeviceProperties = original.DeviceProperties
 type DeviceRolloverDetails = original.DeviceRolloverDetails
-type DevicesConfigureFuture = original.DevicesConfigureFuture
-type DevicesDeactivateFuture = original.DevicesDeactivateFuture
-type DevicesDeleteFuture = original.DevicesDeleteFuture
+type DeviceSettingsClient = original.DeviceSettingsClient
 type DeviceSettingsCreateOrUpdateAlertSettingsFuture = original.DeviceSettingsCreateOrUpdateAlertSettingsFuture
 type DeviceSettingsCreateOrUpdateTimeSettingsFuture = original.DeviceSettingsCreateOrUpdateTimeSettingsFuture
 type DeviceSettingsSyncRemotemanagementCertificateFuture = original.DeviceSettingsSyncRemotemanagementCertificateFuture
 type DeviceSettingsUpdateNetworkSettingsFuture = original.DeviceSettingsUpdateNetworkSettingsFuture
 type DeviceSettingsUpdateSecuritySettingsFuture = original.DeviceSettingsUpdateSecuritySettingsFuture
+type DevicesClient = original.DevicesClient
+type DevicesConfigureFuture = original.DevicesConfigureFuture
+type DevicesDeactivateFuture = original.DevicesDeactivateFuture
+type DevicesDeleteFuture = original.DevicesDeleteFuture
 type DevicesFailoverFuture = original.DevicesFailoverFuture
 type DevicesInstallUpdatesFuture = original.DevicesInstallUpdatesFuture
 type DevicesScanForUpdatesFuture = original.DevicesScanForUpdatesFuture
 type DimensionFilter = original.DimensionFilter
-type DNSSettings = original.DNSSettings
 type EncryptionSettings = original.EncryptionSettings
 type EncryptionSettingsProperties = original.EncryptionSettingsProperties
 type FailoverRequest = original.FailoverRequest
@@ -650,6 +547,7 @@ type HardwareComponentGroup = original.HardwareComponentGroup
 type HardwareComponentGroupList = original.HardwareComponentGroupList
 type HardwareComponentGroupProperties = original.HardwareComponentGroupProperties
 type HardwareComponentGroupsChangeControllerPowerStateFuture = original.HardwareComponentGroupsChangeControllerPowerStateFuture
+type HardwareComponentGroupsClient = original.HardwareComponentGroupsClient
 type Job = original.Job
 type JobErrorDetails = original.JobErrorDetails
 type JobErrorItem = original.JobErrorItem
@@ -658,8 +556,9 @@ type JobList = original.JobList
 type JobListIterator = original.JobListIterator
 type JobListPage = original.JobListPage
 type JobProperties = original.JobProperties
-type JobsCancelFuture = original.JobsCancelFuture
 type JobStage = original.JobStage
+type JobsCancelFuture = original.JobsCancelFuture
+type JobsClient = original.JobsClient
 type Key = original.Key
 type ListFailoverTargetsRequest = original.ListFailoverTargetsRequest
 type Manager = original.Manager
@@ -670,6 +569,7 @@ type ManagerList = original.ManagerList
 type ManagerPatch = original.ManagerPatch
 type ManagerProperties = original.ManagerProperties
 type ManagerSku = original.ManagerSku
+type ManagersClient = original.ManagersClient
 type MetricAvailablity = original.MetricAvailablity
 type MetricData = original.MetricData
 type MetricDefinition = original.MetricDefinition
@@ -689,6 +589,7 @@ type NetworkSettingsPatchProperties = original.NetworkSettingsPatchProperties
 type NetworkSettingsProperties = original.NetworkSettingsProperties
 type NicIPv4 = original.NicIPv4
 type NicIPv6 = original.NicIPv6
+type OperationsClient = original.OperationsClient
 type PublicKey = original.PublicKey
 type RemoteManagementSettings = original.RemoteManagementSettings
 type RemoteManagementSettingsPatch = original.RemoteManagementSettingsPatch
@@ -703,6 +604,7 @@ type SendTestAlertEmailRequest = original.SendTestAlertEmailRequest
 type StorageAccountCredential = original.StorageAccountCredential
 type StorageAccountCredentialList = original.StorageAccountCredentialList
 type StorageAccountCredentialProperties = original.StorageAccountCredentialProperties
+type StorageAccountCredentialsClient = original.StorageAccountCredentialsClient
 type StorageAccountCredentialsCreateOrUpdateFuture = original.StorageAccountCredentialsCreateOrUpdateFuture
 type StorageAccountCredentialsDeleteFuture = original.StorageAccountCredentialsDeleteFuture
 type SymmetricEncryptedSecret = original.SymmetricEncryptedSecret
@@ -719,52 +621,290 @@ type VolumeContainer = original.VolumeContainer
 type VolumeContainerFailoverMetadata = original.VolumeContainerFailoverMetadata
 type VolumeContainerList = original.VolumeContainerList
 type VolumeContainerProperties = original.VolumeContainerProperties
+type VolumeContainersClient = original.VolumeContainersClient
 type VolumeContainersCreateOrUpdateFuture = original.VolumeContainersCreateOrUpdateFuture
 type VolumeContainersDeleteFuture = original.VolumeContainersDeleteFuture
 type VolumeFailoverMetadata = original.VolumeFailoverMetadata
 type VolumeList = original.VolumeList
 type VolumeProperties = original.VolumeProperties
+type VolumesClient = original.VolumesClient
 type VolumesCreateOrUpdateFuture = original.VolumesCreateOrUpdateFuture
 type VolumesDeleteFuture = original.VolumesDeleteFuture
 type WebproxySettings = original.WebproxySettings
-type OperationsClient = original.OperationsClient
 
+func New(subscriptionID string) BaseClient {
+	return original.New(subscriptionID)
+}
+func NewAccessControlRecordsClient(subscriptionID string) AccessControlRecordsClient {
+	return original.NewAccessControlRecordsClient(subscriptionID)
+}
+func NewAccessControlRecordsClientWithBaseURI(baseURI string, subscriptionID string) AccessControlRecordsClient {
+	return original.NewAccessControlRecordsClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewAlertListIterator(page AlertListPage) AlertListIterator {
+	return original.NewAlertListIterator(page)
+}
+func NewAlertListPage(getNextPage func(context.Context, AlertList) (AlertList, error)) AlertListPage {
+	return original.NewAlertListPage(getNextPage)
+}
+func NewAlertsClient(subscriptionID string) AlertsClient {
+	return original.NewAlertsClient(subscriptionID)
+}
+func NewAlertsClientWithBaseURI(baseURI string, subscriptionID string) AlertsClient {
+	return original.NewAlertsClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewAvailableProviderOperationListIterator(page AvailableProviderOperationListPage) AvailableProviderOperationListIterator {
+	return original.NewAvailableProviderOperationListIterator(page)
+}
+func NewAvailableProviderOperationListPage(getNextPage func(context.Context, AvailableProviderOperationList) (AvailableProviderOperationList, error)) AvailableProviderOperationListPage {
+	return original.NewAvailableProviderOperationListPage(getNextPage)
+}
+func NewBackupListIterator(page BackupListPage) BackupListIterator {
+	return original.NewBackupListIterator(page)
+}
+func NewBackupListPage(getNextPage func(context.Context, BackupList) (BackupList, error)) BackupListPage {
+	return original.NewBackupListPage(getNextPage)
+}
+func NewBackupPoliciesClient(subscriptionID string) BackupPoliciesClient {
+	return original.NewBackupPoliciesClient(subscriptionID)
+}
+func NewBackupPoliciesClientWithBaseURI(baseURI string, subscriptionID string) BackupPoliciesClient {
+	return original.NewBackupPoliciesClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewBackupSchedulesClient(subscriptionID string) BackupSchedulesClient {
+	return original.NewBackupSchedulesClient(subscriptionID)
+}
+func NewBackupSchedulesClientWithBaseURI(baseURI string, subscriptionID string) BackupSchedulesClient {
+	return original.NewBackupSchedulesClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewBackupsClient(subscriptionID string) BackupsClient {
+	return original.NewBackupsClient(subscriptionID)
+}
+func NewBackupsClientWithBaseURI(baseURI string, subscriptionID string) BackupsClient {
+	return original.NewBackupsClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewBandwidthSettingsClient(subscriptionID string) BandwidthSettingsClient {
+	return original.NewBandwidthSettingsClient(subscriptionID)
+}
+func NewBandwidthSettingsClientWithBaseURI(baseURI string, subscriptionID string) BandwidthSettingsClient {
+	return original.NewBandwidthSettingsClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewCloudAppliancesClient(subscriptionID string) CloudAppliancesClient {
+	return original.NewCloudAppliancesClient(subscriptionID)
+}
+func NewCloudAppliancesClientWithBaseURI(baseURI string, subscriptionID string) CloudAppliancesClient {
+	return original.NewCloudAppliancesClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewDeviceSettingsClient(subscriptionID string) DeviceSettingsClient {
+	return original.NewDeviceSettingsClient(subscriptionID)
+}
+func NewDeviceSettingsClientWithBaseURI(baseURI string, subscriptionID string) DeviceSettingsClient {
+	return original.NewDeviceSettingsClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewDevicesClient(subscriptionID string) DevicesClient {
+	return original.NewDevicesClient(subscriptionID)
+}
+func NewDevicesClientWithBaseURI(baseURI string, subscriptionID string) DevicesClient {
+	return original.NewDevicesClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewHardwareComponentGroupsClient(subscriptionID string) HardwareComponentGroupsClient {
+	return original.NewHardwareComponentGroupsClient(subscriptionID)
+}
+func NewHardwareComponentGroupsClientWithBaseURI(baseURI string, subscriptionID string) HardwareComponentGroupsClient {
+	return original.NewHardwareComponentGroupsClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewJobListIterator(page JobListPage) JobListIterator {
+	return original.NewJobListIterator(page)
+}
+func NewJobListPage(getNextPage func(context.Context, JobList) (JobList, error)) JobListPage {
+	return original.NewJobListPage(getNextPage)
+}
+func NewJobsClient(subscriptionID string) JobsClient {
+	return original.NewJobsClient(subscriptionID)
+}
+func NewJobsClientWithBaseURI(baseURI string, subscriptionID string) JobsClient {
+	return original.NewJobsClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewManagersClient(subscriptionID string) ManagersClient {
+	return original.NewManagersClient(subscriptionID)
+}
+func NewManagersClientWithBaseURI(baseURI string, subscriptionID string) ManagersClient {
+	return original.NewManagersClientWithBaseURI(baseURI, subscriptionID)
+}
 func NewOperationsClient(subscriptionID string) OperationsClient {
 	return original.NewOperationsClient(subscriptionID)
 }
 func NewOperationsClientWithBaseURI(baseURI string, subscriptionID string) OperationsClient {
 	return original.NewOperationsClientWithBaseURI(baseURI, subscriptionID)
 }
-
-type StorageAccountCredentialsClient = original.StorageAccountCredentialsClient
-
 func NewStorageAccountCredentialsClient(subscriptionID string) StorageAccountCredentialsClient {
 	return original.NewStorageAccountCredentialsClient(subscriptionID)
 }
 func NewStorageAccountCredentialsClientWithBaseURI(baseURI string, subscriptionID string) StorageAccountCredentialsClient {
 	return original.NewStorageAccountCredentialsClientWithBaseURI(baseURI, subscriptionID)
 }
-func UserAgent() string {
-	return original.UserAgent() + " profiles/preview"
-}
-func Version() string {
-	return original.Version()
-}
-
-type VolumeContainersClient = original.VolumeContainersClient
-
 func NewVolumeContainersClient(subscriptionID string) VolumeContainersClient {
 	return original.NewVolumeContainersClient(subscriptionID)
 }
 func NewVolumeContainersClientWithBaseURI(baseURI string, subscriptionID string) VolumeContainersClient {
 	return original.NewVolumeContainersClientWithBaseURI(baseURI, subscriptionID)
 }
-
-type VolumesClient = original.VolumesClient
-
 func NewVolumesClient(subscriptionID string) VolumesClient {
 	return original.NewVolumesClient(subscriptionID)
 }
 func NewVolumesClientWithBaseURI(baseURI string, subscriptionID string) VolumesClient {
 	return original.NewVolumesClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewWithBaseURI(baseURI string, subscriptionID string) BaseClient {
+	return original.NewWithBaseURI(baseURI, subscriptionID)
+}
+func PossibleAlertEmailNotificationStatusValues() []AlertEmailNotificationStatus {
+	return original.PossibleAlertEmailNotificationStatusValues()
+}
+func PossibleAlertScopeValues() []AlertScope {
+	return original.PossibleAlertScopeValues()
+}
+func PossibleAlertSeverityValues() []AlertSeverity {
+	return original.PossibleAlertSeverityValues()
+}
+func PossibleAlertSourceTypeValues() []AlertSourceType {
+	return original.PossibleAlertSourceTypeValues()
+}
+func PossibleAlertStatusValues() []AlertStatus {
+	return original.PossibleAlertStatusValues()
+}
+func PossibleAuthenticationTypeValues() []AuthenticationType {
+	return original.PossibleAuthenticationTypeValues()
+}
+func PossibleAuthorizationEligibilityValues() []AuthorizationEligibility {
+	return original.PossibleAuthorizationEligibilityValues()
+}
+func PossibleAuthorizationStatusValues() []AuthorizationStatus {
+	return original.PossibleAuthorizationStatusValues()
+}
+func PossibleBackupJobCreationTypeValues() []BackupJobCreationType {
+	return original.PossibleBackupJobCreationTypeValues()
+}
+func PossibleBackupPolicyCreationTypeValues() []BackupPolicyCreationType {
+	return original.PossibleBackupPolicyCreationTypeValues()
+}
+func PossibleBackupStatusValues() []BackupStatus {
+	return original.PossibleBackupStatusValues()
+}
+func PossibleBackupTypeValues() []BackupType {
+	return original.PossibleBackupTypeValues()
+}
+func PossibleControllerIDValues() []ControllerID {
+	return original.PossibleControllerIDValues()
+}
+func PossibleControllerPowerStateActionValues() []ControllerPowerStateAction {
+	return original.PossibleControllerPowerStateActionValues()
+}
+func PossibleControllerStatusValues() []ControllerStatus {
+	return original.PossibleControllerStatusValues()
+}
+func PossibleDayOfWeekValues() []DayOfWeek {
+	return original.PossibleDayOfWeekValues()
+}
+func PossibleDeviceConfigurationStatusValues() []DeviceConfigurationStatus {
+	return original.PossibleDeviceConfigurationStatusValues()
+}
+func PossibleDeviceStatusValues() []DeviceStatus {
+	return original.PossibleDeviceStatusValues()
+}
+func PossibleDeviceTypeValues() []DeviceType {
+	return original.PossibleDeviceTypeValues()
+}
+func PossibleEncryptionAlgorithmValues() []EncryptionAlgorithm {
+	return original.PossibleEncryptionAlgorithmValues()
+}
+func PossibleEncryptionStatusValues() []EncryptionStatus {
+	return original.PossibleEncryptionStatusValues()
+}
+func PossibleFeatureSupportStatusValues() []FeatureSupportStatus {
+	return original.PossibleFeatureSupportStatusValues()
+}
+func PossibleHardwareComponentStatusValues() []HardwareComponentStatus {
+	return original.PossibleHardwareComponentStatusValues()
+}
+func PossibleISCSIAndCloudStatusValues() []ISCSIAndCloudStatus {
+	return original.PossibleISCSIAndCloudStatusValues()
+}
+func PossibleInEligibilityCategoryValues() []InEligibilityCategory {
+	return original.PossibleInEligibilityCategoryValues()
+}
+func PossibleJobStatusValues() []JobStatus {
+	return original.PossibleJobStatusValues()
+}
+func PossibleJobTypeValues() []JobType {
+	return original.PossibleJobTypeValues()
+}
+func PossibleKeyRolloverStatusValues() []KeyRolloverStatus {
+	return original.PossibleKeyRolloverStatusValues()
+}
+func PossibleKindValues() []Kind {
+	return original.PossibleKindValues()
+}
+func PossibleManagerTypeValues() []ManagerType {
+	return original.PossibleManagerTypeValues()
+}
+func PossibleMetricAggregationTypeValues() []MetricAggregationType {
+	return original.PossibleMetricAggregationTypeValues()
+}
+func PossibleMetricUnitValues() []MetricUnit {
+	return original.PossibleMetricUnitValues()
+}
+func PossibleMonitoringStatusValues() []MonitoringStatus {
+	return original.PossibleMonitoringStatusValues()
+}
+func PossibleNetInterfaceIDValues() []NetInterfaceID {
+	return original.PossibleNetInterfaceIDValues()
+}
+func PossibleNetInterfaceStatusValues() []NetInterfaceStatus {
+	return original.PossibleNetInterfaceStatusValues()
+}
+func PossibleNetworkModeValues() []NetworkMode {
+	return original.PossibleNetworkModeValues()
+}
+func PossibleOperationStatusValues() []OperationStatus {
+	return original.PossibleOperationStatusValues()
+}
+func PossibleOwnerShipStatusValues() []OwnerShipStatus {
+	return original.PossibleOwnerShipStatusValues()
+}
+func PossibleRecurrenceTypeValues() []RecurrenceType {
+	return original.PossibleRecurrenceTypeValues()
+}
+func PossibleRemoteManagementModeConfigurationValues() []RemoteManagementModeConfiguration {
+	return original.PossibleRemoteManagementModeConfigurationValues()
+}
+func PossibleScheduleStatusValues() []ScheduleStatus {
+	return original.PossibleScheduleStatusValues()
+}
+func PossibleScheduledBackupStatusValues() []ScheduledBackupStatus {
+	return original.PossibleScheduledBackupStatusValues()
+}
+func PossibleSslStatusValues() []SslStatus {
+	return original.PossibleSslStatusValues()
+}
+func PossibleTargetEligibilityResultCodeValues() []TargetEligibilityResultCode {
+	return original.PossibleTargetEligibilityResultCodeValues()
+}
+func PossibleTargetEligibilityStatusValues() []TargetEligibilityStatus {
+	return original.PossibleTargetEligibilityStatusValues()
+}
+func PossibleVirtualMachineAPITypeValues() []VirtualMachineAPIType {
+	return original.PossibleVirtualMachineAPITypeValues()
+}
+func PossibleVolumeStatusValues() []VolumeStatus {
+	return original.PossibleVolumeStatusValues()
+}
+func PossibleVolumeTypeValues() []VolumeType {
+	return original.PossibleVolumeTypeValues()
+}
+func UserAgent() string {
+	return original.UserAgent() + " profiles/preview"
+}
+func Version() string {
+	return original.Version()
 }

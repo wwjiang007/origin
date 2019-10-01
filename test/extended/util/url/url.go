@@ -35,7 +35,7 @@ func NewTester(client kclientset.Interface, ns string) *Tester {
 }
 
 func (ut *Tester) Close() {
-	if err := ut.client.Core().Pods(ut.namespace).Delete(ut.podName, metav1.NewDeleteOptions(1)); err != nil {
+	if err := ut.client.CoreV1().Pods(ut.namespace).Delete(ut.podName, metav1.NewDeleteOptions(1)); err != nil {
 		e2e.Logf("Failed to delete exec pod %s: %v", ut.podName, err)
 	}
 	ut.podName = ""
@@ -154,7 +154,7 @@ func createExecPod(clientset kclientset.Interface, ns, name string) (string, err
 					ImagePullPolicy: v1.PullIfNotPresent,
 				},
 			},
-			HostNetwork:                   true,
+			HostNetwork:                   false,
 			TerminationGracePeriodSeconds: &immediate,
 		},
 	}

@@ -9,8 +9,8 @@ import (
 
 	g "github.com/onsi/ginkgo"
 	o "github.com/onsi/gomega"
+	"k8s.io/kubernetes/test/e2e/framework/pod"
 
-	kapierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	e2e "k8s.io/kubernetes/test/e2e/framework"
@@ -21,19 +21,18 @@ import (
 var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 	defer g.GinkgoRecover()
 	var (
-		configPath = exutil.FixturePath("testdata", "router-http-echo-server.yaml")
+		configPath = exutil.FixturePath("testdata", "router", "router-http-echo-server.yaml")
 		oc         = exutil.NewCLI("router-headers", exutil.KubeConfigPath())
 
-		routerIP string
+		routerIP  string
+		metricsIP string
 	)
 
 	g.BeforeEach(func() {
 		var err error
-		routerIP, err = waitForRouterServiceIP(oc)
-		if kapierrs.IsNotFound(err) {
-			g.Skip("no router installed on the cluster")
-			return
-		}
+		routerIP, err = exutil.WaitForRouterServiceIP(oc)
+		o.Expect(err).NotTo(o.HaveOccurred())
+		metricsIP, err = exutil.WaitForRouterInternalIP(oc)
 		o.Expect(err).NotTo(o.HaveOccurred())
 	})
 
@@ -47,8 +46,8 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 			}()
 
 			ns := oc.KubeFramework().Namespace.Name
-			execPodName := exutil.CreateExecPodOrFail(oc.AdminKubeClient().Core(), ns, "execpod")
-			defer func() { oc.AdminKubeClient().Core().Pods(ns).Delete(execPodName, metav1.NewDeleteOptions(1)) }()
+			execPodName := exutil.CreateExecPodOrFail(oc.AdminKubeClient().CoreV1(), ns, "execpod")
+			defer func() { oc.AdminKubeClient().CoreV1().Pods(ns).Delete(execPodName, metav1.NewDeleteOptions(1)) }()
 
 			g.By(fmt.Sprintf("creating an http echo server from a config file %q", configPath))
 
@@ -57,7 +56,7 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 
 			var clientIP string
 			err = wait.Poll(time.Second, changeTimeoutSeconds*time.Second, func() (bool, error) {
-				pod, err := oc.KubeFramework().ClientSet.Core().Pods(ns).Get("execpod", metav1.GetOptions{})
+				pod, err := oc.KubeFramework().ClientSet.CoreV1().Pods(ns).Get("execpod", metav1.GetOptions{})
 				if err != nil {
 					return false, err
 				}
@@ -74,8 +73,8 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 			routerURL := fmt.Sprintf("http://%s", routerIP)
 
 			g.By("waiting for the healthz endpoint to respond")
-			healthzURI := fmt.Sprintf("http://%s:1936/healthz", routerIP)
-			err = waitForRouterOKResponseExec(ns, execPodName, healthzURI, routerIP, changeTimeoutSeconds)
+			healthzURI := fmt.Sprintf("http://%s:1936/healthz", metricsIP)
+			err = waitForRouterOKResponseExec(ns, execPodName, healthzURI, metricsIP, changeTimeoutSeconds)
 			o.Expect(err).NotTo(o.HaveOccurred())
 
 			host := "router-headers.example.com"
@@ -107,7 +106,7 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 })
 
 func dumpRouterHeadersLogs(oc *exutil.CLI, name string) {
-	log, _ := e2e.GetPodLogs(oc.AdminKubeClient(), oc.KubeFramework().Namespace.Name, "router-headers", "router")
+	log, _ := pod.GetPodLogs(oc.AdminKubeClient(), oc.KubeFramework().Namespace.Name, "router-headers", "router")
 	e2e.Logf("Weighted Router test %s logs:\n %s", name, log)
 }
 

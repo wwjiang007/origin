@@ -1,6 +1,6 @@
 // +build go1.9
 
-// Copyright 2018 Microsoft Corporation
+// Copyright 2019 Microsoft Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,15 +25,6 @@ const (
 	DefaultBaseURI = original.DefaultBaseURI
 )
 
-type BaseClient = original.BaseClient
-
-func New(subscriptionID string) BaseClient {
-	return original.New(subscriptionID)
-}
-func NewWithBaseURI(baseURI string, subscriptionID string) BaseClient {
-	return original.NewWithBaseURI(baseURI, subscriptionID)
-}
-
 type AccessKeyName = original.AccessKeyName
 
 const (
@@ -49,6 +40,7 @@ const (
 )
 
 type AzureSku = original.AzureSku
+type BaseClient = original.BaseClient
 type CheckNameRequest = original.CheckNameRequest
 type CheckNameResponse = original.CheckNameResponse
 type CreateWorkspaceCollectionRequest = original.CreateWorkspaceCollectionRequest
@@ -64,30 +56,38 @@ type WorkspaceCollection = original.WorkspaceCollection
 type WorkspaceCollectionAccessKey = original.WorkspaceCollectionAccessKey
 type WorkspaceCollectionAccessKeys = original.WorkspaceCollectionAccessKeys
 type WorkspaceCollectionList = original.WorkspaceCollectionList
+type WorkspaceCollectionsClient = original.WorkspaceCollectionsClient
 type WorkspaceCollectionsDeleteFuture = original.WorkspaceCollectionsDeleteFuture
 type WorkspaceList = original.WorkspaceList
+type WorkspacesClient = original.WorkspacesClient
 
-func UserAgent() string {
-	return original.UserAgent() + " profiles/preview"
+func New(subscriptionID string) BaseClient {
+	return original.New(subscriptionID)
 }
-func Version() string {
-	return original.Version()
+func NewWithBaseURI(baseURI string, subscriptionID string) BaseClient {
+	return original.NewWithBaseURI(baseURI, subscriptionID)
 }
-
-type WorkspaceCollectionsClient = original.WorkspaceCollectionsClient
-
 func NewWorkspaceCollectionsClient(subscriptionID string) WorkspaceCollectionsClient {
 	return original.NewWorkspaceCollectionsClient(subscriptionID)
 }
 func NewWorkspaceCollectionsClientWithBaseURI(baseURI string, subscriptionID string) WorkspaceCollectionsClient {
 	return original.NewWorkspaceCollectionsClientWithBaseURI(baseURI, subscriptionID)
 }
-
-type WorkspacesClient = original.WorkspacesClient
-
 func NewWorkspacesClient(subscriptionID string) WorkspacesClient {
 	return original.NewWorkspacesClient(subscriptionID)
 }
 func NewWorkspacesClientWithBaseURI(baseURI string, subscriptionID string) WorkspacesClient {
 	return original.NewWorkspacesClientWithBaseURI(baseURI, subscriptionID)
+}
+func PossibleAccessKeyNameValues() []AccessKeyName {
+	return original.PossibleAccessKeyNameValues()
+}
+func PossibleCheckNameReasonValues() []CheckNameReason {
+	return original.PossibleCheckNameReasonValues()
+}
+func UserAgent() string {
+	return original.UserAgent() + " profiles/preview"
+}
+func Version() string {
+	return original.Version()
 }

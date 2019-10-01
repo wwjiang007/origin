@@ -22,12 +22,11 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
-// ProfilesClient is the use these APIs to manage Azure CDN resources through the Azure Resource Manager. You must make
-// sure that requests made to these resources are secure. For more information, see
-// https://msdn.microsoft.com/en-us/library/azure/dn790557.aspx.
+// ProfilesClient is the cdn Management Client
 type ProfilesClient struct {
 	BaseClient
 }
@@ -43,10 +42,21 @@ func NewProfilesClientWithBaseURI(baseURI string, subscriptionID string) Profile
 }
 
 // Create sends the create request.
-//
-// profileName is name of the CDN profile within the resource group. profileProperties is profile properties needed
-// for creation. resourceGroupName is name of the resource group within the Azure subscription.
+// Parameters:
+// profileName - name of the CDN profile within the resource group.
+// profileProperties - profile properties needed for creation.
+// resourceGroupName - name of the resource group within the Azure subscription.
 func (client ProfilesClient) Create(ctx context.Context, profileName string, profileProperties ProfileCreateParameters, resourceGroupName string) (result ProfilesCreateFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProfilesClient.Create")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: profileProperties,
 			Constraints: []validation.Constraint{{Target: "profileProperties.Location", Name: validation.Null, Rule: true, Chain: nil},
@@ -83,7 +93,7 @@ func (client ProfilesClient) CreatePreparer(ctx context.Context, profileName str
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Cdn/profiles/{profileName}", pathParameters),
@@ -95,15 +105,13 @@ func (client ProfilesClient) CreatePreparer(ctx context.Context, profileName str
 // CreateSender sends the Create request. The method will close the
 // http.Response Body if it receives an error.
 func (client ProfilesClient) CreateSender(req *http.Request) (future ProfilesCreateFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusCreated, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -121,10 +129,20 @@ func (client ProfilesClient) CreateResponder(resp *http.Response) (result Profil
 }
 
 // DeleteIfExists sends the delete if exists request.
-//
-// profileName is name of the CDN profile within the resource group. resourceGroupName is name of the resource
-// group within the Azure subscription.
+// Parameters:
+// profileName - name of the CDN profile within the resource group.
+// resourceGroupName - name of the resource group within the Azure subscription.
 func (client ProfilesClient) DeleteIfExists(ctx context.Context, profileName string, resourceGroupName string) (result ProfilesDeleteIfExistsFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProfilesClient.DeleteIfExists")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeleteIfExistsPreparer(ctx, profileName, resourceGroupName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "cdn.ProfilesClient", "DeleteIfExists", nil, "Failure preparing request")
@@ -164,15 +182,13 @@ func (client ProfilesClient) DeleteIfExistsPreparer(ctx context.Context, profile
 // DeleteIfExistsSender sends the DeleteIfExists request. The method will close the
 // http.Response Body if it receives an error.
 func (client ProfilesClient) DeleteIfExistsSender(req *http.Request) (future ProfilesDeleteIfExistsFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -189,10 +205,20 @@ func (client ProfilesClient) DeleteIfExistsResponder(resp *http.Response) (resul
 }
 
 // GenerateSsoURI sends the generate sso uri request.
-//
-// profileName is name of the CDN profile within the resource group. resourceGroupName is name of the resource
-// group within the Azure subscription.
+// Parameters:
+// profileName - name of the CDN profile within the resource group.
+// resourceGroupName - name of the resource group within the Azure subscription.
 func (client ProfilesClient) GenerateSsoURI(ctx context.Context, profileName string, resourceGroupName string) (result SsoURI, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProfilesClient.GenerateSsoURI")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GenerateSsoURIPreparer(ctx, profileName, resourceGroupName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "cdn.ProfilesClient", "GenerateSsoURI", nil, "Failure preparing request")
@@ -238,8 +264,8 @@ func (client ProfilesClient) GenerateSsoURIPreparer(ctx context.Context, profile
 // GenerateSsoURISender sends the GenerateSsoURI request. The method will close the
 // http.Response Body if it receives an error.
 func (client ProfilesClient) GenerateSsoURISender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GenerateSsoURIResponder handles the response to the GenerateSsoURI request. The method always
@@ -256,10 +282,20 @@ func (client ProfilesClient) GenerateSsoURIResponder(resp *http.Response) (resul
 }
 
 // Get sends the get request.
-//
-// profileName is name of the CDN profile within the resource group. resourceGroupName is name of the resource
-// group within the Azure subscription.
+// Parameters:
+// profileName - name of the CDN profile within the resource group.
+// resourceGroupName - name of the resource group within the Azure subscription.
 func (client ProfilesClient) Get(ctx context.Context, profileName string, resourceGroupName string) (result Profile, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProfilesClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, profileName, resourceGroupName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "cdn.ProfilesClient", "Get", nil, "Failure preparing request")
@@ -305,8 +341,8 @@ func (client ProfilesClient) GetPreparer(ctx context.Context, profileName string
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client ProfilesClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -323,9 +359,19 @@ func (client ProfilesClient) GetResponder(resp *http.Response) (result Profile, 
 }
 
 // ListByResourceGroup sends the list by resource group request.
-//
-// resourceGroupName is name of the resource group within the Azure subscription.
+// Parameters:
+// resourceGroupName - name of the resource group within the Azure subscription.
 func (client ProfilesClient) ListByResourceGroup(ctx context.Context, resourceGroupName string) (result ProfileListResult, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProfilesClient.ListByResourceGroup")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.ListByResourceGroupPreparer(ctx, resourceGroupName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "cdn.ProfilesClient", "ListByResourceGroup", nil, "Failure preparing request")
@@ -370,8 +416,8 @@ func (client ProfilesClient) ListByResourceGroupPreparer(ctx context.Context, re
 // ListByResourceGroupSender sends the ListByResourceGroup request. The method will close the
 // http.Response Body if it receives an error.
 func (client ProfilesClient) ListByResourceGroupSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByResourceGroupResponder handles the response to the ListByResourceGroup request. The method always
@@ -389,6 +435,16 @@ func (client ProfilesClient) ListByResourceGroupResponder(resp *http.Response) (
 
 // ListBySubscriptionID sends the list by subscription id request.
 func (client ProfilesClient) ListBySubscriptionID(ctx context.Context) (result ProfileListResult, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProfilesClient.ListBySubscriptionID")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.ListBySubscriptionIDPreparer(ctx)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "cdn.ProfilesClient", "ListBySubscriptionID", nil, "Failure preparing request")
@@ -432,8 +488,8 @@ func (client ProfilesClient) ListBySubscriptionIDPreparer(ctx context.Context) (
 // ListBySubscriptionIDSender sends the ListBySubscriptionID request. The method will close the
 // http.Response Body if it receives an error.
 func (client ProfilesClient) ListBySubscriptionIDSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListBySubscriptionIDResponder handles the response to the ListBySubscriptionID request. The method always
@@ -450,10 +506,21 @@ func (client ProfilesClient) ListBySubscriptionIDResponder(resp *http.Response) 
 }
 
 // Update sends the update request.
-//
-// profileName is name of the CDN profile within the resource group. profileProperties is profile properties needed
-// for update. resourceGroupName is name of the resource group within the Azure subscription.
+// Parameters:
+// profileName - name of the CDN profile within the resource group.
+// profileProperties - profile properties needed for update.
+// resourceGroupName - name of the resource group within the Azure subscription.
 func (client ProfilesClient) Update(ctx context.Context, profileName string, profileProperties ProfileUpdateParameters, resourceGroupName string) (result ProfilesUpdateFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProfilesClient.Update")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UpdatePreparer(ctx, profileName, profileProperties, resourceGroupName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "cdn.ProfilesClient", "Update", nil, "Failure preparing request")
@@ -483,7 +550,7 @@ func (client ProfilesClient) UpdatePreparer(ctx context.Context, profileName str
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Cdn/profiles/{profileName}", pathParameters),
@@ -495,15 +562,13 @@ func (client ProfilesClient) UpdatePreparer(ctx context.Context, profileName str
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client ProfilesClient) UpdateSender(req *http.Request) (future ProfilesUpdateFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 

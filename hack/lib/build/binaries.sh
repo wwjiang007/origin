@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This library holds utility functions for building
 # and placing Golang binaries for multiple arches.
@@ -91,20 +91,9 @@ function os::build::setup_env() {
 
   unset GOBIN
 
-  # default to OS_OUTPUT_GOPATH if no GOPATH set
-  if [[ -z "${GOPATH:-}" ]]; then
-    export OS_OUTPUT_GOPATH=1
-  fi
-
-  # use the regular gopath for building
-  if [[ -z "${OS_OUTPUT_GOPATH:-}" ]]; then
-    export OS_TARGET_BIN=${GOPATH}/bin
-    return
-  fi
-
   # create a local GOPATH in _output
   GOPATH="${OS_OUTPUT}/go"
-  OS_TARGET_BIN=${GOPATH}/bin
+  OS_TARGET_BIN="${OS_OUTPUT}/go/bin"
   local go_pkg_dir="${GOPATH}/src/${OS_GO_PACKAGE}"
   local go_pkg_basedir=$(dirname "${go_pkg_dir}")
 
@@ -120,9 +109,8 @@ function os::build::setup_env() {
   # Append OS_EXTRA_GOPATH to the GOPATH if it is defined.
   if [[ -n ${OS_EXTRA_GOPATH:-} ]]; then
     GOPATH="${GOPATH}:${OS_EXTRA_GOPATH}"
-    # TODO: needs to handle multiple directories
-    OS_TARGET_BIN=${OS_EXTRA_GOPATH}/bin
   fi
+
   export GOPATH
   export OS_TARGET_BIN
 }
@@ -234,7 +222,6 @@ os::build::internal::build_binaries() {
 
       if [[ ${#nonstatics[@]} -gt 0 ]]; then
         GOOS=${platform%/*} GOARCH=${platform##*/} go install \
-          -pkgdir "${pkgdir}/${platform}" \
           -tags "${OS_GOFLAGS_TAGS-} ${!platform_gotags_envvar:-}" \
           -ldflags="${local_ldflags}" \
           "${goflags[@]:+${goflags[@]}}" \
@@ -256,7 +243,6 @@ os::build::internal::build_binaries() {
         local outfile="${OS_OUTPUT_BINPATH}/${platform}/$(basename ${test})"
         # disabling cgo allows use of delve
         CGO_ENABLED="${OS_TEST_CGO_ENABLED:-}" GOOS=${platform%/*} GOARCH=${platform##*/} go test \
-          -pkgdir "${pkgdir}/${platform}" \
           -tags "${OS_GOFLAGS_TAGS-} ${!platform_gotags_test_envvar:-}" \
           -ldflags "${local_ldflags}" \
           -i -c -o "${outfile}" \
@@ -335,12 +321,6 @@ function os::build::place_bins() {
       if [[ $platform == "windows/amd64" ]]; then
         suffix=".exe"
       fi
-      for linkname in "${OC_BINARY_COPY[@]}"; do
-        local src="${OS_OUTPUT_BINPATH}/${platform}/oc${suffix}"
-        if [[ -f "${src}" ]]; then
-          ln -f "$src" "${OS_OUTPUT_BINPATH}/${platform}/${linkname}${suffix}"
-        fi
-      done
 
       # If no release archive was requested, we're done.
       if [[ "${OS_RELEASE_ARCHIVE-}" == "" ]]; then
@@ -353,37 +333,19 @@ function os::build::place_bins() {
         cp "${OS_OUTPUT_BINPATH}/${platform}/${binary}" "${release_binpath}/"
       done
 
-      # Create binary copies where specified.
-      for linkname in "${OC_BINARY_COPY[@]}"; do
-        local src="${release_binpath}/oc${suffix}"
-        if [[ -f "${src}" ]]; then
-          cp -f "${release_binpath}/oc${suffix}" "${release_binpath}/${linkname}${suffix}"
-        fi
-      done
-
       # Create the release archive.
       platform="$( os::build::host_platform_friendly "${platform}" )"
       if [[ ${OS_RELEASE_ARCHIVE} == "openshift-origin" ]]; then
         for file in "${OS_BINARY_RELEASE_CLIENT_EXTRA[@]}"; do
           cp "${file}" "${release_binpath}/"
         done
-        if [[ $platform == "windows" ]]; then
-          OS_RELEASE_ARCHIVE="openshift-origin-client-tools" os::build::archive::zip "${OS_BINARY_RELEASE_CLIENT_WINDOWS[@]}"
-        elif [[ $platform == "mac" ]]; then
-          OS_RELEASE_ARCHIVE="openshift-origin-client-tools" os::build::archive::zip "${OS_BINARY_RELEASE_CLIENT_MAC[@]}"
-        elif [[ $platform == "linux-32bit" ]]; then
-          OS_RELEASE_ARCHIVE="openshift-origin-client-tools" os::build::archive::tar "${OS_BINARY_RELEASE_CLIENT_LINUX[@]}"
-        elif [[ $platform == "linux-64bit" ]]; then
-          OS_RELEASE_ARCHIVE="openshift-origin-client-tools" os::build::archive::tar "${OS_BINARY_RELEASE_CLIENT_LINUX[@]}"
+        if [[ $platform == "linux-64bit" ]]; then
           OS_RELEASE_ARCHIVE="openshift-origin-server" os::build::archive::tar "${OS_BINARY_RELEASE_SERVER_LINUX[@]}"
         elif [[ $platform == "linux-powerpc64" ]]; then
-          OS_RELEASE_ARCHIVE="openshift-origin-client-tools" os::build::archive::tar "${OS_BINARY_RELEASE_CLIENT_LINUX[@]}"
           OS_RELEASE_ARCHIVE="openshift-origin-server" os::build::archive::tar "${OS_BINARY_RELEASE_SERVER_LINUX[@]}"
         elif [[ $platform == "linux-arm64" ]]; then
-          OS_RELEASE_ARCHIVE="openshift-origin-client-tools" os::build::archive::tar "${OS_BINARY_RELEASE_CLIENT_LINUX[@]}"
           OS_RELEASE_ARCHIVE="openshift-origin-server" os::build::archive::tar "${OS_BINARY_RELEASE_SERVER_LINUX[@]}"
         elif [[ $platform == "linux-s390" ]]; then
-          OS_RELEASE_ARCHIVE="openshift-origin-client-tools" os::build::archive::tar "${OS_BINARY_RELEASE_CLIENT_LINUX[@]}"
           OS_RELEASE_ARCHIVE="openshift-origin-server" os::build::archive::tar "${OS_BINARY_RELEASE_SERVER_LINUX[@]}"
         else
           echo "++ ERROR: No release type defined for $platform"
@@ -414,21 +376,6 @@ readonly -f os::build::release_sha
 # binary in _output/local/bin/${platform}
 function os::build::make_openshift_binary_symlinks() {
   platform=$(os::build::host_platform)
-  if [[ -f "${OS_OUTPUT_BINPATH}/${platform}/openshift" ]]; then
-    if [[ -n "${OPENSHIFT_BINARY_SYMLINKS-}" ]]; then
-      for linkname in "${OPENSHIFT_BINARY_SYMLINKS[@]}"; do
-        ln -sf openshift "${OS_OUTPUT_BINPATH}/${platform}/${linkname}"
-      done
-    fi
-  fi
-  if [[ -f "${OS_OUTPUT_BINPATH}/${platform}/oc" ]]; then
-    for linkname in "${OC_BINARY_SYMLINKS[@]}"; do
-      ln -sf oc "${OS_OUTPUT_BINPATH}/${platform}/${linkname}"
-    done
-    for linkname in "${OC_BINARY_COPY[@]}"; do
-      ln -sf oc "${OS_OUTPUT_BINPATH}/${platform}/${linkname}"
-    done
-  fi
 }
 readonly -f os::build::make_openshift_binary_symlinks
 

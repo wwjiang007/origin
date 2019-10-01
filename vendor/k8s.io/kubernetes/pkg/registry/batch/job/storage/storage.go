@@ -37,13 +37,17 @@ type JobStorage struct {
 	Status *StatusREST
 }
 
-func NewStorage(optsGetter generic.RESTOptionsGetter) JobStorage {
-	jobRest, jobStatusRest := NewREST(optsGetter)
+// NewStorage creates a new JobStorage against etcd.
+func NewStorage(optsGetter generic.RESTOptionsGetter) (JobStorage, error) {
+	jobRest, jobStatusRest, err := NewREST(optsGetter)
+	if err != nil {
+		return JobStorage{}, err
+	}
 
 	return JobStorage{
 		Job:    jobRest,
 		Status: jobStatusRest,
-	}
+	}, nil
 }
 
 // REST implements a RESTStorage for jobs against etcd
@@ -52,7 +56,7 @@ type REST struct {
 }
 
 // NewREST returns a RESTStorage object that will work against Jobs.
-func NewREST(optsGetter generic.RESTOptionsGetter) (*REST, *StatusREST) {
+func NewREST(optsGetter generic.RESTOptionsGetter) (*REST, *StatusREST, error) {
 	store := &genericregistry.Store{
 		NewFunc:                  func() runtime.Object { return &batch.Job{} },
 		NewListFunc:              func() runtime.Object { return &batch.JobList{} },
@@ -63,17 +67,17 @@ func NewREST(optsGetter generic.RESTOptionsGetter) (*REST, *StatusREST) {
 		UpdateStrategy: job.Strategy,
 		DeleteStrategy: job.Strategy,
 
-		TableConvertor: printerstorage.TableConvertor{TablePrinter: printers.NewTablePrinter().With(printersinternal.AddHandlers)},
+		TableConvertor: printerstorage.TableConvertor{TableGenerator: printers.NewTableGenerator().With(printersinternal.AddHandlers)},
 	}
 	options := &generic.StoreOptions{RESTOptions: optsGetter, AttrFunc: job.GetAttrs}
 	if err := store.CompleteWithOptions(options); err != nil {
-		panic(err) // TODO: Propagate error up
+		return nil, nil, err
 	}
 
 	statusStore := *store
 	statusStore.UpdateStrategy = job.StatusStrategy
 
-	return &REST{store}, &StatusREST{store: &statusStore}
+	return &REST{store}, &StatusREST{store: &statusStore}, nil
 }
 
 // Implement CategoriesProvider
@@ -89,6 +93,7 @@ type StatusREST struct {
 	store *genericregistry.Store
 }
 
+// New creates a new Job object.
 func (r *StatusREST) New() runtime.Object {
 	return &batch.Job{}
 }
@@ -99,6 +104,8 @@ func (r *StatusREST) Get(ctx context.Context, name string, options *metav1.GetOp
 }
 
 // Update alters the status subset of an object.
-func (r *StatusREST) Update(ctx context.Context, name string, objInfo rest.UpdatedObjectInfo, createValidation rest.ValidateObjectFunc, updateValidation rest.ValidateObjectUpdateFunc) (runtime.Object, bool, error) {
-	return r.store.Update(ctx, name, objInfo, createValidation, updateValidation)
+func (r *StatusREST) Update(ctx context.Context, name string, objInfo rest.UpdatedObjectInfo, createValidation rest.ValidateObjectFunc, updateValidation rest.ValidateObjectUpdateFunc, forceAllowCreate bool, options *metav1.UpdateOptions) (runtime.Object, bool, error) {
+	// We are explicitly setting forceAllowCreate to false in the call to the underlying storage because
+	// subresources should never allow create on update.
+	return r.store.Update(ctx, name, objInfo, createValidation, updateValidation, false, options)
 }

@@ -1,6 +1,6 @@
 // +build go1.9
 
-// Copyright 2018 Microsoft Corporation
+// Copyright 2019 Microsoft Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,47 +19,15 @@
 
 package batchai
 
-import original "github.com/Azure/azure-sdk-for-go/services/batchai/mgmt/2018-03-01/batchai"
+import (
+	"context"
+
+	original "github.com/Azure/azure-sdk-for-go/services/batchai/mgmt/2018-05-01/batchai"
+)
 
 const (
 	DefaultBaseURI = original.DefaultBaseURI
 )
-
-type BaseClient = original.BaseClient
-
-func New(subscriptionID string) BaseClient {
-	return original.New(subscriptionID)
-}
-func NewWithBaseURI(baseURI string, subscriptionID string) BaseClient {
-	return original.NewWithBaseURI(baseURI, subscriptionID)
-}
-
-type ClustersClient = original.ClustersClient
-
-func NewClustersClient(subscriptionID string) ClustersClient {
-	return original.NewClustersClient(subscriptionID)
-}
-func NewClustersClientWithBaseURI(baseURI string, subscriptionID string) ClustersClient {
-	return original.NewClustersClientWithBaseURI(baseURI, subscriptionID)
-}
-
-type FileServersClient = original.FileServersClient
-
-func NewFileServersClient(subscriptionID string) FileServersClient {
-	return original.NewFileServersClient(subscriptionID)
-}
-func NewFileServersClientWithBaseURI(baseURI string, subscriptionID string) FileServersClient {
-	return original.NewFileServersClientWithBaseURI(baseURI, subscriptionID)
-}
-
-type JobsClient = original.JobsClient
-
-func NewJobsClient(subscriptionID string) JobsClient {
-	return original.NewJobsClient(subscriptionID)
-}
-func NewJobsClientWithBaseURI(baseURI string, subscriptionID string) JobsClient {
-	return original.NewJobsClientWithBaseURI(baseURI, subscriptionID)
-}
 
 type AllocationState = original.AllocationState
 
@@ -67,10 +35,6 @@ const (
 	Resizing AllocationState = original.Resizing
 	Steady   AllocationState = original.Steady
 )
-
-func PossibleAllocationStateValues() []AllocationState {
-	return original.PossibleAllocationStateValues()
-}
 
 type CachingType = original.CachingType
 
@@ -80,22 +44,13 @@ const (
 	Readwrite CachingType = original.Readwrite
 )
 
-func PossibleCachingTypeValues() []CachingType {
-	return original.PossibleCachingTypeValues()
-}
-
 type DeallocationOption = original.DeallocationOption
 
 const (
 	Requeue              DeallocationOption = original.Requeue
 	Terminate            DeallocationOption = original.Terminate
-	Unknown              DeallocationOption = original.Unknown
 	Waitforjobcompletion DeallocationOption = original.Waitforjobcompletion
 )
-
-func PossibleDeallocationOptionValues() []DeallocationOption {
-	return original.PossibleDeallocationOptionValues()
-}
 
 type ExecutionState = original.ExecutionState
 
@@ -107,10 +62,6 @@ const (
 	Terminating ExecutionState = original.Terminating
 )
 
-func PossibleExecutionStateValues() []ExecutionState {
-	return original.PossibleExecutionStateValues()
-}
-
 type FileServerProvisioningState = original.FileServerProvisioningState
 
 const (
@@ -121,33 +72,20 @@ const (
 	FileServerProvisioningStateUpdating  FileServerProvisioningState = original.FileServerProvisioningStateUpdating
 )
 
-func PossibleFileServerProvisioningStateValues() []FileServerProvisioningState {
-	return original.PossibleFileServerProvisioningStateValues()
-}
-
-type FileServerType = original.FileServerType
+type FileType = original.FileType
 
 const (
-	Glusterfs FileServerType = original.Glusterfs
-	Nfs       FileServerType = original.Nfs
+	FileTypeDirectory FileType = original.FileTypeDirectory
+	FileTypeFile      FileType = original.FileTypeFile
 )
 
-func PossibleFileServerTypeValues() []FileServerType {
-	return original.PossibleFileServerTypeValues()
-}
-
-type OutputType = original.OutputType
+type JobPriority = original.JobPriority
 
 const (
-	Custom  OutputType = original.Custom
-	Logs    OutputType = original.Logs
-	Model   OutputType = original.Model
-	Summary OutputType = original.Summary
+	High   JobPriority = original.High
+	Low    JobPriority = original.Low
+	Normal JobPriority = original.Normal
 )
-
-func PossibleOutputTypeValues() []OutputType {
-	return original.PossibleOutputTypeValues()
-}
 
 type ProvisioningState = original.ProvisioningState
 
@@ -158,10 +96,6 @@ const (
 	ProvisioningStateSucceeded ProvisioningState = original.ProvisioningStateSucceeded
 )
 
-func PossibleProvisioningStateValues() []ProvisioningState {
-	return original.PossibleProvisioningStateValues()
-}
-
 type StorageAccountType = original.StorageAccountType
 
 const (
@@ -169,24 +103,24 @@ const (
 	StandardLRS StorageAccountType = original.StandardLRS
 )
 
-func PossibleStorageAccountTypeValues() []StorageAccountType {
-	return original.PossibleStorageAccountTypeValues()
-}
-
 type ToolType = original.ToolType
 
 const (
-	ToolTypeCaffe      ToolType = original.ToolTypeCaffe
-	ToolTypeCaffe2     ToolType = original.ToolTypeCaffe2
-	ToolTypeChainer    ToolType = original.ToolTypeChainer
-	ToolTypeCntk       ToolType = original.ToolTypeCntk
-	ToolTypeCustom     ToolType = original.ToolTypeCustom
-	ToolTypeTensorflow ToolType = original.ToolTypeTensorflow
+	Caffe      ToolType = original.Caffe
+	Caffe2     ToolType = original.Caffe2
+	Chainer    ToolType = original.Chainer
+	Cntk       ToolType = original.Cntk
+	Custom     ToolType = original.Custom
+	Custommpi  ToolType = original.Custommpi
+	Horovod    ToolType = original.Horovod
+	Tensorflow ToolType = original.Tensorflow
 )
 
-func PossibleToolTypeValues() []ToolType {
-	return original.PossibleToolTypeValues()
-}
+type UsageUnit = original.UsageUnit
+
+const (
+	Count UsageUnit = original.Count
+)
 
 type VMPriority = original.VMPriority
 
@@ -195,15 +129,13 @@ const (
 	Lowpriority VMPriority = original.Lowpriority
 )
 
-func PossibleVMPriorityValues() []VMPriority {
-	return original.PossibleVMPriorityValues()
-}
-
 type AppInsightsReference = original.AppInsightsReference
 type AutoScaleSettings = original.AutoScaleSettings
 type AzureBlobFileSystemReference = original.AzureBlobFileSystemReference
 type AzureFileShareReference = original.AzureFileShareReference
 type AzureStorageCredentialsInfo = original.AzureStorageCredentialsInfo
+type BaseClient = original.BaseClient
+type CNTKsettings = original.CNTKsettings
 type Caffe2Settings = original.Caffe2Settings
 type CaffeSettings = original.CaffeSettings
 type ChainerSettings = original.ChainerSettings
@@ -216,17 +148,26 @@ type ClusterListResult = original.ClusterListResult
 type ClusterListResultIterator = original.ClusterListResultIterator
 type ClusterListResultPage = original.ClusterListResultPage
 type ClusterProperties = original.ClusterProperties
-type ClustersCreateFuture = original.ClustersCreateFuture
-type ClustersDeleteFuture = original.ClustersDeleteFuture
 type ClusterUpdateParameters = original.ClusterUpdateParameters
 type ClusterUpdateProperties = original.ClusterUpdateProperties
-type CNTKsettings = original.CNTKsettings
+type ClustersClient = original.ClustersClient
+type ClustersCreateFuture = original.ClustersCreateFuture
+type ClustersDeleteFuture = original.ClustersDeleteFuture
 type ContainerSettings = original.ContainerSettings
+type CustomMpiSettings = original.CustomMpiSettings
 type CustomToolkitSettings = original.CustomToolkitSettings
 type DataDisks = original.DataDisks
 type EnvironmentVariable = original.EnvironmentVariable
 type EnvironmentVariableWithSecretValue = original.EnvironmentVariableWithSecretValue
 type Error = original.Error
+type Experiment = original.Experiment
+type ExperimentListResult = original.ExperimentListResult
+type ExperimentListResultIterator = original.ExperimentListResultIterator
+type ExperimentListResultPage = original.ExperimentListResultPage
+type ExperimentProperties = original.ExperimentProperties
+type ExperimentsClient = original.ExperimentsClient
+type ExperimentsCreateFuture = original.ExperimentsCreateFuture
+type ExperimentsDeleteFuture = original.ExperimentsDeleteFuture
 type File = original.File
 type FileListResult = original.FileListResult
 type FileListResultIterator = original.FileListResultIterator
@@ -240,8 +181,10 @@ type FileServerListResultIterator = original.FileServerListResultIterator
 type FileServerListResultPage = original.FileServerListResultPage
 type FileServerProperties = original.FileServerProperties
 type FileServerReference = original.FileServerReference
+type FileServersClient = original.FileServersClient
 type FileServersCreateFuture = original.FileServersCreateFuture
 type FileServersDeleteFuture = original.FileServersDeleteFuture
+type HorovodSettings = original.HorovodSettings
 type ImageReference = original.ImageReference
 type ImageSourceRegistry = original.ImageSourceRegistry
 type InputDirectory = original.InputDirectory
@@ -256,15 +199,14 @@ type JobPreparation = original.JobPreparation
 type JobProperties = original.JobProperties
 type JobPropertiesConstraints = original.JobPropertiesConstraints
 type JobPropertiesExecutionInfo = original.JobPropertiesExecutionInfo
+type JobsClient = original.JobsClient
 type JobsCreateFuture = original.JobsCreateFuture
 type JobsDeleteFuture = original.JobsDeleteFuture
 type JobsTerminateFuture = original.JobsTerminateFuture
-type KeyVaultKeyReference = original.KeyVaultKeyReference
 type KeyVaultSecretReference = original.KeyVaultSecretReference
 type ListUsagesResult = original.ListUsagesResult
 type ListUsagesResultIterator = original.ListUsagesResultIterator
 type ListUsagesResultPage = original.ListUsagesResultPage
-type LocalDataVolume = original.LocalDataVolume
 type ManualScaleSettings = original.ManualScaleSettings
 type MountSettings = original.MountSettings
 type MountVolumes = original.MountVolumes
@@ -276,9 +218,11 @@ type OperationDisplay = original.OperationDisplay
 type OperationListResult = original.OperationListResult
 type OperationListResultIterator = original.OperationListResultIterator
 type OperationListResultPage = original.OperationListResultPage
+type OperationsClient = original.OperationsClient
 type OutputDirectory = original.OutputDirectory
 type PerformanceCountersSettings = original.PerformanceCountersSettings
 type PrivateRegistryCredentials = original.PrivateRegistryCredentials
+type ProxyResource = original.ProxyResource
 type PyTorchSettings = original.PyTorchSettings
 type RemoteLoginInformation = original.RemoteLoginInformation
 type RemoteLoginInformationListResult = original.RemoteLoginInformationListResult
@@ -286,31 +230,164 @@ type RemoteLoginInformationListResultIterator = original.RemoteLoginInformationL
 type RemoteLoginInformationListResultPage = original.RemoteLoginInformationListResultPage
 type Resource = original.Resource
 type ResourceID = original.ResourceID
+type SSHConfiguration = original.SSHConfiguration
 type ScaleSettings = original.ScaleSettings
 type SetupTask = original.SetupTask
-type SSHConfiguration = original.SSHConfiguration
 type TensorFlowSettings = original.TensorFlowSettings
 type UnmanagedFileSystemReference = original.UnmanagedFileSystemReference
 type Usage = original.Usage
 type UsageName = original.UsageName
+type UsagesClient = original.UsagesClient
 type UserAccountSettings = original.UserAccountSettings
 type VirtualMachineConfiguration = original.VirtualMachineConfiguration
-type OperationsClient = original.OperationsClient
+type Workspace = original.Workspace
+type WorkspaceCreateParameters = original.WorkspaceCreateParameters
+type WorkspaceListResult = original.WorkspaceListResult
+type WorkspaceListResultIterator = original.WorkspaceListResultIterator
+type WorkspaceListResultPage = original.WorkspaceListResultPage
+type WorkspaceProperties = original.WorkspaceProperties
+type WorkspaceUpdateParameters = original.WorkspaceUpdateParameters
+type WorkspacesClient = original.WorkspacesClient
+type WorkspacesCreateFuture = original.WorkspacesCreateFuture
+type WorkspacesDeleteFuture = original.WorkspacesDeleteFuture
 
+func New(subscriptionID string) BaseClient {
+	return original.New(subscriptionID)
+}
+func NewClusterListResultIterator(page ClusterListResultPage) ClusterListResultIterator {
+	return original.NewClusterListResultIterator(page)
+}
+func NewClusterListResultPage(getNextPage func(context.Context, ClusterListResult) (ClusterListResult, error)) ClusterListResultPage {
+	return original.NewClusterListResultPage(getNextPage)
+}
+func NewClustersClient(subscriptionID string) ClustersClient {
+	return original.NewClustersClient(subscriptionID)
+}
+func NewClustersClientWithBaseURI(baseURI string, subscriptionID string) ClustersClient {
+	return original.NewClustersClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewExperimentListResultIterator(page ExperimentListResultPage) ExperimentListResultIterator {
+	return original.NewExperimentListResultIterator(page)
+}
+func NewExperimentListResultPage(getNextPage func(context.Context, ExperimentListResult) (ExperimentListResult, error)) ExperimentListResultPage {
+	return original.NewExperimentListResultPage(getNextPage)
+}
+func NewExperimentsClient(subscriptionID string) ExperimentsClient {
+	return original.NewExperimentsClient(subscriptionID)
+}
+func NewExperimentsClientWithBaseURI(baseURI string, subscriptionID string) ExperimentsClient {
+	return original.NewExperimentsClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewFileListResultIterator(page FileListResultPage) FileListResultIterator {
+	return original.NewFileListResultIterator(page)
+}
+func NewFileListResultPage(getNextPage func(context.Context, FileListResult) (FileListResult, error)) FileListResultPage {
+	return original.NewFileListResultPage(getNextPage)
+}
+func NewFileServerListResultIterator(page FileServerListResultPage) FileServerListResultIterator {
+	return original.NewFileServerListResultIterator(page)
+}
+func NewFileServerListResultPage(getNextPage func(context.Context, FileServerListResult) (FileServerListResult, error)) FileServerListResultPage {
+	return original.NewFileServerListResultPage(getNextPage)
+}
+func NewFileServersClient(subscriptionID string) FileServersClient {
+	return original.NewFileServersClient(subscriptionID)
+}
+func NewFileServersClientWithBaseURI(baseURI string, subscriptionID string) FileServersClient {
+	return original.NewFileServersClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewJobListResultIterator(page JobListResultPage) JobListResultIterator {
+	return original.NewJobListResultIterator(page)
+}
+func NewJobListResultPage(getNextPage func(context.Context, JobListResult) (JobListResult, error)) JobListResultPage {
+	return original.NewJobListResultPage(getNextPage)
+}
+func NewJobsClient(subscriptionID string) JobsClient {
+	return original.NewJobsClient(subscriptionID)
+}
+func NewJobsClientWithBaseURI(baseURI string, subscriptionID string) JobsClient {
+	return original.NewJobsClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewListUsagesResultIterator(page ListUsagesResultPage) ListUsagesResultIterator {
+	return original.NewListUsagesResultIterator(page)
+}
+func NewListUsagesResultPage(getNextPage func(context.Context, ListUsagesResult) (ListUsagesResult, error)) ListUsagesResultPage {
+	return original.NewListUsagesResultPage(getNextPage)
+}
+func NewOperationListResultIterator(page OperationListResultPage) OperationListResultIterator {
+	return original.NewOperationListResultIterator(page)
+}
+func NewOperationListResultPage(getNextPage func(context.Context, OperationListResult) (OperationListResult, error)) OperationListResultPage {
+	return original.NewOperationListResultPage(getNextPage)
+}
 func NewOperationsClient(subscriptionID string) OperationsClient {
 	return original.NewOperationsClient(subscriptionID)
 }
 func NewOperationsClientWithBaseURI(baseURI string, subscriptionID string) OperationsClient {
 	return original.NewOperationsClientWithBaseURI(baseURI, subscriptionID)
 }
-
-type UsageClient = original.UsageClient
-
-func NewUsageClient(subscriptionID string) UsageClient {
-	return original.NewUsageClient(subscriptionID)
+func NewRemoteLoginInformationListResultIterator(page RemoteLoginInformationListResultPage) RemoteLoginInformationListResultIterator {
+	return original.NewRemoteLoginInformationListResultIterator(page)
 }
-func NewUsageClientWithBaseURI(baseURI string, subscriptionID string) UsageClient {
-	return original.NewUsageClientWithBaseURI(baseURI, subscriptionID)
+func NewRemoteLoginInformationListResultPage(getNextPage func(context.Context, RemoteLoginInformationListResult) (RemoteLoginInformationListResult, error)) RemoteLoginInformationListResultPage {
+	return original.NewRemoteLoginInformationListResultPage(getNextPage)
+}
+func NewUsagesClient(subscriptionID string) UsagesClient {
+	return original.NewUsagesClient(subscriptionID)
+}
+func NewUsagesClientWithBaseURI(baseURI string, subscriptionID string) UsagesClient {
+	return original.NewUsagesClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewWithBaseURI(baseURI string, subscriptionID string) BaseClient {
+	return original.NewWithBaseURI(baseURI, subscriptionID)
+}
+func NewWorkspaceListResultIterator(page WorkspaceListResultPage) WorkspaceListResultIterator {
+	return original.NewWorkspaceListResultIterator(page)
+}
+func NewWorkspaceListResultPage(getNextPage func(context.Context, WorkspaceListResult) (WorkspaceListResult, error)) WorkspaceListResultPage {
+	return original.NewWorkspaceListResultPage(getNextPage)
+}
+func NewWorkspacesClient(subscriptionID string) WorkspacesClient {
+	return original.NewWorkspacesClient(subscriptionID)
+}
+func NewWorkspacesClientWithBaseURI(baseURI string, subscriptionID string) WorkspacesClient {
+	return original.NewWorkspacesClientWithBaseURI(baseURI, subscriptionID)
+}
+func PossibleAllocationStateValues() []AllocationState {
+	return original.PossibleAllocationStateValues()
+}
+func PossibleCachingTypeValues() []CachingType {
+	return original.PossibleCachingTypeValues()
+}
+func PossibleDeallocationOptionValues() []DeallocationOption {
+	return original.PossibleDeallocationOptionValues()
+}
+func PossibleExecutionStateValues() []ExecutionState {
+	return original.PossibleExecutionStateValues()
+}
+func PossibleFileServerProvisioningStateValues() []FileServerProvisioningState {
+	return original.PossibleFileServerProvisioningStateValues()
+}
+func PossibleFileTypeValues() []FileType {
+	return original.PossibleFileTypeValues()
+}
+func PossibleJobPriorityValues() []JobPriority {
+	return original.PossibleJobPriorityValues()
+}
+func PossibleProvisioningStateValues() []ProvisioningState {
+	return original.PossibleProvisioningStateValues()
+}
+func PossibleStorageAccountTypeValues() []StorageAccountType {
+	return original.PossibleStorageAccountTypeValues()
+}
+func PossibleToolTypeValues() []ToolType {
+	return original.PossibleToolTypeValues()
+}
+func PossibleUsageUnitValues() []UsageUnit {
+	return original.PossibleUsageUnitValues()
+}
+func PossibleVMPriorityValues() []VMPriority {
+	return original.PossibleVMPriorityValues()
 }
 func UserAgent() string {
 	return original.UserAgent() + " profiles/preview"

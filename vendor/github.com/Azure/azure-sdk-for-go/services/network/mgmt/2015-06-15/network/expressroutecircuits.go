@@ -21,6 +21,7 @@ import (
 	"context"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -40,10 +41,21 @@ func NewExpressRouteCircuitsClientWithBaseURI(baseURI string, subscriptionID str
 }
 
 // CreateOrUpdate creates or updates an express route circuit.
-//
-// resourceGroupName is the name of the resource group. circuitName is the name of the circuit. parameters is
-// parameters supplied to the create or update express route circuit operation.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// circuitName - the name of the circuit.
+// parameters - parameters supplied to the create or update express route circuit operation.
 func (client ExpressRouteCircuitsClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, circuitName string, parameters ExpressRouteCircuit) (result ExpressRouteCircuitsCreateOrUpdateFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ExpressRouteCircuitsClient.CreateOrUpdate")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.CreateOrUpdatePreparer(ctx, resourceGroupName, circuitName, parameters)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsClient", "CreateOrUpdate", nil, "Failure preparing request")
@@ -73,7 +85,7 @@ func (client ExpressRouteCircuitsClient) CreateOrUpdatePreparer(ctx context.Cont
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/expressRouteCircuits/{circuitName}", pathParameters),
@@ -85,15 +97,13 @@ func (client ExpressRouteCircuitsClient) CreateOrUpdatePreparer(ctx context.Cont
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client ExpressRouteCircuitsClient) CreateOrUpdateSender(req *http.Request) (future ExpressRouteCircuitsCreateOrUpdateFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusCreated))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -111,9 +121,20 @@ func (client ExpressRouteCircuitsClient) CreateOrUpdateResponder(resp *http.Resp
 }
 
 // Delete deletes the specified express route circuit.
-//
-// resourceGroupName is the name of the resource group. circuitName is the name of the express route circuit.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// circuitName - the name of the express route circuit.
 func (client ExpressRouteCircuitsClient) Delete(ctx context.Context, resourceGroupName string, circuitName string) (result ExpressRouteCircuitsDeleteFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ExpressRouteCircuitsClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeletePreparer(ctx, resourceGroupName, circuitName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsClient", "Delete", nil, "Failure preparing request")
@@ -153,15 +174,13 @@ func (client ExpressRouteCircuitsClient) DeletePreparer(ctx context.Context, res
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client ExpressRouteCircuitsClient) DeleteSender(req *http.Request) (future ExpressRouteCircuitsDeleteFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -178,9 +197,20 @@ func (client ExpressRouteCircuitsClient) DeleteResponder(resp *http.Response) (r
 }
 
 // Get gets information about the specified express route circuit.
-//
-// resourceGroupName is the name of the resource group. circuitName is the name of express route circuit.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// circuitName - the name of express route circuit.
 func (client ExpressRouteCircuitsClient) Get(ctx context.Context, resourceGroupName string, circuitName string) (result ExpressRouteCircuit, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ExpressRouteCircuitsClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, resourceGroupName, circuitName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsClient", "Get", nil, "Failure preparing request")
@@ -226,8 +256,8 @@ func (client ExpressRouteCircuitsClient) GetPreparer(ctx context.Context, resour
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client ExpressRouteCircuitsClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -244,9 +274,19 @@ func (client ExpressRouteCircuitsClient) GetResponder(resp *http.Response) (resu
 }
 
 // List gets all the express route circuits in a resource group.
-//
-// resourceGroupName is the name of the resource group.
+// Parameters:
+// resourceGroupName - the name of the resource group.
 func (client ExpressRouteCircuitsClient) List(ctx context.Context, resourceGroupName string) (result ExpressRouteCircuitListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ExpressRouteCircuitsClient.List")
+		defer func() {
+			sc := -1
+			if result.erclr.Response.Response != nil {
+				sc = result.erclr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listNextResults
 	req, err := client.ListPreparer(ctx, resourceGroupName)
 	if err != nil {
@@ -292,8 +332,8 @@ func (client ExpressRouteCircuitsClient) ListPreparer(ctx context.Context, resou
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client ExpressRouteCircuitsClient) ListSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -310,8 +350,8 @@ func (client ExpressRouteCircuitsClient) ListResponder(resp *http.Response) (res
 }
 
 // listNextResults retrieves the next set of results, if any.
-func (client ExpressRouteCircuitsClient) listNextResults(lastResults ExpressRouteCircuitListResult) (result ExpressRouteCircuitListResult, err error) {
-	req, err := lastResults.expressRouteCircuitListResultPreparer()
+func (client ExpressRouteCircuitsClient) listNextResults(ctx context.Context, lastResults ExpressRouteCircuitListResult) (result ExpressRouteCircuitListResult, err error) {
+	req, err := lastResults.expressRouteCircuitListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsClient", "listNextResults", nil, "Failure preparing next results request")
 	}
@@ -332,12 +372,32 @@ func (client ExpressRouteCircuitsClient) listNextResults(lastResults ExpressRout
 
 // ListComplete enumerates all values, automatically crossing page boundaries as required.
 func (client ExpressRouteCircuitsClient) ListComplete(ctx context.Context, resourceGroupName string) (result ExpressRouteCircuitListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ExpressRouteCircuitsClient.List")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.List(ctx, resourceGroupName)
 	return
 }
 
 // ListAll gets all the express route circuits in a subscription.
 func (client ExpressRouteCircuitsClient) ListAll(ctx context.Context) (result ExpressRouteCircuitListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ExpressRouteCircuitsClient.ListAll")
+		defer func() {
+			sc := -1
+			if result.erclr.Response.Response != nil {
+				sc = result.erclr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listAllNextResults
 	req, err := client.ListAllPreparer(ctx)
 	if err != nil {
@@ -382,8 +442,8 @@ func (client ExpressRouteCircuitsClient) ListAllPreparer(ctx context.Context) (*
 // ListAllSender sends the ListAll request. The method will close the
 // http.Response Body if it receives an error.
 func (client ExpressRouteCircuitsClient) ListAllSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListAllResponder handles the response to the ListAll request. The method always
@@ -400,8 +460,8 @@ func (client ExpressRouteCircuitsClient) ListAllResponder(resp *http.Response) (
 }
 
 // listAllNextResults retrieves the next set of results, if any.
-func (client ExpressRouteCircuitsClient) listAllNextResults(lastResults ExpressRouteCircuitListResult) (result ExpressRouteCircuitListResult, err error) {
-	req, err := lastResults.expressRouteCircuitListResultPreparer()
+func (client ExpressRouteCircuitsClient) listAllNextResults(ctx context.Context, lastResults ExpressRouteCircuitListResult) (result ExpressRouteCircuitListResult, err error) {
+	req, err := lastResults.expressRouteCircuitListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsClient", "listAllNextResults", nil, "Failure preparing next results request")
 	}
@@ -422,15 +482,36 @@ func (client ExpressRouteCircuitsClient) listAllNextResults(lastResults ExpressR
 
 // ListAllComplete enumerates all values, automatically crossing page boundaries as required.
 func (client ExpressRouteCircuitsClient) ListAllComplete(ctx context.Context) (result ExpressRouteCircuitListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ExpressRouteCircuitsClient.ListAll")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListAll(ctx)
 	return
 }
 
-// ListArpTable the ListArpTable from ExpressRouteCircuit opertion retrieves the currently advertised arp table
+// ListArpTable the ListArpTable from ExpressRouteCircuit operation retrieves the currently advertised arp table
 // associated with the ExpressRouteCircuits in a resource group.
-//
-// resourceGroupName is the name of the resource group. circuitName is the name of the circuit.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// circuitName - the name of the circuit.
 func (client ExpressRouteCircuitsClient) ListArpTable(ctx context.Context, resourceGroupName string, circuitName string) (result ExpressRouteCircuitsArpTableListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ExpressRouteCircuitsClient.ListArpTable")
+		defer func() {
+			sc := -1
+			if result.ercatlr.Response.Response != nil {
+				sc = result.ercatlr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listArpTableNextResults
 	req, err := client.ListArpTablePreparer(ctx, resourceGroupName, circuitName)
 	if err != nil {
@@ -477,8 +558,8 @@ func (client ExpressRouteCircuitsClient) ListArpTablePreparer(ctx context.Contex
 // ListArpTableSender sends the ListArpTable request. The method will close the
 // http.Response Body if it receives an error.
 func (client ExpressRouteCircuitsClient) ListArpTableSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListArpTableResponder handles the response to the ListArpTable request. The method always
@@ -495,8 +576,8 @@ func (client ExpressRouteCircuitsClient) ListArpTableResponder(resp *http.Respon
 }
 
 // listArpTableNextResults retrieves the next set of results, if any.
-func (client ExpressRouteCircuitsClient) listArpTableNextResults(lastResults ExpressRouteCircuitsArpTableListResult) (result ExpressRouteCircuitsArpTableListResult, err error) {
-	req, err := lastResults.expressRouteCircuitsArpTableListResultPreparer()
+func (client ExpressRouteCircuitsClient) listArpTableNextResults(ctx context.Context, lastResults ExpressRouteCircuitsArpTableListResult) (result ExpressRouteCircuitsArpTableListResult, err error) {
+	req, err := lastResults.expressRouteCircuitsArpTableListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsClient", "listArpTableNextResults", nil, "Failure preparing next results request")
 	}
@@ -517,15 +598,36 @@ func (client ExpressRouteCircuitsClient) listArpTableNextResults(lastResults Exp
 
 // ListArpTableComplete enumerates all values, automatically crossing page boundaries as required.
 func (client ExpressRouteCircuitsClient) ListArpTableComplete(ctx context.Context, resourceGroupName string, circuitName string) (result ExpressRouteCircuitsArpTableListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ExpressRouteCircuitsClient.ListArpTable")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListArpTable(ctx, resourceGroupName, circuitName)
 	return
 }
 
-// ListRoutesTable the ListRoutesTable from ExpressRouteCircuit opertion retrieves the currently advertised routes
+// ListRoutesTable the ListRoutesTable from ExpressRouteCircuit operation retrieves the currently advertised routes
 // table associated with the ExpressRouteCircuits in a resource group.
-//
-// resourceGroupName is the name of the resource group. circuitName is the name of the circuit.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// circuitName - the name of the circuit.
 func (client ExpressRouteCircuitsClient) ListRoutesTable(ctx context.Context, resourceGroupName string, circuitName string) (result ExpressRouteCircuitsRoutesTableListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ExpressRouteCircuitsClient.ListRoutesTable")
+		defer func() {
+			sc := -1
+			if result.ercrtlr.Response.Response != nil {
+				sc = result.ercrtlr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listRoutesTableNextResults
 	req, err := client.ListRoutesTablePreparer(ctx, resourceGroupName, circuitName)
 	if err != nil {
@@ -572,8 +674,8 @@ func (client ExpressRouteCircuitsClient) ListRoutesTablePreparer(ctx context.Con
 // ListRoutesTableSender sends the ListRoutesTable request. The method will close the
 // http.Response Body if it receives an error.
 func (client ExpressRouteCircuitsClient) ListRoutesTableSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListRoutesTableResponder handles the response to the ListRoutesTable request. The method always
@@ -590,8 +692,8 @@ func (client ExpressRouteCircuitsClient) ListRoutesTableResponder(resp *http.Res
 }
 
 // listRoutesTableNextResults retrieves the next set of results, if any.
-func (client ExpressRouteCircuitsClient) listRoutesTableNextResults(lastResults ExpressRouteCircuitsRoutesTableListResult) (result ExpressRouteCircuitsRoutesTableListResult, err error) {
-	req, err := lastResults.expressRouteCircuitsRoutesTableListResultPreparer()
+func (client ExpressRouteCircuitsClient) listRoutesTableNextResults(ctx context.Context, lastResults ExpressRouteCircuitsRoutesTableListResult) (result ExpressRouteCircuitsRoutesTableListResult, err error) {
+	req, err := lastResults.expressRouteCircuitsRoutesTableListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsClient", "listRoutesTableNextResults", nil, "Failure preparing next results request")
 	}
@@ -612,15 +714,36 @@ func (client ExpressRouteCircuitsClient) listRoutesTableNextResults(lastResults 
 
 // ListRoutesTableComplete enumerates all values, automatically crossing page boundaries as required.
 func (client ExpressRouteCircuitsClient) ListRoutesTableComplete(ctx context.Context, resourceGroupName string, circuitName string) (result ExpressRouteCircuitsRoutesTableListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ExpressRouteCircuitsClient.ListRoutesTable")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListRoutesTable(ctx, resourceGroupName, circuitName)
 	return
 }
 
-// ListStats the Liststats ExpressRouteCircuit opertion retrieves all the stats from a ExpressRouteCircuits in a
+// ListStats the ListStats ExpressRouteCircuit operation retrieves all the stats from a ExpressRouteCircuits in a
 // resource group.
-//
-// resourceGroupName is the name of the resource group. circuitName is the name of the loadBalancer.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// circuitName - the name of the loadBalancer.
 func (client ExpressRouteCircuitsClient) ListStats(ctx context.Context, resourceGroupName string, circuitName string) (result ExpressRouteCircuitsStatsListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ExpressRouteCircuitsClient.ListStats")
+		defer func() {
+			sc := -1
+			if result.ercslr.Response.Response != nil {
+				sc = result.ercslr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listStatsNextResults
 	req, err := client.ListStatsPreparer(ctx, resourceGroupName, circuitName)
 	if err != nil {
@@ -667,8 +790,8 @@ func (client ExpressRouteCircuitsClient) ListStatsPreparer(ctx context.Context, 
 // ListStatsSender sends the ListStats request. The method will close the
 // http.Response Body if it receives an error.
 func (client ExpressRouteCircuitsClient) ListStatsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListStatsResponder handles the response to the ListStats request. The method always
@@ -685,8 +808,8 @@ func (client ExpressRouteCircuitsClient) ListStatsResponder(resp *http.Response)
 }
 
 // listStatsNextResults retrieves the next set of results, if any.
-func (client ExpressRouteCircuitsClient) listStatsNextResults(lastResults ExpressRouteCircuitsStatsListResult) (result ExpressRouteCircuitsStatsListResult, err error) {
-	req, err := lastResults.expressRouteCircuitsStatsListResultPreparer()
+func (client ExpressRouteCircuitsClient) listStatsNextResults(ctx context.Context, lastResults ExpressRouteCircuitsStatsListResult) (result ExpressRouteCircuitsStatsListResult, err error) {
+	req, err := lastResults.expressRouteCircuitsStatsListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network.ExpressRouteCircuitsClient", "listStatsNextResults", nil, "Failure preparing next results request")
 	}
@@ -707,6 +830,16 @@ func (client ExpressRouteCircuitsClient) listStatsNextResults(lastResults Expres
 
 // ListStatsComplete enumerates all values, automatically crossing page boundaries as required.
 func (client ExpressRouteCircuitsClient) ListStatsComplete(ctx context.Context, resourceGroupName string, circuitName string) (result ExpressRouteCircuitsStatsListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ExpressRouteCircuitsClient.ListStats")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListStats(ctx, resourceGroupName, circuitName)
 	return
 }

@@ -17,7 +17,6 @@ import (
 
 	dockerclient "github.com/fsouza/go-dockerclient"
 	g "github.com/onsi/ginkgo"
-
 	godigest "github.com/opencontainers/go-digest"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,15 +26,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 
-	imageapi "github.com/openshift/origin/pkg/image/apis/image"
-	imagetypedclientset "github.com/openshift/origin/pkg/image/generated/internalclientset/typed/image/internalversion"
+	"github.com/openshift/api/image/docker10"
+	imagev1typedclient "github.com/openshift/client-go/image/clientset/versioned/typed/image/v1"
+	"github.com/openshift/library-go/pkg/image/imageutil"
 	exutil "github.com/openshift/origin/test/extended/util"
-	testutil "github.com/openshift/origin/test/util"
 )
 
 const (
 	// There are coefficients used to multiply layer data size to get a rough size of uploaded blob.
-	layerSizeMultiplierForDocker18     = 2.0
 	layerSizeMultiplierForLatestDocker = 0.8
 	defaultLayerSize                   = 1024
 	digestSHA256GzippedEmptyTar        = godigest.Digest("sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4")
@@ -131,6 +129,8 @@ var (
 		`failed to push image: denied`,
 		// docker daemon output >= 1.10
 		`^denied$`,
+		// buildah
+		`Error uploading manifest.*to.*: denied`,
 	}
 	// reExpectedDeniedError matches the output from `docker push` command when the push is denied. The output
 	// differs based on Docker version.
@@ -141,14 +141,18 @@ var (
 
 // GetImageLabels retrieves Docker labels from image from image repository name and
 // image reference
-func GetImageLabels(c imagetypedclientset.ImageStreamImageInterface, imageRepoName, imageRef string) (map[string]string, error) {
-	_, imageID, err := imageapi.ParseImageStreamImageName(imageRef)
-	image, err := c.Get(imageapi.JoinImageStreamImage(imageRepoName, imageID), metav1.GetOptions{})
+func GetImageLabels(c imagev1typedclient.ImageStreamImageInterface, imageRepoName, imageRef string) (map[string]string, error) {
+	_, imageID, err := imageutil.ParseImageStreamImageName(imageRef)
+	image, err := c.Get(imageutil.JoinImageStreamImage(imageRepoName, imageID), metav1.GetOptions{})
 
 	if err != nil {
 		return map[string]string{}, err
 	}
-	return image.Image.DockerImageMetadata.Config.Labels, nil
+	if err := imageutil.ImageWithMetadata(&image.Image); err != nil {
+		return nil, err
+	}
+
+	return image.Image.DockerImageMetadata.Object.(*docker10.DockerImage).Config.Labels, nil
 }
 
 // BuildAndPushImageOfSizeWithBuilder tries to build an image of wanted size and number of layers. Built image
@@ -168,13 +172,13 @@ func BuildAndPushImageOfSizeWithBuilder(
 		istName += ":" + tag
 	}
 
-	bc, err := oc.BuildClient().Build().BuildConfigs(namespace).Get(name, metav1.GetOptions{})
+	bc, err := oc.BuildClient().BuildV1().BuildConfigs(namespace).Get(name, metav1.GetOptions{})
 	if err == nil {
 		if bc.Spec.CommonSpec.Output.To.Kind != "ImageStreamTag" {
 			return fmt.Errorf("Unexpected kind of buildspec's output (%s != %s)", bc.Spec.CommonSpec.Output.To.Kind, "ImageStreamTag")
 		}
 		bc.Spec.CommonSpec.Output.To.Name = istName
-		if _, err = oc.BuildClient().Build().BuildConfigs(namespace).Update(bc); err != nil {
+		if _, err = oc.BuildClient().BuildV1().BuildConfigs(namespace).Update(bc); err != nil {
 			return err
 		}
 	} else {
@@ -212,8 +216,10 @@ func BuildAndPushImageOfSizeWithBuilder(
 	}
 	buildLog, logsErr := br.Logs()
 
-	if match := reSuccessfulBuild.FindStringSubmatch(buildLog); len(match) > 1 {
-		defer dClient.RemoveImageExtended(match[1], dockerclient.RemoveImageOptions{Force: true})
+	if dClient != nil {
+		if match := reSuccessfulBuild.FindStringSubmatch(buildLog); len(match) > 1 {
+			defer dClient.RemoveImageExtended(match[1], dockerclient.RemoveImageOptions{Force: true})
+		}
 	}
 
 	if !shouldSucceed {
@@ -462,7 +468,7 @@ func getDockerVersion(logger io.Writer) (major, minor int, version string, err e
 	reVersion := regexp.MustCompile(`^(\d+)\.(\d+)`)
 
 	if dockerVersion == "" {
-		client, err2 := testutil.NewDockerClient()
+		client, err2 := dockerclient.NewClientFromEnv()
 		if err = err2; err != nil {
 			return
 		}
@@ -610,7 +616,7 @@ func IsBlobStoredInRegistry(
 // assumed to be in a read-only mode and using filesystem as a storage driver. It returns lists of deleted
 // files.
 func RunHardPrune(oc *exutil.CLI, dryRun bool) (*RegistryStorageFiles, error) {
-	pod, err := GetRegistryPod(oc.AsAdmin().KubeClient().Core())
+	pod, err := GetRegistryPod(oc.AsAdmin().KubeClient().CoreV1())
 	if err != nil {
 		return nil, err
 	}
@@ -726,7 +732,7 @@ func AssertDeletedStorageFiles(deleted, expected *RegistryStorageFiles) error {
 	return kerrors.NewAggregate(errors)
 }
 
-// CleanUpContainer holds names of image names, docker image IDs, imagestreamtags and imagestreams that shall
+// CleanUpContainer holds names of image names, container image IDs, imagestreamtags and imagestreams that shall
 // be deleted at the end of the test.
 type CleanUpContainer struct {
 	OC *exutil.CLI
@@ -748,7 +754,7 @@ func NewCleanUpContainer(oc *exutil.CLI) *CleanUpContainer {
 	}
 }
 
-// AddImage marks given image name, docker image id and imagestreamtag as candidates for deletion.
+// AddImage marks given image name, container image id and imagestreamtag as candidates for deletion.
 func (c *CleanUpContainer) AddImage(name, id, isTag string) {
 	if len(name) > 0 {
 		c.imageNames.Insert(name)
@@ -769,19 +775,19 @@ func (c *CleanUpContainer) AddImageStream(isName string) {
 // Run deletes all the marked objects.
 func (c *CleanUpContainer) Run() {
 	for image := range c.imageNames {
-		err := c.OC.AsAdmin().ImageClient().Image().Images().Delete(image, nil)
+		err := c.OC.AsAdmin().ImageClient().ImageV1().Images().Delete(image, nil)
 		if err != nil {
 			fmt.Fprintf(g.GinkgoWriter, "clean up of image %q failed: %v\n", image, err)
 		}
 	}
 	for isName := range c.isNames {
-		err := c.OC.AsAdmin().ImageClient().Image().ImageStreams(c.OC.Namespace()).Delete(isName, nil)
+		err := c.OC.AsAdmin().ImageClient().ImageV1().ImageStreams(c.OC.Namespace()).Delete(isName, nil)
 		if err != nil {
 			fmt.Fprintf(g.GinkgoWriter, "clean up of image stream %q failed: %v\n", isName, err)
 		}
 	}
 	for isTag := range c.isTags {
-		err := c.OC.ImageClient().Image().ImageStreamTags(c.OC.Namespace()).Delete(isTag, nil)
+		err := c.OC.ImageClient().ImageV1().ImageStreamTags(c.OC.Namespace()).Delete(isTag, nil)
 		if err != nil {
 			fmt.Fprintf(g.GinkgoWriter, "clean up of image stream tag %q failed: %v\n", isTag, err)
 		}
@@ -800,7 +806,7 @@ func (c *CleanUpContainer) Run() {
 		return
 	}
 
-	dClient, err := testutil.NewDockerClient()
+	dClient, err := dockerclient.NewClientFromEnv()
 	if err != nil {
 		fmt.Fprintf(g.GinkgoWriter, "failed to create a new docker client: %v\n", err)
 		return

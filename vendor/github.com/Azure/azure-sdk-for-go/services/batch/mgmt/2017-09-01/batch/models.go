@@ -18,13 +18,18 @@ package batch
 // Changes may cause incorrect behavior and will be lost if the code is regenerated.
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
+
+// The package's fully qualified name.
+const fqdn = "github.com/Azure/azure-sdk-for-go/services/batch/mgmt/2017-09-01/batch"
 
 // AccountKeyType enumerates the values for account key type.
 type AccountKeyType string
@@ -35,6 +40,11 @@ const (
 	// Secondary ...
 	Secondary AccountKeyType = "Secondary"
 )
+
+// PossibleAccountKeyTypeValues returns an array of possible values for the AccountKeyType const type.
+func PossibleAccountKeyTypeValues() []AccountKeyType {
+	return []AccountKeyType{Primary, Secondary}
+}
 
 // AllocationState enumerates the values for allocation state.
 type AllocationState string
@@ -48,6 +58,11 @@ const (
 	Stopping AllocationState = "Stopping"
 )
 
+// PossibleAllocationStateValues returns an array of possible values for the AllocationState const type.
+func PossibleAllocationStateValues() []AllocationState {
+	return []AllocationState{Resizing, Steady, Stopping}
+}
+
 // AutoUserScope enumerates the values for auto user scope.
 type AutoUserScope string
 
@@ -57,6 +72,11 @@ const (
 	// AutoUserScopeTask ...
 	AutoUserScopeTask AutoUserScope = "Task"
 )
+
+// PossibleAutoUserScopeValues returns an array of possible values for the AutoUserScope const type.
+func PossibleAutoUserScopeValues() []AutoUserScope {
+	return []AutoUserScope{AutoUserScopePool, AutoUserScopeTask}
+}
 
 // CachingType enumerates the values for caching type.
 type CachingType string
@@ -70,6 +90,11 @@ const (
 	ReadWrite CachingType = "ReadWrite"
 )
 
+// PossibleCachingTypeValues returns an array of possible values for the CachingType const type.
+func PossibleCachingTypeValues() []CachingType {
+	return []CachingType{None, ReadOnly, ReadWrite}
+}
+
 // CertificateFormat enumerates the values for certificate format.
 type CertificateFormat string
 
@@ -79,6 +104,11 @@ const (
 	// Pfx ...
 	Pfx CertificateFormat = "Pfx"
 )
+
+// PossibleCertificateFormatValues returns an array of possible values for the CertificateFormat const type.
+func PossibleCertificateFormatValues() []CertificateFormat {
+	return []CertificateFormat{Cer, Pfx}
+}
 
 // CertificateProvisioningState enumerates the values for certificate provisioning state.
 type CertificateProvisioningState string
@@ -92,6 +122,11 @@ const (
 	Succeeded CertificateProvisioningState = "Succeeded"
 )
 
+// PossibleCertificateProvisioningStateValues returns an array of possible values for the CertificateProvisioningState const type.
+func PossibleCertificateProvisioningStateValues() []CertificateProvisioningState {
+	return []CertificateProvisioningState{Deleting, Failed, Succeeded}
+}
+
 // CertificateStoreLocation enumerates the values for certificate store location.
 type CertificateStoreLocation string
 
@@ -101,6 +136,11 @@ const (
 	// LocalMachine ...
 	LocalMachine CertificateStoreLocation = "LocalMachine"
 )
+
+// PossibleCertificateStoreLocationValues returns an array of possible values for the CertificateStoreLocation const type.
+func PossibleCertificateStoreLocationValues() []CertificateStoreLocation {
+	return []CertificateStoreLocation{CurrentUser, LocalMachine}
+}
 
 // CertificateVisibility enumerates the values for certificate visibility.
 type CertificateVisibility string
@@ -113,6 +153,11 @@ const (
 	// CertificateVisibilityTask ...
 	CertificateVisibilityTask CertificateVisibility = "Task"
 )
+
+// PossibleCertificateVisibilityValues returns an array of possible values for the CertificateVisibility const type.
+func PossibleCertificateVisibilityValues() []CertificateVisibility {
+	return []CertificateVisibility{CertificateVisibilityRemoteUser, CertificateVisibilityStartTask, CertificateVisibilityTask}
+}
 
 // ComputeNodeDeallocationOption enumerates the values for compute node deallocation option.
 type ComputeNodeDeallocationOption string
@@ -128,6 +173,11 @@ const (
 	Terminate ComputeNodeDeallocationOption = "Terminate"
 )
 
+// PossibleComputeNodeDeallocationOptionValues returns an array of possible values for the ComputeNodeDeallocationOption const type.
+func PossibleComputeNodeDeallocationOptionValues() []ComputeNodeDeallocationOption {
+	return []ComputeNodeDeallocationOption{Requeue, RetainedData, TaskCompletion, Terminate}
+}
+
 // ComputeNodeFillType enumerates the values for compute node fill type.
 type ComputeNodeFillType string
 
@@ -137,6 +187,11 @@ const (
 	// Spread ...
 	Spread ComputeNodeFillType = "Spread"
 )
+
+// PossibleComputeNodeFillTypeValues returns an array of possible values for the ComputeNodeFillType const type.
+func PossibleComputeNodeFillTypeValues() []ComputeNodeFillType {
+	return []ComputeNodeFillType{Pack, Spread}
+}
 
 // ElevationLevel enumerates the values for elevation level.
 type ElevationLevel string
@@ -148,6 +203,11 @@ const (
 	NonAdmin ElevationLevel = "NonAdmin"
 )
 
+// PossibleElevationLevelValues returns an array of possible values for the ElevationLevel const type.
+func PossibleElevationLevelValues() []ElevationLevel {
+	return []ElevationLevel{Admin, NonAdmin}
+}
+
 // InboundEndpointProtocol enumerates the values for inbound endpoint protocol.
 type InboundEndpointProtocol string
 
@@ -157,6 +217,11 @@ const (
 	// UDP ...
 	UDP InboundEndpointProtocol = "UDP"
 )
+
+// PossibleInboundEndpointProtocolValues returns an array of possible values for the InboundEndpointProtocol const type.
+func PossibleInboundEndpointProtocolValues() []InboundEndpointProtocol {
+	return []InboundEndpointProtocol{TCP, UDP}
+}
 
 // InterNodeCommunicationState enumerates the values for inter node communication state.
 type InterNodeCommunicationState string
@@ -168,6 +233,11 @@ const (
 	Enabled InterNodeCommunicationState = "Enabled"
 )
 
+// PossibleInterNodeCommunicationStateValues returns an array of possible values for the InterNodeCommunicationState const type.
+func PossibleInterNodeCommunicationStateValues() []InterNodeCommunicationState {
+	return []InterNodeCommunicationState{Disabled, Enabled}
+}
+
 // NameAvailabilityReason enumerates the values for name availability reason.
 type NameAvailabilityReason string
 
@@ -178,6 +248,11 @@ const (
 	Invalid NameAvailabilityReason = "Invalid"
 )
 
+// PossibleNameAvailabilityReasonValues returns an array of possible values for the NameAvailabilityReason const type.
+func PossibleNameAvailabilityReasonValues() []NameAvailabilityReason {
+	return []NameAvailabilityReason{AlreadyExists, Invalid}
+}
+
 // NetworkSecurityGroupRuleAccess enumerates the values for network security group rule access.
 type NetworkSecurityGroupRuleAccess string
 
@@ -187,6 +262,11 @@ const (
 	// Deny ...
 	Deny NetworkSecurityGroupRuleAccess = "Deny"
 )
+
+// PossibleNetworkSecurityGroupRuleAccessValues returns an array of possible values for the NetworkSecurityGroupRuleAccess const type.
+func PossibleNetworkSecurityGroupRuleAccessValues() []NetworkSecurityGroupRuleAccess {
+	return []NetworkSecurityGroupRuleAccess{Allow, Deny}
+}
 
 // PackageState enumerates the values for package state.
 type PackageState string
@@ -200,6 +280,11 @@ const (
 	Unmapped PackageState = "Unmapped"
 )
 
+// PossiblePackageStateValues returns an array of possible values for the PackageState const type.
+func PossiblePackageStateValues() []PackageState {
+	return []PackageState{Active, Pending, Unmapped}
+}
+
 // PoolAllocationMode enumerates the values for pool allocation mode.
 type PoolAllocationMode string
 
@@ -210,6 +295,11 @@ const (
 	UserSubscription PoolAllocationMode = "UserSubscription"
 )
 
+// PossiblePoolAllocationModeValues returns an array of possible values for the PoolAllocationMode const type.
+func PossiblePoolAllocationModeValues() []PoolAllocationMode {
+	return []PoolAllocationMode{BatchService, UserSubscription}
+}
+
 // PoolProvisioningState enumerates the values for pool provisioning state.
 type PoolProvisioningState string
 
@@ -219,6 +309,11 @@ const (
 	// PoolProvisioningStateSucceeded ...
 	PoolProvisioningStateSucceeded PoolProvisioningState = "Succeeded"
 )
+
+// PossiblePoolProvisioningStateValues returns an array of possible values for the PoolProvisioningState const type.
+func PossiblePoolProvisioningStateValues() []PoolProvisioningState {
+	return []PoolProvisioningState{PoolProvisioningStateDeleting, PoolProvisioningStateSucceeded}
+}
 
 // ProvisioningState enumerates the values for provisioning state.
 type ProvisioningState string
@@ -238,6 +333,11 @@ const (
 	ProvisioningStateSucceeded ProvisioningState = "Succeeded"
 )
 
+// PossibleProvisioningStateValues returns an array of possible values for the ProvisioningState const type.
+func PossibleProvisioningStateValues() []ProvisioningState {
+	return []ProvisioningState{ProvisioningStateCancelled, ProvisioningStateCreating, ProvisioningStateDeleting, ProvisioningStateFailed, ProvisioningStateInvalid, ProvisioningStateSucceeded}
+}
+
 // StorageAccountType enumerates the values for storage account type.
 type StorageAccountType string
 
@@ -248,20 +348,25 @@ const (
 	StandardLRS StorageAccountType = "Standard_LRS"
 )
 
+// PossibleStorageAccountTypeValues returns an array of possible values for the StorageAccountType const type.
+func PossibleStorageAccountTypeValues() []StorageAccountType {
+	return []StorageAccountType{PremiumLRS, StandardLRS}
+}
+
 // Account contains information about an Azure Batch account.
 type Account struct {
 	autorest.Response `json:"-"`
 	// AccountProperties - The properties associated with the account.
 	*AccountProperties `json:"properties,omitempty"`
-	// ID - The ID of the resource.
+	// ID - READ-ONLY; The ID of the resource.
 	ID *string `json:"id,omitempty"`
-	// Name - The name of the resource.
+	// Name - READ-ONLY; The name of the resource.
 	Name *string `json:"name,omitempty"`
-	// Type - The type of the resource.
+	// Type - READ-ONLY; The type of the resource.
 	Type *string `json:"type,omitempty"`
-	// Location - The location of the resource.
+	// Location - READ-ONLY; The location of the resource.
 	Location *string `json:"location,omitempty"`
-	// Tags - The tags of the resource.
+	// Tags - READ-ONLY; The tags of the resource.
 	Tags map[string]*string `json:"tags"`
 }
 
@@ -270,21 +375,6 @@ func (a Account) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
 	if a.AccountProperties != nil {
 		objectMap["properties"] = a.AccountProperties
-	}
-	if a.ID != nil {
-		objectMap["id"] = a.ID
-	}
-	if a.Name != nil {
-		objectMap["name"] = a.Name
-	}
-	if a.Type != nil {
-		objectMap["type"] = a.Type
-	}
-	if a.Location != nil {
-		objectMap["location"] = a.Location
-	}
-	if a.Tags != nil {
-		objectMap["tags"] = a.Tags
 	}
 	return json.Marshal(objectMap)
 }
@@ -358,50 +448,31 @@ func (a *Account) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// AccountCreateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// AccountCreateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type AccountCreateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future AccountCreateFuture) Result(client AccountClient) (a Account, err error) {
+func (future *AccountCreateFuture) Result(client AccountClient) (a Account, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "batch.AccountCreateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return a, azure.NewAsyncOpIncompleteError("batch.AccountCreateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		a, err = client.CreateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "batch.AccountCreateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("batch.AccountCreateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if a.Response.Response, err = future.GetResult(sender); err == nil && a.Response.Response.StatusCode != http.StatusNoContent {
+		a, err = client.CreateResponder(a.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "batch.AccountCreateFuture", "Result", a.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "batch.AccountCreateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	a, err = client.CreateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "batch.AccountCreateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -483,62 +554,37 @@ type AccountCreateProperties struct {
 	KeyVaultReference *KeyVaultReference `json:"keyVaultReference,omitempty"`
 }
 
-// AccountDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// AccountDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type AccountDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future AccountDeleteFuture) Result(client AccountClient) (ar autorest.Response, err error) {
+func (future *AccountDeleteFuture) Result(client AccountClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "batch.AccountDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("batch.AccountDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "batch.AccountDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("batch.AccountDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "batch.AccountDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "batch.AccountDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
 // AccountKeys a set of Azure Batch account keys.
 type AccountKeys struct {
 	autorest.Response `json:"-"`
-	// AccountName - The Batch account name.
+	// AccountName - READ-ONLY; The Batch account name.
 	AccountName *string `json:"accountName,omitempty"`
-	// Primary - The primary key associated with the account.
+	// Primary - READ-ONLY; The primary key associated with the account.
 	Primary *string `json:"primary,omitempty"`
-	// Secondary - The secondary key associated with the account.
+	// Secondary - READ-ONLY; The secondary key associated with the account.
 	Secondary *string `json:"secondary,omitempty"`
 }
 
@@ -557,20 +603,37 @@ type AccountListResultIterator struct {
 	page AccountListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *AccountListResultIterator) Next() error {
+func (iter *AccountListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AccountListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *AccountListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -592,6 +655,11 @@ func (iter AccountListResultIterator) Value() Account {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the AccountListResultIterator type.
+func NewAccountListResultIterator(page AccountListResultPage) AccountListResultIterator {
+	return AccountListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (alr AccountListResult) IsEmpty() bool {
 	return alr.Value == nil || len(*alr.Value) == 0
@@ -599,11 +667,11 @@ func (alr AccountListResult) IsEmpty() bool {
 
 // accountListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (alr AccountListResult) accountListResultPreparer() (*http.Request, error) {
+func (alr AccountListResult) accountListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if alr.NextLink == nil || len(to.String(alr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(alr.NextLink)))
@@ -611,19 +679,36 @@ func (alr AccountListResult) accountListResultPreparer() (*http.Request, error) 
 
 // AccountListResultPage contains a page of Account values.
 type AccountListResultPage struct {
-	fn  func(AccountListResult) (AccountListResult, error)
+	fn  func(context.Context, AccountListResult) (AccountListResult, error)
 	alr AccountListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *AccountListResultPage) Next() error {
-	next, err := page.fn(page.alr)
+func (page *AccountListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AccountListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.alr)
 	if err != nil {
 		return err
 	}
 	page.alr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *AccountListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -644,20 +729,31 @@ func (page AccountListResultPage) Values() []Account {
 	return *page.alr.Value
 }
 
+// Creates a new instance of the AccountListResultPage type.
+func NewAccountListResultPage(getNextPage func(context.Context, AccountListResult) (AccountListResult, error)) AccountListResultPage {
+	return AccountListResultPage{fn: getNextPage}
+}
+
 // AccountProperties account specific properties.
 type AccountProperties struct {
-	// AccountEndpoint - The account endpoint used to interact with the Batch service.
+	// AccountEndpoint - READ-ONLY; The account endpoint used to interact with the Batch service.
 	AccountEndpoint *string `json:"accountEndpoint,omitempty"`
-	// ProvisioningState - The provisioned state of the resource. Possible values include: 'ProvisioningStateInvalid', 'ProvisioningStateCreating', 'ProvisioningStateDeleting', 'ProvisioningStateSucceeded', 'ProvisioningStateFailed', 'ProvisioningStateCancelled'
+	// ProvisioningState - READ-ONLY; The provisioned state of the resource. Possible values include: 'ProvisioningStateInvalid', 'ProvisioningStateCreating', 'ProvisioningStateDeleting', 'ProvisioningStateSucceeded', 'ProvisioningStateFailed', 'ProvisioningStateCancelled'
 	ProvisioningState ProvisioningState `json:"provisioningState,omitempty"`
-	// PoolAllocationMode - Possible values include: 'BatchService', 'UserSubscription'
-	PoolAllocationMode           PoolAllocationMode     `json:"poolAllocationMode,omitempty"`
-	KeyVaultReference            *KeyVaultReference     `json:"keyVaultReference,omitempty"`
-	AutoStorage                  *AutoStorageProperties `json:"autoStorage,omitempty"`
-	DedicatedCoreQuota           *int32                 `json:"dedicatedCoreQuota,omitempty"`
-	LowPriorityCoreQuota         *int32                 `json:"lowPriorityCoreQuota,omitempty"`
-	PoolQuota                    *int32                 `json:"poolQuota,omitempty"`
-	ActiveJobAndJobScheduleQuota *int32                 `json:"activeJobAndJobScheduleQuota,omitempty"`
+	// PoolAllocationMode - READ-ONLY; Possible values include: 'BatchService', 'UserSubscription'
+	PoolAllocationMode PoolAllocationMode `json:"poolAllocationMode,omitempty"`
+	// KeyVaultReference - READ-ONLY
+	KeyVaultReference *KeyVaultReference `json:"keyVaultReference,omitempty"`
+	// AutoStorage - READ-ONLY
+	AutoStorage *AutoStorageProperties `json:"autoStorage,omitempty"`
+	// DedicatedCoreQuota - READ-ONLY
+	DedicatedCoreQuota *int32 `json:"dedicatedCoreQuota,omitempty"`
+	// LowPriorityCoreQuota - READ-ONLY
+	LowPriorityCoreQuota *int32 `json:"lowPriorityCoreQuota,omitempty"`
+	// PoolQuota - READ-ONLY
+	PoolQuota *int32 `json:"poolQuota,omitempty"`
+	// ActiveJobAndJobScheduleQuota - READ-ONLY
+	ActiveJobAndJobScheduleQuota *int32 `json:"activeJobAndJobScheduleQuota,omitempty"`
 }
 
 // AccountRegenerateKeyParameters parameters supplied to the RegenerateKey operation.
@@ -757,19 +853,19 @@ type ApplicationCreateParameters struct {
 // ApplicationPackage an application package which represents a particular version of an application.
 type ApplicationPackage struct {
 	autorest.Response `json:"-"`
-	// ID - The ID of the application.
+	// ID - READ-ONLY; The ID of the application.
 	ID *string `json:"id,omitempty"`
-	// Version - The version of the application package.
+	// Version - READ-ONLY; The version of the application package.
 	Version *string `json:"version,omitempty"`
-	// State - The current state of the application package. Possible values include: 'Pending', 'Active', 'Unmapped'
+	// State - READ-ONLY; The current state of the application package. Possible values include: 'Pending', 'Active', 'Unmapped'
 	State PackageState `json:"state,omitempty"`
-	// Format - The format of the application package, if the package is active.
+	// Format - READ-ONLY; The format of the application package, if the package is active.
 	Format *string `json:"format,omitempty"`
-	// StorageURL - The URL for the application package in Azure Storage.
+	// StorageURL - READ-ONLY; The URL for the application package in Azure Storage.
 	StorageURL *string `json:"storageUrl,omitempty"`
-	// StorageURLExpiry - The UTC time at which the Azure Storage URL will expire.
+	// StorageURLExpiry - READ-ONLY; The UTC time at which the Azure Storage URL will expire.
 	StorageURLExpiry *date.Time `json:"storageUrlExpiry,omitempty"`
-	// LastActivationTime - The time at which the package was last activated, if the package is active.
+	// LastActivationTime - READ-ONLY; The time at which the package was last activated, if the package is active.
 	LastActivationTime *date.Time `json:"lastActivationTime,omitempty"`
 }
 
@@ -820,7 +916,8 @@ type AutoStorageBaseProperties struct {
 	StorageAccountID *string `json:"storageAccountId,omitempty"`
 }
 
-// AutoStorageProperties contains information about the auto-storage account associated with a Batch account.
+// AutoStorageProperties contains information about the auto-storage account associated with a Batch
+// account.
 type AutoStorageProperties struct {
 	// LastKeySync - The UTC time at which storage keys were last synchronized with the Batch account.
 	LastKeySync *date.Time `json:"lastKeySync,omitempty"`
@@ -841,14 +938,23 @@ type Certificate struct {
 	autorest.Response `json:"-"`
 	// CertificateProperties - The properties associated with the certificate.
 	*CertificateProperties `json:"properties,omitempty"`
-	// ID - The ID of the resource.
+	// ID - READ-ONLY; The ID of the resource.
 	ID *string `json:"id,omitempty"`
-	// Name - The name of the resource.
+	// Name - READ-ONLY; The name of the resource.
 	Name *string `json:"name,omitempty"`
-	// Type - The type of the resource.
+	// Type - READ-ONLY; The type of the resource.
 	Type *string `json:"type,omitempty"`
-	// Etag - The ETag of the resource, used for concurrency statements.
+	// Etag - READ-ONLY; The ETag of the resource, used for concurrency statements.
 	Etag *string `json:"etag,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for Certificate.
+func (c Certificate) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if c.CertificateProperties != nil {
+		objectMap["properties"] = c.CertificateProperties
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for Certificate struct.
@@ -921,50 +1027,31 @@ type CertificateBaseProperties struct {
 	Format CertificateFormat `json:"format,omitempty"`
 }
 
-// CertificateCreateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// CertificateCreateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type CertificateCreateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future CertificateCreateFuture) Result(client CertificateClient) (c Certificate, err error) {
+func (future *CertificateCreateFuture) Result(client CertificateClient) (c Certificate, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "batch.CertificateCreateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return c, azure.NewAsyncOpIncompleteError("batch.CertificateCreateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		c, err = client.CreateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "batch.CertificateCreateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("batch.CertificateCreateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if c.Response.Response, err = future.GetResult(sender); err == nil && c.Response.Response.StatusCode != http.StatusNoContent {
+		c, err = client.CreateResponder(c.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "batch.CertificateCreateFuture", "Result", c.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "batch.CertificateCreateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	c, err = client.CreateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "batch.CertificateCreateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -973,14 +1060,23 @@ func (future CertificateCreateFuture) Result(client CertificateClient) (c Certif
 type CertificateCreateOrUpdateParameters struct {
 	// CertificateCreateOrUpdateProperties - The properties associated with the certificate.
 	*CertificateCreateOrUpdateProperties `json:"properties,omitempty"`
-	// ID - The ID of the resource.
+	// ID - READ-ONLY; The ID of the resource.
 	ID *string `json:"id,omitempty"`
-	// Name - The name of the resource.
+	// Name - READ-ONLY; The name of the resource.
 	Name *string `json:"name,omitempty"`
-	// Type - The type of the resource.
+	// Type - READ-ONLY; The type of the resource.
 	Type *string `json:"type,omitempty"`
-	// Etag - The ETag of the resource, used for concurrency statements.
+	// Etag - READ-ONLY; The ETag of the resource, used for concurrency statements.
 	Etag *string `json:"etag,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for CertificateCreateOrUpdateParameters.
+func (ccoup CertificateCreateOrUpdateParameters) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if ccoup.CertificateCreateOrUpdateProperties != nil {
+		objectMap["properties"] = ccoup.CertificateCreateOrUpdateProperties
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for CertificateCreateOrUpdateParameters struct.
@@ -1057,68 +1153,45 @@ type CertificateCreateOrUpdateProperties struct {
 	Format CertificateFormat `json:"format,omitempty"`
 }
 
-// CertificateDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// CertificateDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type CertificateDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future CertificateDeleteFuture) Result(client CertificateClient) (ar autorest.Response, err error) {
+func (future *CertificateDeleteFuture) Result(client CertificateClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "batch.CertificateDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("batch.CertificateDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "batch.CertificateDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("batch.CertificateDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "batch.CertificateDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "batch.CertificateDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
 // CertificateProperties certificate properties.
 type CertificateProperties struct {
-	// ProvisioningState - Values are:
+	// ProvisioningState - READ-ONLY; Values are:
 	//  Succeeded - The certificate is available for use in pools.
 	//  Deleting - The user has requested that the certificate be deleted, but the delete operation has not yet completed. You may not reference the certificate when creating or updating pools.
 	//  Failed - The user requested that the certificate be deleted, but there are pools that still have references to the certificate, or it is still installed on one or more compute nodes. (The latter can occur if the certificate has been removed from the pool, but the node has not yet restarted. Nodes refresh their certificates only when they restart.) You may use the cancel certificate delete operation to cancel the delete, or the delete certificate operation to retry the delete. Possible values include: 'Succeeded', 'Deleting', 'Failed'
-	ProvisioningState               CertificateProvisioningState `json:"provisioningState,omitempty"`
-	ProvisioningStateTransitionTime *date.Time                   `json:"provisioningStateTransitionTime,omitempty"`
-	// PreviousProvisioningState - The previous provisioned state of the resource. Possible values include: 'Succeeded', 'Deleting', 'Failed'
-	PreviousProvisioningState               CertificateProvisioningState `json:"previousProvisioningState,omitempty"`
-	PreviousProvisioningStateTransitionTime *date.Time                   `json:"previousProvisioningStateTransitionTime,omitempty"`
-	// PublicData - The public key of the certificate.
+	ProvisioningState CertificateProvisioningState `json:"provisioningState,omitempty"`
+	// ProvisioningStateTransitionTime - READ-ONLY
+	ProvisioningStateTransitionTime *date.Time `json:"provisioningStateTransitionTime,omitempty"`
+	// PreviousProvisioningState - READ-ONLY; The previous provisioned state of the resource. Possible values include: 'Succeeded', 'Deleting', 'Failed'
+	PreviousProvisioningState CertificateProvisioningState `json:"previousProvisioningState,omitempty"`
+	// PreviousProvisioningStateTransitionTime - READ-ONLY
+	PreviousProvisioningStateTransitionTime *date.Time `json:"previousProvisioningStateTransitionTime,omitempty"`
+	// PublicData - READ-ONLY; The public key of the certificate.
 	PublicData *string `json:"publicData,omitempty"`
-	// DeleteCertificateError - This is only returned when the certificate provisioningState is 'Failed'.
+	// DeleteCertificateError - READ-ONLY; This is only returned when the certificate provisioningState is 'Failed'.
 	DeleteCertificateError *DeleteCertificateError `json:"deleteCertificateError,omitempty"`
 	// ThumbprintAlgorithm - This must match the first portion of the certificate name. Currently required to be 'SHA1'.
 	ThumbprintAlgorithm *string `json:"thumbprintAlgorithm,omitempty"`
@@ -1154,11 +1227,11 @@ type CheckNameAvailabilityParameters struct {
 // CheckNameAvailabilityResult the CheckNameAvailability operation response.
 type CheckNameAvailabilityResult struct {
 	autorest.Response `json:"-"`
-	// NameAvailable - Gets a boolean value that indicates whether the name is available for you to use. If true, the name is available. If false, the name has already been taken or invalid and cannot be used.
+	// NameAvailable - READ-ONLY; Gets a boolean value that indicates whether the name is available for you to use. If true, the name is available. If false, the name has already been taken or invalid and cannot be used.
 	NameAvailable *bool `json:"nameAvailable,omitempty"`
-	// Reason - Gets the reason that a Batch account name could not be used. The Reason element is only returned if NameAvailable is false. Possible values include: 'Invalid', 'AlreadyExists'
+	// Reason - READ-ONLY; Gets the reason that a Batch account name could not be used. The Reason element is only returned if NameAvailable is false. Possible values include: 'Invalid', 'AlreadyExists'
 	Reason NameAvailabilityReason `json:"reason,omitempty"`
-	// Message - Gets an error message explaining the Reason value in more detail.
+	// Message - READ-ONLY; Gets an error message explaining the Reason value in more detail.
 	Message *string `json:"message,omitempty"`
 }
 
@@ -1189,7 +1262,8 @@ type CloudServiceConfiguration struct {
 	CurrentOSVersion *string `json:"currentOSVersion,omitempty"`
 }
 
-// DataDisk data Disk settings which will be used by the data disks associated to Compute Nodes in the pool.
+// DataDisk data Disk settings which will be used by the data disks associated to Compute Nodes in the
+// pool.
 type DataDisk struct {
 	// Lun - The lun is used to uniquely identify each data disk. If attaching multiple disks, each should have a distinct lun.
 	Lun *int32 `json:"lun,omitempty"`
@@ -1307,20 +1381,37 @@ type ListApplicationsResultIterator struct {
 	page ListApplicationsResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *ListApplicationsResultIterator) Next() error {
+func (iter *ListApplicationsResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ListApplicationsResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *ListApplicationsResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -1342,6 +1433,11 @@ func (iter ListApplicationsResultIterator) Value() Application {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the ListApplicationsResultIterator type.
+func NewListApplicationsResultIterator(page ListApplicationsResultPage) ListApplicationsResultIterator {
+	return ListApplicationsResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (lar ListApplicationsResult) IsEmpty() bool {
 	return lar.Value == nil || len(*lar.Value) == 0
@@ -1349,11 +1445,11 @@ func (lar ListApplicationsResult) IsEmpty() bool {
 
 // listApplicationsResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (lar ListApplicationsResult) listApplicationsResultPreparer() (*http.Request, error) {
+func (lar ListApplicationsResult) listApplicationsResultPreparer(ctx context.Context) (*http.Request, error) {
 	if lar.NextLink == nil || len(to.String(lar.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(lar.NextLink)))
@@ -1361,19 +1457,36 @@ func (lar ListApplicationsResult) listApplicationsResultPreparer() (*http.Reques
 
 // ListApplicationsResultPage contains a page of Application values.
 type ListApplicationsResultPage struct {
-	fn  func(ListApplicationsResult) (ListApplicationsResult, error)
+	fn  func(context.Context, ListApplicationsResult) (ListApplicationsResult, error)
 	lar ListApplicationsResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *ListApplicationsResultPage) Next() error {
-	next, err := page.fn(page.lar)
+func (page *ListApplicationsResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ListApplicationsResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.lar)
 	if err != nil {
 		return err
 	}
 	page.lar = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *ListApplicationsResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -1394,6 +1507,11 @@ func (page ListApplicationsResultPage) Values() []Application {
 	return *page.lar.Value
 }
 
+// Creates a new instance of the ListApplicationsResultPage type.
+func NewListApplicationsResultPage(getNextPage func(context.Context, ListApplicationsResult) (ListApplicationsResult, error)) ListApplicationsResultPage {
+	return ListApplicationsResultPage{fn: getNextPage}
+}
+
 // ListCertificatesResult values returned by the List operation.
 type ListCertificatesResult struct {
 	autorest.Response `json:"-"`
@@ -1409,20 +1527,37 @@ type ListCertificatesResultIterator struct {
 	page ListCertificatesResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *ListCertificatesResultIterator) Next() error {
+func (iter *ListCertificatesResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ListCertificatesResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *ListCertificatesResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -1444,6 +1579,11 @@ func (iter ListCertificatesResultIterator) Value() Certificate {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the ListCertificatesResultIterator type.
+func NewListCertificatesResultIterator(page ListCertificatesResultPage) ListCertificatesResultIterator {
+	return ListCertificatesResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (lcr ListCertificatesResult) IsEmpty() bool {
 	return lcr.Value == nil || len(*lcr.Value) == 0
@@ -1451,11 +1591,11 @@ func (lcr ListCertificatesResult) IsEmpty() bool {
 
 // listCertificatesResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (lcr ListCertificatesResult) listCertificatesResultPreparer() (*http.Request, error) {
+func (lcr ListCertificatesResult) listCertificatesResultPreparer(ctx context.Context) (*http.Request, error) {
 	if lcr.NextLink == nil || len(to.String(lcr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(lcr.NextLink)))
@@ -1463,19 +1603,36 @@ func (lcr ListCertificatesResult) listCertificatesResultPreparer() (*http.Reques
 
 // ListCertificatesResultPage contains a page of Certificate values.
 type ListCertificatesResultPage struct {
-	fn  func(ListCertificatesResult) (ListCertificatesResult, error)
+	fn  func(context.Context, ListCertificatesResult) (ListCertificatesResult, error)
 	lcr ListCertificatesResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *ListCertificatesResultPage) Next() error {
-	next, err := page.fn(page.lcr)
+func (page *ListCertificatesResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ListCertificatesResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.lcr)
 	if err != nil {
 		return err
 	}
 	page.lcr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *ListCertificatesResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -1496,6 +1653,11 @@ func (page ListCertificatesResultPage) Values() []Certificate {
 	return *page.lcr.Value
 }
 
+// Creates a new instance of the ListCertificatesResultPage type.
+func NewListCertificatesResultPage(getNextPage func(context.Context, ListCertificatesResult) (ListCertificatesResult, error)) ListCertificatesResultPage {
+	return ListCertificatesResultPage{fn: getNextPage}
+}
+
 // ListPoolsResult values returned by the List operation.
 type ListPoolsResult struct {
 	autorest.Response `json:"-"`
@@ -1511,20 +1673,37 @@ type ListPoolsResultIterator struct {
 	page ListPoolsResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *ListPoolsResultIterator) Next() error {
+func (iter *ListPoolsResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ListPoolsResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *ListPoolsResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -1546,6 +1725,11 @@ func (iter ListPoolsResultIterator) Value() Pool {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the ListPoolsResultIterator type.
+func NewListPoolsResultIterator(page ListPoolsResultPage) ListPoolsResultIterator {
+	return ListPoolsResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (lpr ListPoolsResult) IsEmpty() bool {
 	return lpr.Value == nil || len(*lpr.Value) == 0
@@ -1553,11 +1737,11 @@ func (lpr ListPoolsResult) IsEmpty() bool {
 
 // listPoolsResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (lpr ListPoolsResult) listPoolsResultPreparer() (*http.Request, error) {
+func (lpr ListPoolsResult) listPoolsResultPreparer(ctx context.Context) (*http.Request, error) {
 	if lpr.NextLink == nil || len(to.String(lpr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(lpr.NextLink)))
@@ -1565,19 +1749,36 @@ func (lpr ListPoolsResult) listPoolsResultPreparer() (*http.Request, error) {
 
 // ListPoolsResultPage contains a page of Pool values.
 type ListPoolsResultPage struct {
-	fn  func(ListPoolsResult) (ListPoolsResult, error)
+	fn  func(context.Context, ListPoolsResult) (ListPoolsResult, error)
 	lpr ListPoolsResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *ListPoolsResultPage) Next() error {
-	next, err := page.fn(page.lpr)
+func (page *ListPoolsResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ListPoolsResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.lpr)
 	if err != nil {
 		return err
 	}
 	page.lpr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *ListPoolsResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -1598,15 +1799,20 @@ func (page ListPoolsResultPage) Values() []Pool {
 	return *page.lpr.Value
 }
 
+// Creates a new instance of the ListPoolsResultPage type.
+func NewListPoolsResultPage(getNextPage func(context.Context, ListPoolsResult) (ListPoolsResult, error)) ListPoolsResultPage {
+	return ListPoolsResultPage{fn: getNextPage}
+}
+
 // LocationQuota quotas associated with a Batch region for a particular subscription.
 type LocationQuota struct {
 	autorest.Response `json:"-"`
-	// AccountQuota - The number of Batch accounts that may be created under the subscription in the specified region.
+	// AccountQuota - READ-ONLY; The number of Batch accounts that may be created under the subscription in the specified region.
 	AccountQuota *int32 `json:"accountQuota,omitempty"`
 }
 
-// MetadataItem the Batch service does not assign any meaning to this metadata; it is solely for the use of user
-// code.
+// MetadataItem the Batch service does not assign any meaning to this metadata; it is solely for the use of
+// user code.
 type MetadataItem struct {
 	Name  *string `json:"name,omitempty"`
 	Value *string `json:"value,omitempty"`
@@ -1661,20 +1867,37 @@ type OperationListResultIterator struct {
 	page OperationListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *OperationListResultIterator) Next() error {
+func (iter *OperationListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OperationListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *OperationListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -1696,6 +1919,11 @@ func (iter OperationListResultIterator) Value() Operation {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the OperationListResultIterator type.
+func NewOperationListResultIterator(page OperationListResultPage) OperationListResultIterator {
+	return OperationListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (olr OperationListResult) IsEmpty() bool {
 	return olr.Value == nil || len(*olr.Value) == 0
@@ -1703,11 +1931,11 @@ func (olr OperationListResult) IsEmpty() bool {
 
 // operationListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (olr OperationListResult) operationListResultPreparer() (*http.Request, error) {
+func (olr OperationListResult) operationListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if olr.NextLink == nil || len(to.String(olr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(olr.NextLink)))
@@ -1715,19 +1943,36 @@ func (olr OperationListResult) operationListResultPreparer() (*http.Request, err
 
 // OperationListResultPage contains a page of Operation values.
 type OperationListResultPage struct {
-	fn  func(OperationListResult) (OperationListResult, error)
+	fn  func(context.Context, OperationListResult) (OperationListResult, error)
 	olr OperationListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *OperationListResultPage) Next() error {
-	next, err := page.fn(page.olr)
+func (page *OperationListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OperationListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.olr)
 	if err != nil {
 		return err
 	}
 	page.olr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *OperationListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -1748,6 +1993,11 @@ func (page OperationListResultPage) Values() []Operation {
 	return *page.olr.Value
 }
 
+// Creates a new instance of the OperationListResultPage type.
+func NewOperationListResultPage(getNextPage func(context.Context, OperationListResult) (OperationListResult, error)) OperationListResultPage {
+	return OperationListResultPage{fn: getNextPage}
+}
+
 // OSDisk ...
 type OSDisk struct {
 	// Caching - Default value is none. Possible values include: 'None', 'ReadOnly', 'ReadWrite'
@@ -1759,14 +2009,23 @@ type Pool struct {
 	autorest.Response `json:"-"`
 	// PoolProperties - The properties associated with the pool.
 	*PoolProperties `json:"properties,omitempty"`
-	// ID - The ID of the resource.
+	// ID - READ-ONLY; The ID of the resource.
 	ID *string `json:"id,omitempty"`
-	// Name - The name of the resource.
+	// Name - READ-ONLY; The name of the resource.
 	Name *string `json:"name,omitempty"`
-	// Type - The type of the resource.
+	// Type - READ-ONLY; The type of the resource.
 	Type *string `json:"type,omitempty"`
-	// Etag - The ETag of the resource, used for concurrency statements.
+	// Etag - READ-ONLY; The ETag of the resource, used for concurrency statements.
 	Etag *string `json:"etag,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for Pool.
+func (p Pool) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if p.PoolProperties != nil {
+		objectMap["properties"] = p.PoolProperties
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for Pool struct.
@@ -1832,47 +2091,27 @@ func (p *Pool) UnmarshalJSON(body []byte) error {
 // PoolCreateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
 type PoolCreateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future PoolCreateFuture) Result(client PoolClient) (p Pool, err error) {
+func (future *PoolCreateFuture) Result(client PoolClient) (p Pool, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "batch.PoolCreateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return p, azure.NewAsyncOpIncompleteError("batch.PoolCreateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		p, err = client.CreateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "batch.PoolCreateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("batch.PoolCreateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if p.Response.Response, err = future.GetResult(sender); err == nil && p.Response.Response.StatusCode != http.StatusNoContent {
+		p, err = client.CreateResponder(p.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "batch.PoolCreateFuture", "Result", p.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "batch.PoolCreateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	p, err = client.CreateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "batch.PoolCreateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -1880,48 +2119,22 @@ func (future PoolCreateFuture) Result(client PoolClient) (p Pool, err error) {
 // PoolDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
 type PoolDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future PoolDeleteFuture) Result(client PoolClient) (ar autorest.Response, err error) {
+func (future *PoolDeleteFuture) Result(client PoolClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "batch.PoolDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("batch.PoolDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "batch.PoolDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("batch.PoolDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "batch.PoolDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "batch.PoolDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -1935,28 +2148,33 @@ type PoolEndpointConfiguration struct {
 type PoolProperties struct {
 	// DisplayName - The display name need not be unique and can contain any Unicode characters up to a maximum length of 1024.
 	DisplayName *string `json:"displayName,omitempty"`
-	// LastModified - This is the last time at which the pool level data, such as the targetDedicatedNodes or autoScaleSettings, changed. It does not factor in node-level changes such as a compute node changing state.
+	// LastModified - READ-ONLY; This is the last time at which the pool level data, such as the targetDedicatedNodes or autoScaleSettings, changed. It does not factor in node-level changes such as a compute node changing state.
 	LastModified *date.Time `json:"lastModified,omitempty"`
+	// CreationTime - READ-ONLY
 	CreationTime *date.Time `json:"creationTime,omitempty"`
-	// ProvisioningState - Values are:
+	// ProvisioningState - READ-ONLY; Values are:
 	//  Succeeded - The pool is available to run tasks subject to the availability of compute nodes.
 	//  Deleting - The user has requested that the pool be deleted, but the delete operation has not yet completed. Possible values include: 'PoolProvisioningStateSucceeded', 'PoolProvisioningStateDeleting'
-	ProvisioningState               PoolProvisioningState `json:"provisioningState,omitempty"`
-	ProvisioningStateTransitionTime *date.Time            `json:"provisioningStateTransitionTime,omitempty"`
-	// AllocationState - Values are:
+	ProvisioningState PoolProvisioningState `json:"provisioningState,omitempty"`
+	// ProvisioningStateTransitionTime - READ-ONLY
+	ProvisioningStateTransitionTime *date.Time `json:"provisioningStateTransitionTime,omitempty"`
+	// AllocationState - READ-ONLY; Values are:
 	//  Steady - The pool is not resizing. There are no changes to the number of nodes in the pool in progress. A pool enters this state when it is created and when no operations are being performed on the pool to change the number of dedicated nodes.
 	//  Resizing - The pool is resizing; that is, compute nodes are being added to or removed from the pool.
 	//  Stopping - The pool was resizing, but the user has requested that the resize be stopped, but the stop request has not yet been completed. Possible values include: 'Steady', 'Resizing', 'Stopping'
-	AllocationState               AllocationState `json:"allocationState,omitempty"`
-	AllocationStateTransitionTime *date.Time      `json:"allocationStateTransitionTime,omitempty"`
+	AllocationState AllocationState `json:"allocationState,omitempty"`
+	// AllocationStateTransitionTime - READ-ONLY
+	AllocationStateTransitionTime *date.Time `json:"allocationStateTransitionTime,omitempty"`
 	// VMSize - For information about available sizes of virtual machines for Cloud Services pools (pools created with cloudServiceConfiguration), see Sizes for Cloud Services (http://azure.microsoft.com/documentation/articles/cloud-services-sizes-specs/). Batch supports all Cloud Services VM sizes except ExtraSmall. For information about available VM sizes for pools using images from the Virtual Machines Marketplace (pools created with virtualMachineConfiguration) see Sizes for Virtual Machines (Linux) (https://azure.microsoft.com/documentation/articles/virtual-machines-linux-sizes/) or Sizes for Virtual Machines (Windows) (https://azure.microsoft.com/documentation/articles/virtual-machines-windows-sizes/). Batch supports all Azure VM sizes except STANDARD_A0 and those with premium storage (STANDARD_GS, STANDARD_DS, and STANDARD_DSV2 series).
 	VMSize *string `json:"vmSize,omitempty"`
 	// DeploymentConfiguration - Using CloudServiceConfiguration specifies that the nodes should be creating using Azure Cloud Services (PaaS), while VirtualMachineConfiguration uses Azure Virtual Machines (IaaS).
 	DeploymentConfiguration *DeploymentConfiguration `json:"deploymentConfiguration,omitempty"`
-	CurrentDedicatedNodes   *int32                   `json:"currentDedicatedNodes,omitempty"`
-	CurrentLowPriorityNodes *int32                   `json:"currentLowPriorityNodes,omitempty"`
-	ScaleSettings           *ScaleSettings           `json:"scaleSettings,omitempty"`
-	// AutoScaleRun - This property is set only if the pool automatically scales, i.e. autoScaleSettings are used.
+	// CurrentDedicatedNodes - READ-ONLY
+	CurrentDedicatedNodes *int32 `json:"currentDedicatedNodes,omitempty"`
+	// CurrentLowPriorityNodes - READ-ONLY
+	CurrentLowPriorityNodes *int32         `json:"currentLowPriorityNodes,omitempty"`
+	ScaleSettings           *ScaleSettings `json:"scaleSettings,omitempty"`
+	// AutoScaleRun - READ-ONLY; This property is set only if the pool automatically scales, i.e. autoScaleSettings are used.
 	AutoScaleRun *AutoScaleRun `json:"autoScaleRun,omitempty"`
 	// InterNodeCommunication - This imposes restrictions on which nodes can be assigned to the pool. Enabling this value can reduce the chance of the requested number of nodes to be allocated in the pool. If not specified, this value defaults to 'Disabled'. Possible values include: 'Enabled', 'Disabled'
 	InterNodeCommunication InterNodeCommunicationState `json:"interNodeCommunication,omitempty"`
@@ -1973,19 +2191,20 @@ type PoolProperties struct {
 	// ApplicationPackages - Changes to application packages affect all new compute nodes joining the pool, but do not affect compute nodes that are already in the pool until they are rebooted or reimaged.
 	ApplicationPackages *[]ApplicationPackageReference `json:"applicationPackages,omitempty"`
 	// ApplicationLicenses - The list of application licenses must be a subset of available Batch service application licenses. If a license is requested which is not supported, pool creation will fail.
-	ApplicationLicenses   *[]string              `json:"applicationLicenses,omitempty"`
+	ApplicationLicenses *[]string `json:"applicationLicenses,omitempty"`
+	// ResizeOperationStatus - READ-ONLY
 	ResizeOperationStatus *ResizeOperationStatus `json:"resizeOperationStatus,omitempty"`
 }
 
 // ProxyResource a definition of an Azure resource.
 type ProxyResource struct {
-	// ID - The ID of the resource.
+	// ID - READ-ONLY; The ID of the resource.
 	ID *string `json:"id,omitempty"`
-	// Name - The name of the resource.
+	// Name - READ-ONLY; The name of the resource.
 	Name *string `json:"name,omitempty"`
-	// Type - The type of the resource.
+	// Type - READ-ONLY; The type of the resource.
 	Type *string `json:"type,omitempty"`
-	// Etag - The ETag of the resource, used for concurrency statements.
+	// Etag - READ-ONLY; The ETag of the resource, used for concurrency statements.
 	Etag *string `json:"etag,omitempty"`
 }
 
@@ -1998,8 +2217,8 @@ type ResizeError struct {
 	Details *[]ResizeError `json:"details,omitempty"`
 }
 
-// ResizeOperationStatus describes either the current operation (if the pool AllocationState is Resizing) or the
-// previously completed operation (if the AllocationState is Steady).
+// ResizeOperationStatus describes either the current operation (if the pool AllocationState is Resizing)
+// or the previously completed operation (if the AllocationState is Steady).
 type ResizeOperationStatus struct {
 	TargetDedicatedNodes   *int32 `json:"targetDedicatedNodes,omitempty"`
 	TargetLowPriorityNodes *int32 `json:"targetLowPriorityNodes,omitempty"`
@@ -2014,36 +2233,21 @@ type ResizeOperationStatus struct {
 
 // Resource a definition of an Azure resource.
 type Resource struct {
-	// ID - The ID of the resource.
+	// ID - READ-ONLY; The ID of the resource.
 	ID *string `json:"id,omitempty"`
-	// Name - The name of the resource.
+	// Name - READ-ONLY; The name of the resource.
 	Name *string `json:"name,omitempty"`
-	// Type - The type of the resource.
+	// Type - READ-ONLY; The type of the resource.
 	Type *string `json:"type,omitempty"`
-	// Location - The location of the resource.
+	// Location - READ-ONLY; The location of the resource.
 	Location *string `json:"location,omitempty"`
-	// Tags - The tags of the resource.
+	// Tags - READ-ONLY; The tags of the resource.
 	Tags map[string]*string `json:"tags"`
 }
 
 // MarshalJSON is the custom marshaler for Resource.
 func (r Resource) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
-	if r.ID != nil {
-		objectMap["id"] = r.ID
-	}
-	if r.Name != nil {
-		objectMap["name"] = r.Name
-	}
-	if r.Type != nil {
-		objectMap["type"] = r.Type
-	}
-	if r.Location != nil {
-		objectMap["location"] = r.Location
-	}
-	if r.Tags != nil {
-		objectMap["tags"] = r.Tags
-	}
 	return json.Marshal(objectMap)
 }
 
@@ -2057,8 +2261,9 @@ type ResourceFile struct {
 }
 
 // ScaleSettings defines the desired size of the pool. This can either be 'fixedScale' where the requested
-// targetDedicatedNodes is specified, or 'autoScale' which defines a formula which is periodically reevaluated. If
-// this property is not specified, the pool will have a fixed scale with 0 targetDedicatedNodes.
+// targetDedicatedNodes is specified, or 'autoScale' which defines a formula which is periodically
+// reevaluated. If this property is not specified, the pool will have a fixed scale with 0
+// targetDedicatedNodes.
 type ScaleSettings struct {
 	// FixedScale - This property and autoScale are mutually exclusive and one of the properties must be specified.
 	FixedScale *FixedScaleSettings `json:"fixedScale,omitempty"`

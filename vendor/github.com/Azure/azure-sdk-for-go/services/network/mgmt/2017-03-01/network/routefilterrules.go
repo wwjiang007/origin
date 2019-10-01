@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -41,11 +42,22 @@ func NewRouteFilterRulesClientWithBaseURI(baseURI string, subscriptionID string)
 }
 
 // CreateOrUpdate creates or updates a route in the specified route filter.
-//
-// resourceGroupName is the name of the resource group. routeFilterName is the name of the route filter. ruleName
-// is the name of the route filter rule. routeFilterRuleParameters is parameters supplied to the create or update
-// route filter rule operation.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// routeFilterName - the name of the route filter.
+// ruleName - the name of the route filter rule.
+// routeFilterRuleParameters - parameters supplied to the create or update route filter rule operation.
 func (client RouteFilterRulesClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, routeFilterName string, ruleName string, routeFilterRuleParameters RouteFilterRule) (result RouteFilterRulesCreateOrUpdateFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RouteFilterRulesClient.CreateOrUpdate")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: routeFilterRuleParameters,
 			Constraints: []validation.Constraint{{Target: "routeFilterRuleParameters.RouteFilterRulePropertiesFormat", Name: validation.Null, Rule: false,
@@ -84,8 +96,10 @@ func (client RouteFilterRulesClient) CreateOrUpdatePreparer(ctx context.Context,
 		"api-version": APIVersion,
 	}
 
+	routeFilterRuleParameters.Name = nil
+	routeFilterRuleParameters.Etag = nil
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/routeFilters/{routeFilterName}/routeFilterRules/{ruleName}", pathParameters),
@@ -97,15 +111,13 @@ func (client RouteFilterRulesClient) CreateOrUpdatePreparer(ctx context.Context,
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client RouteFilterRulesClient) CreateOrUpdateSender(req *http.Request) (future RouteFilterRulesCreateOrUpdateFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusCreated))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -123,10 +135,21 @@ func (client RouteFilterRulesClient) CreateOrUpdateResponder(resp *http.Response
 }
 
 // Delete deletes the specified rule from a route filter.
-//
-// resourceGroupName is the name of the resource group. routeFilterName is the name of the route filter. ruleName
-// is the name of the rule.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// routeFilterName - the name of the route filter.
+// ruleName - the name of the rule.
 func (client RouteFilterRulesClient) Delete(ctx context.Context, resourceGroupName string, routeFilterName string, ruleName string) (result RouteFilterRulesDeleteFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RouteFilterRulesClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeletePreparer(ctx, resourceGroupName, routeFilterName, ruleName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.RouteFilterRulesClient", "Delete", nil, "Failure preparing request")
@@ -167,15 +190,13 @@ func (client RouteFilterRulesClient) DeletePreparer(ctx context.Context, resourc
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client RouteFilterRulesClient) DeleteSender(req *http.Request) (future RouteFilterRulesDeleteFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -192,10 +213,21 @@ func (client RouteFilterRulesClient) DeleteResponder(resp *http.Response) (resul
 }
 
 // Get gets the specified rule from a route filter.
-//
-// resourceGroupName is the name of the resource group. routeFilterName is the name of the route filter. ruleName
-// is the name of the rule.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// routeFilterName - the name of the route filter.
+// ruleName - the name of the rule.
 func (client RouteFilterRulesClient) Get(ctx context.Context, resourceGroupName string, routeFilterName string, ruleName string) (result RouteFilterRule, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RouteFilterRulesClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, resourceGroupName, routeFilterName, ruleName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.RouteFilterRulesClient", "Get", nil, "Failure preparing request")
@@ -242,8 +274,8 @@ func (client RouteFilterRulesClient) GetPreparer(ctx context.Context, resourceGr
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client RouteFilterRulesClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -260,9 +292,20 @@ func (client RouteFilterRulesClient) GetResponder(resp *http.Response) (result R
 }
 
 // ListByRouteFilter gets all RouteFilterRules in a route filter.
-//
-// resourceGroupName is the name of the resource group. routeFilterName is the name of the route filter.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// routeFilterName - the name of the route filter.
 func (client RouteFilterRulesClient) ListByRouteFilter(ctx context.Context, resourceGroupName string, routeFilterName string) (result RouteFilterRuleListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RouteFilterRulesClient.ListByRouteFilter")
+		defer func() {
+			sc := -1
+			if result.rfrlr.Response.Response != nil {
+				sc = result.rfrlr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.fn = client.listByRouteFilterNextResults
 	req, err := client.ListByRouteFilterPreparer(ctx, resourceGroupName, routeFilterName)
 	if err != nil {
@@ -309,8 +352,8 @@ func (client RouteFilterRulesClient) ListByRouteFilterPreparer(ctx context.Conte
 // ListByRouteFilterSender sends the ListByRouteFilter request. The method will close the
 // http.Response Body if it receives an error.
 func (client RouteFilterRulesClient) ListByRouteFilterSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByRouteFilterResponder handles the response to the ListByRouteFilter request. The method always
@@ -327,8 +370,8 @@ func (client RouteFilterRulesClient) ListByRouteFilterResponder(resp *http.Respo
 }
 
 // listByRouteFilterNextResults retrieves the next set of results, if any.
-func (client RouteFilterRulesClient) listByRouteFilterNextResults(lastResults RouteFilterRuleListResult) (result RouteFilterRuleListResult, err error) {
-	req, err := lastResults.routeFilterRuleListResultPreparer()
+func (client RouteFilterRulesClient) listByRouteFilterNextResults(ctx context.Context, lastResults RouteFilterRuleListResult) (result RouteFilterRuleListResult, err error) {
+	req, err := lastResults.routeFilterRuleListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "network.RouteFilterRulesClient", "listByRouteFilterNextResults", nil, "Failure preparing next results request")
 	}
@@ -349,16 +392,37 @@ func (client RouteFilterRulesClient) listByRouteFilterNextResults(lastResults Ro
 
 // ListByRouteFilterComplete enumerates all values, automatically crossing page boundaries as required.
 func (client RouteFilterRulesClient) ListByRouteFilterComplete(ctx context.Context, resourceGroupName string, routeFilterName string) (result RouteFilterRuleListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RouteFilterRulesClient.ListByRouteFilter")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListByRouteFilter(ctx, resourceGroupName, routeFilterName)
 	return
 }
 
 // Update updates a route in the specified route filter.
-//
-// resourceGroupName is the name of the resource group. routeFilterName is the name of the route filter. ruleName
-// is the name of the route filter rule. routeFilterRuleParameters is parameters supplied to the update route
-// filter rule operation.
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// routeFilterName - the name of the route filter.
+// ruleName - the name of the route filter rule.
+// routeFilterRuleParameters - parameters supplied to the update route filter rule operation.
 func (client RouteFilterRulesClient) Update(ctx context.Context, resourceGroupName string, routeFilterName string, ruleName string, routeFilterRuleParameters PatchRouteFilterRule) (result RouteFilterRulesUpdateFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/RouteFilterRulesClient.Update")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.UpdatePreparer(ctx, resourceGroupName, routeFilterName, ruleName, routeFilterRuleParameters)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.RouteFilterRulesClient", "Update", nil, "Failure preparing request")
@@ -388,8 +452,10 @@ func (client RouteFilterRulesClient) UpdatePreparer(ctx context.Context, resourc
 		"api-version": APIVersion,
 	}
 
+	routeFilterRuleParameters.Name = nil
+	routeFilterRuleParameters.Etag = nil
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/routeFilters/{routeFilterName}/routeFilterRules/{ruleName}", pathParameters),
@@ -401,15 +467,13 @@ func (client RouteFilterRulesClient) UpdatePreparer(ctx context.Context, resourc
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client RouteFilterRulesClient) UpdateSender(req *http.Request) (future RouteFilterRulesUpdateFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 

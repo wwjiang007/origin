@@ -18,11 +18,14 @@ package datacatalog
 // Changes may cause incorrect behavior and will be lost if the code is regenerated.
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
-	"net/http"
 )
+
+// The package's fully qualified name.
+const fqdn = "github.com/Azure/azure-sdk-for-go/services/datacatalog/mgmt/2016-03-30/datacatalog"
 
 // SkuType enumerates the values for sku type.
 type SkuType string
@@ -34,16 +37,21 @@ const (
 	Standard SkuType = "Standard"
 )
 
+// PossibleSkuTypeValues returns an array of possible values for the SkuType const type.
+func PossibleSkuTypeValues() []SkuType {
+	return []SkuType{Free, Standard}
+}
+
 // ADCCatalog azure Data Catalog.
 type ADCCatalog struct {
 	autorest.Response `json:"-"`
 	// ADCCatalogProperties - Azure Data Catalog properties.
 	*ADCCatalogProperties `json:"properties,omitempty"`
-	// ID - Resource Id
+	// ID - READ-ONLY; Resource Id
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name
+	// Name - READ-ONLY; Resource name
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type
+	// Type - READ-ONLY; Resource type
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location
 	Location *string `json:"location,omitempty"`
@@ -58,15 +66,6 @@ func (ac ADCCatalog) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
 	if ac.ADCCatalogProperties != nil {
 		objectMap["properties"] = ac.ADCCatalogProperties
-	}
-	if ac.ID != nil {
-		objectMap["id"] = ac.ID
-	}
-	if ac.Name != nil {
-		objectMap["name"] = ac.Name
-	}
-	if ac.Type != nil {
-		objectMap["type"] = ac.Type
 	}
 	if ac.Location != nil {
 		objectMap["location"] = ac.Location
@@ -174,51 +173,26 @@ type ADCCatalogProperties struct {
 	EnableAutomaticUnitAdjustment *bool `json:"enableAutomaticUnitAdjustment,omitempty"`
 }
 
-// ADCCatalogsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// ADCCatalogsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type ADCCatalogsDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ADCCatalogsDeleteFuture) Result(client ADCCatalogsClient) (ar autorest.Response, err error) {
+func (future *ADCCatalogsDeleteFuture) Result(client ADCCatalogsClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "datacatalog.ADCCatalogsDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("datacatalog.ADCCatalogsDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "datacatalog.ADCCatalogsDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("datacatalog.ADCCatalogsDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "datacatalog.ADCCatalogsDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "datacatalog.ADCCatalogsDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -266,11 +240,11 @@ type Principals struct {
 
 // Resource the Resource model definition.
 type Resource struct {
-	// ID - Resource Id
+	// ID - READ-ONLY; Resource Id
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name
+	// Name - READ-ONLY; Resource name
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type
+	// Type - READ-ONLY; Resource type
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location
 	Location *string `json:"location,omitempty"`
@@ -283,15 +257,6 @@ type Resource struct {
 // MarshalJSON is the custom marshaler for Resource.
 func (r Resource) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
-	if r.ID != nil {
-		objectMap["id"] = r.ID
-	}
-	if r.Name != nil {
-		objectMap["name"] = r.Name
-	}
-	if r.Type != nil {
-		objectMap["type"] = r.Type
-	}
 	if r.Location != nil {
 		objectMap["location"] = r.Location
 	}

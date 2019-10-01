@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -41,9 +42,19 @@ func NewServiceClientWithBaseURI(baseURI string, subscriptionID string) ServiceC
 }
 
 // CheckNameAvailability checks whether the Media Service resource name is available. The name must be globally unique.
-//
-// parameters is properties needed to check the availability of a name.
+// Parameters:
+// parameters - properties needed to check the availability of a name.
 func (client ServiceClient) CheckNameAvailability(ctx context.Context, parameters CheckNameAvailabilityInput) (result CheckNameAvailabilityOutput, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServiceClient.CheckNameAvailability")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameters,
 			Constraints: []validation.Constraint{{Target: "parameters.Name", Name: validation.Null, Rule: true,
@@ -88,7 +99,7 @@ func (client ServiceClient) CheckNameAvailabilityPreparer(ctx context.Context, p
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/providers/Microsoft.Media/CheckNameAvailability", pathParameters),
@@ -100,8 +111,8 @@ func (client ServiceClient) CheckNameAvailabilityPreparer(ctx context.Context, p
 // CheckNameAvailabilitySender sends the CheckNameAvailability request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServiceClient) CheckNameAvailabilitySender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CheckNameAvailabilityResponder handles the response to the CheckNameAvailability request. The method always
@@ -118,10 +129,21 @@ func (client ServiceClient) CheckNameAvailabilityResponder(resp *http.Response) 
 }
 
 // Create creates a Media Service.
-//
-// resourceGroupName is name of the resource group within the Azure subscription. mediaServiceName is name of the
-// Media Service. parameters is media Service properties needed for creation.
+// Parameters:
+// resourceGroupName - name of the resource group within the Azure subscription.
+// mediaServiceName - name of the Media Service.
+// parameters - media Service properties needed for creation.
 func (client ServiceClient) Create(ctx context.Context, resourceGroupName string, mediaServiceName string, parameters Service) (result Service, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServiceClient.Create")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: mediaServiceName,
 			Constraints: []validation.Constraint{{Target: "mediaServiceName", Name: validation.MaxLength, Rule: 24, Chain: nil},
@@ -165,7 +187,7 @@ func (client ServiceClient) CreatePreparer(ctx context.Context, resourceGroupNam
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Media/mediaservices/{mediaServiceName}", pathParameters),
@@ -177,8 +199,8 @@ func (client ServiceClient) CreatePreparer(ctx context.Context, resourceGroupNam
 // CreateSender sends the Create request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServiceClient) CreateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateResponder handles the response to the Create request. The method always
@@ -195,10 +217,20 @@ func (client ServiceClient) CreateResponder(resp *http.Response) (result Service
 }
 
 // Delete deletes a Media Service.
-//
-// resourceGroupName is name of the resource group within the Azure subscription. mediaServiceName is name of the
-// Media Service.
+// Parameters:
+// resourceGroupName - name of the resource group within the Azure subscription.
+// mediaServiceName - name of the Media Service.
 func (client ServiceClient) Delete(ctx context.Context, resourceGroupName string, mediaServiceName string) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServiceClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: mediaServiceName,
 			Constraints: []validation.Constraint{{Target: "mediaServiceName", Name: validation.MaxLength, Rule: 24, Chain: nil},
@@ -252,8 +284,8 @@ func (client ServiceClient) DeletePreparer(ctx context.Context, resourceGroupNam
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServiceClient) DeleteSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
@@ -269,10 +301,20 @@ func (client ServiceClient) DeleteResponder(resp *http.Response) (result autores
 }
 
 // Get gets a Media Service.
-//
-// resourceGroupName is name of the resource group within the Azure subscription. mediaServiceName is name of the
-// Media Service.
+// Parameters:
+// resourceGroupName - name of the resource group within the Azure subscription.
+// mediaServiceName - name of the Media Service.
 func (client ServiceClient) Get(ctx context.Context, resourceGroupName string, mediaServiceName string) (result Service, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServiceClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: mediaServiceName,
 			Constraints: []validation.Constraint{{Target: "mediaServiceName", Name: validation.MaxLength, Rule: 24, Chain: nil},
@@ -326,8 +368,8 @@ func (client ServiceClient) GetPreparer(ctx context.Context, resourceGroupName s
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServiceClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -344,9 +386,19 @@ func (client ServiceClient) GetResponder(resp *http.Response) (result Service, e
 }
 
 // ListByResourceGroup lists all of the Media Services in a resource group.
-//
-// resourceGroupName is name of the resource group within the Azure subscription.
+// Parameters:
+// resourceGroupName - name of the resource group within the Azure subscription.
 func (client ServiceClient) ListByResourceGroup(ctx context.Context, resourceGroupName string) (result ServiceCollection, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServiceClient.ListByResourceGroup")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.ListByResourceGroupPreparer(ctx, resourceGroupName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "media.ServiceClient", "ListByResourceGroup", nil, "Failure preparing request")
@@ -391,8 +443,8 @@ func (client ServiceClient) ListByResourceGroupPreparer(ctx context.Context, res
 // ListByResourceGroupSender sends the ListByResourceGroup request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServiceClient) ListByResourceGroupSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByResourceGroupResponder handles the response to the ListByResourceGroup request. The method always
@@ -409,10 +461,20 @@ func (client ServiceClient) ListByResourceGroupResponder(resp *http.Response) (r
 }
 
 // ListKeys lists the keys for a Media Service.
-//
-// resourceGroupName is name of the resource group within the Azure subscription. mediaServiceName is name of the
-// Media Service.
+// Parameters:
+// resourceGroupName - name of the resource group within the Azure subscription.
+// mediaServiceName - name of the Media Service.
 func (client ServiceClient) ListKeys(ctx context.Context, resourceGroupName string, mediaServiceName string) (result ServiceKeys, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServiceClient.ListKeys")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: mediaServiceName,
 			Constraints: []validation.Constraint{{Target: "mediaServiceName", Name: validation.MaxLength, Rule: 24, Chain: nil},
@@ -466,8 +528,8 @@ func (client ServiceClient) ListKeysPreparer(ctx context.Context, resourceGroupN
 // ListKeysSender sends the ListKeys request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServiceClient) ListKeysSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListKeysResponder handles the response to the ListKeys request. The method always
@@ -484,10 +546,21 @@ func (client ServiceClient) ListKeysResponder(resp *http.Response) (result Servi
 }
 
 // RegenerateKey regenerates a primary or secondary key for a Media Service.
-//
-// resourceGroupName is name of the resource group within the Azure subscription. mediaServiceName is name of the
-// Media Service. parameters is properties needed to regenerate the Media Service key.
+// Parameters:
+// resourceGroupName - name of the resource group within the Azure subscription.
+// mediaServiceName - name of the Media Service.
+// parameters - properties needed to regenerate the Media Service key.
 func (client ServiceClient) RegenerateKey(ctx context.Context, resourceGroupName string, mediaServiceName string, parameters RegenerateKeyInput) (result RegenerateKeyOutput, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServiceClient.RegenerateKey")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: mediaServiceName,
 			Constraints: []validation.Constraint{{Target: "mediaServiceName", Name: validation.MaxLength, Rule: 24, Chain: nil},
@@ -531,7 +604,7 @@ func (client ServiceClient) RegenerateKeyPreparer(ctx context.Context, resourceG
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Media/mediaservices/{mediaServiceName}/regenerateKey", pathParameters),
@@ -543,8 +616,8 @@ func (client ServiceClient) RegenerateKeyPreparer(ctx context.Context, resourceG
 // RegenerateKeySender sends the RegenerateKey request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServiceClient) RegenerateKeySender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // RegenerateKeyResponder handles the response to the RegenerateKey request. The method always
@@ -561,11 +634,21 @@ func (client ServiceClient) RegenerateKeyResponder(resp *http.Response) (result 
 }
 
 // SyncStorageKeys synchronizes storage account keys for a storage account associated with the Media Service account.
-//
-// resourceGroupName is name of the resource group within the Azure subscription. mediaServiceName is name of the
-// Media Service. parameters is properties needed to synchronize the keys for a storage account to the Media
-// Service.
+// Parameters:
+// resourceGroupName - name of the resource group within the Azure subscription.
+// mediaServiceName - name of the Media Service.
+// parameters - properties needed to synchronize the keys for a storage account to the Media Service.
 func (client ServiceClient) SyncStorageKeys(ctx context.Context, resourceGroupName string, mediaServiceName string, parameters SyncStorageKeysInput) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServiceClient.SyncStorageKeys")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: mediaServiceName,
 			Constraints: []validation.Constraint{{Target: "mediaServiceName", Name: validation.MaxLength, Rule: 24, Chain: nil},
@@ -611,7 +694,7 @@ func (client ServiceClient) SyncStorageKeysPreparer(ctx context.Context, resourc
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPost(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Media/mediaservices/{mediaServiceName}/syncStorageKeys", pathParameters),
@@ -623,8 +706,8 @@ func (client ServiceClient) SyncStorageKeysPreparer(ctx context.Context, resourc
 // SyncStorageKeysSender sends the SyncStorageKeys request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServiceClient) SyncStorageKeysSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // SyncStorageKeysResponder handles the response to the SyncStorageKeys request. The method always
@@ -640,10 +723,21 @@ func (client ServiceClient) SyncStorageKeysResponder(resp *http.Response) (resul
 }
 
 // Update updates a Media Service.
-//
-// resourceGroupName is name of the resource group within the Azure subscription. mediaServiceName is name of the
-// Media Service. parameters is media Service properties needed for update.
+// Parameters:
+// resourceGroupName - name of the resource group within the Azure subscription.
+// mediaServiceName - name of the Media Service.
+// parameters - media Service properties needed for update.
 func (client ServiceClient) Update(ctx context.Context, resourceGroupName string, mediaServiceName string, parameters Service) (result Service, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ServiceClient.Update")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: mediaServiceName,
 			Constraints: []validation.Constraint{{Target: "mediaServiceName", Name: validation.MaxLength, Rule: 24, Chain: nil},
@@ -687,7 +781,7 @@ func (client ServiceClient) UpdatePreparer(ctx context.Context, resourceGroupNam
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPatch(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Media/mediaservices/{mediaServiceName}", pathParameters),
@@ -699,8 +793,8 @@ func (client ServiceClient) UpdatePreparer(ctx context.Context, resourceGroupNam
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client ServiceClient) UpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateResponder handles the response to the Update request. The method always

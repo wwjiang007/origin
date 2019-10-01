@@ -23,7 +23,9 @@ func verifyStages(stages []buildv1.StageInfo, expectedStages map[string][]string
 		}
 		expectedMaxDuration, _ := time.ParseDuration(expectedDurations[1])
 		o.ExpectWithOffset(1, stage.DurationMilliseconds > expectedMaxDuration.Nanoseconds()/int64(time.Millisecond)).To(o.BeFalse(), "Stage %v ran for %v, expected less than %v", stage.Name, stage.DurationMilliseconds, expectedMaxDuration)
+		delete(expectedStages, string(stage.Name))
 	}
+	o.ExpectWithOffset(1, expectedStages).To(o.BeEmpty())
 }
 
 var _ = g.Describe("[Feature:Builds][timing] capture build stages and durations", func() {
@@ -39,32 +41,21 @@ var _ = g.Describe("[Feature:Builds][timing] capture build stages and durations"
 
 	g.Context("", func() {
 		g.BeforeEach(func() {
-			exutil.DumpDockerInfo()
-		})
-
-		g.JustBeforeEach(func() {
-			g.By("waiting for default service account")
-			err := exutil.WaitForServiceAccount(oc.KubeClient().Core().ServiceAccounts(oc.Namespace()), "default")
-			o.Expect(err).NotTo(o.HaveOccurred())
-			g.By("waiting for builder service account")
-			err = exutil.WaitForServiceAccount(oc.KubeClient().Core().ServiceAccounts(oc.Namespace()), "builder")
-			o.Expect(err).NotTo(o.HaveOccurred())
+			exutil.PreTestDump()
 		})
 
 		g.AfterEach(func() {
 			if g.CurrentGinkgoTestDescription().Failed {
 				exutil.DumpPodStates(oc)
+				exutil.DumpConfigMapStates(oc)
 				exutil.DumpPodLogsStartingWith("", oc)
 			}
 		})
 
 		g.It("should record build stages and durations for s2i", func() {
-
 			expectedBuildStages := make(map[string][]string)
-			expectedBuildStages["FetchInputs"] = []string{"", "1000s"}
-			expectedBuildStages["CommitContainer"] = []string{"10ms", "1000s"}
-			expectedBuildStages["Assemble"] = []string{"10ms", "1000s"}
-			expectedBuildStages["PostCommit"] = []string{"", "1000s"}
+			expectedBuildStages["PullImages"] = []string{"", "1000s"}
+			expectedBuildStages["Build"] = []string{"10ms", "1000s"}
 			expectedBuildStages["PushImage"] = []string{"100ms", "1000s"}
 
 			g.By("creating test image stream")
@@ -78,18 +69,16 @@ var _ = g.Describe("[Feature:Builds][timing] capture build stages and durations"
 			g.By("starting the test source build")
 			br, _ := exutil.StartBuildAndWait(oc, "test", "--from-dir", sourceBuildBinDir)
 			br.AssertSuccess()
+			// Bug 1716697 - ensure push spec doesn't include tag, only SHA
+			o.Expect(br.Logs()).To(o.MatchRegexp(`pushed image-registry\.openshift-image-registry\.svc:5000/.*/test@sha256:`))
 
 			verifyStages(br.Build.Status.Stages, expectedBuildStages)
 		})
 
 		g.It("should record build stages and durations for docker", func() {
-
 			expectedBuildStages := make(map[string][]string)
-			expectedBuildStages["FetchInputs"] = []string{"", "1000s"}
-			expectedBuildStages["CommitContainer"] = []string{"", "1000s"}
 			expectedBuildStages["PullImages"] = []string{"", "1000s"}
 			expectedBuildStages["Build"] = []string{"10ms", "1000s"}
-			expectedBuildStages["PostCommit"] = []string{"", "1000s"}
 			expectedBuildStages["PushImage"] = []string{"100ms", "1000s"}
 
 			g.By("creating test image stream")
@@ -103,6 +92,8 @@ var _ = g.Describe("[Feature:Builds][timing] capture build stages and durations"
 			g.By("starting the test docker build")
 			br, _ := exutil.StartBuildAndWait(oc, "test", "--from-file", dockerBuildDockerfile)
 			br.AssertSuccess()
+			// Bug 1716697 - ensure push spec doesn't include tag, only SHA
+			o.Expect(br.Logs()).To(o.MatchRegexp(`pushed image-registry\.openshift-image-registry\.svc:5000/.*/test@sha256:`))
 
 			verifyStages(br.Build.Status.Stages, expectedBuildStages)
 

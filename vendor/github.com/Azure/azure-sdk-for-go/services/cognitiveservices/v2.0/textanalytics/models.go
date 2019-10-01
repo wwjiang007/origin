@@ -21,35 +21,8 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 )
 
-// AzureRegions enumerates the values for azure regions.
-type AzureRegions string
-
-const (
-	// Australiaeast ...
-	Australiaeast AzureRegions = "australiaeast"
-	// Brazilsouth ...
-	Brazilsouth AzureRegions = "brazilsouth"
-	// Eastasia ...
-	Eastasia AzureRegions = "eastasia"
-	// Eastus ...
-	Eastus AzureRegions = "eastus"
-	// Eastus2 ...
-	Eastus2 AzureRegions = "eastus2"
-	// Northeurope ...
-	Northeurope AzureRegions = "northeurope"
-	// Southcentralus ...
-	Southcentralus AzureRegions = "southcentralus"
-	// Southeastasia ...
-	Southeastasia AzureRegions = "southeastasia"
-	// Westcentralus ...
-	Westcentralus AzureRegions = "westcentralus"
-	// Westeurope ...
-	Westeurope AzureRegions = "westeurope"
-	// Westus ...
-	Westus AzureRegions = "westus"
-	// Westus2 ...
-	Westus2 AzureRegions = "westus2"
-)
+// The package's fully qualified name.
+const fqdn = "github.com/Azure/azure-sdk-for-go/services/cognitiveservices/v2.0/textanalytics"
 
 // BatchInput ...
 type BatchInput struct {
@@ -64,6 +37,39 @@ type DetectedLanguage struct {
 	Iso6391Name *string `json:"iso6391Name,omitempty"`
 	// Score - A confidence score between 0 and 1. Scores close to 1 indicate 100% certainty that the identified language is true.
 	Score *float64 `json:"score,omitempty"`
+}
+
+// EntitiesBatchResult ...
+type EntitiesBatchResult struct {
+	autorest.Response `json:"-"`
+	// Documents - READ-ONLY
+	Documents *[]EntitiesBatchResultItem `json:"documents,omitempty"`
+	// Errors - READ-ONLY
+	Errors *[]ErrorRecord `json:"errors,omitempty"`
+}
+
+// EntitiesBatchResultItem ...
+type EntitiesBatchResultItem struct {
+	// ID - READ-ONLY; Unique document identifier.
+	ID *string `json:"id,omitempty"`
+	// Entities - READ-ONLY; Recognized entities in the document.
+	Entities *[]EntityRecord `json:"entities,omitempty"`
+}
+
+// EntityRecord ...
+type EntityRecord struct {
+	// Name - Entity formal name.
+	Name *string `json:"name,omitempty"`
+	// Matches - READ-ONLY; List of instances this entity appears in the text.
+	Matches *[]MatchRecord `json:"matches,omitempty"`
+	// WikipediaLanguage - Wikipedia language for which the WikipediaId and WikipediaUrl refers to.
+	WikipediaLanguage *string `json:"wikipediaLanguage,omitempty"`
+	// WikipediaID - Wikipedia unique identifier of the recognized entity.
+	WikipediaID *string `json:"wikipediaId,omitempty"`
+	// WikipediaURL - READ-ONLY; URL for the entity's English Wikipedia page.
+	WikipediaURL *string `json:"wikipediaUrl,omitempty"`
+	// BingID - Bing unique identifier of the recognized entity. Use in conjunction with the Bing Entity Search API to fetch additional relevant information.
+	BingID *string `json:"bingId,omitempty"`
 }
 
 // ErrorRecord ...
@@ -99,31 +105,45 @@ type InternalError struct {
 // KeyPhraseBatchResult ...
 type KeyPhraseBatchResult struct {
 	autorest.Response `json:"-"`
-	Documents         *[]KeyPhraseBatchResultItem `json:"documents,omitempty"`
-	Errors            *[]ErrorRecord              `json:"errors,omitempty"`
+	// Documents - READ-ONLY
+	Documents *[]KeyPhraseBatchResultItem `json:"documents,omitempty"`
+	// Errors - READ-ONLY
+	Errors *[]ErrorRecord `json:"errors,omitempty"`
 }
 
 // KeyPhraseBatchResultItem ...
 type KeyPhraseBatchResultItem struct {
-	// KeyPhrases - A list of representative words or phrases. The number of key phrases returned is proportional to the number of words in the input document.
+	// KeyPhrases - READ-ONLY; A list of representative words or phrases. The number of key phrases returned is proportional to the number of words in the input document.
 	KeyPhrases *[]string `json:"keyPhrases,omitempty"`
-	// ID - Unique document identifier.
+	// ID - READ-ONLY; Unique document identifier.
 	ID *string `json:"id,omitempty"`
 }
 
 // LanguageBatchResult ...
 type LanguageBatchResult struct {
 	autorest.Response `json:"-"`
-	Documents         *[]LanguageBatchResultItem `json:"documents,omitempty"`
-	Errors            *[]ErrorRecord             `json:"errors,omitempty"`
+	// Documents - READ-ONLY
+	Documents *[]LanguageBatchResultItem `json:"documents,omitempty"`
+	// Errors - READ-ONLY
+	Errors *[]ErrorRecord `json:"errors,omitempty"`
 }
 
 // LanguageBatchResultItem ...
 type LanguageBatchResultItem struct {
-	// ID - Unique document identifier.
+	// ID - READ-ONLY; Unique document identifier.
 	ID *string `json:"id,omitempty"`
-	// DetectedLanguages - A list of extracted languages.
+	// DetectedLanguages - READ-ONLY; A list of extracted languages.
 	DetectedLanguages *[]DetectedLanguage `json:"detectedLanguages,omitempty"`
+}
+
+// MatchRecord ...
+type MatchRecord struct {
+	// Text - Entity text as appears in the request.
+	Text *string `json:"text,omitempty"`
+	// Offset - Start position (in Unicode characters) for the entity match text.
+	Offset *int32 `json:"offset,omitempty"`
+	// Length - Length (in Unicode characters) for the entity match text.
+	Length *int32 `json:"length,omitempty"`
 }
 
 // MultiLanguageBatchInput ...
@@ -143,14 +163,16 @@ type MultiLanguageInput struct {
 // SentimentBatchResult ...
 type SentimentBatchResult struct {
 	autorest.Response `json:"-"`
-	Documents         *[]SentimentBatchResultItem `json:"documents,omitempty"`
-	Errors            *[]ErrorRecord              `json:"errors,omitempty"`
+	// Documents - READ-ONLY
+	Documents *[]SentimentBatchResultItem `json:"documents,omitempty"`
+	// Errors - READ-ONLY
+	Errors *[]ErrorRecord `json:"errors,omitempty"`
 }
 
 // SentimentBatchResultItem ...
 type SentimentBatchResultItem struct {
-	// Score - A decimal number between 0 and 1 denoting the sentiment of the document. A score above 0.7 usually refers to a positive document while a score below 0.3 normally has a negative connotation. Mid values refer to neutral text.
+	// Score - READ-ONLY; A decimal number between 0 and 1 denoting the sentiment of the document. A score above 0.7 usually refers to a positive document while a score below 0.3 normally has a negative connotation. Mid values refer to neutral text.
 	Score *float64 `json:"score,omitempty"`
-	// ID - Unique document identifier.
+	// ID - READ-ONLY; Unique document identifier.
 	ID *string `json:"id,omitempty"`
 }

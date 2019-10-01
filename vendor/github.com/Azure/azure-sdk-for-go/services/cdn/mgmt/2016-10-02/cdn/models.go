@@ -18,12 +18,17 @@ package cdn
 // Changes may cause incorrect behavior and will be lost if the code is regenerated.
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
+
+// The package's fully qualified name.
+const fqdn = "github.com/Azure/azure-sdk-for-go/services/cdn/mgmt/2016-10-02/cdn"
 
 // CustomDomainResourceState enumerates the values for custom domain resource state.
 type CustomDomainResourceState string
@@ -36,6 +41,11 @@ const (
 	// Deleting ...
 	Deleting CustomDomainResourceState = "Deleting"
 )
+
+// PossibleCustomDomainResourceStateValues returns an array of possible values for the CustomDomainResourceState const type.
+func PossibleCustomDomainResourceStateValues() []CustomDomainResourceState {
+	return []CustomDomainResourceState{Active, Creating, Deleting}
+}
 
 // CustomHTTPSProvisioningState enumerates the values for custom https provisioning state.
 type CustomHTTPSProvisioningState string
@@ -52,6 +62,11 @@ const (
 	// Failed ...
 	Failed CustomHTTPSProvisioningState = "Failed"
 )
+
+// PossibleCustomHTTPSProvisioningStateValues returns an array of possible values for the CustomHTTPSProvisioningState const type.
+func PossibleCustomHTTPSProvisioningStateValues() []CustomHTTPSProvisioningState {
+	return []CustomHTTPSProvisioningState{Disabled, Disabling, Enabled, Enabling, Failed}
+}
 
 // EndpointResourceState enumerates the values for endpoint resource state.
 type EndpointResourceState string
@@ -71,6 +86,11 @@ const (
 	EndpointResourceStateStopping EndpointResourceState = "Stopping"
 )
 
+// PossibleEndpointResourceStateValues returns an array of possible values for the EndpointResourceState const type.
+func PossibleEndpointResourceStateValues() []EndpointResourceState {
+	return []EndpointResourceState{EndpointResourceStateCreating, EndpointResourceStateDeleting, EndpointResourceStateRunning, EndpointResourceStateStarting, EndpointResourceStateStopped, EndpointResourceStateStopping}
+}
+
 // GeoFilterActions enumerates the values for geo filter actions.
 type GeoFilterActions string
 
@@ -80,6 +100,11 @@ const (
 	// Block ...
 	Block GeoFilterActions = "Block"
 )
+
+// PossibleGeoFilterActionsValues returns an array of possible values for the GeoFilterActions const type.
+func PossibleGeoFilterActionsValues() []GeoFilterActions {
+	return []GeoFilterActions{Allow, Block}
+}
 
 // OptimizationType enumerates the values for optimization type.
 type OptimizationType string
@@ -97,6 +122,11 @@ const (
 	VideoOnDemandMediaStreaming OptimizationType = "VideoOnDemandMediaStreaming"
 )
 
+// PossibleOptimizationTypeValues returns an array of possible values for the OptimizationType const type.
+func PossibleOptimizationTypeValues() []OptimizationType {
+	return []OptimizationType{DynamicSiteAcceleration, GeneralMediaStreaming, GeneralWebDelivery, LargeFileDownload, VideoOnDemandMediaStreaming}
+}
+
 // OriginResourceState enumerates the values for origin resource state.
 type OriginResourceState string
 
@@ -108,6 +138,11 @@ const (
 	// OriginResourceStateDeleting ...
 	OriginResourceStateDeleting OriginResourceState = "Deleting"
 )
+
+// PossibleOriginResourceStateValues returns an array of possible values for the OriginResourceState const type.
+func PossibleOriginResourceStateValues() []OriginResourceState {
+	return []OriginResourceState{OriginResourceStateActive, OriginResourceStateCreating, OriginResourceStateDeleting}
+}
 
 // ProfileResourceState enumerates the values for profile resource state.
 type ProfileResourceState string
@@ -123,6 +158,11 @@ const (
 	ProfileResourceStateDisabled ProfileResourceState = "Disabled"
 )
 
+// PossibleProfileResourceStateValues returns an array of possible values for the ProfileResourceState const type.
+func PossibleProfileResourceStateValues() []ProfileResourceState {
+	return []ProfileResourceState{ProfileResourceStateActive, ProfileResourceStateCreating, ProfileResourceStateDeleting, ProfileResourceStateDisabled}
+}
+
 // QueryStringCachingBehavior enumerates the values for query string caching behavior.
 type QueryStringCachingBehavior string
 
@@ -137,6 +177,11 @@ const (
 	UseQueryString QueryStringCachingBehavior = "UseQueryString"
 )
 
+// PossibleQueryStringCachingBehaviorValues returns an array of possible values for the QueryStringCachingBehavior const type.
+func PossibleQueryStringCachingBehaviorValues() []QueryStringCachingBehavior {
+	return []QueryStringCachingBehavior{BypassCaching, IgnoreQueryString, NotSet, UseQueryString}
+}
+
 // ResourceType enumerates the values for resource type.
 type ResourceType string
 
@@ -144,6 +189,11 @@ const (
 	// MicrosoftCdnProfilesEndpoints ...
 	MicrosoftCdnProfilesEndpoints ResourceType = "Microsoft.Cdn/Profiles/Endpoints"
 )
+
+// PossibleResourceTypeValues returns an array of possible values for the ResourceType const type.
+func PossibleResourceTypeValues() []ResourceType {
+	return []ResourceType{MicrosoftCdnProfilesEndpoints}
+}
 
 // SkuName enumerates the values for sku name.
 type SkuName string
@@ -160,6 +210,11 @@ const (
 	// StandardVerizon ...
 	StandardVerizon SkuName = "Standard_Verizon"
 )
+
+// PossibleSkuNameValues returns an array of possible values for the SkuName const type.
+func PossibleSkuNameValues() []SkuName {
+	return []SkuName{CustomVerizon, PremiumVerizon, StandardAkamai, StandardChinaCdn, StandardVerizon}
+}
 
 // CheckNameAvailabilityInput input of CheckNameAvailability API.
 type CheckNameAvailabilityInput struct {
@@ -182,21 +237,21 @@ type CheckNameAvailabilityOutput struct {
 
 // CidrIPAddress CIDR Ip address
 type CidrIPAddress struct {
-	// BaseIPAddress - Ip adress itself.
+	// BaseIPAddress - IP address itself.
 	BaseIPAddress *string `json:"baseIpAddress,omitempty"`
 	// PrefixLength - The length of the prefix of the ip address.
 	PrefixLength *int32 `json:"prefixLength,omitempty"`
 }
 
-// CustomDomain customer provided domain for branding purposes, e.g. www.consoto.com.
+// CustomDomain customer provided domain for branding purposes, e.g. www.contoso.com.
 type CustomDomain struct {
 	autorest.Response       `json:"-"`
 	*CustomDomainProperties `json:"properties,omitempty"`
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -209,15 +264,6 @@ func (cd CustomDomain) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
 	if cd.CustomDomainProperties != nil {
 		objectMap["properties"] = cd.CustomDomainProperties
-	}
-	if cd.ID != nil {
-		objectMap["id"] = cd.ID
-	}
-	if cd.Name != nil {
-		objectMap["name"] = cd.Name
-	}
-	if cd.Type != nil {
-		objectMap["type"] = cd.Type
 	}
 	if cd.Location != nil {
 		objectMap["location"] = cd.Location
@@ -297,8 +343,8 @@ func (cd *CustomDomain) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// CustomDomainListResult result of the request to list custom domains. It contains a list of custom domain objects
-// and a URL link to get the next set of results.
+// CustomDomainListResult result of the request to list custom domains. It contains a list of custom domain
+// objects and a URL link to get the next set of results.
 type CustomDomainListResult struct {
 	autorest.Response `json:"-"`
 	// Value - List of CDN CustomDomains within an endpoint.
@@ -313,20 +359,37 @@ type CustomDomainListResultIterator struct {
 	page CustomDomainListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *CustomDomainListResultIterator) Next() error {
+func (iter *CustomDomainListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/CustomDomainListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *CustomDomainListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -348,6 +411,11 @@ func (iter CustomDomainListResultIterator) Value() CustomDomain {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the CustomDomainListResultIterator type.
+func NewCustomDomainListResultIterator(page CustomDomainListResultPage) CustomDomainListResultIterator {
+	return CustomDomainListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (cdlr CustomDomainListResult) IsEmpty() bool {
 	return cdlr.Value == nil || len(*cdlr.Value) == 0
@@ -355,11 +423,11 @@ func (cdlr CustomDomainListResult) IsEmpty() bool {
 
 // customDomainListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (cdlr CustomDomainListResult) customDomainListResultPreparer() (*http.Request, error) {
+func (cdlr CustomDomainListResult) customDomainListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if cdlr.NextLink == nil || len(to.String(cdlr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(cdlr.NextLink)))
@@ -367,19 +435,36 @@ func (cdlr CustomDomainListResult) customDomainListResultPreparer() (*http.Reque
 
 // CustomDomainListResultPage contains a page of CustomDomain values.
 type CustomDomainListResultPage struct {
-	fn   func(CustomDomainListResult) (CustomDomainListResult, error)
+	fn   func(context.Context, CustomDomainListResult) (CustomDomainListResult, error)
 	cdlr CustomDomainListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *CustomDomainListResultPage) Next() error {
-	next, err := page.fn(page.cdlr)
+func (page *CustomDomainListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/CustomDomainListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.cdlr)
 	if err != nil {
 		return err
 	}
 	page.cdlr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *CustomDomainListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -400,9 +485,23 @@ func (page CustomDomainListResultPage) Values() []CustomDomain {
 	return *page.cdlr.Value
 }
 
+// Creates a new instance of the CustomDomainListResultPage type.
+func NewCustomDomainListResultPage(getNextPage func(context.Context, CustomDomainListResult) (CustomDomainListResult, error)) CustomDomainListResultPage {
+	return CustomDomainListResultPage{fn: getNextPage}
+}
+
 // CustomDomainParameters the customDomain JSON object required for custom domain creation or update.
 type CustomDomainParameters struct {
 	*CustomDomainPropertiesParameters `json:"properties,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for CustomDomainParameters.
+func (cdp CustomDomainParameters) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if cdp.CustomDomainPropertiesParameters != nil {
+		objectMap["properties"] = cdp.CustomDomainPropertiesParameters
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for CustomDomainParameters struct.
@@ -433,114 +532,77 @@ func (cdp *CustomDomainParameters) UnmarshalJSON(body []byte) error {
 type CustomDomainProperties struct {
 	// HostName - The host name of the custom domain. Must be a domain name.
 	HostName *string `json:"hostName,omitempty"`
-	// ResourceState - Resource status of the custom domain. Possible values include: 'Creating', 'Active', 'Deleting'
+	// ResourceState - READ-ONLY; Resource status of the custom domain. Possible values include: 'Creating', 'Active', 'Deleting'
 	ResourceState CustomDomainResourceState `json:"resourceState,omitempty"`
-	// CustomHTTPSProvisioningState - Provisioning state of Custom Https of the custom domain. Possible values include: 'Enabling', 'Enabled', 'Disabling', 'Disabled', 'Failed'
+	// CustomHTTPSProvisioningState - READ-ONLY; Provisioning state of Custom Https of the custom domain. Possible values include: 'Enabling', 'Enabled', 'Disabling', 'Disabled', 'Failed'
 	CustomHTTPSProvisioningState CustomHTTPSProvisioningState `json:"customHttpsProvisioningState,omitempty"`
 	// ValidationData - Special validation or data may be required when delivering CDN to some regions due to local compliance reasons. E.g. ICP license number of a custom domain is required to deliver content in China.
 	ValidationData *string `json:"validationData,omitempty"`
-	// ProvisioningState - Provisioning status of the custom domain.
+	// ProvisioningState - READ-ONLY; Provisioning status of the custom domain.
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
 
-// CustomDomainPropertiesParameters the JSON object that contains the properties of the custom domain to create.
+// CustomDomainPropertiesParameters the JSON object that contains the properties of the custom domain to
+// create.
 type CustomDomainPropertiesParameters struct {
 	// HostName - The host name of the custom domain. Must be a domain name.
 	HostName *string `json:"hostName,omitempty"`
 }
 
-// CustomDomainsCreateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// CustomDomainsCreateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type CustomDomainsCreateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future CustomDomainsCreateFuture) Result(client CustomDomainsClient) (cd CustomDomain, err error) {
+func (future *CustomDomainsCreateFuture) Result(client CustomDomainsClient) (cd CustomDomain, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "cdn.CustomDomainsCreateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return cd, azure.NewAsyncOpIncompleteError("cdn.CustomDomainsCreateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		cd, err = client.CreateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "cdn.CustomDomainsCreateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("cdn.CustomDomainsCreateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if cd.Response.Response, err = future.GetResult(sender); err == nil && cd.Response.Response.StatusCode != http.StatusNoContent {
+		cd, err = client.CreateResponder(cd.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "cdn.CustomDomainsCreateFuture", "Result", cd.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.CustomDomainsCreateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	cd, err = client.CreateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.CustomDomainsCreateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// CustomDomainsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// CustomDomainsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type CustomDomainsDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future CustomDomainsDeleteFuture) Result(client CustomDomainsClient) (cd CustomDomain, err error) {
+func (future *CustomDomainsDeleteFuture) Result(client CustomDomainsClient) (cd CustomDomain, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "cdn.CustomDomainsDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return cd, azure.NewAsyncOpIncompleteError("cdn.CustomDomainsDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		cd, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "cdn.CustomDomainsDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("cdn.CustomDomainsDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if cd.Response.Response, err = future.GetResult(sender); err == nil && cd.Response.Response.StatusCode != http.StatusNoContent {
+		cd, err = client.DeleteResponder(cd.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "cdn.CustomDomainsDeleteFuture", "Result", cd.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.CustomDomainsDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	cd, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.CustomDomainsDeleteFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -550,6 +612,18 @@ type DeepCreatedOrigin struct {
 	// Name - Origin name
 	Name                         *string `json:"name,omitempty"`
 	*DeepCreatedOriginProperties `json:"properties,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for DeepCreatedOrigin.
+func (dco DeepCreatedOrigin) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if dco.Name != nil {
+		objectMap["name"] = dco.Name
+	}
+	if dco.DeepCreatedOriginProperties != nil {
+		objectMap["properties"] = dco.DeepCreatedOriginProperties
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for DeepCreatedOrigin struct.
@@ -598,11 +672,11 @@ type DeepCreatedOriginProperties struct {
 // EdgeNode edge node of CDN service.
 type EdgeNode struct {
 	*EdgeNodeProperties `json:"properties,omitempty"`
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -615,15 +689,6 @@ func (en EdgeNode) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
 	if en.EdgeNodeProperties != nil {
 		objectMap["properties"] = en.EdgeNodeProperties
-	}
-	if en.ID != nil {
-		objectMap["id"] = en.ID
-	}
-	if en.Name != nil {
-		objectMap["name"] = en.Name
-	}
-	if en.Type != nil {
-		objectMap["type"] = en.Type
 	}
 	if en.Location != nil {
 		objectMap["location"] = en.Location
@@ -709,8 +774,8 @@ type EdgeNodeProperties struct {
 	IPAddressGroups *[]IPAddressGroup `json:"ipAddressGroups,omitempty"`
 }
 
-// EdgenodeResult result of the request to list CDN edgenodes. It contains a list of ip address group and a URL
-// link to get the next set of results.
+// EdgenodeResult result of the request to list CDN edgenodes. It contains a list of ip address group and a
+// URL link to get the next set of results.
 type EdgenodeResult struct {
 	autorest.Response `json:"-"`
 	// Value - Edge node of CDN service.
@@ -725,20 +790,37 @@ type EdgenodeResultIterator struct {
 	page EdgenodeResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *EdgenodeResultIterator) Next() error {
+func (iter *EdgenodeResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/EdgenodeResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *EdgenodeResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -760,6 +842,11 @@ func (iter EdgenodeResultIterator) Value() EdgeNode {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the EdgenodeResultIterator type.
+func NewEdgenodeResultIterator(page EdgenodeResultPage) EdgenodeResultIterator {
+	return EdgenodeResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (er EdgenodeResult) IsEmpty() bool {
 	return er.Value == nil || len(*er.Value) == 0
@@ -767,11 +854,11 @@ func (er EdgenodeResult) IsEmpty() bool {
 
 // edgenodeResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (er EdgenodeResult) edgenodeResultPreparer() (*http.Request, error) {
+func (er EdgenodeResult) edgenodeResultPreparer(ctx context.Context) (*http.Request, error) {
 	if er.NextLink == nil || len(to.String(er.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(er.NextLink)))
@@ -779,19 +866,36 @@ func (er EdgenodeResult) edgenodeResultPreparer() (*http.Request, error) {
 
 // EdgenodeResultPage contains a page of EdgeNode values.
 type EdgenodeResultPage struct {
-	fn func(EdgenodeResult) (EdgenodeResult, error)
+	fn func(context.Context, EdgenodeResult) (EdgenodeResult, error)
 	er EdgenodeResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *EdgenodeResultPage) Next() error {
-	next, err := page.fn(page.er)
+func (page *EdgenodeResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/EdgenodeResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.er)
 	if err != nil {
 		return err
 	}
 	page.er = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *EdgenodeResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -812,17 +916,22 @@ func (page EdgenodeResultPage) Values() []EdgeNode {
 	return *page.er.Value
 }
 
-// Endpoint CDN endpoint is the entity within a CDN profile containing configuration information such as origin,
-// protocol, content caching and delivery behavior. The CDN endpoint uses the URL format
+// Creates a new instance of the EdgenodeResultPage type.
+func NewEdgenodeResultPage(getNextPage func(context.Context, EdgenodeResult) (EdgenodeResult, error)) EdgenodeResultPage {
+	return EdgenodeResultPage{fn: getNextPage}
+}
+
+// Endpoint CDN endpoint is the entity within a CDN profile containing configuration information such as
+// origin, protocol, content caching and delivery behavior. The CDN endpoint uses the URL format
 // <endpointname>.azureedge.net.
 type Endpoint struct {
 	autorest.Response   `json:"-"`
 	*EndpointProperties `json:"properties,omitempty"`
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -835,15 +944,6 @@ func (e Endpoint) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
 	if e.EndpointProperties != nil {
 		objectMap["properties"] = e.EndpointProperties
-	}
-	if e.ID != nil {
-		objectMap["id"] = e.ID
-	}
-	if e.Name != nil {
-		objectMap["name"] = e.Name
-	}
-	if e.Type != nil {
-		objectMap["type"] = e.Type
 	}
 	if e.Location != nil {
 		objectMap["location"] = e.Location
@@ -923,8 +1023,8 @@ func (e *Endpoint) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// EndpointListResult result of the request to list endpoints. It contains a list of endpoint objects and a URL
-// link to get the the next set of results.
+// EndpointListResult result of the request to list endpoints. It contains a list of endpoint objects and a
+// URL link to get the next set of results.
 type EndpointListResult struct {
 	autorest.Response `json:"-"`
 	// Value - List of CDN endpoints within a profile
@@ -939,20 +1039,37 @@ type EndpointListResultIterator struct {
 	page EndpointListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *EndpointListResultIterator) Next() error {
+func (iter *EndpointListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/EndpointListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *EndpointListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -974,6 +1091,11 @@ func (iter EndpointListResultIterator) Value() Endpoint {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the EndpointListResultIterator type.
+func NewEndpointListResultIterator(page EndpointListResultPage) EndpointListResultIterator {
+	return EndpointListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (elr EndpointListResult) IsEmpty() bool {
 	return elr.Value == nil || len(*elr.Value) == 0
@@ -981,11 +1103,11 @@ func (elr EndpointListResult) IsEmpty() bool {
 
 // endpointListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (elr EndpointListResult) endpointListResultPreparer() (*http.Request, error) {
+func (elr EndpointListResult) endpointListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if elr.NextLink == nil || len(to.String(elr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(elr.NextLink)))
@@ -993,19 +1115,36 @@ func (elr EndpointListResult) endpointListResultPreparer() (*http.Request, error
 
 // EndpointListResultPage contains a page of Endpoint values.
 type EndpointListResultPage struct {
-	fn  func(EndpointListResult) (EndpointListResult, error)
+	fn  func(context.Context, EndpointListResult) (EndpointListResult, error)
 	elr EndpointListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *EndpointListResultPage) Next() error {
-	next, err := page.fn(page.elr)
+func (page *EndpointListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/EndpointListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.elr)
 	if err != nil {
 		return err
 	}
 	page.elr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *EndpointListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -1026,15 +1165,20 @@ func (page EndpointListResultPage) Values() []Endpoint {
 	return *page.elr.Value
 }
 
+// Creates a new instance of the EndpointListResultPage type.
+func NewEndpointListResultPage(getNextPage func(context.Context, EndpointListResult) (EndpointListResult, error)) EndpointListResultPage {
+	return EndpointListResultPage{fn: getNextPage}
+}
+
 // EndpointProperties the JSON object that contains the properties required to create an endpoint.
 type EndpointProperties struct {
-	// HostName - The host name of the endpoint structured as {endpointName}.{DNSZone}, e.g. consoto.azureedge.net
+	// HostName - READ-ONLY; The host name of the endpoint structured as {endpointName}.{DNSZone}, e.g. contoso.azureedge.net
 	HostName *string `json:"hostName,omitempty"`
 	// Origins - The source of the content being delivered via CDN.
 	Origins *[]DeepCreatedOrigin `json:"origins,omitempty"`
-	// ResourceState - Resource status of the endpoint. Possible values include: 'EndpointResourceStateCreating', 'EndpointResourceStateDeleting', 'EndpointResourceStateRunning', 'EndpointResourceStateStarting', 'EndpointResourceStateStopped', 'EndpointResourceStateStopping'
+	// ResourceState - READ-ONLY; Resource status of the endpoint. Possible values include: 'EndpointResourceStateCreating', 'EndpointResourceStateDeleting', 'EndpointResourceStateRunning', 'EndpointResourceStateStarting', 'EndpointResourceStateStopped', 'EndpointResourceStateStopping'
 	ResourceState EndpointResourceState `json:"resourceState,omitempty"`
-	// ProvisioningState - Provisioning status of the endpoint.
+	// ProvisioningState - READ-ONLY; Provisioning status of the endpoint.
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 	// OriginHostHeader - The host header CDN sends along with content requests to origin. The default value is the host name of the origin.
 	OriginHostHeader *string `json:"originHostHeader,omitempty"`
@@ -1052,12 +1196,12 @@ type EndpointProperties struct {
 	QueryStringCachingBehavior QueryStringCachingBehavior `json:"queryStringCachingBehavior,omitempty"`
 	// OptimizationType - Customer can specify what scenario they want this CDN endpoint to optimize, e.g. Download, Media services. With this information we can apply scenario driven optimization. Possible values include: 'GeneralWebDelivery', 'GeneralMediaStreaming', 'VideoOnDemandMediaStreaming', 'LargeFileDownload', 'DynamicSiteAcceleration'
 	OptimizationType OptimizationType `json:"optimizationType,omitempty"`
-	// GeoFilters - List of rules defining user geo access within a CDN endpoint. Each geo filter defines an acess rule to a specified path or content, e.g. block APAC for path /pictures/
+	// GeoFilters - List of rules defining user geo access within a CDN endpoint. Each geo filter defines an access rule to a specified path or content, e.g. block APAC for path /pictures/
 	GeoFilters *[]GeoFilter `json:"geoFilters,omitempty"`
 }
 
-// EndpointPropertiesUpdateParameters result of the request to list endpoints. It contains a list of endpoints and
-// a URL link to get the next set of results.
+// EndpointPropertiesUpdateParameters result of the request to list endpoints. It contains a list of
+// endpoints and a URL link to get the next set of results.
 type EndpointPropertiesUpdateParameters struct {
 	// OriginHostHeader - The host header CDN sends along with content requests to origin. The default value is the host name of the origin.
 	OriginHostHeader *string `json:"originHostHeader,omitempty"`
@@ -1075,151 +1219,82 @@ type EndpointPropertiesUpdateParameters struct {
 	QueryStringCachingBehavior QueryStringCachingBehavior `json:"queryStringCachingBehavior,omitempty"`
 	// OptimizationType - Customer can specify what scenario they want this CDN endpoint to optimize, e.g. Download, Media services. With this information we can apply scenario driven optimization. Possible values include: 'GeneralWebDelivery', 'GeneralMediaStreaming', 'VideoOnDemandMediaStreaming', 'LargeFileDownload', 'DynamicSiteAcceleration'
 	OptimizationType OptimizationType `json:"optimizationType,omitempty"`
-	// GeoFilters - List of rules defining user geo access within a CDN endpoint. Each geo filter defines an acess rule to a specified path or content, e.g. block APAC for path /pictures/
+	// GeoFilters - List of rules defining user geo access within a CDN endpoint. Each geo filter defines an access rule to a specified path or content, e.g. block APAC for path /pictures/
 	GeoFilters *[]GeoFilter `json:"geoFilters,omitempty"`
 }
 
-// EndpointsCreateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// EndpointsCreateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type EndpointsCreateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future EndpointsCreateFuture) Result(client EndpointsClient) (e Endpoint, err error) {
+func (future *EndpointsCreateFuture) Result(client EndpointsClient) (e Endpoint, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "cdn.EndpointsCreateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return e, azure.NewAsyncOpIncompleteError("cdn.EndpointsCreateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		e, err = client.CreateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "cdn.EndpointsCreateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("cdn.EndpointsCreateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if e.Response.Response, err = future.GetResult(sender); err == nil && e.Response.Response.StatusCode != http.StatusNoContent {
+		e, err = client.CreateResponder(e.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "cdn.EndpointsCreateFuture", "Result", e.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.EndpointsCreateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	e, err = client.CreateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.EndpointsCreateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// EndpointsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// EndpointsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type EndpointsDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future EndpointsDeleteFuture) Result(client EndpointsClient) (ar autorest.Response, err error) {
+func (future *EndpointsDeleteFuture) Result(client EndpointsClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "cdn.EndpointsDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("cdn.EndpointsDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "cdn.EndpointsDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("cdn.EndpointsDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.EndpointsDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.EndpointsDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
-// EndpointsLoadContentFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// EndpointsLoadContentFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type EndpointsLoadContentFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future EndpointsLoadContentFuture) Result(client EndpointsClient) (ar autorest.Response, err error) {
+func (future *EndpointsLoadContentFuture) Result(client EndpointsClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "cdn.EndpointsLoadContentFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("cdn.EndpointsLoadContentFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.LoadContentResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "cdn.EndpointsLoadContentFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("cdn.EndpointsLoadContentFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.EndpointsLoadContentFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.LoadContentResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.EndpointsLoadContentFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -1227,191 +1302,108 @@ func (future EndpointsLoadContentFuture) Result(client EndpointsClient) (ar auto
 // operation.
 type EndpointsPurgeContentFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future EndpointsPurgeContentFuture) Result(client EndpointsClient) (ar autorest.Response, err error) {
+func (future *EndpointsPurgeContentFuture) Result(client EndpointsClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "cdn.EndpointsPurgeContentFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("cdn.EndpointsPurgeContentFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.PurgeContentResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "cdn.EndpointsPurgeContentFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("cdn.EndpointsPurgeContentFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.EndpointsPurgeContentFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.PurgeContentResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.EndpointsPurgeContentFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
-// EndpointsStartFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// EndpointsStartFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type EndpointsStartFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future EndpointsStartFuture) Result(client EndpointsClient) (e Endpoint, err error) {
+func (future *EndpointsStartFuture) Result(client EndpointsClient) (e Endpoint, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "cdn.EndpointsStartFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return e, azure.NewAsyncOpIncompleteError("cdn.EndpointsStartFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		e, err = client.StartResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "cdn.EndpointsStartFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("cdn.EndpointsStartFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if e.Response.Response, err = future.GetResult(sender); err == nil && e.Response.Response.StatusCode != http.StatusNoContent {
+		e, err = client.StartResponder(e.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "cdn.EndpointsStartFuture", "Result", e.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.EndpointsStartFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	e, err = client.StartResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.EndpointsStartFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// EndpointsStopFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// EndpointsStopFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type EndpointsStopFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future EndpointsStopFuture) Result(client EndpointsClient) (e Endpoint, err error) {
+func (future *EndpointsStopFuture) Result(client EndpointsClient) (e Endpoint, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "cdn.EndpointsStopFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return e, azure.NewAsyncOpIncompleteError("cdn.EndpointsStopFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		e, err = client.StopResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "cdn.EndpointsStopFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("cdn.EndpointsStopFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if e.Response.Response, err = future.GetResult(sender); err == nil && e.Response.Response.StatusCode != http.StatusNoContent {
+		e, err = client.StopResponder(e.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "cdn.EndpointsStopFuture", "Result", e.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.EndpointsStopFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	e, err = client.StopResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.EndpointsStopFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// EndpointsUpdateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// EndpointsUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type EndpointsUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future EndpointsUpdateFuture) Result(client EndpointsClient) (e Endpoint, err error) {
+func (future *EndpointsUpdateFuture) Result(client EndpointsClient) (e Endpoint, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "cdn.EndpointsUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return e, azure.NewAsyncOpIncompleteError("cdn.EndpointsUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		e, err = client.UpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "cdn.EndpointsUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("cdn.EndpointsUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if e.Response.Response, err = future.GetResult(sender); err == nil && e.Response.Response.StatusCode != http.StatusNoContent {
+		e, err = client.UpdateResponder(e.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "cdn.EndpointsUpdateFuture", "Result", e.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.EndpointsUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	e, err = client.UpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.EndpointsUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -1468,8 +1460,8 @@ func (eup *EndpointUpdateParameters) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// ErrorResponse error reponse indicates CDN service is not able to process the incoming request. The reason is
-// provided in the error message.
+// ErrorResponse error response indicates CDN service is not able to process the incoming request. The
+// reason is provided in the error message.
 type ErrorResponse struct {
 	// Code - Error code.
 	Code *string `json:"code,omitempty"`
@@ -1521,8 +1513,8 @@ type OperationDisplay struct {
 	Operation *string `json:"operation,omitempty"`
 }
 
-// OperationListResult result of the request to list CDN operations. It contains a list of operations and a URL
-// link to get the next set of results.
+// OperationListResult result of the request to list CDN operations. It contains a list of operations and a
+// URL link to get the next set of results.
 type OperationListResult struct {
 	autorest.Response `json:"-"`
 	// Value - List of CDN operations supported by the CDN resource provider.
@@ -1537,20 +1529,37 @@ type OperationListResultIterator struct {
 	page OperationListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *OperationListResultIterator) Next() error {
+func (iter *OperationListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OperationListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *OperationListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -1572,6 +1581,11 @@ func (iter OperationListResultIterator) Value() Operation {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the OperationListResultIterator type.
+func NewOperationListResultIterator(page OperationListResultPage) OperationListResultIterator {
+	return OperationListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (olr OperationListResult) IsEmpty() bool {
 	return olr.Value == nil || len(*olr.Value) == 0
@@ -1579,11 +1593,11 @@ func (olr OperationListResult) IsEmpty() bool {
 
 // operationListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (olr OperationListResult) operationListResultPreparer() (*http.Request, error) {
+func (olr OperationListResult) operationListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if olr.NextLink == nil || len(to.String(olr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(olr.NextLink)))
@@ -1591,19 +1605,36 @@ func (olr OperationListResult) operationListResultPreparer() (*http.Request, err
 
 // OperationListResultPage contains a page of Operation values.
 type OperationListResultPage struct {
-	fn  func(OperationListResult) (OperationListResult, error)
+	fn  func(context.Context, OperationListResult) (OperationListResult, error)
 	olr OperationListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *OperationListResultPage) Next() error {
-	next, err := page.fn(page.olr)
+func (page *OperationListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OperationListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.olr)
 	if err != nil {
 		return err
 	}
 	page.olr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *OperationListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -1624,17 +1655,22 @@ func (page OperationListResultPage) Values() []Operation {
 	return *page.olr.Value
 }
 
-// Origin CDN origin is the source of the content being delivered via CDN. When the edge nodes represented by an
-// endpoint do not have the requested content cached, they attempt to fetch it from one or more of the configured
-// origins.
+// Creates a new instance of the OperationListResultPage type.
+func NewOperationListResultPage(getNextPage func(context.Context, OperationListResult) (OperationListResult, error)) OperationListResultPage {
+	return OperationListResultPage{fn: getNextPage}
+}
+
+// Origin CDN origin is the source of the content being delivered via CDN. When the edge nodes represented
+// by an endpoint do not have the requested content cached, they attempt to fetch it from one or more of
+// the configured origins.
 type Origin struct {
 	autorest.Response `json:"-"`
 	*OriginProperties `json:"properties,omitempty"`
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -1647,15 +1683,6 @@ func (o Origin) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
 	if o.OriginProperties != nil {
 		objectMap["properties"] = o.OriginProperties
-	}
-	if o.ID != nil {
-		objectMap["id"] = o.ID
-	}
-	if o.Name != nil {
-		objectMap["name"] = o.Name
-	}
-	if o.Type != nil {
-		objectMap["type"] = o.Type
 	}
 	if o.Location != nil {
 		objectMap["location"] = o.Location
@@ -1735,8 +1762,8 @@ func (o *Origin) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// OriginListResult result of the request to list origins. It contains a list of origin objects and a URL link to
-// get the next set of results.
+// OriginListResult result of the request to list origins. It contains a list of origin objects and a URL
+// link to get the next set of results.
 type OriginListResult struct {
 	autorest.Response `json:"-"`
 	// Value - List of CDN origins within an endpoint
@@ -1751,20 +1778,37 @@ type OriginListResultIterator struct {
 	page OriginListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *OriginListResultIterator) Next() error {
+func (iter *OriginListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OriginListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *OriginListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -1786,6 +1830,11 @@ func (iter OriginListResultIterator) Value() Origin {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the OriginListResultIterator type.
+func NewOriginListResultIterator(page OriginListResultPage) OriginListResultIterator {
+	return OriginListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (olr OriginListResult) IsEmpty() bool {
 	return olr.Value == nil || len(*olr.Value) == 0
@@ -1793,11 +1842,11 @@ func (olr OriginListResult) IsEmpty() bool {
 
 // originListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (olr OriginListResult) originListResultPreparer() (*http.Request, error) {
+func (olr OriginListResult) originListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if olr.NextLink == nil || len(to.String(olr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(olr.NextLink)))
@@ -1805,19 +1854,36 @@ func (olr OriginListResult) originListResultPreparer() (*http.Request, error) {
 
 // OriginListResultPage contains a page of Origin values.
 type OriginListResultPage struct {
-	fn  func(OriginListResult) (OriginListResult, error)
+	fn  func(context.Context, OriginListResult) (OriginListResult, error)
 	olr OriginListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *OriginListResultPage) Next() error {
-	next, err := page.fn(page.olr)
+func (page *OriginListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/OriginListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.olr)
 	if err != nil {
 		return err
 	}
 	page.olr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *OriginListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -1838,6 +1904,11 @@ func (page OriginListResultPage) Values() []Origin {
 	return *page.olr.Value
 }
 
+// Creates a new instance of the OriginListResultPage type.
+func NewOriginListResultPage(getNextPage func(context.Context, OriginListResult) (OriginListResult, error)) OriginListResultPage {
+	return OriginListResultPage{fn: getNextPage}
+}
+
 // OriginProperties the JSON object that contains the properties of the origin to create.
 type OriginProperties struct {
 	// HostName - The address of the origin. Domain names, IPv4 addresses, and IPv6 addresses are supported.
@@ -1846,9 +1917,9 @@ type OriginProperties struct {
 	HTTPPort *int32 `json:"httpPort,omitempty"`
 	// HTTPSPort - The value of the https port. Must be between 1 and 65535.
 	HTTPSPort *int32 `json:"httpsPort,omitempty"`
-	// ResourceState - Resource status of the origin. Possible values include: 'OriginResourceStateCreating', 'OriginResourceStateActive', 'OriginResourceStateDeleting'
+	// ResourceState - READ-ONLY; Resource status of the origin. Possible values include: 'OriginResourceStateCreating', 'OriginResourceStateActive', 'OriginResourceStateDeleting'
 	ResourceState OriginResourceState `json:"resourceState,omitempty"`
-	// ProvisioningState - Provisioning status of the origin.
+	// ProvisioningState - READ-ONLY; Provisioning status of the origin.
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
 
@@ -1862,50 +1933,31 @@ type OriginPropertiesParameters struct {
 	HTTPSPort *int32 `json:"httpsPort,omitempty"`
 }
 
-// OriginsUpdateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// OriginsUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type OriginsUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future OriginsUpdateFuture) Result(client OriginsClient) (o Origin, err error) {
+func (future *OriginsUpdateFuture) Result(client OriginsClient) (o Origin, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "cdn.OriginsUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return o, azure.NewAsyncOpIncompleteError("cdn.OriginsUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		o, err = client.UpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "cdn.OriginsUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("cdn.OriginsUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if o.Response.Response, err = future.GetResult(sender); err == nil && o.Response.Response.StatusCode != http.StatusNoContent {
+		o, err = client.UpdateResponder(o.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "cdn.OriginsUpdateFuture", "Result", o.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.OriginsUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	o, err = client.UpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.OriginsUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -1913,6 +1965,15 @@ func (future OriginsUpdateFuture) Result(client OriginsClient) (o Origin, err er
 // OriginUpdateParameters origin properties needed for origin creation or update.
 type OriginUpdateParameters struct {
 	*OriginPropertiesParameters `json:"properties,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for OriginUpdateParameters.
+func (oup OriginUpdateParameters) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if oup.OriginPropertiesParameters != nil {
+		objectMap["properties"] = oup.OriginPropertiesParameters
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for OriginUpdateParameters struct.
@@ -1939,19 +2000,19 @@ func (oup *OriginUpdateParameters) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// Profile CDN profile represents the top level resource and the entry point into the CDN API. This allows users to
-// set up a logical grouping of endpoints in addition to creating shared configuration settings and selecting
-// pricing tiers and providers.
+// Profile CDN profile represents the top level resource and the entry point into the CDN API. This allows
+// users to set up a logical grouping of endpoints in addition to creating shared configuration settings
+// and selecting pricing tiers and providers.
 type Profile struct {
 	autorest.Response `json:"-"`
 	// Sku - The pricing tier (defines a CDN provider, feature list and rate) of the CDN profile.
 	Sku                *Sku `json:"sku,omitempty"`
 	*ProfileProperties `json:"properties,omitempty"`
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -1967,15 +2028,6 @@ func (p Profile) MarshalJSON() ([]byte, error) {
 	}
 	if p.ProfileProperties != nil {
 		objectMap["properties"] = p.ProfileProperties
-	}
-	if p.ID != nil {
-		objectMap["id"] = p.ID
-	}
-	if p.Name != nil {
-		objectMap["name"] = p.Name
-	}
-	if p.Type != nil {
-		objectMap["type"] = p.Type
 	}
 	if p.Location != nil {
 		objectMap["location"] = p.Location
@@ -2064,8 +2116,8 @@ func (p *Profile) UnmarshalJSON(body []byte) error {
 	return nil
 }
 
-// ProfileListResult result of the request to list profiles. It contains a list of profile objects and a URL link
-// to get the the next set of results.
+// ProfileListResult result of the request to list profiles. It contains a list of profile objects and a
+// URL link to get the next set of results.
 type ProfileListResult struct {
 	autorest.Response `json:"-"`
 	// Value - List of CDN profiles within a resource group.
@@ -2080,20 +2132,37 @@ type ProfileListResultIterator struct {
 	page ProfileListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *ProfileListResultIterator) Next() error {
+func (iter *ProfileListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProfileListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *ProfileListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -2115,6 +2184,11 @@ func (iter ProfileListResultIterator) Value() Profile {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the ProfileListResultIterator type.
+func NewProfileListResultIterator(page ProfileListResultPage) ProfileListResultIterator {
+	return ProfileListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (plr ProfileListResult) IsEmpty() bool {
 	return plr.Value == nil || len(*plr.Value) == 0
@@ -2122,11 +2196,11 @@ func (plr ProfileListResult) IsEmpty() bool {
 
 // profileListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (plr ProfileListResult) profileListResultPreparer() (*http.Request, error) {
+func (plr ProfileListResult) profileListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if plr.NextLink == nil || len(to.String(plr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(plr.NextLink)))
@@ -2134,19 +2208,36 @@ func (plr ProfileListResult) profileListResultPreparer() (*http.Request, error) 
 
 // ProfileListResultPage contains a page of Profile values.
 type ProfileListResultPage struct {
-	fn  func(ProfileListResult) (ProfileListResult, error)
+	fn  func(context.Context, ProfileListResult) (ProfileListResult, error)
 	plr ProfileListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *ProfileListResultPage) Next() error {
-	next, err := page.fn(page.plr)
+func (page *ProfileListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ProfileListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.plr)
 	if err != nil {
 		return err
 	}
 	page.plr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *ProfileListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -2167,154 +2258,96 @@ func (page ProfileListResultPage) Values() []Profile {
 	return *page.plr.Value
 }
 
+// Creates a new instance of the ProfileListResultPage type.
+func NewProfileListResultPage(getNextPage func(context.Context, ProfileListResult) (ProfileListResult, error)) ProfileListResultPage {
+	return ProfileListResultPage{fn: getNextPage}
+}
+
 // ProfileProperties the JSON object that contains the properties required to create a profile.
 type ProfileProperties struct {
-	// ResourceState - Resource status of the profile. Possible values include: 'ProfileResourceStateCreating', 'ProfileResourceStateActive', 'ProfileResourceStateDeleting', 'ProfileResourceStateDisabled'
+	// ResourceState - READ-ONLY; Resource status of the profile. Possible values include: 'ProfileResourceStateCreating', 'ProfileResourceStateActive', 'ProfileResourceStateDeleting', 'ProfileResourceStateDisabled'
 	ResourceState ProfileResourceState `json:"resourceState,omitempty"`
-	// ProvisioningState - Provisioning status of the profile.
+	// ProvisioningState - READ-ONLY; Provisioning status of the profile.
 	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
 
-// ProfilesCreateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// ProfilesCreateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type ProfilesCreateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ProfilesCreateFuture) Result(client ProfilesClient) (p Profile, err error) {
+func (future *ProfilesCreateFuture) Result(client ProfilesClient) (p Profile, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "cdn.ProfilesCreateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return p, azure.NewAsyncOpIncompleteError("cdn.ProfilesCreateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		p, err = client.CreateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "cdn.ProfilesCreateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("cdn.ProfilesCreateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if p.Response.Response, err = future.GetResult(sender); err == nil && p.Response.Response.StatusCode != http.StatusNoContent {
+		p, err = client.CreateResponder(p.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "cdn.ProfilesCreateFuture", "Result", p.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.ProfilesCreateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	p, err = client.CreateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.ProfilesCreateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// ProfilesDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// ProfilesDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type ProfilesDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ProfilesDeleteFuture) Result(client ProfilesClient) (ar autorest.Response, err error) {
+func (future *ProfilesDeleteFuture) Result(client ProfilesClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "cdn.ProfilesDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("cdn.ProfilesDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "cdn.ProfilesDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("cdn.ProfilesDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.ProfilesDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.ProfilesDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
-// ProfilesUpdateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// ProfilesUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type ProfilesUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future ProfilesUpdateFuture) Result(client ProfilesClient) (p Profile, err error) {
+func (future *ProfilesUpdateFuture) Result(client ProfilesClient) (p Profile, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "cdn.ProfilesUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return p, azure.NewAsyncOpIncompleteError("cdn.ProfilesUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		p, err = client.UpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "cdn.ProfilesUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("cdn.ProfilesUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if p.Response.Response, err = future.GetResult(sender); err == nil && p.Response.Response.StatusCode != http.StatusNoContent {
+		p, err = client.UpdateResponder(p.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "cdn.ProfilesUpdateFuture", "Result", p.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.ProfilesUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	p, err = client.UpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "cdn.ProfilesUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -2342,11 +2375,11 @@ type PurgeParameters struct {
 
 // Resource the Resource definition.
 type Resource struct {
-	// ID - Resource ID.
+	// ID - READ-ONLY; Resource ID.
 	ID *string `json:"id,omitempty"`
-	// Name - Resource name.
+	// Name - READ-ONLY; Resource name.
 	Name *string `json:"name,omitempty"`
-	// Type - Resource type.
+	// Type - READ-ONLY; Resource type.
 	Type *string `json:"type,omitempty"`
 	// Location - Resource location.
 	Location *string `json:"location,omitempty"`
@@ -2357,15 +2390,6 @@ type Resource struct {
 // MarshalJSON is the custom marshaler for Resource.
 func (r Resource) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
-	if r.ID != nil {
-		objectMap["id"] = r.ID
-	}
-	if r.Name != nil {
-		objectMap["name"] = r.Name
-	}
-	if r.Type != nil {
-		objectMap["type"] = r.Type
-	}
 	if r.Location != nil {
 		objectMap["location"] = r.Location
 	}
@@ -2402,20 +2426,37 @@ type ResourceUsageListResultIterator struct {
 	page ResourceUsageListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *ResourceUsageListResultIterator) Next() error {
+func (iter *ResourceUsageListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ResourceUsageListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *ResourceUsageListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -2437,6 +2478,11 @@ func (iter ResourceUsageListResultIterator) Value() ResourceUsage {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the ResourceUsageListResultIterator type.
+func NewResourceUsageListResultIterator(page ResourceUsageListResultPage) ResourceUsageListResultIterator {
+	return ResourceUsageListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (rulr ResourceUsageListResult) IsEmpty() bool {
 	return rulr.Value == nil || len(*rulr.Value) == 0
@@ -2444,11 +2490,11 @@ func (rulr ResourceUsageListResult) IsEmpty() bool {
 
 // resourceUsageListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (rulr ResourceUsageListResult) resourceUsageListResultPreparer() (*http.Request, error) {
+func (rulr ResourceUsageListResult) resourceUsageListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if rulr.NextLink == nil || len(to.String(rulr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(rulr.NextLink)))
@@ -2456,19 +2502,36 @@ func (rulr ResourceUsageListResult) resourceUsageListResultPreparer() (*http.Req
 
 // ResourceUsageListResultPage contains a page of ResourceUsage values.
 type ResourceUsageListResultPage struct {
-	fn   func(ResourceUsageListResult) (ResourceUsageListResult, error)
+	fn   func(context.Context, ResourceUsageListResult) (ResourceUsageListResult, error)
 	rulr ResourceUsageListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *ResourceUsageListResultPage) Next() error {
-	next, err := page.fn(page.rulr)
+func (page *ResourceUsageListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/ResourceUsageListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.rulr)
 	if err != nil {
 		return err
 	}
 	page.rulr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *ResourceUsageListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -2487,6 +2550,11 @@ func (page ResourceUsageListResultPage) Values() []ResourceUsage {
 		return nil
 	}
 	return *page.rulr.Value
+}
+
+// Creates a new instance of the ResourceUsageListResultPage type.
+func NewResourceUsageListResultPage(getNextPage func(context.Context, ResourceUsageListResult) (ResourceUsageListResult, error)) ResourceUsageListResultPage {
+	return ResourceUsageListResultPage{fn: getNextPage}
 }
 
 // Sku the pricing tier (defines a CDN provider, feature list and rate) of the CDN profile.

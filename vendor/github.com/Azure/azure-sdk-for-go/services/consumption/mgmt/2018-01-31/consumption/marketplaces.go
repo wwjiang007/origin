@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -43,18 +44,29 @@ func NewMarketplacesClientWithBaseURI(baseURI string, subscriptionID string) Mar
 
 // List lists the marketplaces for a scope by subscriptionId. Marketplaces are available via this API only for May 1,
 // 2014 or later.
-//
-// filter is may be used to filter marketplaces by properties/usageEnd (Utc time), properties/usageStart (Utc
+// Parameters:
+// filter - may be used to filter marketplaces by properties/usageEnd (Utc time), properties/usageStart (Utc
 // time), properties/resourceGroup, properties/instanceName or properties/instanceId. The filter supports 'eq',
-// 'lt', 'gt', 'le', 'ge', and 'and'. It does not currently support 'ne', 'or', or 'not'. top is may be used to
-// limit the number of results to the most recent N marketplaces. skiptoken is skiptoken is only used if a previous
-// operation returned a partial result. If a previous response contains a nextLink element, the value of the
-// nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls.
+// 'lt', 'gt', 'le', 'ge', and 'and'. It does not currently support 'ne', 'or', or 'not'.
+// top - may be used to limit the number of results to the most recent N marketplaces.
+// skiptoken - skiptoken is only used if a previous operation returned a partial result. If a previous response
+// contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that
+// specifies a starting point to use for subsequent calls.
 func (client MarketplacesClient) List(ctx context.Context, filter string, top *int32, skiptoken string) (result MarketplacesListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/MarketplacesClient.List")
+		defer func() {
+			sc := -1
+			if result.mlr.Response.Response != nil {
+				sc = result.mlr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
-				Chain: []validation.Constraint{{Target: "top", Name: validation.InclusiveMaximum, Rule: 1000, Chain: nil},
+				Chain: []validation.Constraint{{Target: "top", Name: validation.InclusiveMaximum, Rule: int64(1000), Chain: nil},
 					{Target: "top", Name: validation.InclusiveMinimum, Rule: 1, Chain: nil},
 				}}}}}); err != nil {
 		return result, validation.NewError("consumption.MarketplacesClient", "List", err.Error())
@@ -113,8 +125,8 @@ func (client MarketplacesClient) ListPreparer(ctx context.Context, filter string
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client MarketplacesClient) ListSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -131,8 +143,8 @@ func (client MarketplacesClient) ListResponder(resp *http.Response) (result Mark
 }
 
 // listNextResults retrieves the next set of results, if any.
-func (client MarketplacesClient) listNextResults(lastResults MarketplacesListResult) (result MarketplacesListResult, err error) {
-	req, err := lastResults.marketplacesListResultPreparer()
+func (client MarketplacesClient) listNextResults(ctx context.Context, lastResults MarketplacesListResult) (result MarketplacesListResult, err error) {
+	req, err := lastResults.marketplacesListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "consumption.MarketplacesClient", "listNextResults", nil, "Failure preparing next results request")
 	}
@@ -153,25 +165,46 @@ func (client MarketplacesClient) listNextResults(lastResults MarketplacesListRes
 
 // ListComplete enumerates all values, automatically crossing page boundaries as required.
 func (client MarketplacesClient) ListComplete(ctx context.Context, filter string, top *int32, skiptoken string) (result MarketplacesListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/MarketplacesClient.List")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.List(ctx, filter, top, skiptoken)
 	return
 }
 
-// ListByBillingPeriod lists the marketplaces for a scope by billing period and subscripotionId. Marketplaces are
+// ListByBillingPeriod lists the marketplaces for a scope by billing period and subscriptionId. Marketplaces are
 // available via this API only for May 1, 2014 or later.
-//
-// billingPeriodName is billing Period Name. filter is may be used to filter marketplaces by properties/usageEnd
-// (Utc time), properties/usageStart (Utc time), properties/resourceGroup, properties/instanceName or
-// properties/instanceId. The filter supports 'eq', 'lt', 'gt', 'le', 'ge', and 'and'. It does not currently
-// support 'ne', 'or', or 'not'. top is may be used to limit the number of results to the most recent N
-// marketplaces. skiptoken is skiptoken is only used if a previous operation returned a partial result. If a
-// previous response contains a nextLink element, the value of the nextLink element will include a skiptoken
-// parameter that specifies a starting point to use for subsequent calls.
+// Parameters:
+// billingPeriodName - billing Period Name.
+// filter - may be used to filter marketplaces by properties/usageEnd (Utc time), properties/usageStart (Utc
+// time), properties/resourceGroup, properties/instanceName or properties/instanceId. The filter supports 'eq',
+// 'lt', 'gt', 'le', 'ge', and 'and'. It does not currently support 'ne', 'or', or 'not'.
+// top - may be used to limit the number of results to the most recent N marketplaces.
+// skiptoken - skiptoken is only used if a previous operation returned a partial result. If a previous response
+// contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that
+// specifies a starting point to use for subsequent calls.
 func (client MarketplacesClient) ListByBillingPeriod(ctx context.Context, billingPeriodName string, filter string, top *int32, skiptoken string) (result MarketplacesListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/MarketplacesClient.ListByBillingPeriod")
+		defer func() {
+			sc := -1
+			if result.mlr.Response.Response != nil {
+				sc = result.mlr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: top,
 			Constraints: []validation.Constraint{{Target: "top", Name: validation.Null, Rule: false,
-				Chain: []validation.Constraint{{Target: "top", Name: validation.InclusiveMaximum, Rule: 1000, Chain: nil},
+				Chain: []validation.Constraint{{Target: "top", Name: validation.InclusiveMaximum, Rule: int64(1000), Chain: nil},
 					{Target: "top", Name: validation.InclusiveMinimum, Rule: 1, Chain: nil},
 				}}}}}); err != nil {
 		return result, validation.NewError("consumption.MarketplacesClient", "ListByBillingPeriod", err.Error())
@@ -231,8 +264,8 @@ func (client MarketplacesClient) ListByBillingPeriodPreparer(ctx context.Context
 // ListByBillingPeriodSender sends the ListByBillingPeriod request. The method will close the
 // http.Response Body if it receives an error.
 func (client MarketplacesClient) ListByBillingPeriodSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByBillingPeriodResponder handles the response to the ListByBillingPeriod request. The method always
@@ -249,8 +282,8 @@ func (client MarketplacesClient) ListByBillingPeriodResponder(resp *http.Respons
 }
 
 // listByBillingPeriodNextResults retrieves the next set of results, if any.
-func (client MarketplacesClient) listByBillingPeriodNextResults(lastResults MarketplacesListResult) (result MarketplacesListResult, err error) {
-	req, err := lastResults.marketplacesListResultPreparer()
+func (client MarketplacesClient) listByBillingPeriodNextResults(ctx context.Context, lastResults MarketplacesListResult) (result MarketplacesListResult, err error) {
+	req, err := lastResults.marketplacesListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "consumption.MarketplacesClient", "listByBillingPeriodNextResults", nil, "Failure preparing next results request")
 	}
@@ -271,6 +304,16 @@ func (client MarketplacesClient) listByBillingPeriodNextResults(lastResults Mark
 
 // ListByBillingPeriodComplete enumerates all values, automatically crossing page boundaries as required.
 func (client MarketplacesClient) ListByBillingPeriodComplete(ctx context.Context, billingPeriodName string, filter string, top *int32, skiptoken string) (result MarketplacesListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/MarketplacesClient.ListByBillingPeriod")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListByBillingPeriod(ctx, billingPeriodName, filter, top, skiptoken)
 	return
 }

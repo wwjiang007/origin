@@ -1,6 +1,6 @@
 // +build go1.9
 
-// Copyright 2018 Microsoft Corporation
+// Copyright 2019 Microsoft Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,17 +22,8 @@ package spellcheck
 import original "github.com/Azure/azure-sdk-for-go/services/cognitiveservices/v1.0/spellcheck"
 
 const (
-	DefaultBaseURI = original.DefaultBaseURI
+	DefaultEndpoint = original.DefaultEndpoint
 )
-
-type BaseClient = original.BaseClient
-
-func New() BaseClient {
-	return original.New()
-}
-func NewWithBaseURI(baseURI string) BaseClient {
-	return original.NewWithBaseURI(baseURI)
-}
 
 type ActionType = original.ActionType
 
@@ -75,6 +66,13 @@ const (
 	UnknownToken  ErrorType = original.UnknownToken
 )
 
+type Mode = original.Mode
+
+const (
+	Proof Mode = original.Proof
+	Spell Mode = original.Spell
+)
+
 type Type = original.Type
 
 const (
@@ -86,20 +84,45 @@ const (
 	TypeSpellCheck    Type = original.TypeSpellCheck
 )
 
-type BasicAnswer = original.BasicAnswer
 type Answer = original.Answer
+type BaseClient = original.BaseClient
+type BasicAnswer = original.BasicAnswer
+type BasicIdentifiable = original.BasicIdentifiable
+type BasicResponse = original.BasicResponse
+type BasicResponseBase = original.BasicResponseBase
 type Error = original.Error
 type ErrorResponse = original.ErrorResponse
-type BasicIdentifiable = original.BasicIdentifiable
 type Identifiable = original.Identifiable
-type BasicResponse = original.BasicResponse
 type Response = original.Response
-type BasicResponseBase = original.BasicResponseBase
 type ResponseBase = original.ResponseBase
 type SpellCheck = original.SpellCheck
 type SpellingFlaggedToken = original.SpellingFlaggedToken
 type SpellingTokenSuggestion = original.SpellingTokenSuggestion
 
+func New() BaseClient {
+	return original.New()
+}
+func NewWithoutDefaults(endpoint string) BaseClient {
+	return original.NewWithoutDefaults(endpoint)
+}
+func PossibleActionTypeValues() []ActionType {
+	return original.PossibleActionTypeValues()
+}
+func PossibleErrorCodeValues() []ErrorCode {
+	return original.PossibleErrorCodeValues()
+}
+func PossibleErrorSubCodeValues() []ErrorSubCode {
+	return original.PossibleErrorSubCodeValues()
+}
+func PossibleErrorTypeValues() []ErrorType {
+	return original.PossibleErrorTypeValues()
+}
+func PossibleModeValues() []Mode {
+	return original.PossibleModeValues()
+}
+func PossibleTypeValues() []Type {
+	return original.PossibleTypeValues()
+}
 func UserAgent() string {
 	return original.UserAgent() + " profiles/latest"
 }

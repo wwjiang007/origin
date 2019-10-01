@@ -18,12 +18,17 @@ package keyvault
 // Changes may cause incorrect behavior and will be lost if the code is regenerated.
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
+
+// The package's fully qualified name.
+const fqdn = "github.com/Azure/azure-sdk-for-go/services/keyvault/2015-06-01/keyvault"
 
 // ActionType enumerates the values for action type.
 type ActionType string
@@ -34,6 +39,11 @@ const (
 	// EmailContacts ...
 	EmailContacts ActionType = "EmailContacts"
 )
+
+// PossibleActionTypeValues returns an array of possible values for the ActionType const type.
+func PossibleActionTypeValues() []ActionType {
+	return []ActionType{AutoRenew, EmailContacts}
+}
 
 // JSONWebKeyEncryptionAlgorithm enumerates the values for json web key encryption algorithm.
 type JSONWebKeyEncryptionAlgorithm string
@@ -46,6 +56,11 @@ const (
 	// RSAOAEP256 ...
 	RSAOAEP256 JSONWebKeyEncryptionAlgorithm = "RSA-OAEP-256"
 )
+
+// PossibleJSONWebKeyEncryptionAlgorithmValues returns an array of possible values for the JSONWebKeyEncryptionAlgorithm const type.
+func PossibleJSONWebKeyEncryptionAlgorithmValues() []JSONWebKeyEncryptionAlgorithm {
+	return []JSONWebKeyEncryptionAlgorithm{RSA15, RSAOAEP, RSAOAEP256}
+}
 
 // JSONWebKeyOperation enumerates the values for json web key operation.
 type JSONWebKeyOperation string
@@ -64,6 +79,11 @@ const (
 	// WrapKey ...
 	WrapKey JSONWebKeyOperation = "wrapKey"
 )
+
+// PossibleJSONWebKeyOperationValues returns an array of possible values for the JSONWebKeyOperation const type.
+func PossibleJSONWebKeyOperationValues() []JSONWebKeyOperation {
+	return []JSONWebKeyOperation{Decrypt, Encrypt, Sign, UnwrapKey, Verify, WrapKey}
+}
 
 // JSONWebKeySignatureAlgorithm enumerates the values for json web key signature algorithm.
 type JSONWebKeySignatureAlgorithm string
@@ -85,6 +105,11 @@ const (
 	RSNULL JSONWebKeySignatureAlgorithm = "RSNULL"
 )
 
+// PossibleJSONWebKeySignatureAlgorithmValues returns an array of possible values for the JSONWebKeySignatureAlgorithm const type.
+func PossibleJSONWebKeySignatureAlgorithmValues() []JSONWebKeySignatureAlgorithm {
+	return []JSONWebKeySignatureAlgorithm{PS256, PS384, PS512, RS256, RS384, RS512, RSNULL}
+}
+
 // JSONWebKeyType enumerates the values for json web key type.
 type JSONWebKeyType string
 
@@ -98,6 +123,11 @@ const (
 	// RSAHSM ...
 	RSAHSM JSONWebKeyType = "RSA-HSM"
 )
+
+// PossibleJSONWebKeyTypeValues returns an array of possible values for the JSONWebKeyType const type.
+func PossibleJSONWebKeyTypeValues() []JSONWebKeyType {
+	return []JSONWebKeyType{EC, Oct, RSA, RSAHSM}
+}
 
 // KeyUsageType enumerates the values for key usage type.
 type KeyUsageType string
@@ -123,6 +153,11 @@ const (
 	NonRepudiation KeyUsageType = "nonRepudiation"
 )
 
+// PossibleKeyUsageTypeValues returns an array of possible values for the KeyUsageType const type.
+func PossibleKeyUsageTypeValues() []KeyUsageType {
+	return []KeyUsageType{CRLSign, DataEncipherment, DecipherOnly, DigitalSignature, EncipherOnly, KeyAgreement, KeyCertSign, KeyEncipherment, NonRepudiation}
+}
+
 // Action the action that will be executed.
 type Action struct {
 	// ActionType - The type of the action. Possible values include: 'EmailContacts', 'AutoRenew'
@@ -135,7 +170,7 @@ type AdministratorDetails struct {
 	FirstName *string `json:"first_name,omitempty"`
 	// LastName - Last name.
 	LastName *string `json:"last_name,omitempty"`
-	// EmailAddress - Email addresss.
+	// EmailAddress - Email address.
 	EmailAddress *string `json:"email,omitempty"`
 	// Phone - Phone number.
 	Phone *string `json:"phone,omitempty"`
@@ -149,16 +184,16 @@ type Attributes struct {
 	NotBefore *date.UnixTime `json:"nbf,omitempty"`
 	// Expires - Expiry date in UTC
 	Expires *date.UnixTime `json:"exp,omitempty"`
-	// Created - Creation time in UTC
+	// Created - READ-ONLY; Creation time in UTC
 	Created *date.UnixTime `json:"created,omitempty"`
-	// Updated - Last updated time in UTC
+	// Updated - READ-ONLY; Last updated time in UTC
 	Updated *date.UnixTime `json:"updated,omitempty"`
 }
 
 // BackupKeyResult the backup key result, containing the backup blob
 type BackupKeyResult struct {
 	autorest.Response `json:"-"`
-	// Value - The backup blob containing the backed up key
+	// Value - READ-ONLY; The backup blob containing the backed up key (a URL-encoded base64 string)
 	Value *string `json:"value,omitempty"`
 }
 
@@ -170,24 +205,24 @@ type CertificateAttributes struct {
 	NotBefore *date.UnixTime `json:"nbf,omitempty"`
 	// Expires - Expiry date in UTC
 	Expires *date.UnixTime `json:"exp,omitempty"`
-	// Created - Creation time in UTC
+	// Created - READ-ONLY; Creation time in UTC
 	Created *date.UnixTime `json:"created,omitempty"`
-	// Updated - Last updated time in UTC
+	// Updated - READ-ONLY; Last updated time in UTC
 	Updated *date.UnixTime `json:"updated,omitempty"`
 }
 
 // CertificateBundle a certificate bundle consists of a certificate (X509) plus its attributes.
 type CertificateBundle struct {
 	autorest.Response `json:"-"`
-	// ID - The certificate id
+	// ID - READ-ONLY; The certificate id
 	ID *string `json:"id,omitempty"`
-	// Kid - The key id
+	// Kid - READ-ONLY; The key id
 	Kid *string `json:"kid,omitempty"`
-	// Sid - The secret id
+	// Sid - READ-ONLY; The secret id
 	Sid *string `json:"sid,omitempty"`
-	// X509Thumbprint - Thumbprint of the certificate.
+	// X509Thumbprint - READ-ONLY; Thumbprint of the certificate. (a URL-encoded base64 string)
 	X509Thumbprint *string `json:"x5t,omitempty"`
-	// Policy - The management policy.
+	// Policy - READ-ONLY; The management policy.
 	Policy *CertificatePolicy `json:"policy,omitempty"`
 	// Cer - CER contents of x509 certificate.
 	Cer *[]byte `json:"cer,omitempty"`
@@ -202,21 +237,6 @@ type CertificateBundle struct {
 // MarshalJSON is the custom marshaler for CertificateBundle.
 func (cb CertificateBundle) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
-	if cb.ID != nil {
-		objectMap["id"] = cb.ID
-	}
-	if cb.Kid != nil {
-		objectMap["kid"] = cb.Kid
-	}
-	if cb.Sid != nil {
-		objectMap["sid"] = cb.Sid
-	}
-	if cb.X509Thumbprint != nil {
-		objectMap["x5t"] = cb.X509Thumbprint
-	}
-	if cb.Policy != nil {
-		objectMap["policy"] = cb.Policy
-	}
 	if cb.Cer != nil {
 		objectMap["cer"] = cb.Cer
 	}
@@ -303,32 +323,50 @@ type CertificateIssuerItem struct {
 // CertificateIssuerListResult the certificate issuer list result
 type CertificateIssuerListResult struct {
 	autorest.Response `json:"-"`
-	// Value - A response message containing a list of certificate issuers in the vault along with a link to the next page of certificate issuers
+	// Value - READ-ONLY; A response message containing a list of certificate issuers in the vault along with a link to the next page of certificate issuers
 	Value *[]CertificateIssuerItem `json:"value,omitempty"`
-	// NextLink - The URL to get the next set of certificate issuers.
+	// NextLink - READ-ONLY; The URL to get the next set of certificate issuers.
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
-// CertificateIssuerListResultIterator provides access to a complete listing of CertificateIssuerItem values.
+// CertificateIssuerListResultIterator provides access to a complete listing of CertificateIssuerItem
+// values.
 type CertificateIssuerListResultIterator struct {
 	i    int
 	page CertificateIssuerListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *CertificateIssuerListResultIterator) Next() error {
+func (iter *CertificateIssuerListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/CertificateIssuerListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *CertificateIssuerListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -350,6 +388,11 @@ func (iter CertificateIssuerListResultIterator) Value() CertificateIssuerItem {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the CertificateIssuerListResultIterator type.
+func NewCertificateIssuerListResultIterator(page CertificateIssuerListResultPage) CertificateIssuerListResultIterator {
+	return CertificateIssuerListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (cilr CertificateIssuerListResult) IsEmpty() bool {
 	return cilr.Value == nil || len(*cilr.Value) == 0
@@ -357,11 +400,11 @@ func (cilr CertificateIssuerListResult) IsEmpty() bool {
 
 // certificateIssuerListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (cilr CertificateIssuerListResult) certificateIssuerListResultPreparer() (*http.Request, error) {
+func (cilr CertificateIssuerListResult) certificateIssuerListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if cilr.NextLink == nil || len(to.String(cilr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(cilr.NextLink)))
@@ -369,19 +412,36 @@ func (cilr CertificateIssuerListResult) certificateIssuerListResultPreparer() (*
 
 // CertificateIssuerListResultPage contains a page of CertificateIssuerItem values.
 type CertificateIssuerListResultPage struct {
-	fn   func(CertificateIssuerListResult) (CertificateIssuerListResult, error)
+	fn   func(context.Context, CertificateIssuerListResult) (CertificateIssuerListResult, error)
 	cilr CertificateIssuerListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *CertificateIssuerListResultPage) Next() error {
-	next, err := page.fn(page.cilr)
+func (page *CertificateIssuerListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/CertificateIssuerListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.cilr)
 	if err != nil {
 		return err
 	}
 	page.cilr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *CertificateIssuerListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -400,6 +460,11 @@ func (page CertificateIssuerListResultPage) Values() []CertificateIssuerItem {
 		return nil
 	}
 	return *page.cilr.Value
+}
+
+// Creates a new instance of the CertificateIssuerListResultPage type.
+func NewCertificateIssuerListResultPage(getNextPage func(context.Context, CertificateIssuerListResult) (CertificateIssuerListResult, error)) CertificateIssuerListResultPage {
+	return CertificateIssuerListResultPage{fn: getNextPage}
 }
 
 // CertificateIssuerSetParameters the certificate issuer set parameters.
@@ -434,7 +499,7 @@ type CertificateItem struct {
 	Attributes *CertificateAttributes `json:"attributes,omitempty"`
 	// Tags - Application-specific metadata in the form of key-value pairs
 	Tags map[string]*string `json:"tags"`
-	// X509Thumbprint - Thumbprint of the certificate.
+	// X509Thumbprint - Thumbprint of the certificate. (a URL-encoded base64 string)
 	X509Thumbprint *string `json:"x5t,omitempty"`
 }
 
@@ -459,9 +524,9 @@ func (ci CertificateItem) MarshalJSON() ([]byte, error) {
 // CertificateListResult the certificate list result
 type CertificateListResult struct {
 	autorest.Response `json:"-"`
-	// Value - A response message containing a list of certificates in the vault along with a link to the next page of certificates
+	// Value - READ-ONLY; A response message containing a list of certificates in the vault along with a link to the next page of certificates
 	Value *[]CertificateItem `json:"value,omitempty"`
-	// NextLink - The URL to get the next set of certificates.
+	// NextLink - READ-ONLY; The URL to get the next set of certificates.
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
@@ -471,20 +536,37 @@ type CertificateListResultIterator struct {
 	page CertificateListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *CertificateListResultIterator) Next() error {
+func (iter *CertificateListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/CertificateListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *CertificateListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -506,6 +588,11 @@ func (iter CertificateListResultIterator) Value() CertificateItem {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the CertificateListResultIterator type.
+func NewCertificateListResultIterator(page CertificateListResultPage) CertificateListResultIterator {
+	return CertificateListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (clr CertificateListResult) IsEmpty() bool {
 	return clr.Value == nil || len(*clr.Value) == 0
@@ -513,11 +600,11 @@ func (clr CertificateListResult) IsEmpty() bool {
 
 // certificateListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (clr CertificateListResult) certificateListResultPreparer() (*http.Request, error) {
+func (clr CertificateListResult) certificateListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if clr.NextLink == nil || len(to.String(clr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(clr.NextLink)))
@@ -525,19 +612,36 @@ func (clr CertificateListResult) certificateListResultPreparer() (*http.Request,
 
 // CertificateListResultPage contains a page of CertificateItem values.
 type CertificateListResultPage struct {
-	fn  func(CertificateListResult) (CertificateListResult, error)
+	fn  func(context.Context, CertificateListResult) (CertificateListResult, error)
 	clr CertificateListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *CertificateListResultPage) Next() error {
-	next, err := page.fn(page.clr)
+func (page *CertificateListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/CertificateListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.clr)
 	if err != nil {
 		return err
 	}
 	page.clr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *CertificateListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -556,6 +660,11 @@ func (page CertificateListResultPage) Values() []CertificateItem {
 		return nil
 	}
 	return *page.clr.Value
+}
+
+// Creates a new instance of the CertificateListResultPage type.
+func NewCertificateListResultPage(getNextPage func(context.Context, CertificateListResult) (CertificateListResult, error)) CertificateListResultPage {
+	return CertificateListResultPage{fn: getNextPage}
 }
 
 // CertificateMergeParameters the certificate merge parameters
@@ -586,7 +695,7 @@ func (cmp CertificateMergeParameters) MarshalJSON() ([]byte, error) {
 // CertificateOperation a certificate operation is returned in case of async requests.
 type CertificateOperation struct {
 	autorest.Response `json:"-"`
-	// ID - The certificate id
+	// ID - READ-ONLY; The certificate id
 	ID *string `json:"id,omitempty"`
 	// IssuerParameters - Parameters for the issuer of the X509 component of a certificate.
 	IssuerParameters *IssuerParameters `json:"issuer,omitempty"`
@@ -615,7 +724,7 @@ type CertificateOperationUpdateParameter struct {
 // CertificatePolicy management policy for a certificate.
 type CertificatePolicy struct {
 	autorest.Response `json:"-"`
-	// ID - The certificate id
+	// ID - READ-ONLY; The certificate id
 	ID *string `json:"id,omitempty"`
 	// KeyProperties - Properties of the key backing a certificate.
 	KeyProperties *KeyProperties `json:"key_props,omitempty"`
@@ -658,7 +767,7 @@ func (cup CertificateUpdateParameters) MarshalJSON() ([]byte, error) {
 
 // Contact the contact information for the vault certificates.
 type Contact struct {
-	// EmailAddress - Email addresss.
+	// EmailAddress - Email address.
 	EmailAddress *string `json:"email,omitempty"`
 	// Name - Name.
 	Name *string `json:"name,omitempty"`
@@ -669,7 +778,7 @@ type Contact struct {
 // Contacts the contacts for the vault certificates.
 type Contacts struct {
 	autorest.Response `json:"-"`
-	// ID - Identifier for the contacts collection.
+	// ID - READ-ONLY; Identifier for the contacts collection.
 	ID *string `json:"id,omitempty"`
 	// ContactList - The contact list for the vault certificates.
 	ContactList *[]Contact `json:"contacts,omitempty"`
@@ -677,14 +786,15 @@ type Contacts struct {
 
 // Error the key vault server error
 type Error struct {
-	// Code - The error code.
+	// Code - READ-ONLY; The error code.
 	Code *string `json:"code,omitempty"`
-	// Message - The error message.
+	// Message - READ-ONLY; The error message.
 	Message *string `json:"message,omitempty"`
 }
 
 // ErrorType the key vault error exception
 type ErrorType struct {
+	// Error - READ-ONLY
 	Error *Error `json:"error,omitempty"`
 }
 
@@ -692,16 +802,16 @@ type ErrorType struct {
 type IssuerAttributes struct {
 	// Enabled - Determines whether the issuer is enabled
 	Enabled *bool `json:"enabled,omitempty"`
-	// Created - Creation time in UTC
+	// Created - READ-ONLY; Creation time in UTC
 	Created *date.UnixTime `json:"created,omitempty"`
-	// Updated - Last updated time in UTC
+	// Updated - READ-ONLY; Last updated time in UTC
 	Updated *date.UnixTime `json:"updated,omitempty"`
 }
 
 // IssuerBundle the issuer for Key Vault certificate
 type IssuerBundle struct {
 	autorest.Response `json:"-"`
-	// ID - Identifier for the issuer object.
+	// ID - READ-ONLY; Identifier for the issuer object.
 	ID *string `json:"id,omitempty"`
 	// Provider - The issuer provider.
 	Provider *string `json:"provider,omitempty"`
@@ -736,25 +846,25 @@ type JSONWebKey struct {
 	// Kty - Supported JsonWebKey key types (kty) for Elliptic Curve, RSA, HSM, Octet, usually RSA. Possible values include: 'EC', 'RSA', 'RSAHSM', 'Oct'
 	Kty    JSONWebKeyType `json:"kty,omitempty"`
 	KeyOps *[]string      `json:"key_ops,omitempty"`
-	// N - RSA modulus
+	// N - RSA modulus (a URL-encoded base64 string)
 	N *string `json:"n,omitempty"`
-	// E - RSA public exponent
+	// E - RSA public exponent (a URL-encoded base64 string)
 	E *string `json:"e,omitempty"`
-	// D - RSA private exponent
+	// D - RSA private exponent (a URL-encoded base64 string)
 	D *string `json:"d,omitempty"`
-	// DP - RSA Private Key Parameter
+	// DP - RSA Private Key Parameter (a URL-encoded base64 string)
 	DP *string `json:"dp,omitempty"`
-	// DQ - RSA Private Key Parameter
+	// DQ - RSA Private Key Parameter (a URL-encoded base64 string)
 	DQ *string `json:"dq,omitempty"`
-	// QI - RSA Private Key Parameter
+	// QI - RSA Private Key Parameter (a URL-encoded base64 string)
 	QI *string `json:"qi,omitempty"`
-	// P - RSA secret prime
+	// P - RSA secret prime (a URL-encoded base64 string)
 	P *string `json:"p,omitempty"`
-	// Q - RSA secret prime, with p < q
+	// Q - RSA secret prime, with p < q (a URL-encoded base64 string)
 	Q *string `json:"q,omitempty"`
-	// K - Symmetric key
+	// K - Symmetric key (a URL-encoded base64 string)
 	K *string `json:"k,omitempty"`
-	// T - HSM Token, used with Bring Your Own Key
+	// T - HSM Token, used with Bring Your Own Key (a URL-encoded base64 string)
 	T *string `json:"key_hsm,omitempty"`
 }
 
@@ -766,9 +876,9 @@ type KeyAttributes struct {
 	NotBefore *date.UnixTime `json:"nbf,omitempty"`
 	// Expires - Expiry date in UTC
 	Expires *date.UnixTime `json:"exp,omitempty"`
-	// Created - Creation time in UTC
+	// Created - READ-ONLY; Creation time in UTC
 	Created *date.UnixTime `json:"created,omitempty"`
-	// Updated - Last updated time in UTC
+	// Updated - READ-ONLY; Last updated time in UTC
 	Updated *date.UnixTime `json:"updated,omitempty"`
 }
 
@@ -781,7 +891,7 @@ type KeyBundle struct {
 	Attributes *KeyAttributes `json:"attributes,omitempty"`
 	// Tags - Application-specific metadata in the form of key-value pairs
 	Tags map[string]*string `json:"tags"`
-	// Managed - True if the key's lifetime is managed by key vault i.e. if this is a key backing a certificate, then managed will be true.
+	// Managed - READ-ONLY; True if the key's lifetime is managed by key vault i.e. if this is a key backing a certificate, then managed will be true.
 	Managed *bool `json:"managed,omitempty"`
 }
 
@@ -797,9 +907,6 @@ func (kb KeyBundle) MarshalJSON() ([]byte, error) {
 	if kb.Tags != nil {
 		objectMap["tags"] = kb.Tags
 	}
-	if kb.Managed != nil {
-		objectMap["managed"] = kb.Managed
-	}
 	return json.Marshal(objectMap)
 }
 
@@ -807,7 +914,7 @@ func (kb KeyBundle) MarshalJSON() ([]byte, error) {
 type KeyCreateParameters struct {
 	// Kty - The type of key to create. Valid key types, see JsonWebKeyType. Supported JsonWebKey key types (kty) for Elliptic Curve, RSA, HSM, Octet. Possible values include: 'EC', 'RSA', 'RSAHSM', 'Oct'
 	Kty JSONWebKeyType `json:"kty,omitempty"`
-	// KeySize - The key size in bytes. e.g. 1024 or 2048.
+	// KeySize - The key size in bits. e.g. 1024 or 2048.
 	KeySize       *int32                 `json:"key_size,omitempty"`
 	KeyOps        *[]JSONWebKeyOperation `json:"key_ops,omitempty"`
 	KeyAttributes *KeyAttributes         `json:"attributes,omitempty"`
@@ -818,7 +925,9 @@ type KeyCreateParameters struct {
 // MarshalJSON is the custom marshaler for KeyCreateParameters.
 func (kcp KeyCreateParameters) MarshalJSON() ([]byte, error) {
 	objectMap := make(map[string]interface{})
-	objectMap["kty"] = kcp.Kty
+	if kcp.Kty != "" {
+		objectMap["kty"] = kcp.Kty
+	}
 	if kcp.KeySize != nil {
 		objectMap["key_size"] = kcp.KeySize
 	}
@@ -872,7 +981,7 @@ type KeyItem struct {
 	Attributes *KeyAttributes `json:"attributes,omitempty"`
 	// Tags - Application-specific metadata in the form of key-value pairs
 	Tags map[string]*string `json:"tags"`
-	// Managed - True if the key's lifetime is managed by key vault i.e. if this is a key backing a certificate, then managed will be true.
+	// Managed - READ-ONLY; True if the key's lifetime is managed by key vault i.e. if this is a key backing a certificate, then managed will be true.
 	Managed *bool `json:"managed,omitempty"`
 }
 
@@ -888,18 +997,15 @@ func (ki KeyItem) MarshalJSON() ([]byte, error) {
 	if ki.Tags != nil {
 		objectMap["tags"] = ki.Tags
 	}
-	if ki.Managed != nil {
-		objectMap["managed"] = ki.Managed
-	}
 	return json.Marshal(objectMap)
 }
 
 // KeyListResult the key list result
 type KeyListResult struct {
 	autorest.Response `json:"-"`
-	// Value - A response message containing a list of keys in the vault along with a link to the next page of keys
+	// Value - READ-ONLY; A response message containing a list of keys in the vault along with a link to the next page of keys
 	Value *[]KeyItem `json:"value,omitempty"`
-	// NextLink - The URL to get the next set of keys.
+	// NextLink - READ-ONLY; The URL to get the next set of keys.
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
@@ -909,20 +1015,37 @@ type KeyListResultIterator struct {
 	page KeyListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *KeyListResultIterator) Next() error {
+func (iter *KeyListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/KeyListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *KeyListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -944,6 +1067,11 @@ func (iter KeyListResultIterator) Value() KeyItem {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the KeyListResultIterator type.
+func NewKeyListResultIterator(page KeyListResultPage) KeyListResultIterator {
+	return KeyListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (klr KeyListResult) IsEmpty() bool {
 	return klr.Value == nil || len(*klr.Value) == 0
@@ -951,11 +1079,11 @@ func (klr KeyListResult) IsEmpty() bool {
 
 // keyListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (klr KeyListResult) keyListResultPreparer() (*http.Request, error) {
+func (klr KeyListResult) keyListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if klr.NextLink == nil || len(to.String(klr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(klr.NextLink)))
@@ -963,19 +1091,36 @@ func (klr KeyListResult) keyListResultPreparer() (*http.Request, error) {
 
 // KeyListResultPage contains a page of KeyItem values.
 type KeyListResultPage struct {
-	fn  func(KeyListResult) (KeyListResult, error)
+	fn  func(context.Context, KeyListResult) (KeyListResult, error)
 	klr KeyListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *KeyListResultPage) Next() error {
-	next, err := page.fn(page.klr)
+func (page *KeyListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/KeyListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.klr)
 	if err != nil {
 		return err
 	}
 	page.klr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *KeyListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -996,11 +1141,17 @@ func (page KeyListResultPage) Values() []KeyItem {
 	return *page.klr.Value
 }
 
+// Creates a new instance of the KeyListResultPage type.
+func NewKeyListResultPage(getNextPage func(context.Context, KeyListResult) (KeyListResult, error)) KeyListResultPage {
+	return KeyListResultPage{fn: getNextPage}
+}
+
 // KeyOperationResult the key operation result
 type KeyOperationResult struct {
 	autorest.Response `json:"-"`
-	// Kid - Key identifier
-	Kid    *string `json:"kid,omitempty"`
+	// Kid - READ-ONLY; Key identifier
+	Kid *string `json:"kid,omitempty"`
+	// Result - READ-ONLY; a URL-encoded base64 string
 	Result *string `json:"value,omitempty"`
 }
 
@@ -1008,7 +1159,8 @@ type KeyOperationResult struct {
 type KeyOperationsParameters struct {
 	// Algorithm - algorithm identifier. Possible values include: 'RSAOAEP', 'RSAOAEP256', 'RSA15'
 	Algorithm JSONWebKeyEncryptionAlgorithm `json:"alg,omitempty"`
-	Value     *string                       `json:"value,omitempty"`
+	// Value - a URL-encoded base64 string
+	Value *string `json:"value,omitempty"`
 }
 
 // KeyProperties properties of the key pair backing a certificate.
@@ -1017,7 +1169,7 @@ type KeyProperties struct {
 	Exportable *bool `json:"exportable,omitempty"`
 	// KeyType - The key type.
 	KeyType *string `json:"kty,omitempty"`
-	// KeySize - The key size in bytes. e.g. 2048.
+	// KeySize - The key size in bits. e.g. 2048.
 	KeySize *int32 `json:"key_size,omitempty"`
 	// ReuseKey - Indicates if the same key pair will be used on certificate renewal.
 	ReuseKey *bool `json:"reuse_key,omitempty"`
@@ -1025,7 +1177,7 @@ type KeyProperties struct {
 
 // KeyRestoreParameters the key restore parameters
 type KeyRestoreParameters struct {
-	// KeyBundleBackup - the backup blob associated with a key bundle
+	// KeyBundleBackup - the backup blob associated with a key bundle (a URL-encoded base64 string)
 	KeyBundleBackup *string `json:"value,omitempty"`
 }
 
@@ -1033,7 +1185,8 @@ type KeyRestoreParameters struct {
 type KeySignParameters struct {
 	// Algorithm - The signing/verification algorithm identifier. For more information on possible algorithm types, see JsonWebKeySignatureAlgorithm. Possible values include: 'PS256', 'PS384', 'PS512', 'RS256', 'RS384', 'RS512', 'RSNULL'
 	Algorithm JSONWebKeySignatureAlgorithm `json:"alg,omitempty"`
-	Value     *string                      `json:"value,omitempty"`
+	// Value - a URL-encoded base64 string
+	Value *string `json:"value,omitempty"`
 }
 
 // KeyUpdateParameters the key update parameters
@@ -1064,20 +1217,21 @@ func (kup KeyUpdateParameters) MarshalJSON() ([]byte, error) {
 type KeyVerifyParameters struct {
 	// Algorithm - The signing/verification algorithm. For more information on possible algorithm types, see JsonWebKeySignatureAlgorithm. Possible values include: 'PS256', 'PS384', 'PS512', 'RS256', 'RS384', 'RS512', 'RSNULL'
 	Algorithm JSONWebKeySignatureAlgorithm `json:"alg,omitempty"`
-	// Digest - The digest used for signing
+	// Digest - The digest used for signing (a URL-encoded base64 string)
 	Digest *string `json:"digest,omitempty"`
-	// Signature - The signature to be verified
+	// Signature - The signature to be verified (a URL-encoded base64 string)
 	Signature *string `json:"value,omitempty"`
 }
 
 // KeyVerifyResult the key verify result
 type KeyVerifyResult struct {
 	autorest.Response `json:"-"`
-	// Value - true if the signature is verified, false otherwise.
+	// Value - READ-ONLY; true if the signature is verified, false otherwise.
 	Value *bool `json:"value,omitempty"`
 }
 
-// LifetimeAction action and its trigger that will be performed by Key Vault over the lifetime of a certificate.
+// LifetimeAction action and its trigger that will be performed by Key Vault over the lifetime of a
+// certificate.
 type LifetimeAction struct {
 	// Trigger - The condition that will execute the action.
 	Trigger *Trigger `json:"trigger,omitempty"`
@@ -1095,7 +1249,7 @@ type OrganizationDetails struct {
 
 // PendingCertificateSigningRequestResult the pending certificate signing request result
 type PendingCertificateSigningRequestResult struct {
-	// Value - The pending certificate signing request as Base64 encoded string.
+	// Value - READ-ONLY; The pending certificate signing request as Base64 encoded string.
 	Value *string `json:"value,omitempty"`
 }
 
@@ -1107,9 +1261,9 @@ type SecretAttributes struct {
 	NotBefore *date.UnixTime `json:"nbf,omitempty"`
 	// Expires - Expiry date in UTC
 	Expires *date.UnixTime `json:"exp,omitempty"`
-	// Created - Creation time in UTC
+	// Created - READ-ONLY; Creation time in UTC
 	Created *date.UnixTime `json:"created,omitempty"`
-	// Updated - Last updated time in UTC
+	// Updated - READ-ONLY; Last updated time in UTC
 	Updated *date.UnixTime `json:"updated,omitempty"`
 }
 
@@ -1126,9 +1280,9 @@ type SecretBundle struct {
 	Attributes *SecretAttributes `json:"attributes,omitempty"`
 	// Tags - Application-specific metadata in the form of key-value pairs
 	Tags map[string]*string `json:"tags"`
-	// Kid - If this is a secret backing a KV certificate, then this field specifies the corresponding key backing the KV certificate.
+	// Kid - READ-ONLY; If this is a secret backing a KV certificate, then this field specifies the corresponding key backing the KV certificate.
 	Kid *string `json:"kid,omitempty"`
-	// Managed - True if the secret's lifetime is managed by key vault i.e. if this is a secret backing a certificate, then managed will be true.
+	// Managed - READ-ONLY; True if the secret's lifetime is managed by key vault i.e. if this is a secret backing a certificate, then managed will be true.
 	Managed *bool `json:"managed,omitempty"`
 }
 
@@ -1150,12 +1304,6 @@ func (sb SecretBundle) MarshalJSON() ([]byte, error) {
 	if sb.Tags != nil {
 		objectMap["tags"] = sb.Tags
 	}
-	if sb.Kid != nil {
-		objectMap["kid"] = sb.Kid
-	}
-	if sb.Managed != nil {
-		objectMap["managed"] = sb.Managed
-	}
 	return json.Marshal(objectMap)
 }
 
@@ -1169,7 +1317,7 @@ type SecretItem struct {
 	Tags map[string]*string `json:"tags"`
 	// ContentType - Type of the secret value such as a password
 	ContentType *string `json:"contentType,omitempty"`
-	// Managed - True if the secret's lifetime is managed by key vault i.e. if this is a key backing a certificate, then managed will be true.
+	// Managed - READ-ONLY; True if the secret's lifetime is managed by key vault i.e. if this is a key backing a certificate, then managed will be true.
 	Managed *bool `json:"managed,omitempty"`
 }
 
@@ -1188,18 +1336,15 @@ func (si SecretItem) MarshalJSON() ([]byte, error) {
 	if si.ContentType != nil {
 		objectMap["contentType"] = si.ContentType
 	}
-	if si.Managed != nil {
-		objectMap["managed"] = si.Managed
-	}
 	return json.Marshal(objectMap)
 }
 
 // SecretListResult the secret list result
 type SecretListResult struct {
 	autorest.Response `json:"-"`
-	// Value - A response message containing a list of secrets in the vault along with a link to the next page of secrets
+	// Value - READ-ONLY; A response message containing a list of secrets in the vault along with a link to the next page of secrets
 	Value *[]SecretItem `json:"value,omitempty"`
-	// NextLink - The URL to get the next set of secrets.
+	// NextLink - READ-ONLY; The URL to get the next set of secrets.
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
@@ -1209,20 +1354,37 @@ type SecretListResultIterator struct {
 	page SecretListResultPage
 }
 
-// Next advances to the next value.  If there was an error making
+// NextWithContext advances to the next value.  If there was an error making
 // the request the iterator does not advance and the error is returned.
-func (iter *SecretListResultIterator) Next() error {
+func (iter *SecretListResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/SecretListResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	iter.i++
 	if iter.i < len(iter.page.Values()) {
 		return nil
 	}
-	err := iter.page.Next()
+	err = iter.page.NextWithContext(ctx)
 	if err != nil {
 		iter.i--
 		return err
 	}
 	iter.i = 0
 	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *SecretListResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the enumeration should be started or is not yet complete.
@@ -1244,6 +1406,11 @@ func (iter SecretListResultIterator) Value() SecretItem {
 	return iter.page.Values()[iter.i]
 }
 
+// Creates a new instance of the SecretListResultIterator type.
+func NewSecretListResultIterator(page SecretListResultPage) SecretListResultIterator {
+	return SecretListResultIterator{page: page}
+}
+
 // IsEmpty returns true if the ListResult contains no values.
 func (slr SecretListResult) IsEmpty() bool {
 	return slr.Value == nil || len(*slr.Value) == 0
@@ -1251,11 +1418,11 @@ func (slr SecretListResult) IsEmpty() bool {
 
 // secretListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
-func (slr SecretListResult) secretListResultPreparer() (*http.Request, error) {
+func (slr SecretListResult) secretListResultPreparer(ctx context.Context) (*http.Request, error) {
 	if slr.NextLink == nil || len(to.String(slr.NextLink)) < 1 {
 		return nil, nil
 	}
-	return autorest.Prepare(&http.Request{},
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
 		autorest.AsJSON(),
 		autorest.AsGet(),
 		autorest.WithBaseURL(to.String(slr.NextLink)))
@@ -1263,19 +1430,36 @@ func (slr SecretListResult) secretListResultPreparer() (*http.Request, error) {
 
 // SecretListResultPage contains a page of SecretItem values.
 type SecretListResultPage struct {
-	fn  func(SecretListResult) (SecretListResult, error)
+	fn  func(context.Context, SecretListResult) (SecretListResult, error)
 	slr SecretListResult
 }
 
-// Next advances to the next page of values.  If there was an error making
+// NextWithContext advances to the next page of values.  If there was an error making
 // the request the page does not advance and the error is returned.
-func (page *SecretListResultPage) Next() error {
-	next, err := page.fn(page.slr)
+func (page *SecretListResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/SecretListResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	next, err := page.fn(ctx, page.slr)
 	if err != nil {
 		return err
 	}
 	page.slr = next
 	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *SecretListResultPage) Next() error {
+	return page.NextWithContext(context.Background())
 }
 
 // NotDone returns true if the page enumeration should be started or is not yet complete.
@@ -1294,6 +1478,11 @@ func (page SecretListResultPage) Values() []SecretItem {
 		return nil
 	}
 	return *page.slr.Value
+}
+
+// Creates a new instance of the SecretListResultPage type.
+func NewSecretListResultPage(getNextPage func(context.Context, SecretListResult) (SecretListResult, error)) SecretListResultPage {
+	return SecretListResultPage{fn: getNextPage}
 }
 
 // SecretProperties properties of the key backing a certificate.
@@ -1385,6 +1574,6 @@ type X509CertificateProperties struct {
 	SubjectAlternativeNames *SubjectAlternativeNames `json:"sans,omitempty"`
 	// KeyUsage - List of key usages.
 	KeyUsage *[]KeyUsageType `json:"key_usage,omitempty"`
-	// ValidityInMonths - The duration that the ceritifcate is valid in months.
+	// ValidityInMonths - The duration that the certificate is valid in months.
 	ValidityInMonths *int32 `json:"validity_months,omitempty"`
 }

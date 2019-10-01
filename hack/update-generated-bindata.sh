@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 STARTTIME=$(date +%s)
 source "$(dirname "${BASH_SOURCE}")/lib/init.sh"
 
@@ -12,29 +12,6 @@ popd > /dev/null
 os::util::ensure::gopath_binary_exists 'go-bindata'
 
 pushd "${OS_ROOT}" > /dev/null
-"$(os::util::find::gopath_binary go-bindata)" \
-    -nocompress \
-    -nometadata \
-    -prefix "manifests" \
-    -pkg "manifests" \
-    -o "${OUTPUT_PARENT}/pkg/oc/clusterup/manifests/bindata.go" \
-    -ignore "OWNERS" \
-    -ignore "README.md" \
-    -ignore ".*\.go$" \
-    -ignore "\.DS_Store" \
-    -ignore application-template.json \
-    -ignore "prometheus-standalone.yaml" \
-    -ignore "node-exporter.yaml" \
-    examples/image-streams/... \
-    examples/db-templates/... \
-    examples/jenkins \
-    examples/jenkins/pipeline \
-    examples/quickstarts/... \
-    examples/heapster/... \
-    examples/prometheus/... \
-    examples/service-catalog/... \
-    install/... \
-    pkg/image/apiserver/admission/apis/imagepolicy/v1/...
 
 "$(os::util::find::gopath_binary go-bindata)" \
     -nocompress \
@@ -47,24 +24,26 @@ pushd "${OS_ROOT}" > /dev/null
     -ignore ".*\.(go|md)$" \
     -ignore "prometheus-standalone.yaml" \
     -ignore "node-exporter.yaml" \
-    test/extended/testdata/... \
-    test/integration/testdata \
     examples/db-templates \
-    examples/image-streams \
-    examples/sample-app \
-    examples/quickstarts/... \
-    examples/prometheus/... \
-    examples/hello-openshift \
-    examples/jenkins/... \
-    examples/quickstarts/cakephp-mysql.json \
-    install/...
+	examples/image-streams \
+	examples/sample-app \
+	examples/quickstarts/... \
+	examples/hello-openshift \
+	examples/jenkins/... \
+	examples/quickstarts/cakephp-mysql.json \
+    test/extended/testdata/... \
+    test/integration/testdata
 
 popd > /dev/null
 
 # If you hit this, please reduce other tests instead of importing more
-if [[ "$( cat "${OUTPUT_PARENT}/test/extended/testdata/bindata.go" | wc -c )" -gt 1500000 ]]; then
+if [[ "$( cat "${OUTPUT_PARENT}/test/extended/testdata/bindata.go" | wc -c )" -gt 2500000 ]]; then
     echo "error: extended bindata is $( cat "${OUTPUT_PARENT}/test/extended/testdata/bindata.go" | wc -c ) bytes, reduce the size of the import" 1>&2
     exit 1
 fi
+
+pushd "${OS_ROOT}/vendor/k8s.io/kubernetes" > /dev/null
+PATH="$(dirname "$(os::util::find::gopath_binary go-bindata)"):${PATH}" hack/generate-bindata.sh
+popd > /dev/null
 
 ret=$?; ENDTIME=$(date +%s); echo "$0 took $(($ENDTIME - $STARTTIME)) seconds"; exit "$ret"

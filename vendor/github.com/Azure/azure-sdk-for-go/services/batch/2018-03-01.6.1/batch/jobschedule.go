@@ -23,6 +23,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"github.com/satori/go.uuid"
 	"net/http"
 )
@@ -43,14 +44,26 @@ func NewJobScheduleClientWithBaseURI(baseURI string) JobScheduleClient {
 }
 
 // Add sends the add request.
-//
-// cloudJobSchedule is the job schedule to be added. timeout is the maximum time that the server can spend
-// processing the request, in seconds. The default is 30 seconds. clientRequestID is the caller-generated request
-// identity, in the form of a GUID with no decoration such as curly braces, e.g.
-// 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0. returnClientRequestID is whether the server should return the
-// client-request-id in the response. ocpDate is the time the request was issued. Client libraries typically set
-// this to the current system clock time; set it explicitly if you are calling the REST API directly.
+// Parameters:
+// cloudJobSchedule - the job schedule to be added.
+// timeout - the maximum time that the server can spend processing the request, in seconds. The default is 30
+// seconds.
+// clientRequestID - the caller-generated request identity, in the form of a GUID with no decoration such as
+// curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0.
+// returnClientRequestID - whether the server should return the client-request-id in the response.
+// ocpDate - the time the request was issued. Client libraries typically set this to the current system clock
+// time; set it explicitly if you are calling the REST API directly.
 func (client JobScheduleClient) Add(ctx context.Context, cloudJobSchedule JobScheduleAddParameter, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobScheduleClient.Add")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: cloudJobSchedule,
 			Constraints: []validation.Constraint{{Target: "cloudJobSchedule.ID", Name: validation.Null, Rule: true, Chain: nil},
@@ -181,8 +194,8 @@ func (client JobScheduleClient) AddPreparer(ctx context.Context, cloudJobSchedul
 // AddSender sends the Add request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobScheduleClient) AddSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // AddResponder handles the response to the Add request. The method always
@@ -201,22 +214,37 @@ func (client JobScheduleClient) AddResponder(resp *http.Response) (result autore
 // deleted, all the files in their working directories on the compute nodes are also deleted (the retention period is
 // ignored). The job schedule statistics are no longer accessible once the job schedule is deleted, though they are
 // still counted towards account lifetime statistics.
-//
-// jobScheduleID is the ID of the job schedule to delete. timeout is the maximum time that the server can spend
-// processing the request, in seconds. The default is 30 seconds. clientRequestID is the caller-generated request
-// identity, in the form of a GUID with no decoration such as curly braces, e.g.
-// 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0. returnClientRequestID is whether the server should return the
-// client-request-id in the response. ocpDate is the time the request was issued. Client libraries typically set
-// this to the current system clock time; set it explicitly if you are calling the REST API directly. ifMatch is an
-// ETag value associated with the version of the resource known to the client. The operation will be performed only
-// if the resource's current ETag on the service exactly matches the value specified by the client. ifNoneMatch is
-// an ETag value associated with the version of the resource known to the client. The operation will be performed
-// only if the resource's current ETag on the service does not match the value specified by the client.
-// ifModifiedSince is a timestamp indicating the last modified time of the resource known to the client. The
+// Parameters:
+// jobScheduleID - the ID of the job schedule to delete.
+// timeout - the maximum time that the server can spend processing the request, in seconds. The default is 30
+// seconds.
+// clientRequestID - the caller-generated request identity, in the form of a GUID with no decoration such as
+// curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0.
+// returnClientRequestID - whether the server should return the client-request-id in the response.
+// ocpDate - the time the request was issued. Client libraries typically set this to the current system clock
+// time; set it explicitly if you are calling the REST API directly.
+// ifMatch - an ETag value associated with the version of the resource known to the client. The operation will
+// be performed only if the resource's current ETag on the service exactly matches the value specified by the
+// client.
+// ifNoneMatch - an ETag value associated with the version of the resource known to the client. The operation
+// will be performed only if the resource's current ETag on the service does not match the value specified by
+// the client.
+// ifModifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
 // operation will be performed only if the resource on the service has been modified since the specified time.
-// ifUnmodifiedSince is a timestamp indicating the last modified time of the resource known to the client. The
-// operation will be performed only if the resource on the service has not been modified since the specified time.
+// ifUnmodifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
+// operation will be performed only if the resource on the service has not been modified since the specified
+// time.
 func (client JobScheduleClient) Delete(ctx context.Context, jobScheduleID string, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123, ifMatch string, ifNoneMatch string, ifModifiedSince *date.TimeRFC1123, ifUnmodifiedSince *date.TimeRFC1123) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobScheduleClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DeletePreparer(ctx, jobScheduleID, timeout, clientRequestID, returnClientRequestID, ocpDate, ifMatch, ifNoneMatch, ifModifiedSince, ifUnmodifiedSince)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "batch.JobScheduleClient", "Delete", nil, "Failure preparing request")
@@ -296,8 +324,8 @@ func (client JobScheduleClient) DeletePreparer(ctx context.Context, jobScheduleI
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobScheduleClient) DeleteSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
@@ -313,22 +341,37 @@ func (client JobScheduleClient) DeleteResponder(resp *http.Response) (result aut
 }
 
 // Disable no new jobs will be created until the job schedule is enabled again.
-//
-// jobScheduleID is the ID of the job schedule to disable. timeout is the maximum time that the server can spend
-// processing the request, in seconds. The default is 30 seconds. clientRequestID is the caller-generated request
-// identity, in the form of a GUID with no decoration such as curly braces, e.g.
-// 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0. returnClientRequestID is whether the server should return the
-// client-request-id in the response. ocpDate is the time the request was issued. Client libraries typically set
-// this to the current system clock time; set it explicitly if you are calling the REST API directly. ifMatch is an
-// ETag value associated with the version of the resource known to the client. The operation will be performed only
-// if the resource's current ETag on the service exactly matches the value specified by the client. ifNoneMatch is
-// an ETag value associated with the version of the resource known to the client. The operation will be performed
-// only if the resource's current ETag on the service does not match the value specified by the client.
-// ifModifiedSince is a timestamp indicating the last modified time of the resource known to the client. The
+// Parameters:
+// jobScheduleID - the ID of the job schedule to disable.
+// timeout - the maximum time that the server can spend processing the request, in seconds. The default is 30
+// seconds.
+// clientRequestID - the caller-generated request identity, in the form of a GUID with no decoration such as
+// curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0.
+// returnClientRequestID - whether the server should return the client-request-id in the response.
+// ocpDate - the time the request was issued. Client libraries typically set this to the current system clock
+// time; set it explicitly if you are calling the REST API directly.
+// ifMatch - an ETag value associated with the version of the resource known to the client. The operation will
+// be performed only if the resource's current ETag on the service exactly matches the value specified by the
+// client.
+// ifNoneMatch - an ETag value associated with the version of the resource known to the client. The operation
+// will be performed only if the resource's current ETag on the service does not match the value specified by
+// the client.
+// ifModifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
 // operation will be performed only if the resource on the service has been modified since the specified time.
-// ifUnmodifiedSince is a timestamp indicating the last modified time of the resource known to the client. The
-// operation will be performed only if the resource on the service has not been modified since the specified time.
+// ifUnmodifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
+// operation will be performed only if the resource on the service has not been modified since the specified
+// time.
 func (client JobScheduleClient) Disable(ctx context.Context, jobScheduleID string, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123, ifMatch string, ifNoneMatch string, ifModifiedSince *date.TimeRFC1123, ifUnmodifiedSince *date.TimeRFC1123) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobScheduleClient.Disable")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.DisablePreparer(ctx, jobScheduleID, timeout, clientRequestID, returnClientRequestID, ocpDate, ifMatch, ifNoneMatch, ifModifiedSince, ifUnmodifiedSince)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "batch.JobScheduleClient", "Disable", nil, "Failure preparing request")
@@ -408,8 +451,8 @@ func (client JobScheduleClient) DisablePreparer(ctx context.Context, jobSchedule
 // DisableSender sends the Disable request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobScheduleClient) DisableSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DisableResponder handles the response to the Disable request. The method always
@@ -425,22 +468,37 @@ func (client JobScheduleClient) DisableResponder(resp *http.Response) (result au
 }
 
 // Enable sends the enable request.
-//
-// jobScheduleID is the ID of the job schedule to enable. timeout is the maximum time that the server can spend
-// processing the request, in seconds. The default is 30 seconds. clientRequestID is the caller-generated request
-// identity, in the form of a GUID with no decoration such as curly braces, e.g.
-// 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0. returnClientRequestID is whether the server should return the
-// client-request-id in the response. ocpDate is the time the request was issued. Client libraries typically set
-// this to the current system clock time; set it explicitly if you are calling the REST API directly. ifMatch is an
-// ETag value associated with the version of the resource known to the client. The operation will be performed only
-// if the resource's current ETag on the service exactly matches the value specified by the client. ifNoneMatch is
-// an ETag value associated with the version of the resource known to the client. The operation will be performed
-// only if the resource's current ETag on the service does not match the value specified by the client.
-// ifModifiedSince is a timestamp indicating the last modified time of the resource known to the client. The
+// Parameters:
+// jobScheduleID - the ID of the job schedule to enable.
+// timeout - the maximum time that the server can spend processing the request, in seconds. The default is 30
+// seconds.
+// clientRequestID - the caller-generated request identity, in the form of a GUID with no decoration such as
+// curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0.
+// returnClientRequestID - whether the server should return the client-request-id in the response.
+// ocpDate - the time the request was issued. Client libraries typically set this to the current system clock
+// time; set it explicitly if you are calling the REST API directly.
+// ifMatch - an ETag value associated with the version of the resource known to the client. The operation will
+// be performed only if the resource's current ETag on the service exactly matches the value specified by the
+// client.
+// ifNoneMatch - an ETag value associated with the version of the resource known to the client. The operation
+// will be performed only if the resource's current ETag on the service does not match the value specified by
+// the client.
+// ifModifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
 // operation will be performed only if the resource on the service has been modified since the specified time.
-// ifUnmodifiedSince is a timestamp indicating the last modified time of the resource known to the client. The
-// operation will be performed only if the resource on the service has not been modified since the specified time.
+// ifUnmodifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
+// operation will be performed only if the resource on the service has not been modified since the specified
+// time.
 func (client JobScheduleClient) Enable(ctx context.Context, jobScheduleID string, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123, ifMatch string, ifNoneMatch string, ifModifiedSince *date.TimeRFC1123, ifUnmodifiedSince *date.TimeRFC1123) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobScheduleClient.Enable")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.EnablePreparer(ctx, jobScheduleID, timeout, clientRequestID, returnClientRequestID, ocpDate, ifMatch, ifNoneMatch, ifModifiedSince, ifUnmodifiedSince)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "batch.JobScheduleClient", "Enable", nil, "Failure preparing request")
@@ -520,8 +578,8 @@ func (client JobScheduleClient) EnablePreparer(ctx context.Context, jobScheduleI
 // EnableSender sends the Enable request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobScheduleClient) EnableSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // EnableResponder handles the response to the Enable request. The method always
@@ -537,22 +595,37 @@ func (client JobScheduleClient) EnableResponder(resp *http.Response) (result aut
 }
 
 // Exists sends the exists request.
-//
-// jobScheduleID is the ID of the job schedule which you want to check. timeout is the maximum time that the server
-// can spend processing the request, in seconds. The default is 30 seconds. clientRequestID is the caller-generated
-// request identity, in the form of a GUID with no decoration such as curly braces, e.g.
-// 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0. returnClientRequestID is whether the server should return the
-// client-request-id in the response. ocpDate is the time the request was issued. Client libraries typically set
-// this to the current system clock time; set it explicitly if you are calling the REST API directly. ifMatch is an
-// ETag value associated with the version of the resource known to the client. The operation will be performed only
-// if the resource's current ETag on the service exactly matches the value specified by the client. ifNoneMatch is
-// an ETag value associated with the version of the resource known to the client. The operation will be performed
-// only if the resource's current ETag on the service does not match the value specified by the client.
-// ifModifiedSince is a timestamp indicating the last modified time of the resource known to the client. The
+// Parameters:
+// jobScheduleID - the ID of the job schedule which you want to check.
+// timeout - the maximum time that the server can spend processing the request, in seconds. The default is 30
+// seconds.
+// clientRequestID - the caller-generated request identity, in the form of a GUID with no decoration such as
+// curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0.
+// returnClientRequestID - whether the server should return the client-request-id in the response.
+// ocpDate - the time the request was issued. Client libraries typically set this to the current system clock
+// time; set it explicitly if you are calling the REST API directly.
+// ifMatch - an ETag value associated with the version of the resource known to the client. The operation will
+// be performed only if the resource's current ETag on the service exactly matches the value specified by the
+// client.
+// ifNoneMatch - an ETag value associated with the version of the resource known to the client. The operation
+// will be performed only if the resource's current ETag on the service does not match the value specified by
+// the client.
+// ifModifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
 // operation will be performed only if the resource on the service has been modified since the specified time.
-// ifUnmodifiedSince is a timestamp indicating the last modified time of the resource known to the client. The
-// operation will be performed only if the resource on the service has not been modified since the specified time.
+// ifUnmodifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
+// operation will be performed only if the resource on the service has not been modified since the specified
+// time.
 func (client JobScheduleClient) Exists(ctx context.Context, jobScheduleID string, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123, ifMatch string, ifNoneMatch string, ifModifiedSince *date.TimeRFC1123, ifUnmodifiedSince *date.TimeRFC1123) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobScheduleClient.Exists")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.ExistsPreparer(ctx, jobScheduleID, timeout, clientRequestID, returnClientRequestID, ocpDate, ifMatch, ifNoneMatch, ifModifiedSince, ifUnmodifiedSince)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "batch.JobScheduleClient", "Exists", nil, "Failure preparing request")
@@ -632,8 +705,8 @@ func (client JobScheduleClient) ExistsPreparer(ctx context.Context, jobScheduleI
 // ExistsSender sends the Exists request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobScheduleClient) ExistsSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ExistsResponder handles the response to the Exists request. The method always
@@ -649,23 +722,39 @@ func (client JobScheduleClient) ExistsResponder(resp *http.Response) (result aut
 }
 
 // Get gets information about the specified job schedule.
-//
-// jobScheduleID is the ID of the job schedule to get. selectParameter is an OData $select clause. expand is an
-// OData $expand clause. timeout is the maximum time that the server can spend processing the request, in seconds.
-// The default is 30 seconds. clientRequestID is the caller-generated request identity, in the form of a GUID with
-// no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0. returnClientRequestID is whether
-// the server should return the client-request-id in the response. ocpDate is the time the request was issued.
-// Client libraries typically set this to the current system clock time; set it explicitly if you are calling the
-// REST API directly. ifMatch is an ETag value associated with the version of the resource known to the client. The
-// operation will be performed only if the resource's current ETag on the service exactly matches the value
-// specified by the client. ifNoneMatch is an ETag value associated with the version of the resource known to the
-// client. The operation will be performed only if the resource's current ETag on the service does not match the
-// value specified by the client. ifModifiedSince is a timestamp indicating the last modified time of the resource
-// known to the client. The operation will be performed only if the resource on the service has been modified since
-// the specified time. ifUnmodifiedSince is a timestamp indicating the last modified time of the resource known to
-// the client. The operation will be performed only if the resource on the service has not been modified since the
-// specified time.
+// Parameters:
+// jobScheduleID - the ID of the job schedule to get.
+// selectParameter - an OData $select clause.
+// expand - an OData $expand clause.
+// timeout - the maximum time that the server can spend processing the request, in seconds. The default is 30
+// seconds.
+// clientRequestID - the caller-generated request identity, in the form of a GUID with no decoration such as
+// curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0.
+// returnClientRequestID - whether the server should return the client-request-id in the response.
+// ocpDate - the time the request was issued. Client libraries typically set this to the current system clock
+// time; set it explicitly if you are calling the REST API directly.
+// ifMatch - an ETag value associated with the version of the resource known to the client. The operation will
+// be performed only if the resource's current ETag on the service exactly matches the value specified by the
+// client.
+// ifNoneMatch - an ETag value associated with the version of the resource known to the client. The operation
+// will be performed only if the resource's current ETag on the service does not match the value specified by
+// the client.
+// ifModifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
+// operation will be performed only if the resource on the service has been modified since the specified time.
+// ifUnmodifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
+// operation will be performed only if the resource on the service has not been modified since the specified
+// time.
 func (client JobScheduleClient) Get(ctx context.Context, jobScheduleID string, selectParameter string, expand string, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123, ifMatch string, ifNoneMatch string, ifModifiedSince *date.TimeRFC1123, ifUnmodifiedSince *date.TimeRFC1123) (result CloudJobSchedule, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobScheduleClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.GetPreparer(ctx, jobScheduleID, selectParameter, expand, timeout, clientRequestID, returnClientRequestID, ocpDate, ifMatch, ifNoneMatch, ifModifiedSince, ifUnmodifiedSince)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "batch.JobScheduleClient", "Get", nil, "Failure preparing request")
@@ -751,8 +840,8 @@ func (client JobScheduleClient) GetPreparer(ctx context.Context, jobScheduleID s
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobScheduleClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -769,21 +858,35 @@ func (client JobScheduleClient) GetResponder(resp *http.Response) (result CloudJ
 }
 
 // List sends the list request.
-//
-// filter is an OData $filter clause. For more information on constructing this filter, see
+// Parameters:
+// filter - an OData $filter clause. For more information on constructing this filter, see
 // https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-job-schedules.
-// selectParameter is an OData $select clause. expand is an OData $expand clause. maxResults is the maximum number
-// of items to return in the response. A maximum of 1000 job schedules can be returned. timeout is the maximum time
-// that the server can spend processing the request, in seconds. The default is 30 seconds. clientRequestID is the
-// caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g.
-// 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0. returnClientRequestID is whether the server should return the
-// client-request-id in the response. ocpDate is the time the request was issued. Client libraries typically set
-// this to the current system clock time; set it explicitly if you are calling the REST API directly.
+// selectParameter - an OData $select clause.
+// expand - an OData $expand clause.
+// maxResults - the maximum number of items to return in the response. A maximum of 1000 job schedules can be
+// returned.
+// timeout - the maximum time that the server can spend processing the request, in seconds. The default is 30
+// seconds.
+// clientRequestID - the caller-generated request identity, in the form of a GUID with no decoration such as
+// curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0.
+// returnClientRequestID - whether the server should return the client-request-id in the response.
+// ocpDate - the time the request was issued. Client libraries typically set this to the current system clock
+// time; set it explicitly if you are calling the REST API directly.
 func (client JobScheduleClient) List(ctx context.Context, filter string, selectParameter string, expand string, maxResults *int32, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123) (result CloudJobScheduleListResultPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobScheduleClient.List")
+		defer func() {
+			sc := -1
+			if result.cjslr.Response.Response != nil {
+				sc = result.cjslr.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: maxResults,
 			Constraints: []validation.Constraint{{Target: "maxResults", Name: validation.Null, Rule: false,
-				Chain: []validation.Constraint{{Target: "maxResults", Name: validation.InclusiveMaximum, Rule: 1000, Chain: nil},
+				Chain: []validation.Constraint{{Target: "maxResults", Name: validation.InclusiveMaximum, Rule: int64(1000), Chain: nil},
 					{Target: "maxResults", Name: validation.InclusiveMinimum, Rule: 1, Chain: nil},
 				}}}}}); err != nil {
 		return result, validation.NewError("batch.JobScheduleClient", "List", err.Error())
@@ -863,8 +966,8 @@ func (client JobScheduleClient) ListPreparer(ctx context.Context, filter string,
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobScheduleClient) ListSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -881,8 +984,8 @@ func (client JobScheduleClient) ListResponder(resp *http.Response) (result Cloud
 }
 
 // listNextResults retrieves the next set of results, if any.
-func (client JobScheduleClient) listNextResults(lastResults CloudJobScheduleListResult) (result CloudJobScheduleListResult, err error) {
-	req, err := lastResults.cloudJobScheduleListResultPreparer()
+func (client JobScheduleClient) listNextResults(ctx context.Context, lastResults CloudJobScheduleListResult) (result CloudJobScheduleListResult, err error) {
+	req, err := lastResults.cloudJobScheduleListResultPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "batch.JobScheduleClient", "listNextResults", nil, "Failure preparing next results request")
 	}
@@ -903,6 +1006,16 @@ func (client JobScheduleClient) listNextResults(lastResults CloudJobScheduleList
 
 // ListComplete enumerates all values, automatically crossing page boundaries as required.
 func (client JobScheduleClient) ListComplete(ctx context.Context, filter string, selectParameter string, expand string, maxResults *int32, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123) (result CloudJobScheduleListResultIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobScheduleClient.List")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.List(ctx, filter, selectParameter, expand, maxResults, timeout, clientRequestID, returnClientRequestID, ocpDate)
 	return
 }
@@ -911,23 +1024,38 @@ func (client JobScheduleClient) ListComplete(ctx context.Context, filter string,
 // is not specified with this request, then the Batch service will keep the existing schedule. Changes to a job
 // schedule only impact jobs created by the schedule after the update has taken place; currently running jobs are
 // unaffected.
-//
-// jobScheduleID is the ID of the job schedule to update. jobSchedulePatchParameter is the parameters for the
-// request. timeout is the maximum time that the server can spend processing the request, in seconds. The default
-// is 30 seconds. clientRequestID is the caller-generated request identity, in the form of a GUID with no
-// decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0. returnClientRequestID is whether the
-// server should return the client-request-id in the response. ocpDate is the time the request was issued. Client
-// libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API
-// directly. ifMatch is an ETag value associated with the version of the resource known to the client. The
-// operation will be performed only if the resource's current ETag on the service exactly matches the value
-// specified by the client. ifNoneMatch is an ETag value associated with the version of the resource known to the
-// client. The operation will be performed only if the resource's current ETag on the service does not match the
-// value specified by the client. ifModifiedSince is a timestamp indicating the last modified time of the resource
-// known to the client. The operation will be performed only if the resource on the service has been modified since
-// the specified time. ifUnmodifiedSince is a timestamp indicating the last modified time of the resource known to
-// the client. The operation will be performed only if the resource on the service has not been modified since the
-// specified time.
+// Parameters:
+// jobScheduleID - the ID of the job schedule to update.
+// jobSchedulePatchParameter - the parameters for the request.
+// timeout - the maximum time that the server can spend processing the request, in seconds. The default is 30
+// seconds.
+// clientRequestID - the caller-generated request identity, in the form of a GUID with no decoration such as
+// curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0.
+// returnClientRequestID - whether the server should return the client-request-id in the response.
+// ocpDate - the time the request was issued. Client libraries typically set this to the current system clock
+// time; set it explicitly if you are calling the REST API directly.
+// ifMatch - an ETag value associated with the version of the resource known to the client. The operation will
+// be performed only if the resource's current ETag on the service exactly matches the value specified by the
+// client.
+// ifNoneMatch - an ETag value associated with the version of the resource known to the client. The operation
+// will be performed only if the resource's current ETag on the service does not match the value specified by
+// the client.
+// ifModifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
+// operation will be performed only if the resource on the service has been modified since the specified time.
+// ifUnmodifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
+// operation will be performed only if the resource on the service has not been modified since the specified
+// time.
 func (client JobScheduleClient) Patch(ctx context.Context, jobScheduleID string, jobSchedulePatchParameter JobSchedulePatchParameter, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123, ifMatch string, ifNoneMatch string, ifModifiedSince *date.TimeRFC1123, ifUnmodifiedSince *date.TimeRFC1123) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobScheduleClient.Patch")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.PatchPreparer(ctx, jobScheduleID, jobSchedulePatchParameter, timeout, clientRequestID, returnClientRequestID, ocpDate, ifMatch, ifNoneMatch, ifModifiedSince, ifUnmodifiedSince)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "batch.JobScheduleClient", "Patch", nil, "Failure preparing request")
@@ -1009,8 +1137,8 @@ func (client JobScheduleClient) PatchPreparer(ctx context.Context, jobScheduleID
 // PatchSender sends the Patch request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobScheduleClient) PatchSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // PatchResponder handles the response to the Patch request. The method always
@@ -1026,22 +1154,37 @@ func (client JobScheduleClient) PatchResponder(resp *http.Response) (result auto
 }
 
 // Terminate sends the terminate request.
-//
-// jobScheduleID is the ID of the job schedule to terminates. timeout is the maximum time that the server can spend
-// processing the request, in seconds. The default is 30 seconds. clientRequestID is the caller-generated request
-// identity, in the form of a GUID with no decoration such as curly braces, e.g.
-// 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0. returnClientRequestID is whether the server should return the
-// client-request-id in the response. ocpDate is the time the request was issued. Client libraries typically set
-// this to the current system clock time; set it explicitly if you are calling the REST API directly. ifMatch is an
-// ETag value associated with the version of the resource known to the client. The operation will be performed only
-// if the resource's current ETag on the service exactly matches the value specified by the client. ifNoneMatch is
-// an ETag value associated with the version of the resource known to the client. The operation will be performed
-// only if the resource's current ETag on the service does not match the value specified by the client.
-// ifModifiedSince is a timestamp indicating the last modified time of the resource known to the client. The
+// Parameters:
+// jobScheduleID - the ID of the job schedule to terminates.
+// timeout - the maximum time that the server can spend processing the request, in seconds. The default is 30
+// seconds.
+// clientRequestID - the caller-generated request identity, in the form of a GUID with no decoration such as
+// curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0.
+// returnClientRequestID - whether the server should return the client-request-id in the response.
+// ocpDate - the time the request was issued. Client libraries typically set this to the current system clock
+// time; set it explicitly if you are calling the REST API directly.
+// ifMatch - an ETag value associated with the version of the resource known to the client. The operation will
+// be performed only if the resource's current ETag on the service exactly matches the value specified by the
+// client.
+// ifNoneMatch - an ETag value associated with the version of the resource known to the client. The operation
+// will be performed only if the resource's current ETag on the service does not match the value specified by
+// the client.
+// ifModifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
 // operation will be performed only if the resource on the service has been modified since the specified time.
-// ifUnmodifiedSince is a timestamp indicating the last modified time of the resource known to the client. The
-// operation will be performed only if the resource on the service has not been modified since the specified time.
+// ifUnmodifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
+// operation will be performed only if the resource on the service has not been modified since the specified
+// time.
 func (client JobScheduleClient) Terminate(ctx context.Context, jobScheduleID string, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123, ifMatch string, ifNoneMatch string, ifModifiedSince *date.TimeRFC1123, ifUnmodifiedSince *date.TimeRFC1123) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobScheduleClient.Terminate")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	req, err := client.TerminatePreparer(ctx, jobScheduleID, timeout, clientRequestID, returnClientRequestID, ocpDate, ifMatch, ifNoneMatch, ifModifiedSince, ifUnmodifiedSince)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "batch.JobScheduleClient", "Terminate", nil, "Failure preparing request")
@@ -1121,8 +1264,8 @@ func (client JobScheduleClient) TerminatePreparer(ctx context.Context, jobSchedu
 // TerminateSender sends the Terminate request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobScheduleClient) TerminateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // TerminateResponder handles the response to the Terminate request. The method always
@@ -1137,27 +1280,42 @@ func (client JobScheduleClient) TerminateResponder(resp *http.Response) (result 
 	return
 }
 
-// Update this fully replaces all the updateable properties of the job schedule. For example, if the schedule property
+// Update this fully replaces all the updatable properties of the job schedule. For example, if the schedule property
 // is not specified with this request, then the Batch service will remove the existing schedule. Changes to a job
 // schedule only impact jobs created by the schedule after the update has taken place; currently running jobs are
 // unaffected.
-//
-// jobScheduleID is the ID of the job schedule to update. jobScheduleUpdateParameter is the parameters for the
-// request. timeout is the maximum time that the server can spend processing the request, in seconds. The default
-// is 30 seconds. clientRequestID is the caller-generated request identity, in the form of a GUID with no
-// decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0. returnClientRequestID is whether the
-// server should return the client-request-id in the response. ocpDate is the time the request was issued. Client
-// libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API
-// directly. ifMatch is an ETag value associated with the version of the resource known to the client. The
-// operation will be performed only if the resource's current ETag on the service exactly matches the value
-// specified by the client. ifNoneMatch is an ETag value associated with the version of the resource known to the
-// client. The operation will be performed only if the resource's current ETag on the service does not match the
-// value specified by the client. ifModifiedSince is a timestamp indicating the last modified time of the resource
-// known to the client. The operation will be performed only if the resource on the service has been modified since
-// the specified time. ifUnmodifiedSince is a timestamp indicating the last modified time of the resource known to
-// the client. The operation will be performed only if the resource on the service has not been modified since the
-// specified time.
+// Parameters:
+// jobScheduleID - the ID of the job schedule to update.
+// jobScheduleUpdateParameter - the parameters for the request.
+// timeout - the maximum time that the server can spend processing the request, in seconds. The default is 30
+// seconds.
+// clientRequestID - the caller-generated request identity, in the form of a GUID with no decoration such as
+// curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0.
+// returnClientRequestID - whether the server should return the client-request-id in the response.
+// ocpDate - the time the request was issued. Client libraries typically set this to the current system clock
+// time; set it explicitly if you are calling the REST API directly.
+// ifMatch - an ETag value associated with the version of the resource known to the client. The operation will
+// be performed only if the resource's current ETag on the service exactly matches the value specified by the
+// client.
+// ifNoneMatch - an ETag value associated with the version of the resource known to the client. The operation
+// will be performed only if the resource's current ETag on the service does not match the value specified by
+// the client.
+// ifModifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
+// operation will be performed only if the resource on the service has been modified since the specified time.
+// ifUnmodifiedSince - a timestamp indicating the last modified time of the resource known to the client. The
+// operation will be performed only if the resource on the service has not been modified since the specified
+// time.
 func (client JobScheduleClient) Update(ctx context.Context, jobScheduleID string, jobScheduleUpdateParameter JobScheduleUpdateParameter, timeout *int32, clientRequestID *uuid.UUID, returnClientRequestID *bool, ocpDate *date.TimeRFC1123, ifMatch string, ifNoneMatch string, ifModifiedSince *date.TimeRFC1123, ifUnmodifiedSince *date.TimeRFC1123) (result autorest.Response, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/JobScheduleClient.Update")
+		defer func() {
+			sc := -1
+			if result.Response != nil {
+				sc = result.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: jobScheduleUpdateParameter,
 			Constraints: []validation.Constraint{{Target: "jobScheduleUpdateParameter.Schedule", Name: validation.Null, Rule: true, Chain: nil},
@@ -1307,8 +1465,8 @@ func (client JobScheduleClient) UpdatePreparer(ctx context.Context, jobScheduleI
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client JobScheduleClient) UpdateSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	sd := autorest.GetSendDecorators(req.Context(), autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateResponder handles the response to the Update request. The method always

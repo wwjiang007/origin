@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -41,16 +42,28 @@ func NewUserGroupsClientWithBaseURI(baseURI string, subscriptionID string) UserG
 }
 
 // ListByUsers lists all user groups.
-//
-// resourceGroupName is the name of the resource group. serviceName is the name of the API Management service. UID
-// is user identifier. Must be unique in the current API Management service instance. filter is | Field       |
-// Supported operators    | Supported functions                         |
+// Parameters:
+// resourceGroupName - the name of the resource group.
+// serviceName - the name of the API Management service.
+// UID - user identifier. Must be unique in the current API Management service instance.
+// filter - | Field       | Supported operators    | Supported functions                         |
 // |-------------|------------------------|---------------------------------------------|
 // | id          | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |
 // | name        | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |
-// | description | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith | top is number of records
-// to return. skip is number of records to skip.
+// | description | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |
+// top - number of records to return.
+// skip - number of records to skip.
 func (client UserGroupsClient) ListByUsers(ctx context.Context, resourceGroupName string, serviceName string, UID string, filter string, top *int32, skip *int32) (result GroupCollectionPage, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/UserGroupsClient.ListByUsers")
+		defer func() {
+			sc := -1
+			if result.gc.Response.Response != nil {
+				sc = result.gc.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: serviceName,
 			Constraints: []validation.Constraint{{Target: "serviceName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -125,8 +138,8 @@ func (client UserGroupsClient) ListByUsersPreparer(ctx context.Context, resource
 // ListByUsersSender sends the ListByUsers request. The method will close the
 // http.Response Body if it receives an error.
 func (client UserGroupsClient) ListByUsersSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByUsersResponder handles the response to the ListByUsers request. The method always
@@ -143,8 +156,8 @@ func (client UserGroupsClient) ListByUsersResponder(resp *http.Response) (result
 }
 
 // listByUsersNextResults retrieves the next set of results, if any.
-func (client UserGroupsClient) listByUsersNextResults(lastResults GroupCollection) (result GroupCollection, err error) {
-	req, err := lastResults.groupCollectionPreparer()
+func (client UserGroupsClient) listByUsersNextResults(ctx context.Context, lastResults GroupCollection) (result GroupCollection, err error) {
+	req, err := lastResults.groupCollectionPreparer(ctx)
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "apimanagement.UserGroupsClient", "listByUsersNextResults", nil, "Failure preparing next results request")
 	}
@@ -165,6 +178,16 @@ func (client UserGroupsClient) listByUsersNextResults(lastResults GroupCollectio
 
 // ListByUsersComplete enumerates all values, automatically crossing page boundaries as required.
 func (client UserGroupsClient) ListByUsersComplete(ctx context.Context, resourceGroupName string, serviceName string, UID string, filter string, top *int32, skip *int32) (result GroupCollectionIterator, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/UserGroupsClient.ListByUsers")
+		defer func() {
+			sc := -1
+			if result.Response().Response.Response != nil {
+				sc = result.page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	result.page, err = client.ListByUsers(ctx, resourceGroupName, serviceName, UID, filter, top, skip)
 	return
 }

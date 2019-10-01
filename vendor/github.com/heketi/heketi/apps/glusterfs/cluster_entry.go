@@ -16,8 +16,10 @@ import (
 	"sort"
 
 	"github.com/boltdb/bolt"
+	wdb "github.com/heketi/heketi/pkg/db"
 	"github.com/heketi/heketi/pkg/glusterfs/api"
-	"github.com/heketi/heketi/pkg/utils"
+	"github.com/heketi/heketi/pkg/idgen"
+	"github.com/heketi/heketi/pkg/sortedstrings"
 	"github.com/lpabon/godbc"
 )
 
@@ -38,13 +40,20 @@ func NewClusterEntry() *ClusterEntry {
 	entry := &ClusterEntry{}
 	entry.Info.Nodes = make(sort.StringSlice, 0)
 	entry.Info.Volumes = make(sort.StringSlice, 0)
+	entry.Info.BlockVolumes = make(sort.StringSlice, 0)
+	entry.Info.Block = false
+	entry.Info.File = false
 
 	return entry
 }
 
-func NewClusterEntryFromRequest() *ClusterEntry {
+func NewClusterEntryFromRequest(req *api.ClusterCreateRequest) *ClusterEntry {
+	godbc.Require(req != nil)
+
 	entry := NewClusterEntry()
-	entry.Info.Id = utils.GenUUID()
+	entry.Info.Id = idgen.GenUUID()
+	entry.Info.Block = req.Block
+	entry.Info.File = req.File
 
 	return entry
 }
@@ -117,6 +126,9 @@ func (c *ClusterEntry) Unmarshal(buffer []byte) error {
 	if c.Info.Volumes == nil {
 		c.Info.Volumes = make(sort.StringSlice, 0)
 	}
+	if c.Info.BlockVolumes == nil {
+		c.Info.BlockVolumes = make(sort.StringSlice, 0)
+	}
 
 	return nil
 }
@@ -141,13 +153,156 @@ func (c *ClusterEntry) VolumeAdd(id string) {
 }
 
 func (c *ClusterEntry) VolumeDelete(id string) {
-	c.Info.Volumes = utils.SortedStringsDelete(c.Info.Volumes, id)
+	c.Info.Volumes = sortedstrings.Delete(c.Info.Volumes, id)
+}
+
+// VolumeCount returns number of volumes in cluster *including* the pending ones
+func (c *ClusterEntry) volumeCount() int {
+	return len(c.Info.Volumes)
+}
+
+func (c *ClusterEntry) BlockVolumeAdd(id string) {
+	c.Info.BlockVolumes = append(c.Info.BlockVolumes, id)
+	c.Info.BlockVolumes.Sort()
+}
+
+func (c *ClusterEntry) BlockVolumeDelete(id string) {
+	c.Info.BlockVolumes = sortedstrings.Delete(c.Info.BlockVolumes, id)
 }
 
 func (c *ClusterEntry) NodeDelete(id string) {
-	c.Info.Nodes = utils.SortedStringsDelete(c.Info.Nodes, id)
+	c.Info.Nodes = sortedstrings.Delete(c.Info.Nodes, id)
 }
 
 func ClusterEntryUpgrade(tx *bolt.Tx) error {
+	err := addBlockFileFlagsInClusterEntry(tx)
+	if err != nil {
+		return err
+	}
 	return nil
+}
+
+func addBlockFileFlagsInClusterEntry(tx *bolt.Tx) error {
+	entry, err := NewDbAttributeEntryFromKey(tx, DB_CLUSTER_HAS_FILE_BLOCK_FLAG)
+	// This key won't exist if we are introducing the feature now
+	if err != nil && err != ErrNotFound {
+		return err
+	}
+
+	if err == ErrNotFound {
+		entry = NewDbAttributeEntry()
+		entry.Key = DB_CLUSTER_HAS_FILE_BLOCK_FLAG
+		entry.Value = "no"
+	} else {
+		// This case is only for future, if ever we want to set this key to "no"
+		if entry.Value == "yes" {
+			return nil
+		}
+	}
+
+	clusters, err := ClusterList(tx)
+	if err != nil {
+		return err
+	}
+	for _, cluster := range clusters {
+		clusterEntry, err := NewClusterEntryFromId(tx, cluster)
+		if err != nil {
+			return err
+		}
+		clusterEntry.Info.Block = true
+		clusterEntry.Info.File = true
+		err = clusterEntry.Save(tx)
+		if err != nil {
+			return err
+		}
+	}
+
+	entry.Value = "yes"
+	return entry.Save(tx)
+}
+
+func (c *ClusterEntry) DeleteBricksWithEmptyPath(tx *bolt.Tx) error {
+
+	logger.Debug("Deleting bricks with empty path in cluster [%v].",
+		c.Info.Id)
+
+	for _, nodeid := range c.Info.Nodes {
+		node, err := NewNodeEntryFromId(tx, nodeid)
+		if err == ErrNotFound {
+			logger.Warning("Ignoring nonexisting node [%v] in "+
+				"cluster [%v].", nodeid, c.Info.Id)
+			continue
+		}
+		if err != nil {
+			return err
+		}
+
+		err = node.DeleteBricksWithEmptyPath(tx)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// hosts returns a node-to-host mapping for all nodes in the
+// cluster.
+func (c *ClusterEntry) hosts(db wdb.RODB) (nodeHosts, error) {
+	hosts := nodeHosts{}
+	err := db.View(func(tx *bolt.Tx) error {
+		for _, nodeId := range c.Info.Nodes {
+			node, err := NewNodeEntryFromId(tx, nodeId)
+			if err != nil {
+				return err
+			}
+			hosts[nodeId] = node.ManageHostName()
+		}
+		return nil
+	})
+	return hosts, err
+}
+
+// consistencyCheck ... verifies that a clusterEntry is consistent with rest of the database.
+// It is a method on clusterEntry and needs rest of the database as its input.
+func (c *ClusterEntry) consistencyCheck(db Db) (response DbEntryCheckResponse) {
+
+	// No consistency check required for following attributes
+	// Id
+	// ClusterFlags
+
+	// Nodes
+	for _, node := range c.Info.Nodes {
+		if nodeEntry, found := db.Nodes[node]; !found {
+			response.Inconsistencies = append(response.Inconsistencies, fmt.Sprintf("Cluster %v unknown node %v", c.Info.Id, node))
+		} else {
+			if nodeEntry.Info.ClusterId != c.Info.Id {
+				response.Inconsistencies = append(response.Inconsistencies, fmt.Sprintf("Cluster %v no link back to cluster from node %v", c.Info.Id, node))
+			}
+		}
+	}
+
+	// Volumes
+	for _, volume := range c.Info.Volumes {
+		if volumeEntry, found := db.Volumes[volume]; !found {
+			response.Inconsistencies = append(response.Inconsistencies, fmt.Sprintf("Cluster %v unknown volume %v", c.Info.Id, volume))
+		} else {
+			if volumeEntry.Info.Cluster != c.Info.Id {
+				response.Inconsistencies = append(response.Inconsistencies, fmt.Sprintf("Cluster %v no link back to cluster from volume %v", c.Info.Id, volume))
+			}
+		}
+	}
+
+	// BlockVolumes
+	for _, blockvolume := range c.Info.BlockVolumes {
+		if blockvolumeEntry, found := db.BlockVolumes[blockvolume]; !found {
+			response.Inconsistencies = append(response.Inconsistencies, fmt.Sprintf("Cluster %v unknown blockvolume %v", c.Info.Id, blockvolume))
+		} else {
+			if blockvolumeEntry.Info.Cluster != c.Info.Id {
+				response.Inconsistencies = append(response.Inconsistencies, fmt.Sprintf("Cluster %v no link back to cluster from blockvolume %v", c.Info.Id, blockvolume))
+			}
+		}
+	}
+
+	return
+
 }

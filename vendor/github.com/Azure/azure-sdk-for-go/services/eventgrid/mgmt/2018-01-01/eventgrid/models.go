@@ -18,11 +18,15 @@ package eventgrid
 // Changes may cause incorrect behavior and will be lost if the code is regenerated.
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"net/http"
 )
+
+// The package's fully qualified name.
+const fqdn = "github.com/Azure/azure-sdk-for-go/services/eventgrid/mgmt/2018-01-01/eventgrid"
 
 // EndpointType enumerates the values for endpoint type.
 type EndpointType string
@@ -35,6 +39,11 @@ const (
 	// EndpointTypeWebHook ...
 	EndpointTypeWebHook EndpointType = "WebHook"
 )
+
+// PossibleEndpointTypeValues returns an array of possible values for the EndpointType const type.
+func PossibleEndpointTypeValues() []EndpointType {
+	return []EndpointType{EndpointTypeEventHub, EndpointTypeEventSubscriptionDestination, EndpointTypeWebHook}
+}
 
 // EventSubscriptionProvisioningState enumerates the values for event subscription provisioning state.
 type EventSubscriptionProvisioningState string
@@ -54,6 +63,11 @@ const (
 	Updating EventSubscriptionProvisioningState = "Updating"
 )
 
+// PossibleEventSubscriptionProvisioningStateValues returns an array of possible values for the EventSubscriptionProvisioningState const type.
+func PossibleEventSubscriptionProvisioningStateValues() []EventSubscriptionProvisioningState {
+	return []EventSubscriptionProvisioningState{Canceled, Creating, Deleting, Failed, Succeeded, Updating}
+}
+
 // ResourceRegionType enumerates the values for resource region type.
 type ResourceRegionType string
 
@@ -63,6 +77,11 @@ const (
 	// RegionalResource ...
 	RegionalResource ResourceRegionType = "RegionalResource"
 )
+
+// PossibleResourceRegionTypeValues returns an array of possible values for the ResourceRegionType const type.
+func PossibleResourceRegionTypeValues() []ResourceRegionType {
+	return []ResourceRegionType{GlobalResource, RegionalResource}
+}
 
 // TopicProvisioningState enumerates the values for topic provisioning state.
 type TopicProvisioningState string
@@ -82,6 +101,11 @@ const (
 	TopicProvisioningStateUpdating TopicProvisioningState = "Updating"
 )
 
+// PossibleTopicProvisioningStateValues returns an array of possible values for the TopicProvisioningState const type.
+func PossibleTopicProvisioningStateValues() []TopicProvisioningState {
+	return []TopicProvisioningState{TopicProvisioningStateCanceled, TopicProvisioningStateCreating, TopicProvisioningStateDeleting, TopicProvisioningStateFailed, TopicProvisioningStateSucceeded, TopicProvisioningStateUpdating}
+}
+
 // TopicTypeProvisioningState enumerates the values for topic type provisioning state.
 type TopicTypeProvisioningState string
 
@@ -100,7 +124,13 @@ const (
 	TopicTypeProvisioningStateUpdating TopicTypeProvisioningState = "Updating"
 )
 
-// EventHubEventSubscriptionDestination information about the event hub destination for an event subscription
+// PossibleTopicTypeProvisioningStateValues returns an array of possible values for the TopicTypeProvisioningState const type.
+func PossibleTopicTypeProvisioningStateValues() []TopicTypeProvisioningState {
+	return []TopicTypeProvisioningState{TopicTypeProvisioningStateCanceled, TopicTypeProvisioningStateCreating, TopicTypeProvisioningStateDeleting, TopicTypeProvisioningStateFailed, TopicTypeProvisioningStateSucceeded, TopicTypeProvisioningStateUpdating}
+}
+
+// EventHubEventSubscriptionDestination information about the event hub destination for an event
+// subscription
 type EventHubEventSubscriptionDestination struct {
 	// EventHubEventSubscriptionDestinationProperties - Event Hub Properties of the event subscription destination
 	*EventHubEventSubscriptionDestinationProperties `json:"properties,omitempty"`
@@ -115,7 +145,9 @@ func (ehesd EventHubEventSubscriptionDestination) MarshalJSON() ([]byte, error) 
 	if ehesd.EventHubEventSubscriptionDestinationProperties != nil {
 		objectMap["properties"] = ehesd.EventHubEventSubscriptionDestinationProperties
 	}
-	objectMap["endpointType"] = ehesd.EndpointType
+	if ehesd.EndpointType != "" {
+		objectMap["endpointType"] = ehesd.EndpointType
+	}
 	return json.Marshal(objectMap)
 }
 
@@ -183,12 +215,21 @@ type EventSubscription struct {
 	autorest.Response `json:"-"`
 	// EventSubscriptionProperties - Properties of the event subscription
 	*EventSubscriptionProperties `json:"properties,omitempty"`
-	// ID - Fully qualified identifier of the resource
+	// ID - READ-ONLY; Fully qualified identifier of the resource
 	ID *string `json:"id,omitempty"`
-	// Name - Name of the resource
+	// Name - READ-ONLY; Name of the resource
 	Name *string `json:"name,omitempty"`
-	// Type - Type of the resource
+	// Type - READ-ONLY; Type of the resource
 	Type *string `json:"type,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for EventSubscription.
+func (es EventSubscription) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if es.EventSubscriptionProperties != nil {
+		objectMap["properties"] = es.EventSubscriptionProperties
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for EventSubscription struct.
@@ -300,7 +341,9 @@ func unmarshalBasicEventSubscriptionDestinationArray(body []byte) ([]BasicEventS
 func (esd EventSubscriptionDestination) MarshalJSON() ([]byte, error) {
 	esd.EndpointType = EndpointTypeEventSubscriptionDestination
 	objectMap := make(map[string]interface{})
-	objectMap["endpointType"] = esd.EndpointType
+	if esd.EndpointType != "" {
+		objectMap["endpointType"] = esd.EndpointType
+	}
 	return json.Marshal(objectMap)
 }
 
@@ -350,9 +393,9 @@ type EventSubscriptionFullURL struct {
 
 // EventSubscriptionProperties properties of the Event Subscription
 type EventSubscriptionProperties struct {
-	// Topic - Name of the topic of the event subscription.
+	// Topic - READ-ONLY; Name of the topic of the event subscription.
 	Topic *string `json:"topic,omitempty"`
-	// ProvisioningState - Provisioning state of the event subscription. Possible values include: 'Creating', 'Updating', 'Deleting', 'Succeeded', 'Canceled', 'Failed'
+	// ProvisioningState - READ-ONLY; Provisioning state of the event subscription. Possible values include: 'Creating', 'Updating', 'Deleting', 'Succeeded', 'Canceled', 'Failed'
 	ProvisioningState EventSubscriptionProvisioningState `json:"provisioningState,omitempty"`
 	// Destination - Information about the destination where events have to be delivered for the event subscription.
 	Destination BasicEventSubscriptionDestination `json:"destination,omitempty"`
@@ -425,97 +468,51 @@ func (esp *EventSubscriptionProperties) UnmarshalJSON(body []byte) error {
 // long-running operation.
 type EventSubscriptionsCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future EventSubscriptionsCreateOrUpdateFuture) Result(client EventSubscriptionsClient) (es EventSubscription, err error) {
+func (future *EventSubscriptionsCreateOrUpdateFuture) Result(client EventSubscriptionsClient) (es EventSubscription, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "eventgrid.EventSubscriptionsCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return es, azure.NewAsyncOpIncompleteError("eventgrid.EventSubscriptionsCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		es, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "eventgrid.EventSubscriptionsCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("eventgrid.EventSubscriptionsCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if es.Response.Response, err = future.GetResult(sender); err == nil && es.Response.Response.StatusCode != http.StatusNoContent {
+		es, err = client.CreateOrUpdateResponder(es.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "eventgrid.EventSubscriptionsCreateOrUpdateFuture", "Result", es.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "eventgrid.EventSubscriptionsCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	es, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "eventgrid.EventSubscriptionsCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
 
-// EventSubscriptionsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// EventSubscriptionsDeleteFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type EventSubscriptionsDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future EventSubscriptionsDeleteFuture) Result(client EventSubscriptionsClient) (ar autorest.Response, err error) {
+func (future *EventSubscriptionsDeleteFuture) Result(client EventSubscriptionsClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "eventgrid.EventSubscriptionsDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("eventgrid.EventSubscriptionsDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "eventgrid.EventSubscriptionsDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("eventgrid.EventSubscriptionsDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "eventgrid.EventSubscriptionsDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "eventgrid.EventSubscriptionsDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -526,51 +523,31 @@ type EventSubscriptionsListResult struct {
 	Value *[]EventSubscription `json:"value,omitempty"`
 }
 
-// EventSubscriptionsUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
-// operation.
+// EventSubscriptionsUpdateFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
 type EventSubscriptionsUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future EventSubscriptionsUpdateFuture) Result(client EventSubscriptionsClient) (es EventSubscription, err error) {
+func (future *EventSubscriptionsUpdateFuture) Result(client EventSubscriptionsClient) (es EventSubscription, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "eventgrid.EventSubscriptionsUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return es, azure.NewAsyncOpIncompleteError("eventgrid.EventSubscriptionsUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		es, err = client.UpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "eventgrid.EventSubscriptionsUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("eventgrid.EventSubscriptionsUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if es.Response.Response, err = future.GetResult(sender); err == nil && es.Response.Response.StatusCode != http.StatusNoContent {
+		es, err = client.UpdateResponder(es.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "eventgrid.EventSubscriptionsUpdateFuture", "Result", es.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "eventgrid.EventSubscriptionsUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	es, err = client.UpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "eventgrid.EventSubscriptionsUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -630,12 +607,21 @@ func (esup *EventSubscriptionUpdateParameters) UnmarshalJSON(body []byte) error 
 type EventType struct {
 	// EventTypeProperties - Properties of the event type.
 	*EventTypeProperties `json:"properties,omitempty"`
-	// ID - Fully qualified identifier of the resource
+	// ID - READ-ONLY; Fully qualified identifier of the resource
 	ID *string `json:"id,omitempty"`
-	// Name - Name of the resource
+	// Name - READ-ONLY; Name of the resource
 	Name *string `json:"name,omitempty"`
-	// Type - Type of the resource
+	// Type - READ-ONLY; Type of the resource
 	Type *string `json:"type,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for EventType.
+func (et EventType) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if et.EventTypeProperties != nil {
+		objectMap["properties"] = et.EventTypeProperties
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for EventType struct.
@@ -739,11 +725,11 @@ type OperationsListResult struct {
 
 // Resource definition of a Resource
 type Resource struct {
-	// ID - Fully qualified identifier of the resource
+	// ID - READ-ONLY; Fully qualified identifier of the resource
 	ID *string `json:"id,omitempty"`
-	// Name - Name of the resource
+	// Name - READ-ONLY; Name of the resource
 	Name *string `json:"name,omitempty"`
-	// Type - Type of the resource
+	// Type - READ-ONLY; Type of the resource
 	Type *string `json:"type,omitempty"`
 }
 
@@ -756,11 +742,11 @@ type Topic struct {
 	Location *string `json:"location,omitempty"`
 	// Tags - Tags of the resource
 	Tags map[string]*string `json:"tags"`
-	// ID - Fully qualified identifier of the resource
+	// ID - READ-ONLY; Fully qualified identifier of the resource
 	ID *string `json:"id,omitempty"`
-	// Name - Name of the resource
+	// Name - READ-ONLY; Name of the resource
 	Name *string `json:"name,omitempty"`
-	// Type - Type of the resource
+	// Type - READ-ONLY; Type of the resource
 	Type *string `json:"type,omitempty"`
 }
 
@@ -775,15 +761,6 @@ func (t Topic) MarshalJSON() ([]byte, error) {
 	}
 	if t.Tags != nil {
 		objectMap["tags"] = t.Tags
-	}
-	if t.ID != nil {
-		objectMap["id"] = t.ID
-	}
-	if t.Name != nil {
-		objectMap["name"] = t.Name
-	}
-	if t.Type != nil {
-		objectMap["type"] = t.Type
 	}
 	return json.Marshal(objectMap)
 }
@@ -859,62 +836,43 @@ func (t *Topic) UnmarshalJSON(body []byte) error {
 
 // TopicProperties properties of the Topic
 type TopicProperties struct {
-	// ProvisioningState - Provisioning state of the topic. Possible values include: 'TopicProvisioningStateCreating', 'TopicProvisioningStateUpdating', 'TopicProvisioningStateDeleting', 'TopicProvisioningStateSucceeded', 'TopicProvisioningStateCanceled', 'TopicProvisioningStateFailed'
+	// ProvisioningState - READ-ONLY; Provisioning state of the topic. Possible values include: 'TopicProvisioningStateCreating', 'TopicProvisioningStateUpdating', 'TopicProvisioningStateDeleting', 'TopicProvisioningStateSucceeded', 'TopicProvisioningStateCanceled', 'TopicProvisioningStateFailed'
 	ProvisioningState TopicProvisioningState `json:"provisioningState,omitempty"`
-	// Endpoint - Endpoint for the topic.
+	// Endpoint - READ-ONLY; Endpoint for the topic.
 	Endpoint *string `json:"endpoint,omitempty"`
 }
 
-// TopicRegenerateKeyRequest topic regenerate share access key key request
+// TopicRegenerateKeyRequest topic regenerate share access key request
 type TopicRegenerateKeyRequest struct {
 	// KeyName - Key name to regenerate key1 or key2
 	KeyName *string `json:"keyName,omitempty"`
 }
 
-// TopicsCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
+// TopicsCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
 type TopicsCreateOrUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future TopicsCreateOrUpdateFuture) Result(client TopicsClient) (t Topic, err error) {
+func (future *TopicsCreateOrUpdateFuture) Result(client TopicsClient) (t Topic, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "eventgrid.TopicsCreateOrUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return t, azure.NewAsyncOpIncompleteError("eventgrid.TopicsCreateOrUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		t, err = client.CreateOrUpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "eventgrid.TopicsCreateOrUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("eventgrid.TopicsCreateOrUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if t.Response.Response, err = future.GetResult(sender); err == nil && t.Response.Response.StatusCode != http.StatusNoContent {
+		t, err = client.CreateOrUpdateResponder(t.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "eventgrid.TopicsCreateOrUpdateFuture", "Result", t.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "eventgrid.TopicsCreateOrUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	t, err = client.CreateOrUpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "eventgrid.TopicsCreateOrUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -922,48 +880,22 @@ func (future TopicsCreateOrUpdateFuture) Result(client TopicsClient) (t Topic, e
 // TopicsDeleteFuture an abstraction for monitoring and retrieving the results of a long-running operation.
 type TopicsDeleteFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future TopicsDeleteFuture) Result(client TopicsClient) (ar autorest.Response, err error) {
+func (future *TopicsDeleteFuture) Result(client TopicsClient) (ar autorest.Response, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "eventgrid.TopicsDeleteFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return ar, azure.NewAsyncOpIncompleteError("eventgrid.TopicsDeleteFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		ar, err = client.DeleteResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "eventgrid.TopicsDeleteFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("eventgrid.TopicsDeleteFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
-		if err != nil {
-			return
-		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "eventgrid.TopicsDeleteFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	ar, err = client.DeleteResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "eventgrid.TopicsDeleteFuture", "Result", resp, "Failure responding to request")
-	}
+	ar.Response = future.Response()
 	return
 }
 
@@ -986,47 +918,27 @@ type TopicsListResult struct {
 // TopicsUpdateFuture an abstraction for monitoring and retrieving the results of a long-running operation.
 type TopicsUpdateFuture struct {
 	azure.Future
-	req *http.Request
 }
 
 // Result returns the result of the asynchronous operation.
 // If the operation has not completed it will return an error.
-func (future TopicsUpdateFuture) Result(client TopicsClient) (t Topic, err error) {
+func (future *TopicsUpdateFuture) Result(client TopicsClient) (t Topic, err error) {
 	var done bool
-	done, err = future.Done(client)
+	done, err = future.DoneWithContext(context.Background(), client)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "eventgrid.TopicsUpdateFuture", "Result", future.Response(), "Polling failure")
 		return
 	}
 	if !done {
-		return t, azure.NewAsyncOpIncompleteError("eventgrid.TopicsUpdateFuture")
-	}
-	if future.PollingMethod() == azure.PollingLocation {
-		t, err = client.UpdateResponder(future.Response())
-		if err != nil {
-			err = autorest.NewErrorWithError(err, "eventgrid.TopicsUpdateFuture", "Result", future.Response(), "Failure responding to request")
-		}
+		err = azure.NewAsyncOpIncompleteError("eventgrid.TopicsUpdateFuture")
 		return
 	}
-	var req *http.Request
-	var resp *http.Response
-	if future.PollingURL() != "" {
-		req, err = http.NewRequest(http.MethodGet, future.PollingURL(), nil)
+	sender := autorest.DecorateSender(client, autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
+	if t.Response.Response, err = future.GetResult(sender); err == nil && t.Response.Response.StatusCode != http.StatusNoContent {
+		t, err = client.UpdateResponder(t.Response.Response)
 		if err != nil {
-			return
+			err = autorest.NewErrorWithError(err, "eventgrid.TopicsUpdateFuture", "Result", t.Response.Response, "Failure responding to request")
 		}
-	} else {
-		req = autorest.ChangeToGet(future.req)
-	}
-	resp, err = autorest.SendWithSender(client, req,
-		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...))
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "eventgrid.TopicsUpdateFuture", "Result", resp, "Failure sending request")
-		return
-	}
-	t, err = client.UpdateResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "eventgrid.TopicsUpdateFuture", "Result", resp, "Failure responding to request")
 	}
 	return
 }
@@ -1036,12 +948,21 @@ type TopicTypeInfo struct {
 	autorest.Response `json:"-"`
 	// TopicTypeProperties - Properties of the topic type info
 	*TopicTypeProperties `json:"properties,omitempty"`
-	// ID - Fully qualified identifier of the resource
+	// ID - READ-ONLY; Fully qualified identifier of the resource
 	ID *string `json:"id,omitempty"`
-	// Name - Name of the resource
+	// Name - READ-ONLY; Name of the resource
 	Name *string `json:"name,omitempty"`
-	// Type - Type of the resource
+	// Type - READ-ONLY; Type of the resource
 	Type *string `json:"type,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for TopicTypeInfo.
+func (tti TopicTypeInfo) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if tti.TopicTypeProperties != nil {
+		objectMap["properties"] = tti.TopicTypeProperties
+	}
+	return json.Marshal(objectMap)
 }
 
 // UnmarshalJSON is the custom unmarshaler for TopicTypeInfo struct.
@@ -1139,11 +1060,11 @@ type TrackedResource struct {
 	Location *string `json:"location,omitempty"`
 	// Tags - Tags of the resource
 	Tags map[string]*string `json:"tags"`
-	// ID - Fully qualified identifier of the resource
+	// ID - READ-ONLY; Fully qualified identifier of the resource
 	ID *string `json:"id,omitempty"`
-	// Name - Name of the resource
+	// Name - READ-ONLY; Name of the resource
 	Name *string `json:"name,omitempty"`
-	// Type - Type of the resource
+	// Type - READ-ONLY; Type of the resource
 	Type *string `json:"type,omitempty"`
 }
 
@@ -1155,15 +1076,6 @@ func (tr TrackedResource) MarshalJSON() ([]byte, error) {
 	}
 	if tr.Tags != nil {
 		objectMap["tags"] = tr.Tags
-	}
-	if tr.ID != nil {
-		objectMap["id"] = tr.ID
-	}
-	if tr.Name != nil {
-		objectMap["name"] = tr.Name
-	}
-	if tr.Type != nil {
-		objectMap["type"] = tr.Type
 	}
 	return json.Marshal(objectMap)
 }
@@ -1183,7 +1095,9 @@ func (whesd WebHookEventSubscriptionDestination) MarshalJSON() ([]byte, error) {
 	if whesd.WebHookEventSubscriptionDestinationProperties != nil {
 		objectMap["properties"] = whesd.WebHookEventSubscriptionDestinationProperties
 	}
-	objectMap["endpointType"] = whesd.EndpointType
+	if whesd.EndpointType != "" {
+		objectMap["endpointType"] = whesd.EndpointType
+	}
 	return json.Marshal(objectMap)
 }
 
@@ -1240,11 +1154,11 @@ func (whesd *WebHookEventSubscriptionDestination) UnmarshalJSON(body []byte) err
 	return nil
 }
 
-// WebHookEventSubscriptionDestinationProperties information about the webhook destination properties for an event
-// subscription.
+// WebHookEventSubscriptionDestinationProperties information about the webhook destination properties for
+// an event subscription.
 type WebHookEventSubscriptionDestinationProperties struct {
 	// EndpointURL - The URL that represents the endpoint of the destination of an event subscription.
 	EndpointURL *string `json:"endpointUrl,omitempty"`
-	// EndpointBaseURL - The base URL that represents the endpoint of the destination of an event subscription.
+	// EndpointBaseURL - READ-ONLY; The base URL that represents the endpoint of the destination of an event subscription.
 	EndpointBaseURL *string `json:"endpointBaseUrl,omitempty"`
 }

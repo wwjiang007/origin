@@ -22,6 +22,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
+	"github.com/Azure/go-autorest/tracing"
 	"net/http"
 )
 
@@ -41,10 +42,22 @@ func NewBandwidthSettingsClientWithBaseURI(baseURI string, subscriptionID string
 }
 
 // CreateOrUpdate creates or updates the bandwidth setting
-//
-// bandwidthSettingName is the bandwidth setting name. parameters is the bandwidth setting to be added or updated.
-// resourceGroupName is the resource group name managerName is the manager name
+// Parameters:
+// bandwidthSettingName - the bandwidth setting name.
+// parameters - the bandwidth setting to be added or updated.
+// resourceGroupName - the resource group name
+// managerName - the manager name
 func (client BandwidthSettingsClient) CreateOrUpdate(ctx context.Context, bandwidthSettingName string, parameters BandwidthSetting, resourceGroupName string, managerName string) (result BandwidthSettingsCreateOrUpdateFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BandwidthSettingsClient.CreateOrUpdate")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameters,
 			Constraints: []validation.Constraint{{Target: "parameters.BandwidthRateSettingProperties", Name: validation.Null, Rule: true,
@@ -85,7 +98,7 @@ func (client BandwidthSettingsClient) CreateOrUpdatePreparer(ctx context.Context
 	}
 
 	preparer := autorest.CreatePreparer(
-		autorest.AsJSON(),
+		autorest.AsContentType("application/json; charset=utf-8"),
 		autorest.AsPut(),
 		autorest.WithBaseURL(client.BaseURI),
 		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.StorSimple/managers/{managerName}/bandwidthSettings/{bandwidthSettingName}", pathParameters),
@@ -97,15 +110,13 @@ func (client BandwidthSettingsClient) CreateOrUpdatePreparer(ctx context.Context
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client BandwidthSettingsClient) CreateOrUpdateSender(req *http.Request) (future BandwidthSettingsCreateOrUpdateFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -123,10 +134,21 @@ func (client BandwidthSettingsClient) CreateOrUpdateResponder(resp *http.Respons
 }
 
 // Delete deletes the bandwidth setting
-//
-// bandwidthSettingName is the name of the bandwidth setting. resourceGroupName is the resource group name
-// managerName is the manager name
+// Parameters:
+// bandwidthSettingName - the name of the bandwidth setting.
+// resourceGroupName - the resource group name
+// managerName - the manager name
 func (client BandwidthSettingsClient) Delete(ctx context.Context, bandwidthSettingName string, resourceGroupName string, managerName string) (result BandwidthSettingsDeleteFuture, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BandwidthSettingsClient.Delete")
+		defer func() {
+			sc := -1
+			if result.Response() != nil {
+				sc = result.Response().StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: managerName,
 			Constraints: []validation.Constraint{{Target: "managerName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -174,15 +196,13 @@ func (client BandwidthSettingsClient) DeletePreparer(ctx context.Context, bandwi
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client BandwidthSettingsClient) DeleteSender(req *http.Request) (future BandwidthSettingsDeleteFuture, err error) {
-	sender := autorest.DecorateSender(client, azure.DoRetryWithRegistration(client.Client))
-	future.Future = azure.NewFuture(req)
-	future.req = req
-	_, err = future.Done(sender)
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	var resp *http.Response
+	resp, err = autorest.SendWithSender(client, req, sd...)
 	if err != nil {
 		return
 	}
-	err = autorest.Respond(future.Response(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent))
+	future.Future, err = azure.NewFutureFromResponse(resp)
 	return
 }
 
@@ -199,10 +219,21 @@ func (client BandwidthSettingsClient) DeleteResponder(resp *http.Response) (resu
 }
 
 // Get returns the properties of the specified bandwidth setting name.
-//
-// bandwidthSettingName is the name of bandwidth setting to be fetched. resourceGroupName is the resource group
-// name managerName is the manager name
+// Parameters:
+// bandwidthSettingName - the name of bandwidth setting to be fetched.
+// resourceGroupName - the resource group name
+// managerName - the manager name
 func (client BandwidthSettingsClient) Get(ctx context.Context, bandwidthSettingName string, resourceGroupName string, managerName string) (result BandwidthSetting, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BandwidthSettingsClient.Get")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: managerName,
 			Constraints: []validation.Constraint{{Target: "managerName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -256,8 +287,8 @@ func (client BandwidthSettingsClient) GetPreparer(ctx context.Context, bandwidth
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client BandwidthSettingsClient) GetSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -274,9 +305,20 @@ func (client BandwidthSettingsClient) GetResponder(resp *http.Response) (result 
 }
 
 // ListByManager retrieves all the bandwidth setting in a manager.
-//
-// resourceGroupName is the resource group name managerName is the manager name
+// Parameters:
+// resourceGroupName - the resource group name
+// managerName - the manager name
 func (client BandwidthSettingsClient) ListByManager(ctx context.Context, resourceGroupName string, managerName string) (result BandwidthSettingList, err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/BandwidthSettingsClient.ListByManager")
+		defer func() {
+			sc := -1
+			if result.Response.Response != nil {
+				sc = result.Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: managerName,
 			Constraints: []validation.Constraint{{Target: "managerName", Name: validation.MaxLength, Rule: 50, Chain: nil},
@@ -329,8 +371,8 @@ func (client BandwidthSettingsClient) ListByManagerPreparer(ctx context.Context,
 // ListByManagerSender sends the ListByManager request. The method will close the
 // http.Response Body if it receives an error.
 func (client BandwidthSettingsClient) ListByManagerSender(req *http.Request) (*http.Response, error) {
-	return autorest.SendWithSender(client, req,
-		azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListByManagerResponder handles the response to the ListByManager request. The method always

@@ -1,6 +1,6 @@
 // +build go1.9
 
-// Copyright 2018 Microsoft Corporation
+// Copyright 2019 Microsoft Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,20 +19,15 @@
 
 package keyvault
 
-import original "github.com/Azure/azure-sdk-for-go/services/keyvault/mgmt/2016-10-01/keyvault"
+import (
+	"context"
+
+	original "github.com/Azure/azure-sdk-for-go/services/keyvault/mgmt/2016-10-01/keyvault"
+)
 
 const (
 	DefaultBaseURI = original.DefaultBaseURI
 )
-
-type BaseClient = original.BaseClient
-
-func New(subscriptionID string) BaseClient {
-	return original.New(subscriptionID)
-}
-func NewWithBaseURI(baseURI string, subscriptionID string) BaseClient {
-	return original.NewWithBaseURI(baseURI, subscriptionID)
-}
 
 type AccessPolicyUpdateKind = original.AccessPolicyUpdateKind
 
@@ -136,6 +131,7 @@ const (
 )
 
 type AccessPolicyEntry = original.AccessPolicyEntry
+type BaseClient = original.BaseClient
 type CheckNameAvailabilityResult = original.CheckNameAvailabilityResult
 type DeletedVault = original.DeletedVault
 type DeletedVaultListResult = original.DeletedVaultListResult
@@ -149,6 +145,7 @@ type OperationListResult = original.OperationListResult
 type OperationListResultIterator = original.OperationListResultIterator
 type OperationListResultPage = original.OperationListResultPage
 type OperationProperties = original.OperationProperties
+type OperationsClient = original.OperationsClient
 type Permissions = original.Permissions
 type Resource = original.Resource
 type ResourceListResult = original.ResourceListResult
@@ -167,23 +164,74 @@ type VaultListResultPage = original.VaultListResultPage
 type VaultPatchParameters = original.VaultPatchParameters
 type VaultPatchProperties = original.VaultPatchProperties
 type VaultProperties = original.VaultProperties
+type VaultsClient = original.VaultsClient
 type VaultsPurgeDeletedFuture = original.VaultsPurgeDeletedFuture
-type OperationsClient = original.OperationsClient
 
+func New(subscriptionID string) BaseClient {
+	return original.New(subscriptionID)
+}
+func NewDeletedVaultListResultIterator(page DeletedVaultListResultPage) DeletedVaultListResultIterator {
+	return original.NewDeletedVaultListResultIterator(page)
+}
+func NewDeletedVaultListResultPage(getNextPage func(context.Context, DeletedVaultListResult) (DeletedVaultListResult, error)) DeletedVaultListResultPage {
+	return original.NewDeletedVaultListResultPage(getNextPage)
+}
+func NewOperationListResultIterator(page OperationListResultPage) OperationListResultIterator {
+	return original.NewOperationListResultIterator(page)
+}
+func NewOperationListResultPage(getNextPage func(context.Context, OperationListResult) (OperationListResult, error)) OperationListResultPage {
+	return original.NewOperationListResultPage(getNextPage)
+}
 func NewOperationsClient(subscriptionID string) OperationsClient {
 	return original.NewOperationsClient(subscriptionID)
 }
 func NewOperationsClientWithBaseURI(baseURI string, subscriptionID string) OperationsClient {
 	return original.NewOperationsClientWithBaseURI(baseURI, subscriptionID)
 }
-
-type VaultsClient = original.VaultsClient
-
+func NewResourceListResultIterator(page ResourceListResultPage) ResourceListResultIterator {
+	return original.NewResourceListResultIterator(page)
+}
+func NewResourceListResultPage(getNextPage func(context.Context, ResourceListResult) (ResourceListResult, error)) ResourceListResultPage {
+	return original.NewResourceListResultPage(getNextPage)
+}
+func NewVaultListResultIterator(page VaultListResultPage) VaultListResultIterator {
+	return original.NewVaultListResultIterator(page)
+}
+func NewVaultListResultPage(getNextPage func(context.Context, VaultListResult) (VaultListResult, error)) VaultListResultPage {
+	return original.NewVaultListResultPage(getNextPage)
+}
 func NewVaultsClient(subscriptionID string) VaultsClient {
 	return original.NewVaultsClient(subscriptionID)
 }
 func NewVaultsClientWithBaseURI(baseURI string, subscriptionID string) VaultsClient {
 	return original.NewVaultsClientWithBaseURI(baseURI, subscriptionID)
+}
+func NewWithBaseURI(baseURI string, subscriptionID string) BaseClient {
+	return original.NewWithBaseURI(baseURI, subscriptionID)
+}
+func PossibleAccessPolicyUpdateKindValues() []AccessPolicyUpdateKind {
+	return original.PossibleAccessPolicyUpdateKindValues()
+}
+func PossibleCertificatePermissionsValues() []CertificatePermissions {
+	return original.PossibleCertificatePermissionsValues()
+}
+func PossibleCreateModeValues() []CreateMode {
+	return original.PossibleCreateModeValues()
+}
+func PossibleKeyPermissionsValues() []KeyPermissions {
+	return original.PossibleKeyPermissionsValues()
+}
+func PossibleReasonValues() []Reason {
+	return original.PossibleReasonValues()
+}
+func PossibleSecretPermissionsValues() []SecretPermissions {
+	return original.PossibleSecretPermissionsValues()
+}
+func PossibleSkuNameValues() []SkuName {
+	return original.PossibleSkuNameValues()
+}
+func PossibleStoragePermissionsValues() []StoragePermissions {
+	return original.PossibleStoragePermissionsValues()
 }
 func UserAgent() string {
 	return original.UserAgent() + " profiles/2017-03-09"
