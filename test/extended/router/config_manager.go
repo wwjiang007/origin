@@ -43,10 +43,10 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 	g.BeforeEach(func() {
 		ns = oc.Namespace()
 
-		routerImage, _ := exutil.FindRouterImage(oc)
-		routerImage = strings.Replace(routerImage, "${component}", "haproxy-router", -1)
+		routerImage, err := exutil.FindRouterImage(oc)
+		o.Expect(err).NotTo(o.HaveOccurred())
 
-		err := oc.AsAdmin().Run("new-app").Args("-f", configPath, "-p", "IMAGE="+routerImage).Execute()
+		err = oc.AsAdmin().Run("new-app").Args("-f", configPath, "-p", "IMAGE="+routerImage).Execute()
 		o.Expect(err).NotTo(o.HaveOccurred())
 	})
 
@@ -141,6 +141,7 @@ func waitForRouteToRespond(ns, execPodName, proto, host, abspath, ipaddr string,
 		set -e
 		STOP=$(($(date '+%%s') + %d))
 		while [ $(date '+%%s') -lt $STOP ]; do
+			rc=0
 			code=$( curl -k -s -m 5 -o /dev/null -w '%%{http_code}\n' --resolve %s:%d:%s %q ) || rc=$?
 			if [[ "${rc:-0}" -eq 0 ]]; then
 				echo $code

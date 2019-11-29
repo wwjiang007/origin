@@ -133,11 +133,11 @@ func WaitForInternalRegistryHostname(oc *CLI) (string, error) {
 					firstLog := false
 					for scanner.Scan() {
 						line := scanner.Text()
-						if strings.Contains(line, "docker_registry_service.go") && strings.Contains(line, registryHostname) {
+						if strings.Contains(line, "build_controller.go") && strings.Contains(line, "Starting build controller") {
 							firstLog = true
 							continue
 						}
-						if firstLog && strings.Contains(line, "build_controller.go") && strings.Contains(line, "Starting build controller") {
+						if firstLog && strings.Contains(line, "build_controller.go") && strings.Contains(line, registryHostname) {
 							e2e.Logf("the OCM pod logs indicate the build controller was started after the internal registry hostname has been set in the OCM config")
 							foundOCMLogs = true
 							break
@@ -1625,8 +1625,9 @@ func RunOneShotCommandPod(
 	// Wait for command completion.
 	err = wait.PollImmediate(1*time.Second, timeout, func() (done bool, err error) {
 		cmdPod, getErr := oc.AdminKubeClient().CoreV1().Pods(oc.Namespace()).Get(pod.Name, v1.GetOptions{})
-		if err != nil {
-			return false, getErr
+		if getErr != nil {
+			e2e.Logf("failed to get pod %q: %v", pod.Name, err)
+			return false, nil
 		}
 
 		if podHasErrored(cmdPod) {
@@ -1850,9 +1851,18 @@ func FindCLIImage(oc *CLI) (string, bool) {
 	return strings.Replace(format, "${component}", "cli", -1), ok
 }
 
-func FindRouterImage(oc *CLI) (string, bool) {
-	format, ok := FindImageFormatString(oc)
-	return strings.Replace(format, "${component}", "haproxy-router", -1), ok
+func FindRouterImage(oc *CLI) (string, error) {
+	configclient := oc.AdminConfigClient().ConfigV1()
+	o, err := configclient.ClusterOperators().Get("ingress", metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	for _, v := range o.Status.Versions {
+		if v.Name == "ingress-controller" {
+			return v.Version, nil
+		}
+	}
+	return "", fmt.Errorf("expected to find ingress-controller version on clusteroperators/ingress")
 }
 
 func IsClusterOperated(oc *CLI) bool {

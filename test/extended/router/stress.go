@@ -51,10 +51,11 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 	g.BeforeEach(func() {
 		ns = oc.Namespace()
 
-		routerImage, _ = exutil.FindRouterImage(oc)
-		routerImage = strings.Replace(routerImage, "${component}", "haproxy-router", -1)
+		var err error
+		routerImage, err = exutil.FindRouterImage(oc)
+		o.Expect(err).NotTo(o.HaveOccurred())
 
-		_, err := oc.AdminKubeClient().RbacV1().RoleBindings(ns).Create(&rbacv1.RoleBinding{
+		_, err = oc.AdminKubeClient().RbacV1().RoleBindings(ns).Create(&rbacv1.RoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "router",
 			},
@@ -79,7 +80,7 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 				scaledRouter(
 					routerImage,
 					[]string{
-						"--loglevel=4",
+						"-v=4",
 						fmt.Sprintf("--namespace=%s", ns),
 						"--resync-interval=2m",
 						"--name=namespaced",
@@ -161,7 +162,7 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 				scaledRouter(
 					routerImage,
 					[]string{
-						"--loglevel=4",
+						"-v=4",
 						fmt.Sprintf("--namespace=%s", ns),
 						// the contention tracker is resync / 10, so this will give us 2 minutes of contention tracking
 						"--resync-interval=20m",
@@ -251,7 +252,7 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 					}
 				}
 				// we expect to see no more than 10 writes per router (we should hit the hard limit) (3 replicas and 1 master)
-				o.Expect(writes).To(o.BeNumerically("<=", 40))
+				o.Expect(writes).To(o.BeNumerically("<=", 50))
 			}()
 
 			// the os_http_be.map file will vary, so only check the haproxy config
@@ -375,7 +376,7 @@ func verifyCommandEquivalent(c clientset.Interface, rs *appsv1.ReplicaSet, cmd s
 // Waits for longer than the standard e2e method.
 func waitForReadyReplicaSet(c clientset.Interface, ns, name string) error {
 	err := wait.Poll(3*time.Second, 3*time.Minute, func() (bool, error) {
-		rs, err := c.ExtensionsV1beta1().ReplicaSets(ns).Get(name, metav1.GetOptions{})
+		rs, err := c.AppsV1().ReplicaSets(ns).Get(name, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}

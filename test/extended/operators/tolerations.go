@@ -14,7 +14,7 @@ import (
 	e2e "k8s.io/kubernetes/test/e2e/framework"
 )
 
-var _ = Describe("[Feature:Platform][Smoke] Managed cluster should", func() {
+var _ = Describe("[Feature:Platform] Managed cluster should", func() {
 	oc := exutil.NewCLIWithoutNamespace("operators")
 
 	It("ensure control plane operators do not make themselves unevictable", func() {
@@ -31,7 +31,7 @@ var _ = Describe("[Feature:Platform][Smoke] Managed cluster should", func() {
 		namespacePrefixes := sets.NewString("kube-", "openshift-")
 		excludedNamespaces := sets.NewString("openshift-kube-apiserver", "openshift-kube-controller-manager", "openshift-kube-scheduler", "openshift-etcd", "openshift-openstack-infra")
 		// exclude these pods from checks
-		whitelistPods := sets.NewString("network-operator", "dns-operator", "olm-operators", "gcp-routes-controller")
+		whitelistPods := sets.NewString("network-operator", "dns-operator", "olm-operators", "gcp-routes-controller", "ovnkube-master", "must-gather")
 		for _, pod := range pods.Items {
 			// exclude non-control plane namespaces
 			if !hasPrefixSet(pod.Namespace, namespacePrefixes) {

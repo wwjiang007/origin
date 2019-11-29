@@ -1,8 +1,11 @@
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: testapp
 spec:
+  selector:
+    matchLabels:
+      app: testapp
   replicas: 1
   template:
     metadata:
@@ -11,7 +14,7 @@ spec:
     spec:
       containers:
       - name: testapp
-        image: centos/ruby-22-centos7:latest
+        image: centos/ruby-25-centos7:latest
         command:
         - /bin/sleep
         args:

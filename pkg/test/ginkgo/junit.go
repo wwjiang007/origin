@@ -115,7 +115,7 @@ const (
 	TestResultFail TestResult = "fail"
 )
 
-func writeJUnitReport(name string, tests []*testCase, dir string, duration time.Duration, errOut io.Writer, additionalResults ...*JUnitTestCase) error {
+func writeJUnitReport(filePrefix, name string, tests []*testCase, dir string, duration time.Duration, errOut io.Writer, additionalResults ...*JUnitTestCase) error {
 	s := &JUnitTestSuite{
 		Name:     name,
 		Duration: duration.Seconds(),
@@ -124,6 +124,7 @@ func writeJUnitReport(name string, tests []*testCase, dir string, duration time.
 		switch {
 		case test.skipped:
 			s.NumTests++
+			s.NumSkipped++
 			s.TestCases = append(s.TestCases, &JUnitTestCase{
 				Name:      test.name,
 				SystemOut: string(test.out),
@@ -134,7 +135,7 @@ func writeJUnitReport(name string, tests []*testCase, dir string, duration time.
 			})
 		case test.failed:
 			s.NumTests++
-			s.NumSkipped++
+			s.NumFailed++
 			s.TestCases = append(s.TestCases, &JUnitTestCase{
 				Name:      test.name,
 				SystemOut: string(test.out),
@@ -144,7 +145,6 @@ func writeJUnitReport(name string, tests []*testCase, dir string, duration time.
 				},
 			})
 		case test.success:
-			s.NumTests++
 			s.NumFailed++
 			s.TestCases = append(s.TestCases, &JUnitTestCase{
 				Name:     test.name,
@@ -166,7 +166,7 @@ func writeJUnitReport(name string, tests []*testCase, dir string, duration time.
 	if err != nil {
 		return err
 	}
-	path := filepath.Join(dir, fmt.Sprintf("junit_e2e_%s.xml", time.Now().UTC().Format("20060102-150405")))
+	path := filepath.Join(dir, fmt.Sprintf("%s_%s.xml", filePrefix, time.Now().UTC().Format("20060102-150405")))
 	fmt.Fprintf(errOut, "Writing JUnit report to %s\n\n", path)
 	return ioutil.WriteFile(path, out, 0640)
 }

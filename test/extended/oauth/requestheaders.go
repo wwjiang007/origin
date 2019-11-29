@@ -16,6 +16,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	g "github.com/onsi/ginkgo"
 	o "github.com/onsi/gomega"
 
@@ -24,6 +25,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
+	e2e "k8s.io/kubernetes/test/e2e/framework"
 
 	configv1 "github.com/openshift/api/config/v1"
 	osinv1 "github.com/openshift/api/osin/v1"
@@ -52,14 +54,6 @@ type certAuthTest struct {
 	endpoint      string
 	expectToken   bool
 	expectedError string
-}
-
-// helper error to retrieve the token from a redirect chain stopped by custom
-// http client CheckRedirect
-type tokenFoundError struct{}
-
-func (e *tokenFoundError) Error() string {
-	return fmt.Sprintf("token found")
 }
 
 var _ = g.Describe("[Serial] [Feature:OAuthServer] [RequestHeaders] [IdP]", func() {
@@ -130,11 +124,11 @@ var _ = g.Describe("[Serial] [Feature:OAuthServer] [RequestHeaders] [IdP]", func
 				expectToken: true,
 			},
 			{
-				name:          "/authorize - challenging-client - unknown CA cert: expect 500 because the verifier can generally return TLS errors :(",
+				name:          "/authorize - challenging-client - unknown CA cert: expect 302 because we never get authenticated",
 				cert:          unknownCACert,
 				key:           unknownCAKey,
 				endpoint:      "/oauth/authorize?client_id=openshift-challenging-client&response_type=token",
-				expectedError: "500 Internal Server Error",
+				expectedError: "302 Found",
 			},
 			{
 				name:          "/authorize - challenging-client - wrong CN cert: expect 500 because the verifier can generally return TLS errors :(",
@@ -160,7 +154,7 @@ var _ = g.Describe("[Serial] [Feature:OAuthServer] [RequestHeaders] [IdP]", func
 				cert:          unknownCACert,
 				key:           unknownCAKey,
 				endpoint:      "/metrics",
-				expectedError: "401 Unauthorized",
+				expectedError: "403 Forbidden",
 			},
 			{
 				name:     "/healtz - anonymous: anyone should be able to access it",
@@ -196,7 +190,7 @@ var _ = g.Describe("[Serial] [Feature:OAuthServer] [RequestHeaders] [IdP]", func
 
 		for _, tc := range testCases {
 			g.By(tc.name, func() {
-				resp := oauthHTTPRequest(caCerts, oauthURL, tc.endpoint, "", tc.cert, tc.key)
+				resp := oauthHTTPRequestOrFail(caCerts, oauthURL, tc.endpoint, "", tc.cert, tc.key)
 				respDump, err := httputil.DumpResponse(resp, false)
 				o.Expect(err).NotTo(o.HaveOccurred())
 				if len(tc.expectedError) == 0 && resp.StatusCode != 200 && resp.StatusCode != 302 {
@@ -226,7 +220,7 @@ var _ = g.Describe("[Serial] [Feature:OAuthServer] [RequestHeaders] [IdP]", func
 func testEndpointsWithValidToken(caCerts *x509.CertPool, oauthServerURL, token string) {
 	g.By("/metrics - token: requires user authorized to access the endpoint", func() {
 		testedEndpoint := "/metrics"
-		resp := oauthHTTPRequest(caCerts, oauthServerURL, testedEndpoint, token, nil, nil)
+		resp := oauthHTTPRequestOrFail(caCerts, oauthServerURL, testedEndpoint, token, nil, nil)
 		respDump, err := httputil.DumpResponse(resp, false)
 		o.Expect(err).NotTo(o.HaveOccurred())
 		o.Expect(resp.StatusCode).To(o.Equal(403), fmt.Sprintf("full response header: %s\n", respDump))
@@ -234,7 +228,7 @@ func testEndpointsWithValidToken(caCerts *x509.CertPool, oauthServerURL, token s
 
 	g.By("/healthz - token: should be accessible to anyone", func() {
 		testedEndpoint := "/healthz"
-		resp := oauthHTTPRequest(caCerts, oauthServerURL, testedEndpoint, token, nil, nil)
+		resp := oauthHTTPRequestOrFail(caCerts, oauthServerURL, testedEndpoint, token, nil, nil)
 		o.Expect(resp.StatusCode).To(o.Equal(200))
 	})
 }
@@ -242,7 +236,7 @@ func testEndpointsWithValidToken(caCerts *x509.CertPool, oauthServerURL, token s
 func testBrowserClientRedirectsProperly(caCerts *x509.CertPool, oauthServerURL string) {
 	g.By("/authorize - browser-client - anonymous: anonymous users are redirected to console login page to authenticate", func() {
 		testedEndpoint := "/oauth/authorize?client_id=openshift-browser-client&response_type=token"
-		resp := oauthHTTPRequest(caCerts, oauthServerURL, testedEndpoint, "", nil, nil)
+		resp := oauthHTTPRequestOrFail(caCerts, oauthServerURL, testedEndpoint, "", nil, nil)
 		respDump, err := httputil.DumpResponse(resp, false)
 		o.Expect(err).NotTo(o.HaveOccurred())
 		o.Expect(resp.StatusCode).To(o.Equal(200), fmt.Sprintf("full response header: %s\n", respDump))
@@ -253,7 +247,7 @@ func testBrowserClientRedirectsProperly(caCerts *x509.CertPool, oauthServerURL s
 
 	g.By("/token/request - browser-client - anonymous: users are redirected to console login page to authenticate", func() {
 		testedEndpoint := "/oauth/token/request"
-		resp := oauthHTTPRequest(caCerts, oauthServerURL, testedEndpoint, "", nil, nil)
+		resp := oauthHTTPRequestOrFail(caCerts, oauthServerURL, testedEndpoint, "", nil, nil)
 		respDump, err := httputil.DumpResponse(resp, false)
 		o.Expect(err).NotTo(o.HaveOccurred())
 		o.Expect(resp.StatusCode).To(o.Equal(200), fmt.Sprintf("full response header: %s\n", respDump))
@@ -264,7 +258,7 @@ func testBrowserClientRedirectsProperly(caCerts *x509.CertPool, oauthServerURL s
 
 	g.By("/authorize - browser-client - anonymous: specify the request header provider in the query", func() {
 		testedEndpoint := "/oauth/authorize?client_id=openshift-browser-client&response_type=token;idp=test-request-header"
-		resp := oauthHTTPRequest(caCerts, oauthServerURL, testedEndpoint, "", nil, nil)
+		resp := oauthHTTPRequestOrFail(caCerts, oauthServerURL, testedEndpoint, "", nil, nil)
 		respDump, err := httputil.DumpResponse(resp, false)
 		o.Expect(err).NotTo(o.HaveOccurred())
 		o.Expect(resp.StatusCode).To(o.Equal(302), fmt.Sprintf("full response header: %s\n", respDump))
@@ -371,15 +365,25 @@ func waitForNewOAuthConfig(oc *exutil.CLI, caCerts *x509.CertPool, oauthURL stri
 	err = wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
 		authn, err := oc.AdminConfigClient().ConfigV1().ClusterOperators().Get("authentication", metav1.GetOptions{})
 		if err != nil {
+			e2e.Logf("Error getting authentication operator: %v", err)
 			return false, err
 		}
 
 		if clusteroperatorhelpers.IsStatusConditionTrue(authn.Status.Conditions, configv1.OperatorProgressing) {
+			e2e.Logf("Waiting for progressing condition: %s", spew.Sdump(authn.Status.Conditions))
 			return false, nil
 		}
 
 		// it seems that if we do anonymous request too early, it still does not see the IdP as configured
-		if resp := oauthHTTPRequest(caCerts, oauthURL, "/oauth/authorize?client_id=openshift-challenging-client&response_type=token", "", nil, nil); resp.StatusCode != 302 {
+		resp, err := oauthHTTPRequest(caCerts, oauthURL, "/oauth/authorize?client_id=openshift-challenging-client&response_type=token", "", nil, nil)
+		if err != nil {
+			e2e.Logf("Error making OAuth request: %v", err)
+			return false, nil
+		}
+
+		if resp.StatusCode != 302 {
+			bodyBytes, _ := ioutil.ReadAll(resp.Body)
+			e2e.Logf("OAuth HTTP request response is not 302: %q (%s)", resp.Status, string(bodyBytes))
 			return false, nil
 		}
 		return true, nil
@@ -387,8 +391,17 @@ func waitForNewOAuthConfig(oc *exutil.CLI, caCerts *x509.CertPool, oauthURL stri
 	o.Expect(err).NotTo(o.HaveOccurred())
 }
 
-// returns token or encountered error should it receive Unauthorized or any other error
-func oauthHTTPRequest(caCerts *x509.CertPool, oauthBaseURL, endpoint, token string, cert *x509.Certificate, key *rsa.PrivateKey) *http.Response {
+// oauthHTTPRequestOrFail wraps oauthHTTPRequest and fails the test if the request failed
+func oauthHTTPRequestOrFail(caCerts *x509.CertPool, oauthBaseURL, endpoint, token string, cert *x509.Certificate, key *rsa.PrivateKey) *http.Response {
+	resp, err := oauthHTTPRequest(caCerts, oauthBaseURL, endpoint, token, cert, key)
+	o.Expect(err).NotTo(o.HaveOccurred())
+
+	return resp
+}
+
+// oauthHTTPRequest returns token or encountered error should it receive Unauthorized or any other error
+// This function can still Fail() the test in case its arguments are invalid/some basic stdlib functions fail.
+func oauthHTTPRequest(caCerts *x509.CertPool, oauthBaseURL, endpoint, token string, cert *x509.Certificate, key *rsa.PrivateKey) (*http.Response, error) {
 	if (cert == nil) != (key == nil) { // YOU MONSTER!
 		g.Fail("must either specify both key and cert, or neither")
 	}
@@ -417,7 +430,7 @@ func oauthHTTPRequest(caCerts *x509.CertPool, oauthBaseURL, endpoint, token stri
 		tlsCert, err := tls.X509KeyPair(certBytes, keyBytes)
 
 		o.Expect(err).NotTo(o.HaveOccurred())
-		transport.TLSClientConfig.GetClientCertificate = func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) { return &tlsCert, nil }
+		transport.TLSClientConfig.Certificates = []tls.Certificate{tlsCert}
 	}
 
 	oauthServerURL, err := url.Parse(oauthBaseURL)
@@ -443,15 +456,12 @@ func oauthHTTPRequest(caCerts *x509.CertPool, oauthBaseURL, endpoint, token stri
 	resp, err := httpClient.Do(req)
 	if urlErr, ok := err.(*url.Error); ok {
 		switch urlErr.Err {
-		case nil, tokenFoundError, outsideClusterError:
-		default:
-			o.Expect(err).NotTo(o.HaveOccurred())
+		case tokenFoundError, outsideClusterError:
+			err = nil // these are our own expected errors
 		}
-	} else {
-		o.Expect(err).NotTo(o.HaveOccurred())
 	}
 
-	return resp
+	return resp, err
 }
 
 func getTokenFromResponse(resp *http.Response) string {

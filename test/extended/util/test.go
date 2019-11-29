@@ -54,7 +54,7 @@ func InitStandardFlags() {
 	//e2e.RegisterStorageFlags()
 }
 
-func InitTest(dryRun bool) {
+func InitTest(dryRun bool) error {
 	InitDefaultEnvironmentVariables()
 	// interpret synthetic input in `--ginkgo.focus` and/or `--ginkgo.skip`
 	ginkgo.BeforeEach(checkSyntheticInput)
@@ -78,7 +78,7 @@ func InitTest(dryRun bool) {
 	clientConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(&clientcmd.ClientConfigLoadingRules{ExplicitPath: TestContext.KubeConfig}, &clientcmd.ConfigOverrides{})
 	cfg, err := clientConfig.ClientConfig()
 	if err != nil && !dryRun { // we don't need the host when doing a dryrun
-		FatalErr(err)
+		return err
 	}
 	if cfg != nil {
 		TestContext.Host = cfg.Host
@@ -95,6 +95,7 @@ func InitTest(dryRun bool) {
 	TestContext.CreateTestingNS = createTestingNS
 
 	klog.V(2).Infof("Extended test version %s", version.Get().String())
+	return nil
 }
 
 func ExecuteTest(t ginkgo.GinkgoTestingT, suite string) {
@@ -180,7 +181,7 @@ func newGinkgoTestRenamerFromGlobals(provider string, networkSkips []string) *gi
 	for _, network := range networkSkips {
 		excludedTests = append(excludedTests, fmt.Sprintf(`\[Skipped:Network/%s\]`, network))
 	}
-	klog.Infof("openshift-tests excluded test regex is %q", strings.Join(excludedTests, `|`))
+	klog.V(4).Infof("openshift-tests excluded test regex is %q", strings.Join(excludedTests, `|`))
 	excludedTestsFilter := regexp.MustCompile(strings.Join(excludedTests, `|`))
 
 	return &ginkgoTestRenamer{
@@ -289,10 +290,6 @@ func testNameContains(name string) bool {
 	return strings.Contains(ginkgo.CurrentGinkgoTestDescription().FullTestText, name)
 }
 
-func isOriginUpgradeTest() bool {
-	return isPackage("/origin/test/e2e/upgrade/")
-}
-
 func skipTestNamespaceCustomization() bool {
 	return (isPackage("/kubernetes/test/e2e/namespace.go") && (testNameContains("should always delete fast") || testNameContains("should delete fast enough")))
 }
@@ -302,15 +299,14 @@ func createTestingNS(baseName string, c kclientset.Interface, labels map[string]
 	if !strings.HasPrefix(baseName, "e2e-") {
 		baseName = "e2e-" + baseName
 	}
+
 	ns, err := e2e.CreateTestingNS(baseName, c, labels)
 	if err != nil {
 		return ns, err
 	}
 
-	klog.V(2).Infof("blah=%s", ginkgo.CurrentGinkgoTestDescription().FileName)
-
 	// Add anyuid and privileged permissions for upstream tests
-	if (isKubernetesE2ETest() && !skipTestNamespaceCustomization()) || isOriginUpgradeTest() {
+	if strings.HasPrefix(baseName, "e2e-k8s-") || (isKubernetesE2ETest() && !skipTestNamespaceCustomization()) {
 		clientConfig, err := getClientConfig(KubeConfigPath())
 		if err != nil {
 			return ns, err
@@ -358,8 +354,9 @@ var (
 			`\[Feature:Initializers\]`,     // admission controller disabled
 			`\[Feature:TTLAfterFinished\]`, // flag gate is off
 			`\[Feature:GPUDevicePlugin\]`,  // GPU node needs to be available
-			`\[Feature:ExpandCSIVolumes\]`, // off by default .  sig-storage
-			`\[Feature:DynamicAudit\]`,     // off by default.  sig-master
+			`\[sig-scheduling\] GPUDevicePluginAcrossRecreate \[Feature:Recreate\]`, // GPU node needs to be available
+			`\[Feature:ExpandCSIVolumes\]`,                                          // off by default .  sig-storage
+			`\[Feature:DynamicAudit\]`,                                              // off by default.  sig-master
 
 			`\[NodeAlphaFeature:VolumeSubpathEnvExpansion\]`, // flag gate is off
 			`\[Feature:IPv6DualStack.*\]`,
@@ -416,21 +413,14 @@ var (
 			`should idle the service and DeploymentConfig properly`,                      // idling with a single service and DeploymentConfig [Conformance]
 			`\[Driver: csi-hostpath`,                                                     // https://bugzilla.redhat.com/show_bug.cgi?id=1711607
 			`should answer endpoint and wildcard queries for the cluster`,                // currently not supported by dns operator https://github.com/openshift/cluster-dns-operator/issues/43
-			`should propagate mounts to the host`,                                        // requires SSH, https://bugzilla.redhat.com/show_bug.cgi?id=1711600
 			`should allow ingress access on one named port`,                              // https://bugzilla.redhat.com/show_bug.cgi?id=1711602
 			`ClusterDns \[Feature:Example\] should create pod that uses dns`,             // https://bugzilla.redhat.com/show_bug.cgi?id=1711601
-			`should be rejected when no endpoints exist`,                                 // https://bugzilla.redhat.com/show_bug.cgi?id=1711605
 			`PreemptionExecutionPath runs ReplicaSets to verify preemption running path`, // https://bugzilla.redhat.com/show_bug.cgi?id=1711606
 			`TaintBasedEvictions`,                                                        // https://bugzilla.redhat.com/show_bug.cgi?id=1711608
+			`recreate nodes and ensure they function upon restart`,                       // https://bugzilla.redhat.com/show_bug.cgi?id=1756428
+			`\[Driver: iscsi\]`,                                                          // https://bugzilla.redhat.com/show_bug.cgi?id=1711627
 			// TODO(workloads): reenable
 			`SchedulerPreemption`,
-
-			`\[Driver: iscsi\]`, // https://bugzilla.redhat.com/show_bug.cgi?id=1711627
-
-			`\[Driver: nfs\] \[Testpattern: Dynamic PV \(default fs\)\] provisioning should access volume from different nodes`, // https://bugzilla.redhat.com/show_bug.cgi?id=1711688
-
-			// Test fails on platforms that use LoadBalancerService and HostNetwork endpoint publishing strategy
-			`\[Conformance\]\[Area:Networking\]\[Feature:Router\] The HAProxy router should set Forwarded headers appropriately`, // https://bugzilla.redhat.com/show_bug.cgi?id=1752646
 
 			// requires a 1.14 kubelet, enable when rhcos is built for 4.2
 			"when the NodeLease feature is enabled",
@@ -446,20 +436,6 @@ var (
 
 			// TODO(sdn): test pod fails to connect in 1.16
 			`should allow ingress access from updated pod`,
-
-			// TODO(storage): fix the use of SSH into the node
-			`volumeMode should not mount / map unused volumes in a pod`,
-
-			// TODO(workload): reactivate when oc is rebased
-			`should support exec using resource/name`,
-
-			// Disable these tests for now because they require 1.16 kubelet
-			// https://bugzilla.redhat.com/show_bug.cgi?id=1755000
-			`VolumeSubpathEnvExpansion`,
-			`CSI mock volume CSI Volume expansion`,
-			`CSI mock volume CSI online volume expansion`,
-			`CSI mock volume CSI workload information using mock driver`,
-			`volume-expand should resize volume when PVC is edited while pod is using it`,
 		},
 		// tests that may work, but we don't support them
 		"[Disabled:Unsupported]": {
@@ -548,10 +524,18 @@ var (
 		},
 		// tests that don't pass under OVN Kubernetes
 		"[Skipped:Network/OVNKubernetes]": {
-			`\[sig-network\] Services should be able to switch session affinity for NodePort service`,            // https://jira.coreos.com/browse/SDN-510
-			`\[sig-network\] Services should be able to switch session affinity for service with type clusterIP`, // https://jira.coreos.com/browse/SDN-510
-			`\[sig-network\] Services should have session affinity work for NodePort service`,                    // https://jira.coreos.com/browse/SDN-510
-			`\[sig-network\] Services should have session affinity work for service with type clusterIP`,         // https://jira.coreos.com/browse/SDN-510
+			// https://jira.coreos.com/browse/SDN-510: OVN-K doesn't support session affinity
+			`\[sig-network\] Networking Granular Checks: Services should function for client IP based session affinity: http`,
+			`\[sig-network\] Networking Granular Checks: Services should function for client IP based session affinity: udp`,
+			`\[sig-network\] Services should be able to switch session affinity for NodePort service`,
+			`\[sig-network\] Services should be able to switch session affinity for service with type clusterIP`,
+			`\[sig-network\] Services should have session affinity work for NodePort service`,
+			`\[sig-network\] Services should have session affinity work for service with type clusterIP`,
+			// SDN-587: OVN-Kubernetes doesn't support hairpin services
+			`\[sig-network\] Services should allow pods to hairpin back to themselves through services`,
+			`\[sig-network\] Networking Granular Checks: Services should function for endpoint-Service`,
+			// https://github.com/ovn-org/ovn-kubernetes/issues/928
+			`\[sig-network\] Services should be rejected when no endpoints exist`,
 		},
 		"[Suite:openshift/scalability]": {},
 		// tests that replace the old test-cmd script

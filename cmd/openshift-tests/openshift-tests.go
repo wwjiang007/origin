@@ -6,10 +6,8 @@ import (
 	goflag "flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/onsi/ginkgo"
@@ -23,13 +21,12 @@ import (
 	"k8s.io/kubectl/pkg/util/templates"
 	reale2e "k8s.io/kubernetes/test/e2e"
 	e2e "k8s.io/kubernetes/test/e2e/framework"
-	"k8s.io/kubernetes/test/e2e/storage/external"
 
 	"github.com/openshift/library-go/pkg/serviceability"
 	"github.com/openshift/origin/pkg/monitor"
 	testginkgo "github.com/openshift/origin/pkg/test/ginkgo"
 	exutil "github.com/openshift/origin/test/extended/util"
-	exutilazure "github.com/openshift/origin/test/extended/util/azure"
+	exutilcloud "github.com/openshift/origin/test/extended/util/cloud"
 
 	// these are loading important global flags that we need to get and set
 	_ "k8s.io/kubernetes/test/e2e"
@@ -104,6 +101,7 @@ func newRunCommand() *cobra.Command {
 	opt := &testginkgo.Options{
 		Suites: staticSuites,
 	}
+
 	cmd := &cobra.Command{
 		Use:   "run SUITE",
 		Short: "Run a test suite",
@@ -209,6 +207,7 @@ func newRunTestCommand() *cobra.Command {
 		Out:    os.Stdout,
 		ErrOut: os.Stderr,
 	}
+
 	cmd := &cobra.Command{
 		Use:   "run-test NAME",
 		Short: "Run a single test by name",
@@ -284,7 +283,7 @@ func initProvider(provider string, dryRun bool) error {
 	exutil.TestContext.MaxNodesToGather = 0
 	reale2e.SetViperConfig(os.Getenv("VIPERCONFIG"))
 
-	if err := initCSITests(); err != nil {
+	if err := initCSITests(dryRun); err != nil {
 		return err
 	}
 
@@ -294,39 +293,31 @@ func initProvider(provider string, dryRun bool) error {
 	//exutil.TestContext.LoggingSoak.MilliSecondsBetweenWaves = 5000
 
 	exutil.AnnotateTestSuite()
-	exutil.InitTest(dryRun)
+	err := exutil.InitTest(dryRun)
 	gomega.RegisterFailHandler(ginkgo.Fail)
 
 	// TODO: infer SSH keys from the cluster
-	return nil
+	return err
 }
 
 func decodeProviderTo(provider string, testContext *e2e.TestContextType) error {
 	switch provider {
-	case "":
+	case "", "azure", "aws", "gce":
 		if _, ok := os.LookupEnv("KUBE_SSH_USER"); ok {
 			if _, ok := os.LookupEnv("LOCAL_SSH_KEY"); ok {
 				testContext.Provider = "local"
 			}
 		}
-		// TODO: detect which provider the cluster is running and use that as a default.
-	case "azure":
-		tmpFile, err := ioutil.TempFile("", "e2e-*")
+
+		provider, cfg, err := exutilcloud.LoadConfig()
 		if err != nil {
 			return err
 		}
-		data, err := exutilazure.LoadConfigFile()
-		if err != nil {
-			return err
+		if cfg != nil {
+			testContext.Provider = provider
+			testContext.CloudConfig = *cfg
 		}
-		if _, err := tmpFile.Write(data); err != nil {
-			return err
-		}
-		if err := tmpFile.Close(); err != nil {
-			return err
-		}
-		testContext.Provider = "azure"
-		testContext.CloudConfig = e2e.CloudConfig{ConfigFile: tmpFile.Name()}
+
 	default:
 		var providerInfo struct{ Type string }
 		if err := json.Unmarshal([]byte(provider), &providerInfo); err != nil {
@@ -344,21 +335,5 @@ func decodeProviderTo(provider string, testContext *e2e.TestContextType) error {
 		testContext.Provider = "skeleton"
 	}
 	klog.V(2).Infof("Provider %s: %#v", testContext.Provider, testContext.CloudConfig)
-	return nil
-}
-
-// Initialize openshift/csi suite, i.e. define CSI tests from TEST_CSI_DRIVER_FILES.
-func initCSITests() error {
-	// TODO: replace with cmdline argument
-	driverList := os.Getenv("TEST_CSI_DRIVER_FILES")
-	if driverList == "" {
-		return nil
-	}
-	drivers := strings.Split(driverList, ",")
-	for _, driver := range drivers {
-		if err := external.AddDriverDefinition(driver); err != nil {
-			return fmt.Errorf("failed to load driver from %q: %s", driver, err)
-		}
-	}
 	return nil
 }

@@ -22,7 +22,6 @@ package app
 import (
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -111,7 +110,6 @@ others. The API Server services REST operations and provides the frontend to the
 cluster's shared state through which all other components interact.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			verflag.PrintAndExitIfRequested()
-			utilflag.PrintFlags(cmd.Flags())
 
 			if len(s.OpenShiftConfig) > 0 {
 				enablement.ForceOpenShift()
@@ -122,22 +120,28 @@ cluster's shared state through which all other components interact.`,
 
 				// this forces a patch to be called
 				// TODO we're going to try to remove bits of the patching.
-				configPatchFn, serverPatchContext := openshiftkubeapiserver.NewOpenShiftKubeAPIServerConfigPatch(genericapiserver.NewEmptyDelegate(), openshiftConfig)
+				configPatchFn := openshiftkubeapiserver.NewOpenShiftKubeAPIServerConfigPatch(openshiftConfig)
 				OpenShiftKubeAPIServerConfigPatch = configPatchFn
-				OpenShiftKubeAPIServerServerPatch = serverPatchContext.PatchServer
 
 				args, err := openshiftkubeapiserver.ConfigToFlags(openshiftConfig)
 				if err != nil {
 					return err
 				}
+
 				// hopefully this resets the flags?
 				if err := cmd.ParseFlags(args); err != nil {
 					return err
 				}
 
+				// print merged flags (merged from OpenshiftConfig)
+				utilflag.PrintFlags(cmd.Flags())
+
 				enablement.ForceGlobalInitializationForOpenShift(s)
 				enablement.InstallOpenShiftAdmissionPlugins(s)
 
+			} else {
+				// print default flags
+				utilflag.PrintFlags(cmd.Flags())
 			}
 
 			// set default options
@@ -215,17 +219,13 @@ func CreateServerChain(completedOptions completedServerRunOptions, stopCh <-chan
 	if err != nil {
 		return nil, err
 	}
-	apiExtensionsServer, err := createAPIExtensionsServer(apiExtensionsConfig, StartingDelegate)
+	apiExtensionsServer, err := createAPIExtensionsServer(apiExtensionsConfig, genericapiserver.NewEmptyDelegate())
 	if err != nil {
 		return nil, err
 	}
 
 	kubeAPIServer, err := CreateKubeAPIServer(kubeAPIServerConfig, apiExtensionsServer.GenericAPIServer, admissionPostStartHook)
 	if err != nil {
-		return nil, err
-	}
-
-	if err := PatchKubeAPIServerServer(kubeAPIServer); err != nil {
 		return nil, err
 	}
 
@@ -361,15 +361,6 @@ func CreateKubeAPIServerConfig(
 		}
 	}
 
-	clientCA, lastErr := readCAorNil(s.Authentication.ClientCert.ClientCA)
-	if lastErr != nil {
-		return
-	}
-	requestHeaderProxyCA, lastErr := readCAorNil(s.Authentication.RequestHeader.ClientCAFile)
-	if lastErr != nil {
-		return
-	}
-
 	var eventStorage *eventstorage.REST
 	eventStorage, lastErr = eventstorage.NewREST(genericConfig.RESTOptionsGetter, uint64(s.EventTTL.Seconds()))
 	if lastErr != nil {
@@ -380,14 +371,6 @@ func CreateKubeAPIServerConfig(
 	config = &master.Config{
 		GenericConfig: genericConfig,
 		ExtraConfig: master.ExtraConfig{
-			ClientCARegistrationHook: master.ClientCARegistrationHook{
-				ClientCA:                         clientCA,
-				RequestHeaderUsernameHeaders:     s.Authentication.RequestHeader.UsernameHeaders,
-				RequestHeaderGroupHeaders:        s.Authentication.RequestHeader.GroupHeaders,
-				RequestHeaderExtraHeaderPrefixes: s.Authentication.RequestHeader.ExtraHeaderPrefixes,
-				RequestHeaderCA:                  requestHeaderProxyCA,
-				RequestHeaderAllowedNames:        s.Authentication.RequestHeader.AllowedNames,
-			},
 
 			APIResourceConfigSource: storageFactory.APIResourceConfigSource,
 			StorageFactory:          storageFactory,
@@ -415,6 +398,24 @@ func CreateKubeAPIServerConfig(
 
 			VersionedInformers: versionedInformers,
 		},
+	}
+
+	clientCAProvider, lastErr := s.Authentication.ClientCert.GetClientCAContentProvider()
+	if lastErr != nil {
+		return
+	}
+	config.ExtraConfig.ClusterAuthenticationInfo.ClientCA = clientCAProvider
+
+	requestHeaderConfig, lastErr := s.Authentication.RequestHeader.ToAuthenticationRequestHeaderConfig()
+	if lastErr != nil {
+		return
+	}
+	if requestHeaderConfig != nil {
+		config.ExtraConfig.ClusterAuthenticationInfo.RequestHeaderCA = requestHeaderConfig.CAContentProvider
+		config.ExtraConfig.ClusterAuthenticationInfo.RequestHeaderAllowedNames = requestHeaderConfig.AllowedClientNames
+		config.ExtraConfig.ClusterAuthenticationInfo.RequestHeaderExtraHeaderPrefixes = requestHeaderConfig.ExtraHeaderPrefixes
+		config.ExtraConfig.ClusterAuthenticationInfo.RequestHeaderGroupHeaders = requestHeaderConfig.GroupHeaders
+		config.ExtraConfig.ClusterAuthenticationInfo.RequestHeaderUsernameHeaders = requestHeaderConfig.UsernameHeaders
 	}
 
 	if nodeTunneler != nil {
@@ -515,7 +516,7 @@ func buildGenericConfig(
 	}
 	versionedInformers = clientgoinformers.NewSharedInformerFactory(clientgoExternalClient, 10*time.Minute)
 
-	genericConfig.Authentication.Authenticator, genericConfig.OpenAPIConfig.SecurityDefinitions, genericConfig.Authentication.DynamicReloadFns, err = BuildAuthenticator(s, clientgoExternalClient, versionedInformers)
+	genericConfig.Authentication.Authenticator, genericConfig.OpenAPIConfig.SecurityDefinitions, err = BuildAuthenticator(s, clientgoExternalClient, versionedInformers)
 	if err != nil {
 		lastErr = fmt.Errorf("invalid authentication config: %v", err)
 		return
@@ -559,8 +560,7 @@ func buildGenericConfig(
 		return
 	}
 
-	StartingDelegate, err = PatchKubeAPIServerConfig(genericConfig, versionedInformers, &pluginInitializers)
-	if err != nil {
+	if err := PatchKubeAPIServerConfig(genericConfig, versionedInformers, &pluginInitializers); err != nil {
 		lastErr = fmt.Errorf("failed to patch: %v", err)
 		return
 	}
@@ -581,8 +581,11 @@ func buildGenericConfig(
 }
 
 // BuildAuthenticator constructs the authenticator
-func BuildAuthenticator(s *options.ServerRunOptions, extclient clientgoclientset.Interface, versionedInformer clientgoinformers.SharedInformerFactory) (authenticator.Request, *spec.SecurityDefinitions, map[string]genericapiserver.PostStartHookFunc, error) {
-	authenticatorConfig := s.Authentication.ToAuthenticationConfig()
+func BuildAuthenticator(s *options.ServerRunOptions, extclient clientgoclientset.Interface, versionedInformer clientgoinformers.SharedInformerFactory) (authenticator.Request, *spec.SecurityDefinitions, error) {
+	authenticatorConfig, err := s.Authentication.ToAuthenticationConfig()
+	if err != nil {
+		return nil, nil, err
+	}
 	if s.Authentication.ServiceAccounts.Lookup || utilfeature.DefaultFeatureGate.Enabled(features.TokenRequest) {
 		authenticatorConfig.ServiceAccountTokenGetter = serviceaccountcontroller.NewGetterFromClient(
 			extclient,
@@ -766,13 +769,6 @@ func buildServiceResolver(enabledAggregatorRouting bool, hostname string, inform
 		serviceResolver = aggregatorapiserver.NewLoopbackServiceResolver(serviceResolver, localHost)
 	}
 	return serviceResolver
-}
-
-func readCAorNil(file string) ([]byte, error) {
-	if len(file) == 0 {
-		return nil, nil
-	}
-	return ioutil.ReadFile(file)
 }
 
 // eventRegistrySink wraps an event registry in order to be used as direct event sync, without going through the API.
