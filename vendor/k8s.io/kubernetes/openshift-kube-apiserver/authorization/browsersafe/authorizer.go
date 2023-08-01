@@ -1,6 +1,7 @@
 package browsersafe
 
 import (
+	"context"
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -26,9 +27,9 @@ func NewBrowserSafeAuthorizer(delegate authorizer.Authorizer, authenticatedGroup
 	}
 }
 
-func (a *browserSafeAuthorizer) Authorize(attributes authorizer.Attributes) (authorizer.Decision, string, error) {
+func (a *browserSafeAuthorizer) Authorize(ctx context.Context, attributes authorizer.Attributes) (authorizer.Decision, string, error) {
 	attrs := a.getBrowserSafeAttributes(attributes)
-	decision, reason, err := a.delegate.Authorize(attrs)
+	decision, reason, err := a.delegate.Authorize(ctx, attrs)
 	safeAttributes, changed := attrs.(*browserSafeAttributes)
 
 	// check if the request was not allowed and we changed the attributes

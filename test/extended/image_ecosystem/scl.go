@@ -1,11 +1,12 @@
 package image_ecosystem
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	kapiv1 "k8s.io/api/core/v1"
@@ -13,12 +14,27 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/kubernetes/pkg/client/conditions"
 	e2e "k8s.io/kubernetes/test/e2e/framework"
+	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
+	e2eskipper "k8s.io/kubernetes/test/e2e/framework/skipper"
 
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-func getPodNameForTest(image string, t tc) string {
-	return fmt.Sprintf("%s-%s-centos7", image, t.Version)
+func skipArch(oc *exutil.CLI, arches []string) bool {
+	allWorkerNodes, err := oc.AsAdmin().KubeClient().CoreV1().Nodes().List(context.Background(), metav1.ListOptions{
+		LabelSelector: "node-role.kubernetes.io/worker",
+	})
+	if err != nil {
+		e2e.Logf("problem getting nodes for arch check: %s", err)
+	}
+	for _, node := range allWorkerNodes.Items {
+		for _, arch := range arches {
+			if node.Status.NodeInfo.Architecture == arch {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // defineTest will create the gingko test.  This ensures the test
@@ -26,21 +42,27 @@ func getPodNameForTest(image string, t tc) string {
 // since the test may not run immediately and may run in parallel with other
 // tests, so sharing a variable reference is problematic.  (Sharing the oc client
 // is ok for these tests).
-func defineTest(image string, t tc, oc *exutil.CLI) {
+func defineTest(name string, t tc, oc *exutil.CLI) {
 	g.Describe("returning s2i usage when running the image", func() {
 		g.It(fmt.Sprintf("%q should print the usage", t.DockerImageReference), func() {
+			e2e.Logf("checking %s:%s for architecture compatibility", name, t.Tag)
+			if skipArch(oc, t.Arches) {
+				e2eskipper.Skipf("skipping %s:%s because not available on cluster architecture", name, t.Tag)
+				return
+			}
+			e2e.Logf("%s:%s passed architecture compatibility", name, t.Tag)
 			g.By(fmt.Sprintf("creating a sample pod for %q", t.DockerImageReference))
 			pod := exutil.GetPodForContainer(kapiv1.Container{
 				Name:  "test",
 				Image: t.DockerImageReference,
 			})
-			_, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Create(pod)
+			_, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Create(context.Background(), pod, metav1.CreateOptions{})
 			o.Expect(err).NotTo(o.HaveOccurred())
 
 			g.By("waiting for the pod to be running")
-			err = oc.KubeFramework().WaitForPodRunningSlow(pod.Name)
+			err = e2epod.WaitForPodSuccessInNamespaceSlow(context.TODO(), oc.KubeClient(), pod.Name, oc.Namespace())
 			if err != nil {
-				p, e := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(pod.Name, metav1.GetOptions{})
+				p, e := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(context.Background(), pod.Name, metav1.GetOptions{})
 				if e != nil {
 					e2e.Logf("error %v getting pod", e)
 				}
@@ -50,12 +72,21 @@ func defineTest(image string, t tc, oc *exutil.CLI) {
 
 			g.By("checking the log of the pod")
 			err = wait.Poll(1*time.Second, 10*time.Second, func() (bool, error) {
-				log, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).GetLogs(pod.Name, &kapiv1.PodLogOptions{}).DoRaw()
+				log, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).GetLogs(pod.Name, &kapiv1.PodLogOptions{}).DoRaw(context.Background())
 				if err != nil {
 					return false, err
 				}
 				e2e.Logf("got log %v from pod %v", string(log), pod.Name)
 				if strings.Contains(string(log), "Sample invocation") {
+					return true, nil
+				}
+				if strings.Contains(string(log), "oc new-app") {
+					return true, nil
+				}
+				if strings.Contains(string(log), "OpenShift") {
+					return true, nil
+				}
+				if strings.Contains(string(log), "Openshift") {
 					return true, nil
 				}
 				return false, nil
@@ -66,6 +97,12 @@ func defineTest(image string, t tc, oc *exutil.CLI) {
 	})
 	g.Describe("using the SCL in s2i images", func() {
 		g.It(fmt.Sprintf("%q should be SCL enabled", t.DockerImageReference), func() {
+			e2e.Logf("checking %s:%s for architecture compatibility", name, t.Tag)
+			if skipArch(oc, t.Arches) {
+				e2eskipper.Skipf("skipping %s:%s because not available on cluster architecture", name, t.Tag)
+				return
+			}
+			e2e.Logf("%s:%s passed architecture compatibility", name, t.Tag)
 			g.By(fmt.Sprintf("creating a sample pod for %q with /bin/bash -c command", t.DockerImageReference))
 			pod := exutil.GetPodForContainer(kapiv1.Container{
 				Image:   t.DockerImageReference,
@@ -73,12 +110,12 @@ func defineTest(image string, t tc, oc *exutil.CLI) {
 				Command: []string{"/bin/bash", "-c", t.Cmd},
 			})
 
-			_, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Create(pod)
+			_, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Create(context.Background(), pod, metav1.CreateOptions{})
 			o.Expect(err).NotTo(o.HaveOccurred())
 
-			err = oc.KubeFramework().WaitForPodRunningSlow(pod.Name)
+			err = e2epod.WaitForPodSuccessInNamespaceSlow(context.TODO(), oc.KubeClient(), pod.Name, oc.Namespace())
 			if err != nil {
-				p, e := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(pod.Name, metav1.GetOptions{})
+				p, e := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(context.Background(), pod.Name, metav1.GetOptions{})
 				if e != nil {
 					e2e.Logf("error %v getting pod", e)
 				}
@@ -88,7 +125,7 @@ func defineTest(image string, t tc, oc *exutil.CLI) {
 
 			g.By("checking the log of the pod")
 			err = wait.Poll(1*time.Second, 10*time.Second, func() (bool, error) {
-				log, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).GetLogs(pod.Name, &kapiv1.PodLogOptions{}).DoRaw()
+				log, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).GetLogs(pod.Name, &kapiv1.PodLogOptions{}).DoRaw(context.Background())
 				if err != nil {
 					return false, err
 				}
@@ -106,10 +143,10 @@ func defineTest(image string, t tc, oc *exutil.CLI) {
 				Name:    "test",
 				Command: []string{"/usr/bin/sleep", "infinity"},
 			})
-			_, err = oc.KubeClient().CoreV1().Pods(oc.Namespace()).Create(pod)
+			_, err = oc.KubeClient().CoreV1().Pods(oc.Namespace()).Create(context.Background(), pod, metav1.CreateOptions{})
 			o.Expect(err).NotTo(o.HaveOccurred())
 
-			err = oc.KubeFramework().WaitForPodRunningSlow(pod.Name)
+			err = e2epod.WaitForPodRunningInNamespaceSlow(context.TODO(), oc.KubeClient(), pod.Name, oc.Namespace())
 			o.Expect(err).NotTo(o.HaveOccurred())
 
 			g.By("calling the binary using 'oc exec /bin/bash -c'")
@@ -125,9 +162,9 @@ func defineTest(image string, t tc, oc *exutil.CLI) {
 	})
 }
 
-var _ = g.Describe("[image_ecosystem][Slow] openshift images should be SCL enabled", func() {
+var _ = g.Describe("[sig-devex][Feature:ImageEcosystem][Slow] openshift images should be SCL enabled", func() {
 	defer g.GinkgoRecover()
-	var oc = exutil.NewCLI("s2i-usage", exutil.KubeConfigPath())
+	var oc = exutil.NewCLI("s2i-usage")
 
 	g.Context("", func() {
 		g.JustBeforeEach(func() {
@@ -135,15 +172,15 @@ var _ = g.Describe("[image_ecosystem][Slow] openshift images should be SCL enabl
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				exutil.DumpPodStates(oc)
 				exutil.DumpPodLogsStartingWith("", oc)
 			}
 		})
 
-		for image, tcs := range GetTestCaseForImages() {
+		for name, tcs := range GetTestCaseForImages() {
 			for _, t := range tcs {
-				defineTest(image, t, oc)
+				defineTest(name, t, oc)
 			}
 		}
 	})

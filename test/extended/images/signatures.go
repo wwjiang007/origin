@@ -2,27 +2,34 @@ package images
 
 import (
 	"fmt"
-	"os/exec"
 	"strings"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	e2e "k8s.io/kubernetes/test/e2e/framework"
+	admissionapi "k8s.io/pod-security-admission/api"
 
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[registry][Serial][Suite:openshift/registry/serial] Image signature workflow", func() {
+var _ = g.Describe("[sig-imageregistry][Serial] Image signature workflow", func() {
 	defer g.GinkgoRecover()
 
 	var (
-		oc                 = exutil.NewCLI("registry-signing", exutil.KubeConfigPath())
+		oc                 = exutil.NewCLIWithPodSecurityLevel("registry-signing", admissionapi.LevelBaseline)
 		signerBuildFixture = exutil.FixturePath("testdata", "signer-buildconfig.yaml")
 	)
 
-	g.It("can push a signed image to openshift registry and verify it", func() {
-		g.Skip("disable because containers/image: https://github.com/containers/image/pull/570")
+	g.AfterEach(func() {
+		if g.CurrentSpecReport().Failed() {
+			exutil.DumpPodStates(oc)
+			exutil.DumpConfigMapStates(oc)
+			exutil.DumpPodLogsStartingWith("", oc)
+		}
+	})
+
+	g.It("can push a signed image to openshift registry and verify it [apigroup:user.openshift.io][apigroup:image.openshift.io]", func() {
 		g.By("building a signer image that knows how to sign images")
 		output, err := oc.Run("create").Args("-f", signerBuildFixture).Output()
 		if err != nil {
@@ -30,8 +37,6 @@ var _ = g.Describe("[registry][Serial][Suite:openshift/registry/serial] Image si
 		}
 		o.Expect(err).NotTo(o.HaveOccurred())
 		err = exutil.WaitForAnImageStreamTag(oc, oc.Namespace(), "signer", "latest")
-		containerLog, _ := oc.Run("logs").Args("builds/signer-1").Output()
-		e2e.Logf("signer build logs:\n%s\n", containerLog)
 		o.Expect(err).NotTo(o.HaveOccurred())
 
 		g.By("looking up the openshift registry URL")
@@ -68,39 +73,37 @@ var _ = g.Describe("[registry][Serial][Suite:openshift/registry/serial] Image si
 		pod, err := exutil.NewPodExecutor(oc, "sign-and-push", signerImage)
 		o.Expect(err).NotTo(o.HaveOccurred())
 
-		ocAbsPath, err := exec.LookPath("oc")
-		o.Expect(err).NotTo(o.HaveOccurred())
-
-		err = pod.CopyFromHost(ocAbsPath, "/usr/bin/oc")
-		o.Expect(err).NotTo(o.HaveOccurred())
-
 		// Generate GPG key
 		// Note that we need to replace the /dev/random with /dev/urandom to get more entropy
 		// into container so we can successfully generate the GPG keypair.
 		g.By("creating dummy GPG key")
 		out, err := pod.Exec("rm -f /dev/random; ln -sf /dev/urandom /dev/random && " +
-			"GNUPGHOME=/var/lib/origin/gnupg gpg2 --batch --gen-key dummy_key.conf")
+			"GNUPGHOME=/var/lib/origin/gnupg gpg2 --batch --gen-key --pinentry-mode=loopback --passphrase '' dummy_key.conf && " +
+			"GNUPGHOME=/var/lib/origin/gnupg gpg2 --output=gnupg/pubring.gpg --export joe@foo.bar")
 		o.Expect(err).NotTo(o.HaveOccurred())
-		o.Expect(out).To(o.ContainSubstring("keyring `/var/lib/origin/gnupg/secring.gpg' created"))
+		o.Expect(out).To(o.ContainSubstring("keybox '/var/lib/origin/gnupg/pubring.kbx' created"))
 
-		// Create kubeconfig for skopeo
+		// Create kubeconfig for oc
 		g.By("logging as a test user")
 		out, err = pod.Exec("oc login https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT --token=" + token + " --certificate-authority=/run/secrets/kubernetes.io/serviceaccount/ca.crt")
 		o.Expect(err).NotTo(o.HaveOccurred())
 		o.Expect(out).To(o.ContainSubstring("Logged in"))
 
 		// Sign and copy the memcached image into target image stream tag
-		// TODO: Fix skopeo to pickup the Kubernetes environment variables (remove the $KUBERNETES_MASTER)
-		g.By("signing the memcached:latest image and pushing it into openshift registry")
+		g.By("signing a just-built image and pushing it into openshift registry")
 		out, err = pod.Exec(strings.Join([]string{
-			"KUBERNETES_MASTER=https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT",
 			"GNUPGHOME=/var/lib/origin/gnupg",
-			"skopeo", "--debug", "copy", "--sign-by", "joe@foo.bar",
+			"skopeo", "--debug",
+			"copy", "--sign-by", "joe@foo.bar",
+			"--src-creds=" + user + ":" + token,
 			"--dest-creds=" + user + ":" + token,
-			// TODO: test with this turned to true as well
-			"--dest-tls-verify=false",
-			"docker://docker.io/library/memcached:latest",
-			"atomic:" + signedImage,
+
+			// Expect to use /run/secrets/kubernetes.io/serviceaccount/ca.crt
+			"--src-cert-dir=/run/secrets/kubernetes.io/serviceaccount",
+			"--dest-cert-dir=/run/secrets/kubernetes.io/serviceaccount",
+
+			"docker://" + signerImage,
+			"docker://" + signedImage,
 		}, " "))
 		fmt.Fprintf(g.GinkgoWriter, "output: %s\n", out)
 		o.Expect(err).NotTo(o.HaveOccurred())

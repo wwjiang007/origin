@@ -1,13 +1,18 @@
 package builds
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
-	g "github.com/onsi/ginkgo"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/validation"
+
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	e2e "k8s.io/kubernetes/test/e2e/framework"
 
@@ -16,11 +21,23 @@ import (
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Feature:Builds][Slow] using build configuration runPolicy", func() {
+func hasConditionState(build *buildv1.Build, condition buildv1.BuildPhase, expectedStatus bool) bool {
+	for _, c := range build.Status.Conditions {
+		if c.Type == buildv1.BuildConditionType(condition) {
+			if (expectedStatus && c.Status == corev1.ConditionTrue) ||
+				(!expectedStatus && c.Status == corev1.ConditionFalse) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+var _ = g.Describe("[sig-builds][Feature:Builds][Slow] using build configuration runPolicy", func() {
 	defer g.GinkgoRecover()
 	var (
 		// Use invalid source here as we don't care about the result
-		oc = exutil.NewCLI("cli-build-run-policy", exutil.KubeConfigPath())
+		oc = exutil.NewCLI("cli-build-run-policy")
 	)
 
 	g.Context("", func() {
@@ -34,7 +51,7 @@ var _ = g.Describe("[Feature:Builds][Slow] using build configuration runPolicy",
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				exutil.DumpPodStates(oc)
 				exutil.DumpConfigMapStates(oc)
 				exutil.DumpPodLogsStartingWith("", oc)
@@ -42,7 +59,7 @@ var _ = g.Describe("[Feature:Builds][Slow] using build configuration runPolicy",
 		})
 
 		g.Describe("build configuration with Parallel build run policy", func() {
-			g.It("runs the builds in parallel", func() {
+			g.It("runs the builds in parallel [apigroup:build.openshift.io]", func() {
 				g.By("starting multiple builds")
 				var (
 					startedBuilds []string
@@ -50,7 +67,7 @@ var _ = g.Describe("[Feature:Builds][Slow] using build configuration runPolicy",
 				)
 				bcName := "sample-parallel-build"
 
-				buildWatch, err := oc.BuildClient().BuildV1().Builds(oc.Namespace()).Watch(metav1.ListOptions{
+				buildWatch, err := oc.BuildClient().BuildV1().Builds(oc.Namespace()).Watch(context.Background(), metav1.ListOptions{
 					LabelSelector: BuildConfigSelector(bcName).String(),
 				})
 				defer buildWatch.Stop()
@@ -97,9 +114,11 @@ var _ = g.Describe("[Feature:Builds][Slow] using build configuration runPolicy",
 					// TODO: This might introduce flakes in case the first build complete
 					// sooner or fail.
 					if build.Status.Phase == buildv1.BuildPhasePending {
+						o.Expect(hasConditionState(build, buildv1.BuildPhasePending, true)).Should(o.BeTrue())
 						firstBuildRunning := false
 						_, err := BuildConfigBuilds(oc.BuildClient().BuildV1(), oc.Namespace(), bcName, func(b *buildv1.Build) bool {
 							if b.Name == startedBuilds[0] && b.Status.Phase == buildv1.BuildPhaseRunning {
+								o.Expect(hasConditionState(b, buildv1.BuildPhaseRunning, true)).Should(o.BeTrue())
 								firstBuildRunning = true
 							}
 							return false
@@ -119,7 +138,7 @@ var _ = g.Describe("[Feature:Builds][Slow] using build configuration runPolicy",
 		})
 
 		g.Describe("build configuration with Serial build run policy", func() {
-			g.It("runs the builds in serial order", func() {
+			g.It("runs the builds in serial order [apigroup:build.openshift.io]", func() {
 				g.By("starting multiple builds")
 				var (
 					startedBuilds []string
@@ -135,7 +154,7 @@ var _ = g.Describe("[Feature:Builds][Slow] using build configuration runPolicy",
 					startedBuilds = append(startedBuilds, strings.TrimSpace(strings.Split(stdout, "/")[1]))
 				}
 
-				buildWatch, err := oc.BuildClient().BuildV1().Builds(oc.Namespace()).Watch(metav1.ListOptions{
+				buildWatch, err := oc.BuildClient().BuildV1().Builds(oc.Namespace()).Watch(context.Background(), metav1.ListOptions{
 					LabelSelector: BuildConfigSelector(bcName).String(),
 				})
 				defer buildWatch.Stop()
@@ -147,12 +166,20 @@ var _ = g.Describe("[Feature:Builds][Slow] using build configuration runPolicy",
 					build := event.Object.(*buildv1.Build)
 					var lastCompletion time.Time
 					if build.Status.Phase == buildv1.BuildPhaseComplete {
+						o.Expect(hasConditionState(build, buildv1.BuildPhaseComplete, true)).Should(o.BeTrue())
 						lastCompletion = time.Now()
 						o.Expect(build.Status.StartTimestamp).ToNot(o.BeNil(), "completed builds should have a valid start time")
 						o.Expect(build.Status.CompletionTimestamp).ToNot(o.BeNil(), "completed builds should have a valid completion time")
 						sawCompletion = true
 					}
 					if build.Status.Phase == buildv1.BuildPhaseRunning || build.Status.Phase == buildv1.BuildPhasePending {
+						if build.Status.Phase == buildv1.BuildPhaseRunning {
+							o.Expect(hasConditionState(build, buildv1.BuildPhaseRunning, true)).Should(o.BeTrue())
+						}
+						if build.Status.Phase == buildv1.BuildPhasePending {
+							o.Expect(hasConditionState(build, buildv1.BuildPhasePending, true)).Should(o.BeTrue())
+						}
+
 						latency := lastCompletion.Sub(time.Now())
 						o.Expect(latency).To(o.BeNumerically("<", 20*time.Second), "next build should have started less than 20s after last completed build")
 
@@ -185,12 +212,12 @@ var _ = g.Describe("[Feature:Builds][Slow] using build configuration runPolicy",
 						break
 					}
 				}
-				o.Expect(sawCompletion).To(o.BeTrue(), "should have seen at least one build complete")
+				o.Expect(sawCompletion).Should(o.BeTrue(), "should have seen at least one build complete")
 			})
 		})
 
 		g.Describe("build configuration with Serial build run policy handling cancellation", func() {
-			g.It("starts the next build immediately after one is canceled", func() {
+			g.It("starts the next build immediately after one is canceled [apigroup:build.openshift.io]", func() {
 				g.By("starting multiple builds")
 				bcName := "sample-serial-build"
 
@@ -199,7 +226,7 @@ var _ = g.Describe("[Feature:Builds][Slow] using build configuration runPolicy",
 					o.Expect(err).NotTo(o.HaveOccurred())
 				}
 
-				buildWatch, err := oc.BuildClient().BuildV1().Builds(oc.Namespace()).Watch(metav1.ListOptions{
+				buildWatch, err := oc.BuildClient().BuildV1().Builds(oc.Namespace()).Watch(context.Background(), metav1.ListOptions{
 					LabelSelector: BuildConfigSelector(bcName).String(),
 				})
 				defer buildWatch.Stop()
@@ -210,6 +237,12 @@ var _ = g.Describe("[Feature:Builds][Slow] using build configuration runPolicy",
 					event := <-buildWatch.ResultChan()
 					build := event.Object.(*buildv1.Build)
 					if build.Status.Phase == buildv1.BuildPhasePending || build.Status.Phase == buildv1.BuildPhaseRunning {
+						if build.Status.Phase == buildv1.BuildPhaseRunning {
+							o.Expect(hasConditionState(build, buildv1.BuildPhaseRunning, true)).Should(o.BeTrue())
+						}
+						if build.Status.Phase == buildv1.BuildPhasePending {
+							o.Expect(hasConditionState(build, buildv1.BuildPhasePending, true)).Should(o.BeTrue())
+						}
 						if build.Name == "sample-serial-build-1" {
 							err := oc.Run("cancel-build").Args("sample-serial-build-1").Execute()
 							o.Expect(err).ToNot(o.HaveOccurred())
@@ -233,7 +266,7 @@ var _ = g.Describe("[Feature:Builds][Slow] using build configuration runPolicy",
 		})
 
 		g.Describe("build configuration with Serial build run policy handling failure", func() {
-			g.It("starts the next build immediately after one fails", func() {
+			g.It("starts the next build immediately after one fails [apigroup:build.openshift.io]", func() {
 				g.By("starting multiple builds")
 				bcName := "sample-serial-build-fail"
 
@@ -242,7 +275,7 @@ var _ = g.Describe("[Feature:Builds][Slow] using build configuration runPolicy",
 					o.Expect(err).NotTo(o.HaveOccurred())
 				}
 
-				buildWatch, err := oc.BuildClient().BuildV1().Builds(oc.Namespace()).Watch(metav1.ListOptions{
+				buildWatch, err := oc.BuildClient().BuildV1().Builds(oc.Namespace()).Watch(context.Background(), metav1.ListOptions{
 					LabelSelector: BuildConfigSelector(bcName).String(),
 				})
 				defer buildWatch.Stop()
@@ -256,6 +289,7 @@ var _ = g.Describe("[Feature:Builds][Slow] using build configuration runPolicy",
 					case event := <-buildWatch.ResultChan():
 						build := event.Object.(*buildv1.Build)
 						if build.Status.Phase == buildv1.BuildPhasePending {
+							o.Expect(hasConditionState(build, buildv1.BuildPhasePending, true)).Should(o.BeTrue())
 							if build.Name == "sample-serial-build-fail-2" {
 								duration := time.Now().Sub(failTime)
 								o.Expect(duration).To(o.BeNumerically("<", 20*time.Second), "next build should have started less than 20s after failed build")
@@ -267,6 +301,7 @@ var _ = g.Describe("[Feature:Builds][Slow] using build configuration runPolicy",
 						}
 
 						if build.Status.Phase == buildv1.BuildPhaseFailed {
+							o.Expect(hasConditionState(build, buildv1.BuildPhaseFailed, true)).Should(o.BeTrue())
 							if build.Name == "sample-serial-build-fail-1" {
 								// this may not be set on the first build modified to failed event because
 								// the build gets marked failed by the build pod, but the timestamps get
@@ -304,14 +339,14 @@ var _ = g.Describe("[Feature:Builds][Slow] using build configuration runPolicy",
 						done = true
 					}
 				}
-				o.Expect(timestamps1).To(o.BeTrue(), "failed builds should have start and completion timestamps set")
-				o.Expect(timestamps2).To(o.BeTrue(), "failed builds should have start and completion timestamps set")
-				o.Expect(timestamps3).To(o.BeTrue(), "failed builds should have start and completion timestamps set")
+				o.Expect(timestamps1).Should(o.BeTrue(), "failed builds should have start and completion timestamps set")
+				o.Expect(timestamps2).Should(o.BeTrue(), "failed builds should have start and completion timestamps set")
+				o.Expect(timestamps3).Should(o.BeTrue(), "failed builds should have start and completion timestamps set")
 			})
 		})
 
 		g.Describe("build configuration with Serial build run policy handling deletion", func() {
-			g.It("starts the next build immediately after running one is deleted", func() {
+			g.It("starts the next build immediately after running one is deleted [apigroup:build.openshift.io]", func() {
 				g.By("starting multiple builds")
 
 				bcName := "sample-serial-build"
@@ -320,7 +355,7 @@ var _ = g.Describe("[Feature:Builds][Slow] using build configuration runPolicy",
 					o.Expect(err).NotTo(o.HaveOccurred())
 				}
 
-				buildWatch, err := oc.BuildClient().BuildV1().Builds(oc.Namespace()).Watch(metav1.ListOptions{
+				buildWatch, err := oc.BuildClient().BuildV1().Builds(oc.Namespace()).Watch(context.Background(), metav1.ListOptions{
 					LabelSelector: BuildConfigSelector(bcName).String(),
 				})
 				defer buildWatch.Stop()
@@ -334,6 +369,12 @@ var _ = g.Describe("[Feature:Builds][Slow] using build configuration runPolicy",
 					case event := <-buildWatch.ResultChan():
 						build := event.Object.(*buildv1.Build)
 						if build.Status.Phase == buildv1.BuildPhasePending || build.Status.Phase == buildv1.BuildPhaseRunning {
+							if build.Status.Phase == buildv1.BuildPhaseRunning {
+								o.Expect(hasConditionState(build, buildv1.BuildPhaseRunning, true)).Should(o.BeTrue())
+							}
+							if build.Status.Phase == buildv1.BuildPhasePending {
+								o.Expect(hasConditionState(build, buildv1.BuildPhasePending, true)).Should(o.BeTrue())
+							}
 							if build.Name == "sample-serial-build-1" {
 								err := oc.Run("delete").Args("build", "sample-serial-build-1", "--ignore-not-found").Execute()
 								o.Expect(err).ToNot(o.HaveOccurred())
@@ -363,7 +404,7 @@ var _ = g.Describe("[Feature:Builds][Slow] using build configuration runPolicy",
 		})
 
 		g.Describe("build configuration with SerialLatestOnly build run policy", func() {
-			g.It("runs the builds in serial order but cancel previous builds", func() {
+			g.It("runs the builds in serial order but cancel previous builds [apigroup:build.openshift.io]", func() {
 				g.By("starting multiple builds")
 				var (
 					startedBuilds        []string
@@ -373,7 +414,7 @@ var _ = g.Describe("[Feature:Builds][Slow] using build configuration runPolicy",
 
 				bcName := "sample-serial-latest-only-build"
 				buildVerified := map[string]bool{}
-				buildWatch, err := oc.BuildClient().BuildV1().Builds(oc.Namespace()).Watch(metav1.ListOptions{
+				buildWatch, err := oc.BuildClient().BuildV1().Builds(oc.Namespace()).Watch(context.Background(), metav1.ListOptions{
 					LabelSelector: BuildConfigSelector(bcName).String(),
 				})
 				defer buildWatch.Stop()
@@ -413,6 +454,7 @@ var _ = g.Describe("[Feature:Builds][Slow] using build configuration runPolicy",
 					e2e.Logf("got event for build %s with phase %s", build.Name, build.Status.Phase)
 					// The second build should be cancelled
 					if build.Status.Phase == buildv1.BuildPhaseCancelled {
+						o.Expect(hasConditionState(build, buildv1.BuildPhaseCancelled, true)).Should(o.BeTrue())
 						if build.Name == startedBuilds[1] {
 							buildVerified[build.Name] = true
 							wasCancelled = true
@@ -420,6 +462,12 @@ var _ = g.Describe("[Feature:Builds][Slow] using build configuration runPolicy",
 					}
 					// Only first and third build should actually run (serially).
 					if build.Status.Phase == buildv1.BuildPhaseRunning || build.Status.Phase == buildv1.BuildPhasePending {
+						if build.Status.Phase == buildv1.BuildPhaseRunning {
+							o.Expect(hasConditionState(build, buildv1.BuildPhaseRunning, true)).Should(o.BeTrue())
+						}
+						if build.Status.Phase == buildv1.BuildPhasePending {
+							o.Expect(hasConditionState(build, buildv1.BuildPhasePending, true)).Should(o.BeTrue())
+						}
 						// Ignore events from complete builds (if there are any) if we already
 						// verified the build.
 						if _, exists := buildVerified[build.Name]; exists {
@@ -476,7 +524,7 @@ func IsTerminalPhase(phase buildv1.BuildPhase) bool {
 // Optionally you can specify a filter function to select only builds that
 // matches your criteria.
 func BuildConfigBuilds(c buildclientv1.BuildsGetter, namespace, name string, filterFunc buildFilter) ([]*buildv1.Build, error) {
-	result, err := c.Builds(namespace).List(metav1.ListOptions{LabelSelector: BuildConfigSelector(name).String()})
+	result, err := c.Builds(namespace).List(context.Background(), metav1.ListOptions{LabelSelector: BuildConfigSelector(name).String()})
 	if err != nil {
 		return nil, err
 	}
@@ -497,3 +545,19 @@ func BuildConfigBuilds(c buildclientv1.BuildsGetter, namespace, name string, fil
 }
 
 type buildFilter func(*buildv1.Build) bool
+
+// BuildConfigSelector returns a label Selector which can be used to find all
+// builds for a BuildConfig.
+func BuildConfigSelector(name string) labels.Selector {
+	return labels.Set{buildv1.BuildConfigLabel: LabelValue(name)}.AsSelector()
+}
+
+// LabelValue returns a string to use as a value for the Build
+// label in a pod. If the length of the string parameter exceeds
+// the maximum label length, the value will be truncated.
+func LabelValue(name string) string {
+	if len(name) <= validation.DNS1123LabelMaxLength {
+		return name
+	}
+	return name[:validation.DNS1123LabelMaxLength]
+}

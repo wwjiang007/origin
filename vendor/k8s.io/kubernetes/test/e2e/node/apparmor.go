@@ -17,34 +17,40 @@ limitations under the License.
 package node
 
 import (
-	"k8s.io/kubernetes/test/e2e/common"
-	"k8s.io/kubernetes/test/e2e/framework"
-	e2elog "k8s.io/kubernetes/test/e2e/framework/log"
+	"context"
 
-	"github.com/onsi/ginkgo"
+	"k8s.io/kubernetes/test/e2e/framework"
+	e2ekubectl "k8s.io/kubernetes/test/e2e/framework/kubectl"
+	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
+	e2esecurity "k8s.io/kubernetes/test/e2e/framework/security"
+	e2eskipper "k8s.io/kubernetes/test/e2e/framework/skipper"
+	admissionapi "k8s.io/pod-security-admission/api"
+
+	"github.com/onsi/ginkgo/v2"
 )
 
 var _ = SIGDescribe("AppArmor", func() {
 	f := framework.NewDefaultFramework("apparmor")
+	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
 
 	ginkgo.Context("load AppArmor profiles", func() {
-		ginkgo.BeforeEach(func() {
-			common.SkipIfAppArmorNotSupported()
-			common.LoadAppArmorProfiles(f)
+		ginkgo.BeforeEach(func(ctx context.Context) {
+			e2eskipper.SkipIfAppArmorNotSupported()
+			e2esecurity.LoadAppArmorProfiles(ctx, f.Namespace.Name, f.ClientSet)
 		})
-		ginkgo.AfterEach(func() {
-			if !ginkgo.CurrentGinkgoTestDescription().Failed {
+		ginkgo.AfterEach(func(ctx context.Context) {
+			if !ginkgo.CurrentSpecReport().Failed() {
 				return
 			}
-			framework.LogFailedContainers(f.ClientSet, f.Namespace.Name, e2elog.Logf)
+			e2ekubectl.LogFailedContainers(ctx, f.ClientSet, f.Namespace.Name, framework.Logf)
 		})
 
-		ginkgo.It("should enforce an AppArmor profile", func() {
-			common.CreateAppArmorTestPod(f, false, true)
+		ginkgo.It("should enforce an AppArmor profile", func(ctx context.Context) {
+			e2esecurity.CreateAppArmorTestPod(ctx, f.Namespace.Name, f.ClientSet, e2epod.NewPodClient(f), false, true)
 		})
 
-		ginkgo.It("can disable an AppArmor profile, using unconfined", func() {
-			common.CreateAppArmorTestPod(f, true, true)
+		ginkgo.It("can disable an AppArmor profile, using unconfined", func(ctx context.Context) {
+			e2esecurity.CreateAppArmorTestPod(ctx, f.Namespace.Name, f.ClientSet, e2epod.NewPodClient(f), true, true)
 		})
 	})
 })

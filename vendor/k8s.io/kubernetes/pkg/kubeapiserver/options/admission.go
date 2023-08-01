@@ -28,6 +28,7 @@ import (
 	genericoptions "k8s.io/apiserver/pkg/server/options"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/rest"
+	"k8s.io/component-base/featuregate"
 )
 
 // AdmissionOptions holds the admission options.
@@ -42,12 +43,13 @@ type AdmissionOptions struct {
 
 // NewAdmissionOptions creates a new instance of AdmissionOptions
 // Note:
-//  In addition it calls RegisterAllAdmissionPlugins to register
-//  all kube-apiserver admission plugins.
 //
-//  Provides the list of RecommendedPluginOrder that holds sane values
-//  that can be used by servers that don't care about admission chain.
-//  Servers that do care can overwrite/append that field after creation.
+//	In addition it calls RegisterAllAdmissionPlugins to register
+//	all kube-apiserver admission plugins.
+//
+//	Provides the list of RecommendedPluginOrder that holds sane values
+//	that can be used by servers that don't care about admission chain.
+//	Servers that do care can overwrite/append that field after creation.
 func NewAdmissionOptions() *AdmissionOptions {
 	options := genericoptions.NewAdmissionOptions()
 	// register all admission plugins
@@ -83,7 +85,7 @@ func (a *AdmissionOptions) Validate() []error {
 	if a == nil {
 		return nil
 	}
-	errs := []error{}
+	var errs []error
 	if a.PluginNames != nil &&
 		(a.GenericAdmission.EnablePlugins != nil || a.GenericAdmission.DisablePlugins != nil) {
 		errs = append(errs, fmt.Errorf("admission-control and enable-admission-plugins/disable-admission-plugins flags are mutually exclusive"))
@@ -107,6 +109,7 @@ func (a *AdmissionOptions) ApplyTo(
 	c *server.Config,
 	informers informers.SharedInformerFactory,
 	kubeAPIServerClientConfig *rest.Config,
+	features featuregate.FeatureGate,
 	pluginInitializers ...admission.PluginInitializer,
 ) error {
 	if a == nil {
@@ -118,7 +121,7 @@ func (a *AdmissionOptions) ApplyTo(
 		a.GenericAdmission.EnablePlugins, a.GenericAdmission.DisablePlugins = computePluginNames(a.PluginNames, a.GenericAdmission.RecommendedPluginOrder)
 	}
 
-	return a.GenericAdmission.ApplyTo(c, informers, kubeAPIServerClientConfig, pluginInitializers...)
+	return a.GenericAdmission.ApplyTo(c, informers, kubeAPIServerClientConfig, features, pluginInitializers...)
 }
 
 // explicitly disable all plugins that are not in the enabled list

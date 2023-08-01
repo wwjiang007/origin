@@ -33,6 +33,9 @@ type KubeProxyIPTablesConfiguration struct {
 	MasqueradeBit *int32
 	// masqueradeAll tells kube-proxy to SNAT everything if using the pure iptables proxy mode.
 	MasqueradeAll bool
+	// LocalhostNodePorts tells kube-proxy to allow service NodePorts to be accessed via
+	// localhost (iptables mode only)
+	LocalhostNodePorts *bool
 	// syncPeriod is the period that iptables rules are refreshed (e.g. '5s', '1m',
 	// '2h22m').  Must be greater than 0.
 	SyncPeriod metav1.Duration
@@ -58,6 +61,15 @@ type KubeProxyIPVSConfiguration struct {
 	// strict ARP configure arp_ignore and arp_announce to avoid answering ARP queries
 	// from kube-ipvs0 interface
 	StrictARP bool
+	// tcpTimeout is the timeout value used for idle IPVS TCP sessions.
+	// The default value is 0, which preserves the current timeout value on the system.
+	TCPTimeout metav1.Duration
+	// tcpFinTimeout is the timeout value used for IPVS TCP sessions after receiving a FIN.
+	// The default value is 0, which preserves the current timeout value on the system.
+	TCPFinTimeout metav1.Duration
+	// udpTimeout is the timeout value used for IPVS UDP packets.
+	// The default value is 0, which preserves the current timeout value on the system.
+	UDPTimeout metav1.Duration
 }
 
 // KubeProxyConntrackConfiguration contains conntrack settings for
@@ -84,12 +96,30 @@ type KubeProxyWinkernelConfiguration struct {
 	// networkName is the name of the network kube-proxy will use
 	// to create endpoints and policies
 	NetworkName string
-	// sourceVip is the IP address of the source VIP endoint used for
+	// sourceVip is the IP address of the source VIP endpoint used for
 	// NAT when loadbalancing
 	SourceVip string
 	// enableDSR tells kube-proxy whether HNS policies should be created
 	// with DSR
 	EnableDSR bool
+	// RootHnsEndpointName is the name of hnsendpoint that is attached to
+	// l2bridge for root network namespace
+	RootHnsEndpointName string
+	// ForwardHealthCheckVip forwards service VIP for health check port on
+	// Windows
+	ForwardHealthCheckVip bool
+}
+
+// DetectLocalConfiguration contains optional settings related to DetectLocalMode option
+type DetectLocalConfiguration struct {
+	// BridgeInterface is a string argument which represents a single bridge interface name.
+	// Kube-proxy considers traffic as local if originating from this given bridge.
+	// This argument should be set if DetectLocalMode is set to BridgeInterface.
+	BridgeInterface string
+	// InterfaceNamePrefix is a string argument which represents a single interface prefix name.
+	// Kube-proxy considers traffic as local if originating from one or more interfaces which match
+	// the given prefix. This argument should be set if DetectLocalMode is set to InterfaceNamePrefix.
+	InterfaceNamePrefix string
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -111,6 +141,8 @@ type KubeProxyConfiguration struct {
 	// metricsBindAddress is the IP address and port for the metrics server to serve on,
 	// defaulting to 127.0.0.1:10249 (set to 0.0.0.0 for all interfaces)
 	MetricsBindAddress string
+	// BindAddressHardFail, if true, kube-proxy will treat failure to bind to a port as fatal and exit
+	BindAddressHardFail bool
 	// enableProfiling enables profiling via web interface on /debug/pprof handler.
 	// Profiling handlers will be handled by metrics server.
 	EnableProfiling bool
@@ -135,9 +167,6 @@ type KubeProxyConfiguration struct {
 	// portRange is the range of host ports (beginPort-endPort, inclusive) that may be consumed
 	// in order to proxy service traffic. If unspecified (0-0) then ports will be randomly chosen.
 	PortRange string
-	// udpIdleTimeout is how long an idle UDP connection will be kept open (e.g. '250ms', '2s').
-	// Must be greater than 0. Only applicable for proxyMode=userspace.
-	UDPIdleTimeout metav1.Duration
 	// conntrack contains conntrack-related configuration options.
 	Conntrack KubeProxyConntrackConfiguration
 	// configSyncPeriod is how often configuration from the apiserver is refreshed. Must be greater
@@ -153,70 +182,40 @@ type KubeProxyConfiguration struct {
 	NodePortAddresses []string
 	// winkernel contains winkernel-related configuration options.
 	Winkernel KubeProxyWinkernelConfiguration
+	// ShowHiddenMetricsForVersion is the version for which you want to show hidden metrics.
+	ShowHiddenMetricsForVersion string
+	// DetectLocalMode determines mode to use for detecting local traffic, defaults to LocalModeClusterCIDR
+	DetectLocalMode LocalMode
+	// DetectLocal contains optional configuration settings related to DetectLocalMode.
+	DetectLocal DetectLocalConfiguration
 }
 
-// Currently, three modes of proxy are available in Linux platform: 'userspace' (older, going to be EOL), 'iptables'
-// (newer, faster), 'ipvs'(newest, better in performance and scalability).
+// ProxyMode represents modes used by the Kubernetes proxy server.
 //
-// Two modes of proxy are available in Windows platform: 'userspace'(older, stable) and 'kernelspace' (newer, faster).
+// Currently, two modes of proxy are available on Linux platforms: 'iptables' and 'ipvs'.
+// One mode of proxy is available on Windows platforms: 'kernelspace'.
 //
-// In Linux platform, if proxy mode is blank, use the best-available proxy (currently iptables, but may change in the
-// future). If the iptables proxy is selected, regardless of how, but the system's kernel or iptables versions are
-// insufficient, this always falls back to the userspace proxy. IPVS mode will be enabled when proxy mode is set to 'ipvs',
-// and the fall back path is firstly iptables and then userspace.
-
-// In Windows platform, if proxy mode is blank, use the best-available proxy (currently userspace, but may change in the
-// future). If winkernel proxy is selected, regardless of how, but the Windows kernel can't support this mode of proxy,
-// this always falls back to the userspace proxy.
+// If the proxy mode is unspecified, the best-available proxy mode will be used (currently this
+// is `iptables` on Linux and `kernelspace` on Windows). If the selected proxy mode cannot be
+// used (due to lack of kernel support, missing userspace components, etc) then kube-proxy
+// will exit with an error.
 type ProxyMode string
 
 const (
-	ProxyModeUserspace   ProxyMode = "userspace"
 	ProxyModeIPTables    ProxyMode = "iptables"
 	ProxyModeIPVS        ProxyMode = "ipvs"
 	ProxyModeKernelspace ProxyMode = "kernelspace"
 )
 
-// IPVSSchedulerMethod is the algorithm for allocating TCP connections and
-// UDP datagrams to real servers.  Scheduling algorithms are imple-
-//wanted as kernel modules. Ten are shipped with the Linux Virtual Server.
-type IPVSSchedulerMethod string
+// LocalMode represents modes to detect local traffic from the node
+type LocalMode string
 
+// Currently supported modes for LocalMode
 const (
-	// RoundRobin distributes jobs equally amongst the available real servers.
-	RoundRobin IPVSSchedulerMethod = "rr"
-	// WeightedRoundRobin assigns jobs to real servers proportionally to their real servers' weight.
-	// Servers with higher weights receive new jobs first and get more jobs than servers with lower weights.
-	// Servers with equal weights get an equal distribution of new jobs.
-	WeightedRoundRobin IPVSSchedulerMethod = "wrr"
-	// LeastConnection assigns more jobs to real servers with fewer active jobs.
-	LeastConnection IPVSSchedulerMethod = "lc"
-	// WeightedLeastConnection assigns more jobs to servers with fewer jobs and
-	// relative to the real servers' weight(Ci/Wi).
-	WeightedLeastConnection IPVSSchedulerMethod = "wlc"
-	// LocalityBasedLeastConnection assigns jobs destined for the same IP address to the same server if
-	// the server is not overloaded and available; otherwise assigns jobs to servers with fewer jobs,
-	// and keep it for future assignment.
-	LocalityBasedLeastConnection IPVSSchedulerMethod = "lblc"
-	// LocalityBasedLeastConnectionWithReplication with Replication assigns jobs destined for the same IP address to the
-	// least-connection node in the server set for the IP address. If all the node in the server set are overloaded,
-	// it picks up a node with fewer jobs in the cluster and adds it to the sever set for the target.
-	// If the server set has not been modified for the specified time, the most loaded node is removed from the server set,
-	// in order to avoid high degree of replication.
-	LocalityBasedLeastConnectionWithReplication IPVSSchedulerMethod = "lblcr"
-	// SourceHashing assigns jobs to servers through looking up a statically assigned hash table
-	// by their source IP addresses.
-	SourceHashing IPVSSchedulerMethod = "sh"
-	// DestinationHashing assigns jobs to servers through looking up a statically assigned hash table
-	// by their destination IP addresses.
-	DestinationHashing IPVSSchedulerMethod = "dh"
-	// ShortestExpectedDelay assigns an incoming job to the server with the shortest expected delay.
-	// The expected delay that the job will experience is (Ci + 1) / Ui if sent to the ith server, in which
-	// Ci is the number of jobs on the ith server and Ui is the fixed service rate (weight) of the ith server.
-	ShortestExpectedDelay IPVSSchedulerMethod = "sed"
-	// NeverQueue assigns an incoming job to an idle server if there is, instead of waiting for a fast one;
-	// if all the servers are busy, it adopts the ShortestExpectedDelay policy to assign the job.
-	NeverQueue IPVSSchedulerMethod = "nq"
+	LocalModeClusterCIDR         LocalMode = "ClusterCIDR"
+	LocalModeNodeCIDR            LocalMode = "NodeCIDR"
+	LocalModeBridgeInterface     LocalMode = "BridgeInterface"
+	LocalModeInterfaceNamePrefix LocalMode = "InterfaceNamePrefix"
 )
 
 func (m *ProxyMode) Set(s string) error {
@@ -233,6 +232,22 @@ func (m *ProxyMode) String() string {
 
 func (m *ProxyMode) Type() string {
 	return "ProxyMode"
+}
+
+func (m *LocalMode) Set(s string) error {
+	*m = LocalMode(s)
+	return nil
+}
+
+func (m *LocalMode) String() string {
+	if m != nil {
+		return string(*m)
+	}
+	return ""
+}
+
+func (m *LocalMode) Type() string {
+	return "LocalMode"
 }
 
 type ConfigurationMap map[string]string

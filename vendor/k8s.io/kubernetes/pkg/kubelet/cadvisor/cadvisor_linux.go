@@ -1,4 +1,5 @@
-// +build cgo,linux
+//go:build linux
+// +build linux
 
 /*
 Copyright 2015 The Kubernetes Authors.
@@ -29,14 +30,7 @@ import (
 	// Register supported container handlers.
 	_ "github.com/google/cadvisor/container/containerd/install"
 	_ "github.com/google/cadvisor/container/crio/install"
-	_ "github.com/google/cadvisor/container/docker/install"
 	_ "github.com/google/cadvisor/container/systemd/install"
-
-	// Register cloud info providers.
-	// TODO(#76660): Remove this once the cAdvisor endpoints are removed.
-	_ "github.com/google/cadvisor/utils/cloudinfo/aws"
-	_ "github.com/google/cadvisor/utils/cloudinfo/azure"
-	_ "github.com/google/cadvisor/utils/cloudinfo/gce"
 
 	"github.com/google/cadvisor/cache/memory"
 	cadvisormetrics "github.com/google/cadvisor/container"
@@ -45,7 +39,8 @@ import (
 	cadvisorapiv2 "github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/utils/sysfs"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
+	"k8s.io/utils/pointer"
 )
 
 type cadvisorClient struct {
@@ -64,10 +59,17 @@ const defaultHousekeepingInterval = 10 * time.Second
 const allowDynamicHousekeeping = true
 
 func init() {
+	maxHouseKeeping := maxHousekeepingInterval.String()
+	if value := os.Getenv("OPENSHIFT_MAX_HOUSEKEEPING_INTERVAL_DURATION"); value != "" {
+		klog.Infof("Detected OPENSHIFT_MAX_HOUSEKEEPING_INTERVAL_DURATION: %v", value)
+		maxHouseKeeping = value
+	}
 	// Override cAdvisor flag defaults.
 	flagOverrides := map[string]string{
 		// Override the default cAdvisor housekeeping interval.
 		"housekeeping_interval": defaultHousekeepingInterval.String(),
+		// Override the default max cAdvisor housekeeping interval.
+		"max_housekeeping_interval": maxHouseKeeping,
 		// Disable event storage by default.
 		"event_storage_event_limit": "default=0",
 		"event_storage_age_limit":   "default=0",
@@ -77,30 +79,38 @@ func init() {
 			f.DefValue = defaultValue
 			f.Value.Set(defaultValue)
 		} else {
-			klog.Errorf("Expected cAdvisor flag %q not found", name)
+			klog.ErrorS(nil, "Expected cAdvisor flag not found", "flag", name)
 		}
 	}
 }
 
 // New creates a new cAdvisor Interface for linux systems.
-func New(imageFsInfoProvider ImageFsInfoProvider, rootPath string, cgroupRoots []string, usingLegacyStats bool) (Interface, error) {
+func New(imageFsInfoProvider ImageFsInfoProvider, rootPath string, cgroupRoots []string, usingLegacyStats, localStorageCapacityIsolation bool) (Interface, error) {
 	sysFs := sysfs.NewRealSysFs()
 
 	includedMetrics := cadvisormetrics.MetricSet{
-		cadvisormetrics.CpuUsageMetrics:         struct{}{},
-		cadvisormetrics.MemoryUsageMetrics:      struct{}{},
-		cadvisormetrics.CpuLoadMetrics:          struct{}{},
-		cadvisormetrics.DiskIOMetrics:           struct{}{},
-		cadvisormetrics.NetworkUsageMetrics:     struct{}{},
-		cadvisormetrics.AcceleratorUsageMetrics: struct{}{},
-		cadvisormetrics.AppMetrics:              struct{}{},
+		cadvisormetrics.CpuUsageMetrics:     struct{}{},
+		cadvisormetrics.MemoryUsageMetrics:  struct{}{},
+		cadvisormetrics.CpuLoadMetrics:      struct{}{},
+		cadvisormetrics.DiskIOMetrics:       struct{}{},
+		cadvisormetrics.NetworkUsageMetrics: struct{}{},
+		cadvisormetrics.AppMetrics:          struct{}{},
+		cadvisormetrics.ProcessMetrics:      struct{}{},
+		cadvisormetrics.OOMMetrics:          struct{}{},
 	}
-	if usingLegacyStats {
+
+	if usingLegacyStats || localStorageCapacityIsolation {
 		includedMetrics[cadvisormetrics.DiskUsageMetrics] = struct{}{}
 	}
 
+	duration := maxHousekeepingInterval
+	housekeepingConfig := manager.HouskeepingConfig{
+		Interval:     &duration,
+		AllowDynamic: pointer.Bool(allowDynamicHousekeeping),
+	}
+
 	// Create the cAdvisor container manager.
-	m, err := manager.New(memory.New(statsCacheDuration, nil), sysFs, maxHousekeepingInterval, allowDynamicHousekeeping, includedMetrics, http.DefaultClient, cgroupRoots)
+	m, err := manager.New(memory.New(statsCacheDuration, nil), sysFs, housekeepingConfig, includedMetrics, http.DefaultClient, cgroupRoots, nil /* containerEnvMetadataWhiteList */, "" /* perfEventsFile */, time.Duration(0) /*resctrlInterval*/)
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +187,7 @@ func (cc *cadvisorClient) getFsInfo(label string) (cadvisorapiv2.FsInfo, error) 
 	}
 	// TODO(vmarmol): Handle this better when a label has more than one image filesystem.
 	if len(res) > 1 {
-		klog.Warningf("More than one filesystem labeled %q: %#v. Only using the first one", label, res)
+		klog.InfoS("More than one filesystem labeled. Only using the first one", "label", label, "fileSystem", res)
 	}
 
 	return res[0], nil

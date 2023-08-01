@@ -3,7 +3,12 @@
 package fake
 
 import (
+	"context"
+	json "encoding/json"
+	"fmt"
+
 	configv1 "github.com/openshift/api/config/v1"
+	applyconfigurationsconfigv1 "github.com/openshift/client-go/config/applyconfigurations/config/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -22,7 +27,7 @@ var consolesResource = schema.GroupVersionResource{Group: "config.openshift.io",
 var consolesKind = schema.GroupVersionKind{Group: "config.openshift.io", Version: "v1", Kind: "Console"}
 
 // Get takes name of the console, and returns the corresponding console object, and an error if there is any.
-func (c *FakeConsoles) Get(name string, options v1.GetOptions) (result *configv1.Console, err error) {
+func (c *FakeConsoles) Get(ctx context.Context, name string, options v1.GetOptions) (result *configv1.Console, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootGetAction(consolesResource, name), &configv1.Console{})
 	if obj == nil {
@@ -32,7 +37,7 @@ func (c *FakeConsoles) Get(name string, options v1.GetOptions) (result *configv1
 }
 
 // List takes label and field selectors, and returns the list of Consoles that match those selectors.
-func (c *FakeConsoles) List(opts v1.ListOptions) (result *configv1.ConsoleList, err error) {
+func (c *FakeConsoles) List(ctx context.Context, opts v1.ListOptions) (result *configv1.ConsoleList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootListAction(consolesResource, consolesKind, opts), &configv1.ConsoleList{})
 	if obj == nil {
@@ -53,13 +58,13 @@ func (c *FakeConsoles) List(opts v1.ListOptions) (result *configv1.ConsoleList, 
 }
 
 // Watch returns a watch.Interface that watches the requested consoles.
-func (c *FakeConsoles) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeConsoles) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewRootWatchAction(consolesResource, opts))
 }
 
 // Create takes the representation of a console and creates it.  Returns the server's representation of the console, and an error, if there is any.
-func (c *FakeConsoles) Create(console *configv1.Console) (result *configv1.Console, err error) {
+func (c *FakeConsoles) Create(ctx context.Context, console *configv1.Console, opts v1.CreateOptions) (result *configv1.Console, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootCreateAction(consolesResource, console), &configv1.Console{})
 	if obj == nil {
@@ -69,7 +74,7 @@ func (c *FakeConsoles) Create(console *configv1.Console) (result *configv1.Conso
 }
 
 // Update takes the representation of a console and updates it. Returns the server's representation of the console, and an error, if there is any.
-func (c *FakeConsoles) Update(console *configv1.Console) (result *configv1.Console, err error) {
+func (c *FakeConsoles) Update(ctx context.Context, console *configv1.Console, opts v1.UpdateOptions) (result *configv1.Console, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootUpdateAction(consolesResource, console), &configv1.Console{})
 	if obj == nil {
@@ -80,7 +85,7 @@ func (c *FakeConsoles) Update(console *configv1.Console) (result *configv1.Conso
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeConsoles) UpdateStatus(console *configv1.Console) (*configv1.Console, error) {
+func (c *FakeConsoles) UpdateStatus(ctx context.Context, console *configv1.Console, opts v1.UpdateOptions) (*configv1.Console, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootUpdateSubresourceAction(consolesResource, "status", console), &configv1.Console{})
 	if obj == nil {
@@ -90,24 +95,67 @@ func (c *FakeConsoles) UpdateStatus(console *configv1.Console) (*configv1.Consol
 }
 
 // Delete takes name of the console and deletes it. Returns an error if one occurs.
-func (c *FakeConsoles) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeConsoles) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteAction(consolesResource, name), &configv1.Console{})
+		Invokes(testing.NewRootDeleteActionWithOptions(consolesResource, name, opts), &configv1.Console{})
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeConsoles) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(consolesResource, listOptions)
+func (c *FakeConsoles) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewRootDeleteCollectionAction(consolesResource, listOpts)
 
 	_, err := c.Fake.Invokes(action, &configv1.ConsoleList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched console.
-func (c *FakeConsoles) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *configv1.Console, err error) {
+func (c *FakeConsoles) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *configv1.Console, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootPatchSubresourceAction(consolesResource, name, pt, data, subresources...), &configv1.Console{})
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*configv1.Console), err
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied console.
+func (c *FakeConsoles) Apply(ctx context.Context, console *applyconfigurationsconfigv1.ConsoleApplyConfiguration, opts v1.ApplyOptions) (result *configv1.Console, err error) {
+	if console == nil {
+		return nil, fmt.Errorf("console provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(console)
+	if err != nil {
+		return nil, err
+	}
+	name := console.Name
+	if name == nil {
+		return nil, fmt.Errorf("console.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewRootPatchSubresourceAction(consolesResource, *name, types.ApplyPatchType, data), &configv1.Console{})
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*configv1.Console), err
+}
+
+// ApplyStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
+func (c *FakeConsoles) ApplyStatus(ctx context.Context, console *applyconfigurationsconfigv1.ConsoleApplyConfiguration, opts v1.ApplyOptions) (result *configv1.Console, err error) {
+	if console == nil {
+		return nil, fmt.Errorf("console provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(console)
+	if err != nil {
+		return nil, err
+	}
+	name := console.Name
+	if name == nil {
+		return nil, fmt.Errorf("console.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewRootPatchSubresourceAction(consolesResource, *name, types.ApplyPatchType, data, "status"), &configv1.Console{})
 	if obj == nil {
 		return nil, err
 	}

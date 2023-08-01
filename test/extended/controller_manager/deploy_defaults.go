@@ -1,10 +1,11 @@
 package controller_manager
 
 import (
+	"context"
 	"reflect"
 	"time"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 
 	appsv1 "github.com/openshift/api/apps/v1"
 	exutil "github.com/openshift/origin/test/extended/util"
@@ -90,13 +91,14 @@ func clearTransient(dc *appsv1.DeploymentConfig) {
 	dc.ObjectMeta.UID = ""
 	dc.ObjectMeta.ResourceVersion = ""
 	dc.ObjectMeta.CreationTimestamp.Time = time.Time{}
+	dc.ObjectMeta.ManagedFields = nil
 }
 
-var _ = g.Describe("[Feature:OpenShiftControllerManager]", func() {
+var _ = g.Describe("[sig-apps][Feature:OpenShiftControllerManager]", func() {
 	defer g.GinkgoRecover()
-	oc := exutil.NewCLI("deployment-defaults", exutil.KubeConfigPath())
+	oc := exutil.NewCLI("deployment-defaults")
 
-	g.It("TestDeploymentConfigDefaults", func() {
+	g.It("TestDeploymentConfigDefaults [apigroup:apps.openshift.io]", func() {
 		t := g.GinkgoT()
 
 		namespace := oc.Namespace()
@@ -135,7 +137,7 @@ var _ = g.Describe("[Feature:OpenShiftControllerManager]", func() {
 			},
 		}
 		for _, tc := range ttApps {
-			appsDC, err := appsClient.AppsV1().DeploymentConfigs(namespace).Create(tc.obj)
+			appsDC, err := appsClient.AppsV1().DeploymentConfigs(namespace).Create(context.Background(), tc.obj, metav1.CreateOptions{})
 			if err != nil {
 				t.Fatalf("Failed to create DC: %v", err)
 			}

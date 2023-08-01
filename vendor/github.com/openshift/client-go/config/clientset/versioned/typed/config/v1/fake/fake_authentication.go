@@ -3,7 +3,12 @@
 package fake
 
 import (
+	"context"
+	json "encoding/json"
+	"fmt"
+
 	configv1 "github.com/openshift/api/config/v1"
+	applyconfigurationsconfigv1 "github.com/openshift/client-go/config/applyconfigurations/config/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -22,7 +27,7 @@ var authenticationsResource = schema.GroupVersionResource{Group: "config.openshi
 var authenticationsKind = schema.GroupVersionKind{Group: "config.openshift.io", Version: "v1", Kind: "Authentication"}
 
 // Get takes name of the authentication, and returns the corresponding authentication object, and an error if there is any.
-func (c *FakeAuthentications) Get(name string, options v1.GetOptions) (result *configv1.Authentication, err error) {
+func (c *FakeAuthentications) Get(ctx context.Context, name string, options v1.GetOptions) (result *configv1.Authentication, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootGetAction(authenticationsResource, name), &configv1.Authentication{})
 	if obj == nil {
@@ -32,7 +37,7 @@ func (c *FakeAuthentications) Get(name string, options v1.GetOptions) (result *c
 }
 
 // List takes label and field selectors, and returns the list of Authentications that match those selectors.
-func (c *FakeAuthentications) List(opts v1.ListOptions) (result *configv1.AuthenticationList, err error) {
+func (c *FakeAuthentications) List(ctx context.Context, opts v1.ListOptions) (result *configv1.AuthenticationList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootListAction(authenticationsResource, authenticationsKind, opts), &configv1.AuthenticationList{})
 	if obj == nil {
@@ -53,13 +58,13 @@ func (c *FakeAuthentications) List(opts v1.ListOptions) (result *configv1.Authen
 }
 
 // Watch returns a watch.Interface that watches the requested authentications.
-func (c *FakeAuthentications) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeAuthentications) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewRootWatchAction(authenticationsResource, opts))
 }
 
 // Create takes the representation of a authentication and creates it.  Returns the server's representation of the authentication, and an error, if there is any.
-func (c *FakeAuthentications) Create(authentication *configv1.Authentication) (result *configv1.Authentication, err error) {
+func (c *FakeAuthentications) Create(ctx context.Context, authentication *configv1.Authentication, opts v1.CreateOptions) (result *configv1.Authentication, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootCreateAction(authenticationsResource, authentication), &configv1.Authentication{})
 	if obj == nil {
@@ -69,7 +74,7 @@ func (c *FakeAuthentications) Create(authentication *configv1.Authentication) (r
 }
 
 // Update takes the representation of a authentication and updates it. Returns the server's representation of the authentication, and an error, if there is any.
-func (c *FakeAuthentications) Update(authentication *configv1.Authentication) (result *configv1.Authentication, err error) {
+func (c *FakeAuthentications) Update(ctx context.Context, authentication *configv1.Authentication, opts v1.UpdateOptions) (result *configv1.Authentication, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootUpdateAction(authenticationsResource, authentication), &configv1.Authentication{})
 	if obj == nil {
@@ -80,7 +85,7 @@ func (c *FakeAuthentications) Update(authentication *configv1.Authentication) (r
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeAuthentications) UpdateStatus(authentication *configv1.Authentication) (*configv1.Authentication, error) {
+func (c *FakeAuthentications) UpdateStatus(ctx context.Context, authentication *configv1.Authentication, opts v1.UpdateOptions) (*configv1.Authentication, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootUpdateSubresourceAction(authenticationsResource, "status", authentication), &configv1.Authentication{})
 	if obj == nil {
@@ -90,24 +95,67 @@ func (c *FakeAuthentications) UpdateStatus(authentication *configv1.Authenticati
 }
 
 // Delete takes name of the authentication and deletes it. Returns an error if one occurs.
-func (c *FakeAuthentications) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeAuthentications) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteAction(authenticationsResource, name), &configv1.Authentication{})
+		Invokes(testing.NewRootDeleteActionWithOptions(authenticationsResource, name, opts), &configv1.Authentication{})
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeAuthentications) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(authenticationsResource, listOptions)
+func (c *FakeAuthentications) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewRootDeleteCollectionAction(authenticationsResource, listOpts)
 
 	_, err := c.Fake.Invokes(action, &configv1.AuthenticationList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched authentication.
-func (c *FakeAuthentications) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *configv1.Authentication, err error) {
+func (c *FakeAuthentications) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *configv1.Authentication, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootPatchSubresourceAction(authenticationsResource, name, pt, data, subresources...), &configv1.Authentication{})
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*configv1.Authentication), err
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied authentication.
+func (c *FakeAuthentications) Apply(ctx context.Context, authentication *applyconfigurationsconfigv1.AuthenticationApplyConfiguration, opts v1.ApplyOptions) (result *configv1.Authentication, err error) {
+	if authentication == nil {
+		return nil, fmt.Errorf("authentication provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(authentication)
+	if err != nil {
+		return nil, err
+	}
+	name := authentication.Name
+	if name == nil {
+		return nil, fmt.Errorf("authentication.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewRootPatchSubresourceAction(authenticationsResource, *name, types.ApplyPatchType, data), &configv1.Authentication{})
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*configv1.Authentication), err
+}
+
+// ApplyStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
+func (c *FakeAuthentications) ApplyStatus(ctx context.Context, authentication *applyconfigurationsconfigv1.AuthenticationApplyConfiguration, opts v1.ApplyOptions) (result *configv1.Authentication, err error) {
+	if authentication == nil {
+		return nil, fmt.Errorf("authentication provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(authentication)
+	if err != nil {
+		return nil, err
+	}
+	name := authentication.Name
+	if name == nil {
+		return nil, fmt.Errorf("authentication.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewRootPatchSubresourceAction(authenticationsResource, *name, types.ApplyPatchType, data, "status"), &configv1.Authentication{})
 	if obj == nil {
 		return nil, err
 	}

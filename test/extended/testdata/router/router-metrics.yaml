@@ -2,7 +2,7 @@ apiVersion: v1
 kind: List
 items:
 # a route that has multiple weighted services that it points to
-- apiVersion: v1
+- apiVersion: route.openshift.io/v1
   kind: Route
   metadata:
     name: weightedroute
@@ -10,7 +10,6 @@ items:
       test: router
       select: weighted
   spec:
-    host: weighted.metrics.example.com
     to:
       name: weightedendpoints1
       kind: Service
@@ -19,11 +18,11 @@ items:
     - name: weightedendpoints2
       kind: Service
       weight: 50
-    ports:
-    - targetPort: 8080
+    port:
+      targetPort: 8080
 
 # a route that has multiple services but all weights are zero
-- apiVersion: v1
+- apiVersion: route.openshift.io/v1
   kind: Route
   metadata:
     name: zeroweightroute
@@ -31,7 +30,6 @@ items:
       test: router
       select: weighted
   spec:
-    host: zeroweight.metrics.example.com
     to:
       name: weightedendpoints1
       kind: Service
@@ -40,8 +38,8 @@ items:
     - name: weightedendpoints2
       kind: Service
       weight: 0
-    ports:
-    - targetPort: 8080
+    port:
+      targetPort: 8080
 
 # two services that can be routed to
 - apiVersion: v1
@@ -80,7 +78,8 @@ items:
     terminationGracePeriodSeconds: 1
     containers:
     - name: test
-      image: openshift/hello-openshift
+      image: registry.k8s.io/e2e-test-images/agnhost:2.43
+      args: ["netexec"]
       ports:
       - containerPort: 8080
         name: http
@@ -97,7 +96,8 @@ items:
     terminationGracePeriodSeconds: 1
     containers:
     - name: test
-      image: openshift/hello-openshift
+      image: registry.k8s.io/e2e-test-images/agnhost:2.43
+      args: ["netexec"]
       ports:
       - containerPort: 8080
         name: http

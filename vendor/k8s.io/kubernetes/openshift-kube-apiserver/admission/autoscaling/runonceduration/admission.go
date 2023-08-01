@@ -7,7 +7,7 @@ import (
 	"io"
 	"strconv"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
 	"k8s.io/apiserver/pkg/admission"
 	"k8s.io/apiserver/pkg/admission/initializer"
@@ -16,10 +16,10 @@ import (
 	"k8s.io/utils/integer"
 
 	"github.com/openshift/library-go/pkg/config/helpers"
+	corev1listers "k8s.io/client-go/listers/core/v1"
 	"k8s.io/kubernetes/openshift-kube-apiserver/admission/autoscaling/apis/runonceduration"
 	v1 "k8s.io/kubernetes/openshift-kube-apiserver/admission/autoscaling/apis/runonceduration/v1"
 	"k8s.io/kubernetes/openshift-kube-apiserver/admission/autoscaling/apis/runonceduration/validation"
-	corev1listers "k8s.io/client-go/listers/core/v1"
 )
 
 func Register(plugins *admission.Plugins) {
@@ -98,8 +98,8 @@ func (a *runOnceDuration) Admit(ctx context.Context, attributes admission.Attrib
 		return admission.NewForbidden(attributes, err)
 	}
 
-	if !appliedProjectLimit && a.config.ActiveDeadlineSecondsLimit != nil {
-		pod.Spec.ActiveDeadlineSeconds = int64MinP(a.config.ActiveDeadlineSecondsLimit, pod.Spec.ActiveDeadlineSeconds)
+	if !appliedProjectLimit && a.config.ActiveDeadlineSecondsOverride != nil {
+		pod.Spec.ActiveDeadlineSeconds = int64MinP(a.config.ActiveDeadlineSecondsOverride, pod.Spec.ActiveDeadlineSeconds)
 	}
 	return nil
 }

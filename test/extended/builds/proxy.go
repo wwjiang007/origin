@@ -1,21 +1,21 @@
 package builds
 
 import (
-	"fmt"
-	"strings"
+	"context"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	buildv1 "github.com/openshift/api/build/v1"
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Feature:Builds][Slow] builds should support proxies", func() {
+var _ = g.Describe("[sig-builds][Feature:Builds][Slow] builds should support proxies", func() {
 	defer g.GinkgoRecover()
 	var (
 		buildFixture = exutil.FixturePath("testdata", "builds", "test-build-proxy.yaml")
-		oc           = exutil.NewCLI("build-proxy", exutil.KubeConfigPath())
+		oc           = exutil.NewCLI("build-proxy")
 	)
 
 	g.Context("", func() {
@@ -29,7 +29,7 @@ var _ = g.Describe("[Feature:Builds][Slow] builds should support proxies", func(
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				exutil.DumpPodStates(oc)
 				exutil.DumpConfigMapStates(oc)
 				exutil.DumpPodLogsStartingWith("", oc)
@@ -37,7 +37,7 @@ var _ = g.Describe("[Feature:Builds][Slow] builds should support proxies", func(
 		})
 
 		g.Describe("start build with broken proxy", func() {
-			g.It("should start a build and wait for the build to fail", func() {
+			g.It("should start a build and wait for the build to fail [apigroup:build.openshift.io]", func() {
 				g.By("starting the build")
 
 				br, _ := exutil.StartBuildAndWait(oc, "sample-build", "--build-loglevel=5")
@@ -49,10 +49,7 @@ var _ = g.Describe("[Feature:Builds][Slow] builds should support proxies", func(
 				buildLog, err := br.Logs()
 				o.Expect(err).NotTo(o.HaveOccurred())
 				o.Expect(buildLog).NotTo(o.ContainSubstring("clone"))
-				if !strings.Contains(buildLog, `unable to access 'https://github.com/openshift/ruby-hello-world.git/': Failed connect to 127.0.0.1:3128`) {
-					fmt.Fprintf(g.GinkgoWriter, "\nbuild log:\n%s\n", buildLog)
-				}
-				o.Expect(buildLog).To(o.ContainSubstring(`unable to access 'https://github.com/openshift/ruby-hello-world.git/': Failed connect to 127.0.0.1:3128`))
+				o.Expect(buildLog).To(o.MatchRegexp(`unable to access '%s': Failed( to)? connect to`, "https://github.com/openshift/ruby-hello-world.git/"))
 
 				g.By("verifying the build sample-build-1 status")
 				o.Expect(br.Build.Status.Phase).Should(o.BeEquivalentTo(buildv1.BuildPhaseFailed))
@@ -60,7 +57,7 @@ var _ = g.Describe("[Feature:Builds][Slow] builds should support proxies", func(
 		})
 
 		g.Describe("start build with broken proxy and a no_proxy override", func() {
-			g.It("should start an s2i build and wait for the build to succeed", func() {
+			g.It("should start an s2i build and wait for the build to succeed [apigroup:build.openshift.io]", func() {
 				g.By("starting the build")
 				br, _ := exutil.StartBuildAndWait(oc, "sample-s2i-build-noproxy", "--build-loglevel=5")
 				br.AssertSuccess()
@@ -74,7 +71,7 @@ var _ = g.Describe("[Feature:Builds][Slow] builds should support proxies", func(
 				o.Expect(buildLog).To(o.ContainSubstring("proxy3"), "build log should include proxy host")
 				o.Expect(buildLog).To(o.ContainSubstring("proxy4"), "build log should include proxy host")
 			})
-			g.It("should start a docker build and wait for the build to succeed", func() {
+			g.It("should start a docker build and wait for the build to succeed [apigroup:build.openshift.io]", func() {
 				g.By("starting the build")
 				br, _ := exutil.StartBuildAndWait(oc, "sample-docker-build-noproxy", "--build-loglevel=5")
 				br.AssertSuccess()
@@ -88,6 +85,30 @@ var _ = g.Describe("[Feature:Builds][Slow] builds should support proxies", func(
 				o.Expect(buildLog).To(o.ContainSubstring("proxy3"), "build log should include proxy host")
 				o.Expect(buildLog).To(o.ContainSubstring("proxy4"), "build log should include proxy host")
 			})
+		})
+
+		g.Describe("start build with cluster-wide custom PKI", func() {
+
+			g.It("should mount the custom PKI into the build if specified [apigroup:config.openshift.io][apigroup:build.openshift.io]", func() {
+				ctx := context.TODO()
+				proxy, err := oc.AdminConfigClient().ConfigV1().Proxies().Get(ctx, "cluster", metav1.GetOptions{})
+				o.Expect(err).NotTo(o.HaveOccurred())
+				if len(proxy.Spec.TrustedCA.Name) == 0 {
+					g.Skip("cluster custom PKI is not configured")
+				}
+				caData, err := oc.AsAdmin().KubeClient().CoreV1().ConfigMaps("openshift-config").Get(ctx, proxy.Spec.TrustedCA.Name, metav1.GetOptions{})
+				o.Expect(err).NotTo(o.HaveOccurred())
+				caBundle, present := caData.Data["ca-bundle.crt"]
+				if !present {
+					g.Skip("cluster custom PKI is missing key ca-bundle.crt")
+				}
+				br, _ := exutil.StartBuildAndWait(oc, "sample-docker-build-proxy-ca")
+				br.AssertSuccess()
+				buildLog, err := br.Logs()
+				o.Expect(err).NotTo(o.HaveOccurred())
+				o.Expect(buildLog).To(o.ContainSubstring(caBundle))
+			})
+
 		})
 	})
 })

@@ -19,9 +19,9 @@ package admission
 import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apiserver/pkg/admission"
-	"k8s.io/apiserver/pkg/authorization/authorizer"
-	"k8s.io/apiserver/pkg/util/webhook"
-	quota "k8s.io/kubernetes/pkg/quota/v1"
+	"k8s.io/apiserver/pkg/admission/initializer"
+	"k8s.io/apiserver/pkg/cel/openapi/resolver"
+	quota "k8s.io/apiserver/pkg/quota/v1"
 )
 
 // TODO add a `WantsToRun` which takes a stopCh.  Might make it generic.
@@ -31,25 +31,12 @@ type WantsCloudConfig interface {
 	SetCloudConfig([]byte)
 }
 
-// WantsRESTMapper defines a function which sets RESTMapper for admission plugins that need it.
-type WantsRESTMapper interface {
-	SetRESTMapper(meta.RESTMapper)
-}
-
-// WantsQuotaConfiguration defines a function which sets quota configuration for admission plugins that need it.
-type WantsQuotaConfiguration interface {
-	SetQuotaConfiguration(quota.Configuration)
-	admission.InitializationValidator
-}
-
 // PluginInitializer is used for initialization of the Kubernetes specific admission plugins.
 type PluginInitializer struct {
-	authorizer                        authorizer.Authorizer
-	cloudConfig                       []byte
-	restMapper                        meta.RESTMapper
-	quotaConfiguration                quota.Configuration
-	serviceResolver                   webhook.ServiceResolver
-	authenticationInfoResolverWrapper webhook.AuthenticationInfoResolverWrapper
+	cloudConfig        []byte
+	restMapper         meta.RESTMapper
+	quotaConfiguration quota.Configuration
+	schemaResolver     resolver.SchemaResolver
 }
 
 var _ admission.PluginInitializer = &PluginInitializer{}
@@ -61,11 +48,13 @@ func NewPluginInitializer(
 	cloudConfig []byte,
 	restMapper meta.RESTMapper,
 	quotaConfiguration quota.Configuration,
+	schemaResolver resolver.SchemaResolver,
 ) *PluginInitializer {
 	return &PluginInitializer{
 		cloudConfig:        cloudConfig,
 		restMapper:         restMapper,
 		quotaConfiguration: quotaConfiguration,
+		schemaResolver:     schemaResolver,
 	}
 }
 
@@ -76,11 +65,15 @@ func (i *PluginInitializer) Initialize(plugin admission.Interface) {
 		wants.SetCloudConfig(i.cloudConfig)
 	}
 
-	if wants, ok := plugin.(WantsRESTMapper); ok {
+	if wants, ok := plugin.(initializer.WantsRESTMapper); ok {
 		wants.SetRESTMapper(i.restMapper)
 	}
 
-	if wants, ok := plugin.(WantsQuotaConfiguration); ok {
+	if wants, ok := plugin.(initializer.WantsQuotaConfiguration); ok {
 		wants.SetQuotaConfiguration(i.quotaConfiguration)
+	}
+
+	if wants, ok := plugin.(initializer.WantsSchemaResolver); ok {
+		wants.SetSchemaResolver(i.schemaResolver)
 	}
 }

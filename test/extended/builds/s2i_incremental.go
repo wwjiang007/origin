@@ -1,12 +1,15 @@
 package builds
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
+
+	admissionapi "k8s.io/pod-security-admission/api"
 
 	e2e "k8s.io/kubernetes/test/e2e/framework"
 	"k8s.io/kubernetes/test/e2e/framework/pod"
@@ -14,7 +17,7 @@ import (
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Feature:Builds][Slow] incremental s2i build", func() {
+var _ = g.Describe("[sig-builds][Feature:Builds][Slow] incremental s2i build", func() {
 	defer g.GinkgoRecover()
 
 	const (
@@ -25,7 +28,7 @@ var _ = g.Describe("[Feature:Builds][Slow] incremental s2i build", func() {
 	var (
 		templateFixture      = exutil.FixturePath("testdata", "builds", "incremental-auth-build.json")
 		podAndServiceFixture = exutil.FixturePath("testdata", "builds", "test-build-podsvc.json")
-		oc                   = exutil.NewCLI("build-sti-inc", exutil.KubeConfigPath())
+		oc                   = exutil.NewCLIWithPodSecurityLevel("build-sti-inc", admissionapi.LevelBaseline)
 	)
 
 	g.Context("", func() {
@@ -34,7 +37,7 @@ var _ = g.Describe("[Feature:Builds][Slow] incremental s2i build", func() {
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				exutil.DumpPodStates(oc)
 				exutil.DumpConfigMapStates(oc)
 				exutil.DumpPodLogsStartingWith("", oc)
@@ -42,7 +45,7 @@ var _ = g.Describe("[Feature:Builds][Slow] incremental s2i build", func() {
 		})
 
 		g.Describe("Building from a template", func() {
-			g.It(fmt.Sprintf("should create a build from %q template and run it", filepath.Base(templateFixture)), func() {
+			g.It(fmt.Sprintf("should create a build from %q template and run it [apigroup:build.openshift.io][apigroup:image.openshift.io]", filepath.Base(templateFixture)), func() {
 
 				g.By(fmt.Sprintf("calling oc new-app -f %q", templateFixture))
 				err := oc.Run("new-app").Args("-f", templateFixture).Execute()
@@ -65,7 +68,7 @@ var _ = g.Describe("[Feature:Builds][Slow] incremental s2i build", func() {
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				g.By("waiting for the pod to be running")
-				err = pod.WaitForPodNameRunningInNamespace(oc.KubeFramework().ClientSet, "build-test-pod", oc.Namespace())
+				err = pod.WaitForPodNameRunningInNamespace(context.TODO(), oc.KubeFramework().ClientSet, "build-test-pod", oc.Namespace())
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				g.By("waiting for the service to become available")

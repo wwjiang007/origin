@@ -34,11 +34,13 @@ func isSupportedQoSComputeResource(name core.ResourceName) bool {
 // A pod is besteffort if none of its containers have specified any requests or limits.
 // A pod is guaranteed only when requests and limits are specified for all the containers and they are equal.
 // A pod is burstable if limits and requests do not match across all containers.
+// When this function is updated please also update staging/src/k8s.io/kubectl/pkg/util/qos/qos.go
 func GetPodQOS(pod *core.Pod) core.PodQOSClass {
 	requests := core.ResourceList{}
 	limits := core.ResourceList{}
 	zeroQuantity := resource.MustParse("0")
 	isGuaranteed := true
+	// note, ephemeral containers are not considered for QoS as they cannot define resources
 	allContainers := []core.Container{}
 	allContainers = append(allContainers, pod.Spec.Containers...)
 	allContainers = append(allContainers, pod.Spec.InitContainers...)

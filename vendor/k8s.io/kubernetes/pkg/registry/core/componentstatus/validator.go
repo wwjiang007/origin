@@ -18,6 +18,7 @@ package componentstatus
 
 import (
 	"crypto/tls"
+	"fmt"
 	"sync"
 	"time"
 
@@ -72,18 +73,22 @@ func (server *Server) DoServerCheck() (probe.Result, string, error) {
 	}
 	url := utilnet.FormatURL(scheme, server.Addr, server.Port, server.Path)
 
-	result, data, err := server.Prober.Probe(url, nil, probeTimeOut)
+	req, err := httpprober.NewProbeRequest(url, nil)
+	if err != nil {
+		return probe.Unknown, "", fmt.Errorf("failed to construct probe request: %w", err)
+	}
+	result, data, err := server.Prober.Probe(req, probeTimeOut)
 
 	if err != nil {
 		return probe.Unknown, "", err
 	}
 	if result == probe.Failure {
-		return probe.Failure, string(data), err
+		return probe.Failure, data, err
 	}
 	if server.Validate != nil {
 		if err := server.Validate([]byte(data)); err != nil {
-			return probe.Failure, string(data), err
+			return probe.Failure, data, err
 		}
 	}
-	return result, string(data), nil
+	return result, data, nil
 }

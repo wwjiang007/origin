@@ -5,13 +5,13 @@
   "items": [
     {
       "kind": "ImageStream",
-      "apiVersion": "v1",
+      "apiVersion": "image.openshift.io/v1",
       "metadata": {
         "name": "ruby-20-centos7-buildcli",
         "creationTimestamp": null
       },
       "spec": {
-        "dockerImageRepository": "centos/ruby-25-centos7",
+        "dockerImageRepository": "image-registry.openshift-image-registry.svc:5000/openshift/ruby",
         "tags": [
           {
             "name": "valid"
@@ -24,7 +24,7 @@
     },
     {
       "kind": "BuildConfig",
-      "apiVersion": "v1",
+      "apiVersion": "build.openshift.io/v1",
       "metadata": {
         "name": "ruby-sample-build-validtag",
         "creationTimestamp": null
@@ -39,7 +39,7 @@
         "source": {
           "type": "Git",
           "git": {
-            "uri": "git://github.com/openshift/ruby-hello-world.git"
+            "uri": "https://github.com/openshift/ruby-hello-world.git"
           }
         },
         "strategy": {
@@ -47,7 +47,7 @@
           "sourceStrategy": {
             "from": {
               "kind": "DockerImage",
-              "name": "centos/ruby-25-centos7"
+              "name": "image-registry.openshift-image-registry.svc:5000/openshift/ruby"
             },
             "incremental": true
           }
@@ -66,7 +66,7 @@
     },
     {
       "kind": "BuildConfig",
-      "apiVersion": "v1",
+      "apiVersion": "build.openshift.io/v1",
       "metadata": {
         "name": "ruby-sample-build-invalidtag",
         "creationTimestamp": null
@@ -81,7 +81,7 @@
         "source": {
           "type": "Git",
           "git": {
-            "uri": "git://github.com/openshift/ruby-hello-world.git"
+            "uri": "https://github.com/openshift/ruby-hello-world.git"
           }
         },
         "strategy": {
@@ -89,7 +89,7 @@
           "sourceStrategy": {
             "from": {
               "kind": "DockerImage",
-              "name": "centos/ruby-25-centos7"
+              "name": "image-registry.openshift-image-registry.svc:5000/openshift/ruby"
             },
             "incremental": true
           }

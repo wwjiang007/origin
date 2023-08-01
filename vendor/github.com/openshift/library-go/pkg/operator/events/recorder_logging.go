@@ -1,14 +1,21 @@
 package events
 
 import (
+	"context"
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 type LoggingEventRecorder struct {
 	component string
+	ctx       context.Context
+}
+
+func (r *LoggingEventRecorder) WithContext(ctx context.Context) Recorder {
+	r.ctx = ctx
+	return r
 }
 
 // NewLoggingEventRecorder provides event recorder that will log all recorded events via klog.
@@ -25,6 +32,8 @@ func (r *LoggingEventRecorder) ForComponent(component string) Recorder {
 	newRecorder.component = component
 	return &newRecorder
 }
+
+func (r *LoggingEventRecorder) Shutdown() {}
 
 func (r *LoggingEventRecorder) WithComponentSuffix(suffix string) Recorder {
 	return r.ForComponent(fmt.Sprintf("%s-%s", r.ComponentName(), suffix))

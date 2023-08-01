@@ -16,19 +16,18 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/dynamic"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 	templateapi "github.com/openshift/api/template/v1"
 	"github.com/openshift/library-go/pkg/template/templateprocessingclient"
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Conformance][templates] template-api", func() {
+var _ = g.Describe("[sig-devex][Feature:Templates] template-api", func() {
 	defer g.GinkgoRecover()
-	oc := exutil.NewCLI("templates", exutil.KubeConfigPath())
+	oc := exutil.NewCLI("templates")
 
-	g.It("TestTemplate", func() {
-		g.Skip("Bug 1731222: skip template tests until we determine what is broken")
+	g.It("TestTemplate [apigroup:template.openshift.io]", func() {
 		t := g.GinkgoT()
 
 		for _, version := range []schema.GroupVersion{v1.SchemeGroupVersion} {
@@ -96,12 +95,11 @@ var _ = g.Describe("[Conformance][templates] template-api", func() {
 	})
 })
 
-var _ = g.Describe("[Conformance][templates] template-api", func() {
+var _ = g.Describe("[sig-devex][Feature:Templates] template-api", func() {
 	defer g.GinkgoRecover()
-	oc := exutil.NewCLI("templates", exutil.KubeConfigPath())
+	oc := exutil.NewCLI("templates")
 
-	g.It("TestTemplateTransformationFromConfig", func() {
-		g.Skip("Bug 1731222: skip template tests until we determine what is broken")
+	g.It("TestTemplateTransformationFromConfig [apigroup:template.openshift.io]", func() {
 		t := g.GinkgoT()
 
 		clusterAdminClientConfig := oc.AdminConfig()

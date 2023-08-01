@@ -18,6 +18,7 @@ package ingress
 
 import (
 	"context"
+	"fmt"
 
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -26,9 +27,14 @@ import (
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 	"k8s.io/kubernetes/pkg/apis/networking"
 	"k8s.io/kubernetes/pkg/apis/networking/validation"
+	"sigs.k8s.io/structured-merge-diff/v4/fieldpath"
 )
 
-// ingressStrategy implements verification logic for Replication Ingresss.
+const (
+	annotationIngressClass = "kubernetes.io/ingress.class"
+)
+
+// ingressStrategy implements verification logic for Replication Ingress.
 type ingressStrategy struct {
 	runtime.ObjectTyper
 	names.NameGenerator
@@ -40,6 +46,24 @@ var Strategy = ingressStrategy{legacyscheme.Scheme, names.SimpleNameGenerator}
 // NamespaceScoped returns true because all Ingress' need to be within a namespace.
 func (ingressStrategy) NamespaceScoped() bool {
 	return true
+}
+
+// GetResetFields returns the set of fields that get reset by the strategy
+// and should not be modified by the user.
+func (ingressStrategy) GetResetFields() map[fieldpath.APIVersion]*fieldpath.Set {
+	fields := map[fieldpath.APIVersion]*fieldpath.Set{
+		"extensions/v1beta1": fieldpath.NewSet(
+			fieldpath.MakePathOrDie("status"),
+		),
+		"networking.k8s.io/v1beta1": fieldpath.NewSet(
+			fieldpath.MakePathOrDie("status"),
+		),
+		"networking.k8s.io/v1": fieldpath.NewSet(
+			fieldpath.MakePathOrDie("status"),
+		),
+	}
+
+	return fields
 }
 
 // PrepareForCreate clears the status of an Ingress before creation.
@@ -67,11 +91,21 @@ func (ingressStrategy) PrepareForUpdate(ctx context.Context, obj, old runtime.Ob
 
 }
 
-// Validate validates a new Ingress.
+// Validate validates ingresses on create.
 func (ingressStrategy) Validate(ctx context.Context, obj runtime.Object) field.ErrorList {
 	ingress := obj.(*networking.Ingress)
-	err := validation.ValidateIngress(ingress)
-	return err
+	return validation.ValidateIngressCreate(ingress)
+}
+
+// WarningsOnCreate returns warnings for the creation of the given object.
+func (ingressStrategy) WarningsOnCreate(ctx context.Context, obj runtime.Object) []string {
+	var warnings []string
+	ingress := obj.(*networking.Ingress)
+	_, annotationIsSet := ingress.Annotations[annotationIngressClass]
+	if annotationIsSet && ingress.Spec.IngressClassName == nil {
+		warnings = append(warnings, fmt.Sprintf("annotation %q is deprecated, please use 'spec.ingressClassName' instead", annotationIngressClass))
+	}
+	return warnings
 }
 
 // Canonicalize normalizes the object after validation.
@@ -83,11 +117,14 @@ func (ingressStrategy) AllowCreateOnUpdate() bool {
 	return false
 }
 
-// ValidateUpdate is the default update validation for an end user.
+// ValidateUpdate validates ingresses on update.
 func (ingressStrategy) ValidateUpdate(ctx context.Context, obj, old runtime.Object) field.ErrorList {
-	validationErrorList := validation.ValidateIngress(obj.(*networking.Ingress))
-	updateErrorList := validation.ValidateIngressUpdate(obj.(*networking.Ingress), old.(*networking.Ingress))
-	return append(validationErrorList, updateErrorList...)
+	return validation.ValidateIngressUpdate(obj.(*networking.Ingress), old.(*networking.Ingress))
+}
+
+// WarningsOnUpdate returns warnings for the given update.
+func (ingressStrategy) WarningsOnUpdate(ctx context.Context, obj, old runtime.Object) []string {
+	return nil
 }
 
 // AllowUnconditionalUpdate is the default update policy for Ingress objects.
@@ -102,6 +139,24 @@ type ingressStatusStrategy struct {
 // StatusStrategy implements logic used to validate and prepare for updates of the status subresource
 var StatusStrategy = ingressStatusStrategy{Strategy}
 
+// GetResetFields returns the set of fields that get reset by the strategy
+// and should not be modified by the user.
+func (ingressStatusStrategy) GetResetFields() map[fieldpath.APIVersion]*fieldpath.Set {
+	fields := map[fieldpath.APIVersion]*fieldpath.Set{
+		"extensions/v1beta1": fieldpath.NewSet(
+			fieldpath.MakePathOrDie("spec"),
+		),
+		"networking.k8s.io/v1beta1": fieldpath.NewSet(
+			fieldpath.MakePathOrDie("spec"),
+		),
+		"networking.k8s.io/v1": fieldpath.NewSet(
+			fieldpath.MakePathOrDie("spec"),
+		),
+	}
+
+	return fields
+}
+
 // PrepareForUpdate clears fields that are not allowed to be set by end users on update of status
 func (ingressStatusStrategy) PrepareForUpdate(ctx context.Context, obj, old runtime.Object) {
 	newIngress := obj.(*networking.Ingress)
@@ -113,4 +168,9 @@ func (ingressStatusStrategy) PrepareForUpdate(ctx context.Context, obj, old runt
 // ValidateUpdate is the default update validation for an end user updating status
 func (ingressStatusStrategy) ValidateUpdate(ctx context.Context, obj, old runtime.Object) field.ErrorList {
 	return validation.ValidateIngressStatusUpdate(obj.(*networking.Ingress), old.(*networking.Ingress))
+}
+
+// WarningsOnUpdate returns warnings for the given update.
+func (ingressStatusStrategy) WarningsOnUpdate(ctx context.Context, obj, old runtime.Object) []string {
+	return nil
 }

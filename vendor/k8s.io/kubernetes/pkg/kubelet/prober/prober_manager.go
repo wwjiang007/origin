@@ -18,20 +18,18 @@ package prober
 
 import (
 	"sync"
+	"time"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/apimachinery/pkg/util/wait"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/component-base/metrics"
-	"k8s.io/klog"
-	"k8s.io/kubernetes/pkg/features"
+	"k8s.io/klog/v2"
 	kubecontainer "k8s.io/kubernetes/pkg/kubelet/container"
 	"k8s.io/kubernetes/pkg/kubelet/prober/results"
 	"k8s.io/kubernetes/pkg/kubelet/status"
-	"k8s.io/kubernetes/pkg/kubelet/util/format"
+	"k8s.io/utils/clock"
 )
 
 // ProberResults stores the cumulative number of a probe by result as prometheus metrics.
@@ -50,15 +48,31 @@ var ProberResults = metrics.NewCounterVec(
 		"pod_uid"},
 )
 
+// ProberDuration stores the duration of a successful probe lifecycle by result as prometheus metrics.
+var ProberDuration = metrics.NewHistogramVec(
+	&metrics.HistogramOpts{
+		Subsystem:      "prober",
+		Name:           "probe_duration_seconds",
+		Help:           "Duration in seconds for a probe response.",
+		StabilityLevel: metrics.ALPHA,
+	},
+	[]string{"probe_type",
+		"container",
+		"pod",
+		"namespace"},
+)
+
 // Manager manages pod probing. It creates a probe "worker" for every container that specifies a
 // probe (AddPod). The worker periodically probes its assigned container and caches the results. The
 // manager use the cached probe results to set the appropriate Ready state in the PodStatus when
 // requested (UpdatePodStatus). Updating probe parameters is not currently supported.
-// TODO: Move liveness probing out of the runtime, to here.
 type Manager interface {
 	// AddPod creates new probe workers for every container probe. This should be called for every
 	// pod created.
 	AddPod(pod *v1.Pod)
+
+	// StopLivenessAndStartup handles stopping liveness and startup probes during termination.
+	StopLivenessAndStartup(pod *v1.Pod)
 
 	// RemovePod handles cleaning up the removed pod state, including terminating probe workers and
 	// deleting cached results.
@@ -71,9 +85,6 @@ type Manager interface {
 	// UpdatePodStatus modifies the given PodStatus with the appropriate Ready state for each
 	// container based on container running status, cached probe results and worker states.
 	UpdatePodStatus(types.UID, *v1.PodStatus)
-
-	// Start starts the Manager sync loops.
-	Start()
 }
 
 type manager struct {
@@ -96,19 +107,20 @@ type manager struct {
 
 	// prober executes the probe actions.
 	prober *prober
+
+	start time.Time
 }
 
 // NewManager creates a Manager for pod probing.
 func NewManager(
 	statusManager status.Manager,
 	livenessManager results.Manager,
-	runner kubecontainer.ContainerCommandRunner,
-	refManager *kubecontainer.RefManager,
+	readinessManager results.Manager,
+	startupManager results.Manager,
+	runner kubecontainer.CommandRunner,
 	recorder record.EventRecorder) Manager {
 
-	prober := newProber(runner, refManager, recorder)
-	readinessManager := results.NewManager()
-	startupManager := results.NewManager()
+	prober := newProber(runner, recorder)
 	return &manager{
 		statusManager:    statusManager,
 		prober:           prober,
@@ -116,15 +128,8 @@ func NewManager(
 		livenessManager:  livenessManager,
 		startupManager:   startupManager,
 		workers:          make(map[probeKey]*worker),
+		start:            clock.RealClock{}.Now(),
 	}
-}
-
-// Start syncing probe status. This should only be called once.
-func (m *manager) Start() {
-	// Start syncing readiness.
-	go wait.Forever(m.updateReadiness, 0)
-	// Start syncing startup.
-	go wait.Forever(m.updateStartup, 0)
 }
 
 // Key uniquely identifying container probes
@@ -169,11 +174,11 @@ func (m *manager) AddPod(pod *v1.Pod) {
 	for _, c := range pod.Spec.Containers {
 		key.containerName = c.Name
 
-		if c.StartupProbe != nil && utilfeature.DefaultFeatureGate.Enabled(features.StartupProbe) {
+		if c.StartupProbe != nil {
 			key.probeType = startup
 			if _, ok := m.workers[key]; ok {
-				klog.Errorf("Startup probe already exists! %v - %v",
-					format.Pod(pod), c.Name)
+				klog.V(8).ErrorS(nil, "Startup probe already exists for container",
+					"pod", klog.KObj(pod), "containerName", c.Name)
 				return
 			}
 			w := newWorker(m, startup, pod, c)
@@ -184,8 +189,8 @@ func (m *manager) AddPod(pod *v1.Pod) {
 		if c.ReadinessProbe != nil {
 			key.probeType = readiness
 			if _, ok := m.workers[key]; ok {
-				klog.Errorf("Readiness probe already exists! %v - %v",
-					format.Pod(pod), c.Name)
+				klog.V(8).ErrorS(nil, "Readiness probe already exists for container",
+					"pod", klog.KObj(pod), "containerName", c.Name)
 				return
 			}
 			w := newWorker(m, readiness, pod, c)
@@ -196,13 +201,29 @@ func (m *manager) AddPod(pod *v1.Pod) {
 		if c.LivenessProbe != nil {
 			key.probeType = liveness
 			if _, ok := m.workers[key]; ok {
-				klog.Errorf("Liveness probe already exists! %v - %v",
-					format.Pod(pod), c.Name)
+				klog.V(8).ErrorS(nil, "Liveness probe already exists for container",
+					"pod", klog.KObj(pod), "containerName", c.Name)
 				return
 			}
 			w := newWorker(m, liveness, pod, c)
 			m.workers[key] = w
 			go w.run()
+		}
+	}
+}
+
+func (m *manager) StopLivenessAndStartup(pod *v1.Pod) {
+	m.workerLock.RLock()
+	defer m.workerLock.RUnlock()
+
+	key := probeKey{podUID: pod.UID}
+	for _, c := range pod.Spec.Containers {
+		key.containerName = c.Name
+		for _, probeType := range [...]probeType{liveness, startup} {
+			key.probeType = probeType
+			if worker, ok := m.workers[key]; ok {
+				worker.stop()
+			}
 		}
 	}
 }
@@ -236,24 +257,9 @@ func (m *manager) CleanupPods(desiredPods map[types.UID]sets.Empty) {
 
 func (m *manager) UpdatePodStatus(podUID types.UID, podStatus *v1.PodStatus) {
 	for i, c := range podStatus.ContainerStatuses {
-		var ready bool
-		if c.State.Running == nil {
-			ready = false
-		} else if result, ok := m.readinessManager.Get(kubecontainer.ParseContainerID(c.ContainerID)); ok {
-			ready = result == results.Success
-		} else {
-			// The check whether there is a probe which hasn't run yet.
-			_, exists := m.getWorker(podUID, c.Name, readiness)
-			ready = !exists
-		}
-		podStatus.ContainerStatuses[i].Ready = ready
-
 		var started bool
 		if c.State.Running == nil {
 			started = false
-		} else if !utilfeature.DefaultFeatureGate.Enabled(features.StartupProbe) {
-			// the container is running, assume it is started if the StartupProbe feature is disabled
-			started = true
 		} else if result, ok := m.startupManager.Get(kubecontainer.ParseContainerID(c.ContainerID)); ok {
 			started = result == results.Success
 		} else {
@@ -262,6 +268,28 @@ func (m *manager) UpdatePodStatus(podUID types.UID, podStatus *v1.PodStatus) {
 			started = !exists
 		}
 		podStatus.ContainerStatuses[i].Started = &started
+
+		if started {
+			var ready bool
+			if c.State.Running == nil {
+				ready = false
+			} else if result, ok := m.readinessManager.Get(kubecontainer.ParseContainerID(c.ContainerID)); ok && result == results.Success {
+				ready = true
+			} else {
+				// The check whether there is a probe which hasn't run yet.
+				w, exists := m.getWorker(podUID, c.Name, readiness)
+				ready = !exists // no readinessProbe -> always ready
+				if exists {
+					// Trigger an immediate run of the readinessProbe to update ready state
+					select {
+					case w.manualTriggerCh <- struct{}{}:
+					default: // Non-blocking.
+						klog.InfoS("Failed to trigger a manual run", "probe", w.probeType.String())
+					}
+				}
+			}
+			podStatus.ContainerStatuses[i].Ready = ready
+		}
 	}
 	// init containers are ready if they have exited with success or if a readiness probe has
 	// succeeded.
@@ -293,18 +321,4 @@ func (m *manager) workerCount() int {
 	m.workerLock.RLock()
 	defer m.workerLock.RUnlock()
 	return len(m.workers)
-}
-
-func (m *manager) updateReadiness() {
-	update := <-m.readinessManager.Updates()
-
-	ready := update.Result == results.Success
-	m.statusManager.SetContainerReadiness(update.PodUID, update.ContainerID, ready)
-}
-
-func (m *manager) updateStartup() {
-	update := <-m.startupManager.Updates()
-
-	started := update.Result == results.Success
-	m.statusManager.SetContainerStartup(update.PodUID, update.ContainerID, started)
 }

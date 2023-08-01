@@ -19,13 +19,14 @@ limitations under the License.
 package replicaset
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
 	apps "k8s.io/api/apps/v1"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	appsclient "k8s.io/client-go/kubernetes/typed/apps/v1"
@@ -33,7 +34,7 @@ import (
 )
 
 // updateReplicaSetStatus attempts to update the Status.Replicas of the given ReplicaSet, with a single GET/PUT retry.
-func updateReplicaSetStatus(c appsclient.ReplicaSetInterface, rs *apps.ReplicaSet, newStatus apps.ReplicaSetStatus) (*apps.ReplicaSet, error) {
+func updateReplicaSetStatus(logger klog.Logger, c appsclient.ReplicaSetInterface, rs *apps.ReplicaSet, newStatus apps.ReplicaSetStatus) (*apps.ReplicaSet, error) {
 	// This is the steady state. It happens when the ReplicaSet doesn't have any expectations, since
 	// we do a periodic relist every 30s. If the generations differ but the replicas are
 	// the same, a caller might've resized to the same replica count.
@@ -55,7 +56,7 @@ func updateReplicaSetStatus(c appsclient.ReplicaSetInterface, rs *apps.ReplicaSe
 	var getErr, updateErr error
 	var updatedRS *apps.ReplicaSet
 	for i, rs := 0, rs; ; i++ {
-		klog.V(4).Infof(fmt.Sprintf("Updating status for %v: %s/%s, ", rs.Kind, rs.Namespace, rs.Name) +
+		logger.V(4).Info(fmt.Sprintf("Updating status for %v: %s/%s, ", rs.Kind, rs.Namespace, rs.Name) +
 			fmt.Sprintf("replicas %d->%d (need %d), ", rs.Status.Replicas, newStatus.Replicas, *(rs.Spec.Replicas)) +
 			fmt.Sprintf("fullyLabeledReplicas %d->%d, ", rs.Status.FullyLabeledReplicas, newStatus.FullyLabeledReplicas) +
 			fmt.Sprintf("readyReplicas %d->%d, ", rs.Status.ReadyReplicas, newStatus.ReadyReplicas) +
@@ -63,7 +64,7 @@ func updateReplicaSetStatus(c appsclient.ReplicaSetInterface, rs *apps.ReplicaSe
 			fmt.Sprintf("sequence No: %v->%v", rs.Status.ObservedGeneration, newStatus.ObservedGeneration))
 
 		rs.Status = newStatus
-		updatedRS, updateErr = c.UpdateStatus(rs)
+		updatedRS, updateErr = c.UpdateStatus(context.TODO(), rs, metav1.UpdateOptions{})
 		if updateErr == nil {
 			return updatedRS, nil
 		}
@@ -72,7 +73,7 @@ func updateReplicaSetStatus(c appsclient.ReplicaSetInterface, rs *apps.ReplicaSe
 			break
 		}
 		// Update the ReplicaSet with the latest resource version for the next poll
-		if rs, getErr = c.Get(rs.Name, metav1.GetOptions{}); getErr != nil {
+		if rs, getErr = c.Get(context.TODO(), rs.Name, metav1.GetOptions{}); getErr != nil {
 			// If the GET fails we can't trust status.Replicas anymore. This error
 			// is bound to be more interesting than the update failure.
 			return nil, getErr

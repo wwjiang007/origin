@@ -52,7 +52,7 @@ const (
 	// truncated to maximum label length.
 	BuildLabel = "openshift.io/build.name"
 
-	// BuildRunPolicyLabel represents the start policy used to to start the build.
+	// BuildRunPolicyLabel represents the start policy used to start the build.
 	BuildRunPolicyLabel = "openshift.io/build.start-policy"
 
 	// BuildConfigLabelDeprecated was used as BuildConfigLabel before adding namespaces.
@@ -111,6 +111,14 @@ const (
 	// StatusReasonFetchSourceFailed indicates that fetching the source of the
 	// build has failed.
 	StatusReasonFetchSourceFailed StatusReason = "FetchSourceFailed"
+
+	// StatusReasonFetchImageContentFailed indicates that the fetching of an image and extracting
+	// its contents for inclusion in the build has failed.
+	StatusReasonFetchImageContentFailed StatusReason = "FetchImageContentFailed"
+
+	// StatusReasonManageDockerfileFailed indicates that the set up of the Dockerfile for the build
+	// has failed.
+	StatusReasonManageDockerfileFailed StatusReason = "ManageDockerfileFailed"
 
 	// StatusReasonInvalidContextDirectory indicates that the supplied
 	// contextDir does not exist

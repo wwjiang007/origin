@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/apitesting"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
 	appsv1 "github.com/openshift/api/apps/v1"
 	buildv1 "github.com/openshift/api/build/v1"
@@ -68,17 +68,14 @@ func TestExampleObjectSchemas(t *testing.T) {
 		},
 		"../examples/image-streams": {
 			"image-streams-centos7": &imagev1.ImageStreamList{},
-			"image-streams-rhel7":   &imagev1.ImageStreamList{},
 		},
 		"../examples/db-templates": {
 			"mysql-persistent-template":      &templatev1.Template{},
 			"postgresql-persistent-template": &templatev1.Template{},
-			"mongodb-persistent-template":    &templatev1.Template{},
 			"mariadb-persistent-template":    &templatev1.Template{},
 			"redis-persistent-template":      &templatev1.Template{},
 			"mysql-ephemeral-template":       &templatev1.Template{},
 			"postgresql-ephemeral-template":  &templatev1.Template{},
-			"mongodb-ephemeral-template":     &templatev1.Template{},
 			"mariadb-ephemeral-template":     &templatev1.Template{},
 			"redis-ephemeral-template":       &templatev1.Template{},
 		},

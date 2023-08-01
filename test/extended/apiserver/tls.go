@@ -3,16 +3,16 @@ package apiserver
 import (
 	"crypto/tls"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 
 	"github.com/openshift/library-go/pkg/crypto"
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Feature:APIServer]", func() {
+var _ = g.Describe("[sig-api-machinery][Feature:APIServer]", func() {
 	defer g.GinkgoRecover()
 
-	oc := exutil.NewCLI("apiserver", exutil.KubeConfigPath())
+	oc := exutil.NewCLI("apiserver")
 
 	g.It("TestTLSDefaults", func() {
 		g.Skip("skipping because it was broken in master")

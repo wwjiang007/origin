@@ -26,14 +26,24 @@ type Interface interface {
 	FeatureGates() FeatureGateInformer
 	// Images returns a ImageInformer.
 	Images() ImageInformer
+	// ImageContentPolicies returns a ImageContentPolicyInformer.
+	ImageContentPolicies() ImageContentPolicyInformer
+	// ImageDigestMirrorSets returns a ImageDigestMirrorSetInformer.
+	ImageDigestMirrorSets() ImageDigestMirrorSetInformer
+	// ImageTagMirrorSets returns a ImageTagMirrorSetInformer.
+	ImageTagMirrorSets() ImageTagMirrorSetInformer
 	// Infrastructures returns a InfrastructureInformer.
 	Infrastructures() InfrastructureInformer
 	// Ingresses returns a IngressInformer.
 	Ingresses() IngressInformer
 	// Networks returns a NetworkInformer.
 	Networks() NetworkInformer
+	// Nodes returns a NodeInformer.
+	Nodes() NodeInformer
 	// OAuths returns a OAuthInformer.
 	OAuths() OAuthInformer
+	// OperatorHubs returns a OperatorHubInformer.
+	OperatorHubs() OperatorHubInformer
 	// Projects returns a ProjectInformer.
 	Projects() ProjectInformer
 	// Proxies returns a ProxyInformer.
@@ -98,6 +108,21 @@ func (v *version) Images() ImageInformer {
 	return &imageInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
+// ImageContentPolicies returns a ImageContentPolicyInformer.
+func (v *version) ImageContentPolicies() ImageContentPolicyInformer {
+	return &imageContentPolicyInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// ImageDigestMirrorSets returns a ImageDigestMirrorSetInformer.
+func (v *version) ImageDigestMirrorSets() ImageDigestMirrorSetInformer {
+	return &imageDigestMirrorSetInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// ImageTagMirrorSets returns a ImageTagMirrorSetInformer.
+func (v *version) ImageTagMirrorSets() ImageTagMirrorSetInformer {
+	return &imageTagMirrorSetInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
 // Infrastructures returns a InfrastructureInformer.
 func (v *version) Infrastructures() InfrastructureInformer {
 	return &infrastructureInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
@@ -113,9 +138,19 @@ func (v *version) Networks() NetworkInformer {
 	return &networkInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
+// Nodes returns a NodeInformer.
+func (v *version) Nodes() NodeInformer {
+	return &nodeInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
 // OAuths returns a OAuthInformer.
 func (v *version) OAuths() OAuthInformer {
 	return &oAuthInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// OperatorHubs returns a OperatorHubInformer.
+func (v *version) OperatorHubs() OperatorHubInformer {
+	return &operatorHubInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
 // Projects returns a ProjectInformer.

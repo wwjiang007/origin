@@ -23,15 +23,17 @@ import (
 	"os"
 	"time"
 
-	"golang.org/x/oauth2/google"
-
-	"github.com/onsi/ginkgo"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/kubernetes/test/e2e/common"
 	"k8s.io/kubernetes/test/e2e/framework"
+	e2eautoscaling "k8s.io/kubernetes/test/e2e/framework/autoscaling"
+	e2eskipper "k8s.io/kubernetes/test/e2e/framework/skipper"
 	instrumentation "k8s.io/kubernetes/test/e2e/instrumentation/common"
+	admissionapi "k8s.io/pod-security-admission/api"
 
+	"github.com/onsi/ginkgo/v2"
+	"golang.org/x/oauth2/google"
 	gcm "google.golang.org/api/monitoring/v3"
+	"google.golang.org/api/option"
 )
 
 var (
@@ -60,22 +62,23 @@ var (
 
 var _ = instrumentation.SIGDescribe("Stackdriver Monitoring", func() {
 	ginkgo.BeforeEach(func() {
-		framework.SkipUnlessProviderIs("gce", "gke")
+		e2eskipper.SkipUnlessProviderIs("gce", "gke")
 	})
 
 	f := framework.NewDefaultFramework("stackdriver-monitoring")
+	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
 
-	ginkgo.It("should have cluster metrics [Feature:StackdriverMonitoring]", func() {
-		testStackdriverMonitoring(f, 1, 100, 200)
+	ginkgo.It("should have cluster metrics [Feature:StackdriverMonitoring]", func(ctx context.Context) {
+		testStackdriverMonitoring(ctx, f, 1, 100, 200)
 	})
 
 })
 
-func testStackdriverMonitoring(f *framework.Framework, pods, allPodsCPU int, perPodCPU int64) {
+func testStackdriverMonitoring(ctx context.Context, f *framework.Framework, pods, allPodsCPU int, perPodCPU int64) {
 	projectID := framework.TestContext.CloudConfig.ProjectID
 
-	ctx := context.Background()
 	client, err := google.DefaultClient(ctx, gcm.CloudPlatformScope)
+	framework.ExpectNoError(err)
 
 	// Hack for running tests locally
 	// If this is your use case, create application default credentials:
@@ -90,7 +93,7 @@ func testStackdriverMonitoring(f *framework.Framework, pods, allPodsCPU int, per
 		client := oauth2.NewClient(oauth2.NoContext, ts)
 	*/
 
-	gcmService, err := gcm.New(client)
+	gcmService, err := gcm.NewService(ctx, option.WithHTTPClient(client))
 
 	// set this env var if accessing Stackdriver test endpoint (default is prod):
 	// $ export STACKDRIVER_API_ENDPOINT_OVERRIDE=https://test-monitoring.sandbox.googleapis.com/
@@ -101,10 +104,10 @@ func testStackdriverMonitoring(f *framework.Framework, pods, allPodsCPU int, per
 
 	framework.ExpectNoError(err)
 
-	rc := common.NewDynamicResourceConsumer(rcName, f.Namespace.Name, common.KindDeployment, pods, allPodsCPU, memoryUsed, 0, perPodCPU, memoryLimit, f.ClientSet, f.ScalesGetter)
-	defer rc.CleanUp()
+	rc := e2eautoscaling.NewDynamicResourceConsumer(ctx, rcName, f.Namespace.Name, e2eautoscaling.KindDeployment, pods, allPodsCPU, memoryUsed, 0, perPodCPU, memoryLimit, f.ClientSet, f.ScalesGetter, e2eautoscaling.Disable, e2eautoscaling.Idle)
+	ginkgo.DeferCleanup(rc.CleanUp)
 
-	rc.WaitForReplicas(pods, 15*time.Minute)
+	rc.WaitForReplicas(ctx, pods, 15*time.Minute)
 
 	metricsMap := map[string]bool{}
 	pollingFunction := checkForMetrics(projectID, gcmService, time.Now(), metricsMap, allPodsCPU, perPodCPU)

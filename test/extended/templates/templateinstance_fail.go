@@ -1,10 +1,11 @@
 package templates
 
 import (
+	"context"
 	"fmt"
 	"time"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	corev1 "k8s.io/api/core/v1"
@@ -15,24 +16,23 @@ import (
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Conformance][templates] templateinstance creation with invalid object reports error", func() {
+var _ = g.Describe("[sig-devex][Feature:Templates] templateinstance creation with invalid object reports error", func() {
 	defer g.GinkgoRecover()
 
 	var (
-		cli             = exutil.NewCLI("templates", exutil.KubeConfigPath())
+		cli             = exutil.NewCLI("templates")
 		templatefixture = exutil.FixturePath("testdata", "templates", "templateinstance_badobject.yaml")
 	)
 
 	g.Context("", func() {
-		g.It("should report a failure on creation", func() {
-			g.Skip("Bug 1731222: skip template tests until we determine what is broken")
+		g.It("should report a failure on creation [apigroup:template.openshift.io]", func() {
 			err := cli.Run("create").Args("-f", templatefixture).Execute()
 			o.Expect(err).NotTo(o.HaveOccurred())
 
 			g.By("waiting for error to appear")
 			var templateinstance *templatev1.TemplateInstance
 			err = wait.Poll(time.Second, 1*time.Minute, func() (bool, error) {
-				templateinstance, err = cli.TemplateClient().TemplateV1().TemplateInstances(cli.Namespace()).Get("invalidtemplateinstance", metav1.GetOptions{})
+				templateinstance, err = cli.TemplateClient().TemplateV1().TemplateInstances(cli.Namespace()).Get(context.Background(), "invalidtemplateinstance", metav1.GetOptions{})
 				if err != nil {
 					return false, err
 				}

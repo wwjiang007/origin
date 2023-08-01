@@ -1,10 +1,11 @@
 package image_ecosystem
 
 import (
+	"context"
 	"fmt"
 	"time"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	"github.com/openshift/api/template"
@@ -27,11 +28,11 @@ var (
 )
 
 /*
-var _ = g.Describe("[image_ecosystem][postgresql][Slow][local] openshift postgresql replication", func() {
+var _ = g.Describe("[sig-devex][Feature:ImageEcosystem][postgresql][Slow][Local] openshift postgresql replication", func() {
 	defer g.GinkgoRecover()
 	g.Skip("db replica tests are currently flaky and disabled")
 
-	var oc = exutil.NewCLI("postgresql-replication", exutil.KubeConfigPath())
+	var oc = exutil.NewCLI("postgresql-replication")
 	var pvs = []*kapiv1.PersistentVolume{}
 	var nfspod = &kapiv1.Pod{}
 	var cleanup = func() {
@@ -39,7 +40,7 @@ var _ = g.Describe("[image_ecosystem][postgresql][Slow][local] openshift postgre
 		// before nfs server to assist with umount issues; as such, need to clean
 		// up prior to the AfterEach processing, to guaranteed deletion order
 		g.By("start cleanup")
-		if g.CurrentGinkgoTestDescription().Failed {
+		if g.CurrentSpecReport().Failed() {
 			exutil.DumpPodStates(oc)
 			exutil.DumpPodLogsStartingWith("", oc)
 			exutil.DumpImageStreams(oc)
@@ -234,7 +235,7 @@ func PostgreSQLReplicationTestFactory(oc *exutil.CLI, image string, cleanup func
 		o.Expect(err).NotTo(o.HaveOccurred())
 		assertReplicationIsWorking("postgresql-master-2", "postgresql-slave-1", 1)
 
-		pods, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).List(metav1.ListOptions{LabelSelector: exutil.ParseLabelsOrDie("deployment=postgresql-slave-1").String()})
+		pods, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).List(context.Background(), metav1.ListOptions{LabelSelector: exutil.ParseLabelsOrDie("deployment=postgresql-slave-1").String()})
 		o.Expect(err).NotTo(o.HaveOccurred())
 		o.Expect(len(pods.Items)).To(o.Equal(1))
 

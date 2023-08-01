@@ -7,14 +7,14 @@ spec:
   runPolicy: Serial
   source:
     git:
-      uri: git://github.com/openshift/ruby-hello-world.git
+      uri: https://github.com/openshift/ruby-hello-world.git
     secrets: null
     type: Git
   strategy:
     sourceStrategy:
       from:
         kind: DockerImage
-        name: centos/ruby-25-centos7
+        name: registry.access.redhat.com/ubi8/ruby-27
     type: Source
   triggers: []
 status:

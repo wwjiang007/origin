@@ -10,6 +10,7 @@ import (
 	"k8s.io/apiserver/pkg/admission"
 	"k8s.io/apiserver/pkg/admission/initializer"
 	"k8s.io/apiserver/pkg/authorization/authorizer"
+	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	coreapi "k8s.io/kubernetes/pkg/apis/core"
 	coreapiv1conversions "k8s.io/kubernetes/pkg/apis/core/v1"
@@ -51,7 +52,7 @@ func (d *sccExecRestrictions) Validate(ctx context.Context, a admission.Attribut
 		return nil
 	}
 
-	pod, err := d.client.CoreV1().Pods(a.GetNamespace()).Get(a.GetName(), metav1.GetOptions{})
+	pod, err := d.client.CoreV1().Pods(a.GetNamespace()).Get(context.TODO(), a.GetName(), metav1.GetOptions{})
 	switch {
 	case errors.IsNotFound(err):
 		return admission.NewNotFound(a)
@@ -87,7 +88,10 @@ func NewSCCExecRestrictions() *sccExecRestrictions {
 
 func (d *sccExecRestrictions) SetExternalKubeClientSet(c kubernetes.Interface) {
 	d.client = c
-	d.constraintAdmission.SetExternalKubeClientSet(c)
+}
+
+func (d *sccExecRestrictions) SetExternalKubeInformerFactory(informers informers.SharedInformerFactory) {
+	d.constraintAdmission.SetExternalKubeInformerFactory(informers)
 }
 
 func (d *sccExecRestrictions) SetSecurityInformers(informers securityv1informers.SecurityContextConstraintsInformer) {

@@ -1,11 +1,12 @@
 package image_ecosystem
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,11 +17,11 @@ import (
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[image_ecosystem][ruby][Slow] hot deploy for openshift ruby image", func() {
+var _ = g.Describe("[sig-devex][Feature:ImageEcosystem][ruby][Slow] hot deploy for openshift ruby image", func() {
 	defer g.GinkgoRecover()
 	var (
-		railsTemplate = "https://raw.githubusercontent.com/openshift/rails-ex/master/openshift/templates/rails-postgresql.json"
-		oc            = exutil.NewCLI("s2i-ruby", exutil.KubeConfigPath())
+		railsTemplate = "rails-postgresql-example"
+		oc            = exutil.NewCLI("s2i-ruby")
 		modifyCommand = []string{"sed", "-ie", `s%render :file => 'public/index.html'%%`, "app/controllers/welcome_controller.rb"}
 		removeCommand = []string{"rm", "-f", "public/index.html"}
 		dcName        = "rails-postgresql-example"
@@ -36,18 +37,18 @@ var _ = g.Describe("[image_ecosystem][ruby][Slow] hot deploy for openshift ruby 
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				exutil.DumpPodStates(oc)
 				exutil.DumpPodLogsStartingWith("", oc)
 			}
 		})
 
 		g.Describe("Rails example", func() {
-			g.It(fmt.Sprintf("should work with hot deploy"), func() {
+			g.It(fmt.Sprintf("should work with hot deploy [apigroup:image.openshift.io][apigroup:operator.openshift.io][apigroup:config.openshift.io][apigroup:build.openshift.io]"), func() {
 
 				exutil.WaitForOpenShiftNamespaceImageStreams(oc)
-				g.By(fmt.Sprintf("calling oc new-app -f %q", railsTemplate))
-				err := oc.Run("new-app").Args("-f", railsTemplate).Execute()
+				g.By(fmt.Sprintf("calling oc new-app %q", railsTemplate))
+				err := oc.Run("new-app").Args(railsTemplate).Execute()
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				g.By("waiting for build to finish")
@@ -63,7 +64,7 @@ var _ = g.Describe("[image_ecosystem][ruby][Slow] hot deploy for openshift ruby 
 				g.By("waiting for endpoint")
 				err = exutil.WaitForEndpoint(oc.KubeFramework().ClientSet, oc.Namespace(), dcName)
 				o.Expect(err).NotTo(o.HaveOccurred())
-				oldEndpoint, err := oc.KubeFramework().ClientSet.CoreV1().Endpoints(oc.Namespace()).Get(dcName, metav1.GetOptions{})
+				oldEndpoint, err := oc.KubeFramework().ClientSet.CoreV1().Endpoints(oc.Namespace()).Get(context.Background(), dcName, metav1.GetOptions{})
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				assertPageContent := func(content string, dcLabel labels.Selector) {
@@ -85,7 +86,7 @@ var _ = g.Describe("[image_ecosystem][ruby][Slow] hot deploy for openshift ruby 
 				g.By("testing application content source modification")
 				assertPageContent("Welcome to your Rails application on OpenShift", dcLabelOne)
 
-				pods, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).List(metav1.ListOptions{LabelSelector: dcLabelOne.String()})
+				pods, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).List(context.Background(), metav1.ListOptions{LabelSelector: dcLabelOne.String()})
 				o.Expect(err).NotTo(o.HaveOccurred())
 				o.Expect(len(pods.Items)).To(o.Equal(1))
 
@@ -103,7 +104,7 @@ var _ = g.Describe("[image_ecosystem][ruby][Slow] hot deploy for openshift ruby 
 				// request timeouts against the previous pod's ip.  So make sure the endpoint is pointing to the
 				// new pod before hitting it.
 				err = wait.Poll(1*time.Second, 1*time.Minute, func() (bool, error) {
-					newEndpoint, err := oc.KubeFramework().ClientSet.CoreV1().Endpoints(oc.Namespace()).Get(dcName, metav1.GetOptions{})
+					newEndpoint, err := oc.KubeFramework().ClientSet.CoreV1().Endpoints(oc.Namespace()).Get(context.Background(), dcName, metav1.GetOptions{})
 					if err != nil {
 						return false, err
 					}

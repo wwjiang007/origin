@@ -3,6 +3,7 @@ kind: StatefulSet
 metadata:
   name: testapp
 spec:
+  serviceName: frontend
   selector:
     matchLabels:
       app: testapp
@@ -14,7 +15,7 @@ spec:
     spec:
       containers:
       - name: testapp
-        image: centos/ruby-25-centos7:latest
+        image: registry.access.redhat.com/ubi8/ruby-27:latest
         command:
         - /bin/sleep
         args:

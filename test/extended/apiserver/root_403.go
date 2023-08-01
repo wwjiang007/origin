@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	"k8s.io/apimachinery/pkg/util/net"
@@ -17,10 +17,10 @@ import (
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Feature:APIServer]", func() {
+var _ = g.Describe("[sig-api-machinery][Feature:APIServer]", func() {
 	defer g.GinkgoRecover()
 
-	oc := exutil.NewCLI("apiserver", exutil.KubeConfigPath())
+	oc := exutil.NewCLIWithoutNamespace("apiserver")
 
 	g.It("anonymous browsers should get a 403 from /", func() {
 		transport, err := anonymousHttpTransport(oc.AdminConfig())
@@ -59,6 +59,9 @@ var _ = g.Describe("[Feature:APIServer]", func() {
 })
 
 func anonymousHttpTransport(restConfig *rest.Config) (*http.Transport, error) {
+	if len(restConfig.TLSClientConfig.CAData) == 0 {
+		return &http.Transport{}, nil
+	}
 	pool := x509.NewCertPool()
 	if ok := pool.AppendCertsFromPEM(restConfig.TLSClientConfig.CAData); !ok {
 		return nil, errors.New("failed to add server CA certificates to client pool")

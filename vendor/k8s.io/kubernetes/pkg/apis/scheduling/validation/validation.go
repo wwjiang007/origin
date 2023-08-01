@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	apivalidation "k8s.io/kubernetes/pkg/apis/core/validation"
 	"k8s.io/kubernetes/pkg/apis/scheduling"
+	schedulingapiv1 "k8s.io/kubernetes/pkg/apis/scheduling/v1"
 )
 
 // ValidatePriorityClass tests whether required fields in the PriorityClass are
@@ -34,7 +35,7 @@ func ValidatePriorityClass(pc *scheduling.PriorityClass) field.ErrorList {
 	// If the priorityClass starts with a system prefix, it must be one of the
 	// predefined system priority classes.
 	if strings.HasPrefix(pc.Name, scheduling.SystemPriorityClassPrefix) {
-		if is, err := scheduling.IsKnownSystemPriorityClass(pc); !is {
+		if is, err := schedulingapiv1.IsKnownSystemPriorityClass(pc.Name, pc.Value, pc.GlobalDefault); !is {
 			allErrs = append(allErrs, field.Forbidden(field.NewPath("metadata", "name"), "priority class names with '"+scheduling.SystemPriorityClassPrefix+"' prefix are reserved for system use only. error: "+err.Error()))
 		}
 	} else if pc.Value > scheduling.HighestUserDefinablePriority {
@@ -48,14 +49,15 @@ func ValidatePriorityClass(pc *scheduling.PriorityClass) field.ErrorList {
 }
 
 // ValidatePriorityClassUpdate tests if required fields in the PriorityClass are
-// set and are valid. PriorityClass does not allow updating Name, and Value.
+// set and are valid. PriorityClass does not allow updating name, value, and preemptionPolicy.
 func ValidatePriorityClassUpdate(pc, oldPc *scheduling.PriorityClass) field.ErrorList {
+	// name is immutable and is checked by the ObjectMeta validator.
 	allErrs := apivalidation.ValidateObjectMetaUpdate(&pc.ObjectMeta, &oldPc.ObjectMeta, field.NewPath("metadata"))
-	// Name is immutable and is checked by the ObjectMeta validator.
+	// value is immutable.
 	if pc.Value != oldPc.Value {
-		allErrs = append(allErrs, field.Forbidden(field.NewPath("Value"), "may not be changed in an update."))
+		allErrs = append(allErrs, field.Forbidden(field.NewPath("value"), "may not be changed in an update."))
 	}
-	// PreemptionPolicy is immutable and is checked by the ObjectMeta validator.
+	// preemptionPolicy is immutable.
 	allErrs = append(allErrs, apivalidation.ValidateImmutableField(pc.PreemptionPolicy, oldPc.PreemptionPolicy, field.NewPath("preemptionPolicy"))...)
 	return allErrs
 }

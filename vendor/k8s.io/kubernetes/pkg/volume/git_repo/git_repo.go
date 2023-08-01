@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubernetes/pkg/volume"
 	volumeutil "k8s.io/kubernetes/pkg/volume/util"
@@ -77,11 +77,7 @@ func (plugin *gitRepoPlugin) CanSupport(spec *volume.Spec) bool {
 	return spec.Volume != nil && spec.Volume.GitRepo != nil
 }
 
-func (plugin *gitRepoPlugin) IsMigratedToCSI() bool {
-	return false
-}
-
-func (plugin *gitRepoPlugin) RequiresRemount() bool {
+func (plugin *gitRepoPlugin) RequiresRemount(spec *volume.Spec) bool {
 	return false
 }
 
@@ -91,6 +87,10 @@ func (plugin *gitRepoPlugin) SupportsMountOption() bool {
 
 func (plugin *gitRepoPlugin) SupportsBulkVolumeVerification() bool {
 	return false
+}
+
+func (plugin *gitRepoPlugin) SupportsSELinuxContextMount(spec *volume.Spec) (bool, error) {
+	return false, nil
 }
 
 func (plugin *gitRepoPlugin) NewMounter(spec *volume.Spec, pod *v1.Pod, opts volume.VolumeOptions) (volume.Mounter, error) {
@@ -123,14 +123,16 @@ func (plugin *gitRepoPlugin) NewUnmounter(volName string, podUID types.UID) (vol
 	}, nil
 }
 
-func (plugin *gitRepoPlugin) ConstructVolumeSpec(volumeName, mountPath string) (*volume.Spec, error) {
+func (plugin *gitRepoPlugin) ConstructVolumeSpec(volumeName, mountPath string) (volume.ReconstructedVolume, error) {
 	gitVolume := &v1.Volume{
 		Name: volumeName,
 		VolumeSource: v1.VolumeSource{
 			GitRepo: &v1.GitRepoVolumeSource{},
 		},
 	}
-	return volume.NewSpecFromVolume(gitVolume), nil
+	return volume.ReconstructedVolume{
+		Spec: volume.NewSpecFromVolume(gitVolume),
+	}, nil
 }
 
 // gitRepo volumes are directories which are pre-filled from a git repository.
@@ -165,17 +167,10 @@ var _ volume.Mounter = &gitRepoVolumeMounter{}
 
 func (b *gitRepoVolumeMounter) GetAttributes() volume.Attributes {
 	return volume.Attributes{
-		ReadOnly:        false,
-		Managed:         true,
-		SupportsSELinux: true, // xattr change should be okay, TODO: double check
+		ReadOnly:       false,
+		Managed:        true,
+		SELinuxRelabel: true, // xattr change should be okay, TODO: double check
 	}
-}
-
-// Checks prior to mount operations to verify that the required components (binaries, etc.)
-// to mount the volume are available on the underlying node.
-// If not, it returns an error
-func (b *gitRepoVolumeMounter) CanMount() error {
-	return nil
 }
 
 // SetUp creates new directory and clones a git repo.
@@ -240,7 +235,7 @@ func (b *gitRepoVolumeMounter) SetUpAt(dir string, mounterArgs volume.MounterArg
 		return fmt.Errorf("failed to exec 'git reset --hard': %s: %v", output, err)
 	}
 
-	volume.SetVolumeOwnership(b, mounterArgs.FsGroup)
+	volume.SetVolumeOwnership(b, dir, mounterArgs.FsGroup, nil /*fsGroupChangePolicy*/, volumeutil.FSGroupCompleteHook(b.plugin, nil))
 
 	volumeutil.SetReady(b.getMetaDir())
 	return nil

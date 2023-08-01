@@ -17,7 +17,9 @@ limitations under the License.
 package gce
 
 import (
+	"context"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"os/exec"
 	"regexp"
@@ -32,6 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
+	e2epv "k8s.io/kubernetes/test/e2e/framework/pv"
 	e2eservice "k8s.io/kubernetes/test/e2e/framework/service"
 	gcecloud "k8s.io/legacy-cloud-providers/gce"
 )
@@ -45,17 +48,35 @@ func factory() (framework.ProviderInterface, error) {
 	framework.Logf("Fetching cloud provider for %q\r", framework.TestContext.Provider)
 	zone := framework.TestContext.CloudConfig.Zone
 	region := framework.TestContext.CloudConfig.Region
+	allowedZones := framework.TestContext.CloudConfig.Zones
+
+	// ensure users don't specify a zone outside of the requested zones
+	if len(zone) > 0 && len(allowedZones) > 0 {
+		var found bool
+		for _, allowedZone := range allowedZones {
+			if zone == allowedZone {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return nil, fmt.Errorf("the provided zone %q must be included in the list of allowed zones %v", zone, allowedZones)
+		}
+	}
 
 	var err error
 	if region == "" {
 		region, err = gcecloud.GetGCERegion(zone)
 		if err != nil {
-			return nil, fmt.Errorf("error parsing GCE/GKE region from zone %q: %v", zone, err)
+			return nil, fmt.Errorf("error parsing GCE/GKE region from zone %q: %w", zone, err)
 		}
 	}
 	managedZones := []string{} // Manage all zones in the region
 	if !framework.TestContext.CloudConfig.MultiZone {
 		managedZones = []string{zone}
+	}
+	if len(allowedZones) > 0 {
+		managedZones = allowedZones
 	}
 
 	gceCloud, err := gcecloud.CreateGCECloud(&gcecloud.CloudConfig{
@@ -74,10 +95,13 @@ func factory() (framework.ProviderInterface, error) {
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("Error building GCE/GKE provider: %v", err)
+		return nil, fmt.Errorf("Error building GCE/GKE provider: %w", err)
 	}
 
-	// Arbitrarily pick one of the zones we have nodes in
+	// Arbitrarily pick one of the zones we have nodes in, looking at prepopulated zones first.
+	if framework.TestContext.CloudConfig.Zone == "" && len(managedZones) > 0 {
+		framework.TestContext.CloudConfig.Zone = managedZones[rand.Intn(len(managedZones))]
+	}
 	if framework.TestContext.CloudConfig.Zone == "" && framework.TestContext.CloudConfig.MultiZone {
 		zones, err := gceCloud.GetAllZonesFromCloudProvider()
 		if err != nil {
@@ -161,14 +185,14 @@ func (p *Provider) GroupSize(group string) (int, error) {
 }
 
 // EnsureLoadBalancerResourcesDeleted ensures that cloud load balancer resources that were created
-func (p *Provider) EnsureLoadBalancerResourcesDeleted(ip, portRange string) error {
+func (p *Provider) EnsureLoadBalancerResourcesDeleted(ctx context.Context, ip, portRange string) error {
 	project := framework.TestContext.CloudConfig.ProjectID
 	region, err := gcecloud.GetGCERegion(framework.TestContext.CloudConfig.Zone)
 	if err != nil {
-		return fmt.Errorf("could not get region for zone %q: %v", framework.TestContext.CloudConfig.Zone, err)
+		return fmt.Errorf("could not get region for zone %q: %w", framework.TestContext.CloudConfig.Zone, err)
 	}
 
-	return wait.Poll(10*time.Second, 5*time.Minute, func() (bool, error) {
+	return wait.PollWithContext(ctx, 10*time.Second, 5*time.Minute, func(ctx context.Context) (bool, error) {
 		computeservice := p.gceCloud.ComputeServices().GA
 		list, err := computeservice.ForwardingRules.List(project, region).Do()
 		if err != nil {
@@ -186,7 +210,7 @@ func (p *Provider) EnsureLoadBalancerResourcesDeleted(ip, portRange string) erro
 
 func getGCEZoneForGroup(group string) (string, error) {
 	output, err := exec.Command("gcloud", "compute", "instance-groups", "managed", "list",
-		"--project="+framework.TestContext.CloudConfig.ProjectID, "--format=value(zone)", "--filter=name="+group).CombinedOutput()
+		"--project="+framework.TestContext.CloudConfig.ProjectID, "--format=value(zone)", "--filter=name="+group).Output()
 	if err != nil {
 		return "", fmt.Errorf("Failed to get zone for node group %s: %s", group, output)
 	}
@@ -199,6 +223,14 @@ func (p *Provider) DeleteNode(node *v1.Node) error {
 	project := framework.TestContext.CloudConfig.ProjectID
 
 	return p.gceCloud.DeleteInstance(project, zone, node.Name)
+}
+
+func (p *Provider) CreateShare() (string, string, string, error) {
+	return "", "", "", nil
+}
+
+func (p *Provider) DeleteShare(accountName, shareName string) error {
+	return nil
 }
 
 // CreatePD creates a persistent volume
@@ -214,7 +246,7 @@ func (p *Provider) CreatePD(zone string) (string, error) {
 	}
 
 	tags := map[string]string{}
-	if err := p.gceCloud.CreateDisk(pdName, gcecloud.DiskTypeStandard, zone, 2 /* sizeGb */, tags); err != nil {
+	if _, err := p.gceCloud.CreateDisk(pdName, gcecloud.DiskTypeStandard, zone, 2 /* sizeGb */, tags); err != nil {
 		return "", err
 	}
 	return pdName, nil
@@ -236,7 +268,7 @@ func (p *Provider) DeletePD(pdName string) error {
 }
 
 // CreatePVSource creates a persistent volume source
-func (p *Provider) CreatePVSource(zone, diskName string) (*v1.PersistentVolumeSource, error) {
+func (p *Provider) CreatePVSource(ctx context.Context, zone, diskName string) (*v1.PersistentVolumeSource, error) {
 	return &v1.PersistentVolumeSource{
 		GCEPersistentDisk: &v1.GCEPersistentDiskVolumeSource{
 			PDName:   diskName,
@@ -247,16 +279,16 @@ func (p *Provider) CreatePVSource(zone, diskName string) (*v1.PersistentVolumeSo
 }
 
 // DeletePVSource deletes a persistent volume source
-func (p *Provider) DeletePVSource(pvSource *v1.PersistentVolumeSource) error {
-	return framework.DeletePDWithRetry(pvSource.GCEPersistentDisk.PDName)
+func (p *Provider) DeletePVSource(ctx context.Context, pvSource *v1.PersistentVolumeSource) error {
+	return e2epv.DeletePDWithRetry(ctx, pvSource.GCEPersistentDisk.PDName)
 }
 
 // CleanupServiceResources cleans up GCE Service Type=LoadBalancer resources with
 // the given name. The name is usually the UUID of the Service prefixed with an
 // alpha-numeric character ('a') to work around cloudprovider rules.
-func (p *Provider) CleanupServiceResources(c clientset.Interface, loadBalancerName, region, zone string) {
-	if pollErr := wait.Poll(5*time.Second, e2eservice.LoadBalancerCleanupTimeout, func() (bool, error) {
-		if err := p.cleanupGCEResources(c, loadBalancerName, region, zone); err != nil {
+func (p *Provider) CleanupServiceResources(ctx context.Context, c clientset.Interface, loadBalancerName, region, zone string) {
+	if pollErr := wait.PollWithContext(ctx, 5*time.Second, e2eservice.LoadBalancerCleanupTimeout, func(ctx context.Context) (bool, error) {
+		if err := p.cleanupGCEResources(ctx, c, loadBalancerName, region, zone); err != nil {
 			framework.Logf("Still waiting for glbc to cleanup: %v", err)
 			return false, nil
 		}
@@ -266,13 +298,13 @@ func (p *Provider) CleanupServiceResources(c clientset.Interface, loadBalancerNa
 	}
 }
 
-func (p *Provider) cleanupGCEResources(c clientset.Interface, loadBalancerName, region, zone string) (retErr error) {
+func (p *Provider) cleanupGCEResources(ctx context.Context, c clientset.Interface, loadBalancerName, region, zone string) (retErr error) {
 	if region == "" {
 		// Attempt to parse region from zone if no region is given.
 		var err error
 		region, err = gcecloud.GetGCERegion(zone)
 		if err != nil {
-			return fmt.Errorf("error parsing GCE/GKE region from zone %q: %v", zone, err)
+			return fmt.Errorf("error parsing GCE/GKE region from zone %q: %w", zone, err)
 		}
 	}
 	if err := p.gceCloud.DeleteFirewall(gcecloud.MakeFirewallName(loadBalancerName)); err != nil &&
@@ -288,7 +320,7 @@ func (p *Provider) cleanupGCEResources(c clientset.Interface, loadBalancerName, 
 		!IsGoogleAPIHTTPErrorCode(err, http.StatusNotFound) {
 		retErr = fmt.Errorf("%v\n%v", retErr, err)
 	}
-	clusterID, err := GetClusterID(c)
+	clusterID, err := GetClusterID(ctx, c)
 	if err != nil {
 		retErr = fmt.Errorf("%v\n%v", retErr, err)
 		return
@@ -309,10 +341,10 @@ func (p *Provider) cleanupGCEResources(c clientset.Interface, loadBalancerName, 
 	return
 }
 
-// LoadBalancerSrcRanges contains the ranges of ips used by the GCE load balancers (l4 & L7)
-// for proxying client requests and performing health checks.
-func (p *Provider) LoadBalancerSrcRanges() []string {
-	return gcecloud.LoadBalancerSrcRanges()
+// L4LoadBalancerSrcRanges contains the ranges of ips used by the GCE L4 load
+// balancers for proxying client requests and performing health checks.
+func (p *Provider) L4LoadBalancerSrcRanges() []string {
+	return gcecloud.L4LoadBalancerSrcRanges()
 }
 
 // EnableAndDisableInternalLB returns functions for both enabling and disabling internal Load Balancer
@@ -352,16 +384,6 @@ func SetInstanceTags(cloudConfig framework.CloudConfig, instanceName, zone strin
 	return resTags.Items
 }
 
-// GetNodeTags gets k8s node tag from one of the nodes
-func GetNodeTags(c clientset.Interface, cloudConfig framework.CloudConfig) []string {
-	nodes := framework.GetReadySchedulableNodesOrDie(c)
-	if len(nodes.Items) == 0 {
-		framework.Logf("GetNodeTags: Found 0 node.")
-		return []string{}
-	}
-	return GetInstanceTags(cloudConfig, nodes.Items[0].Name).Items
-}
-
 // IsGoogleAPIHTTPErrorCode returns true if the error is a google api
 // error matching the corresponding HTTP error code.
 func IsGoogleAPIHTTPErrorCode(err error, code int) bool {
@@ -379,10 +401,10 @@ func GetGCECloud() (*gcecloud.Cloud, error) {
 }
 
 // GetClusterID returns cluster ID
-func GetClusterID(c clientset.Interface) (string, error) {
-	cm, err := c.CoreV1().ConfigMaps(metav1.NamespaceSystem).Get(gcecloud.UIDConfigMapName, metav1.GetOptions{})
+func GetClusterID(ctx context.Context, c clientset.Interface) (string, error) {
+	cm, err := c.CoreV1().ConfigMaps(metav1.NamespaceSystem).Get(ctx, gcecloud.UIDConfigMapName, metav1.GetOptions{})
 	if err != nil || cm == nil {
-		return "", fmt.Errorf("error getting cluster ID: %v", err)
+		return "", fmt.Errorf("error getting cluster ID: %w", err)
 	}
 	clusterID, clusterIDExists := cm.Data[gcecloud.UIDCluster]
 	providerID, providerIDExists := cm.Data[gcecloud.UIDProvider]

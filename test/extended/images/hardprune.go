@@ -1,13 +1,14 @@
 package images
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	"github.com/docker/distribution/manifest/schema2"
@@ -25,10 +26,11 @@ import (
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Feature:ImagePrune][registry][Serial][Suite:openshift/registry/serial][local] Image hard prune", func() {
+var _ = g.Describe("[sig-imageregistry][Feature:ImagePrune][Serial][Suite:openshift/registry/serial][Local] Image hard prune [apigroup:apps.openshift.io][apigroup:user.openshift.io]", func() {
 	defer g.GinkgoRecover()
-	var oc = exutil.NewCLI("prune-images", exutil.KubeConfigPath())
+	var oc = exutil.NewCLI("prune-images")
 	var originalAcceptSchema2 *bool
+	ctx := context.Background()
 
 	g.JustBeforeEach(func() {
 		if originalAcceptSchema2 == nil {
@@ -135,7 +137,7 @@ var _ = g.Describe("[Feature:ImagePrune][registry][Serial][Suite:openshift/regis
 
 		imgs := map[string]*imagev1.Image{}
 		for _, imgName := range []string{baseImg1, baseImg2, baseImg3, baseImg4, childImg1, childImg2, childImg3} {
-			img, err := oc.AsAdmin().ImageClient().ImageV1().Images().Get(imgName, metav1.GetOptions{})
+			img, err := oc.AsAdmin().ImageClient().ImageV1().Images().Get(ctx, imgName, metav1.GetOptions{})
 			o.Expect(err).NotTo(o.HaveOccurred())
 			err = imageutil.ImageWithMetadata(img)
 			o.Expect(err).NotTo(o.HaveOccurred())
@@ -159,7 +161,7 @@ var _ = g.Describe("[Feature:ImagePrune][registry][Serial][Suite:openshift/regis
 		 *  childImg3 | baseImg3 | 7 8 9  | c
 		 */
 
-		err = oc.AsAdmin().ImageClient().ImageV1().ImageStreamTags(oc.Namespace()).Delete("a:latest", nil)
+		err = oc.AsAdmin().ImageClient().ImageV1().ImageStreamTags(oc.Namespace()).Delete(ctx, "a:latest", metav1.DeleteOptions{})
 		o.Expect(err).NotTo(o.HaveOccurred())
 		deleted, err = RunHardPrune(oc, dryRun)
 		o.Expect(err).NotTo(o.HaveOccurred())
@@ -169,11 +171,11 @@ var _ = g.Describe("[Feature:ImagePrune][registry][Serial][Suite:openshift/regis
 		err = AssertDeletedStorageFiles(deleted, expectedDeletions)
 		o.Expect(err).NotTo(o.HaveOccurred())
 
-		err = oc.AsAdmin().ImageClient().ImageV1().Images().Delete(childImg1, nil)
+		err = oc.AsAdmin().ImageClient().ImageV1().Images().Delete(ctx, childImg1, metav1.DeleteOptions{})
 		o.Expect(err).NotTo(o.HaveOccurred())
 		// The repository a-tagged will not be removed even though it has no tags anymore.
 		// For the repository to be removed, the image stream itself needs to be deleted.
-		err = oc.AsAdmin().ImageClient().ImageV1().ImageStreamTags(oc.Namespace()).Delete("a-tagged:latest", nil)
+		err = oc.AsAdmin().ImageClient().ImageV1().ImageStreamTags(oc.Namespace()).Delete(ctx, "a-tagged:latest", metav1.DeleteOptions{})
 		o.Expect(err).NotTo(o.HaveOccurred())
 		deleted, err = RunHardPrune(oc, dryRun)
 		o.Expect(err).NotTo(o.HaveOccurred())
@@ -191,7 +193,7 @@ var _ = g.Describe("[Feature:ImagePrune][registry][Serial][Suite:openshift/regis
 		err = AssertDeletedStorageFiles(deleted, expectedDeletions)
 		o.Expect(err).NotTo(o.HaveOccurred())
 
-		err = oc.AsAdmin().ImageClient().ImageV1().Images().Delete(baseImg1, nil)
+		err = oc.AsAdmin().ImageClient().ImageV1().Images().Delete(ctx, baseImg1, metav1.DeleteOptions{})
 		o.Expect(err).NotTo(o.HaveOccurred())
 		deleted, err = RunHardPrune(oc, dryRun)
 		o.Expect(err).NotTo(o.HaveOccurred())
@@ -209,7 +211,7 @@ var _ = g.Describe("[Feature:ImagePrune][registry][Serial][Suite:openshift/regis
 		err = AssertDeletedStorageFiles(deleted, expectedDeletions)
 		o.Expect(err).NotTo(o.HaveOccurred())
 
-		err = oc.AsAdmin().ImageClient().ImageV1().Images().Delete(childImg2, nil)
+		err = oc.AsAdmin().ImageClient().ImageV1().Images().Delete(ctx, childImg2, metav1.DeleteOptions{})
 		o.Expect(err).NotTo(o.HaveOccurred())
 		deleted, err = RunHardPrune(oc, dryRun)
 		o.Expect(err).NotTo(o.HaveOccurred())
@@ -228,10 +230,10 @@ var _ = g.Describe("[Feature:ImagePrune][registry][Serial][Suite:openshift/regis
 		o.Expect(err).NotTo(o.HaveOccurred())
 
 		// untag both baseImg2 and childImg2
-		err = oc.AsAdmin().ImageClient().ImageV1().ImageStreams(oc.Namespace()).Delete("b", nil)
+		err = oc.AsAdmin().ImageClient().ImageV1().ImageStreams(oc.Namespace()).Delete(ctx, "b", metav1.DeleteOptions{})
 		o.Expect(err).NotTo(o.HaveOccurred())
 		delete(expectedDeletions.ManifestLinks, oc.Namespace()+"/b")
-		err = oc.AsAdmin().ImageClient().ImageV1().Images().Delete(baseImg2, nil)
+		err = oc.AsAdmin().ImageClient().ImageV1().Images().Delete(ctx, baseImg2, metav1.DeleteOptions{})
 		o.Expect(err).NotTo(o.HaveOccurred())
 		deleted, err = RunHardPrune(oc, dryRun)
 		o.Expect(err).NotTo(o.HaveOccurred())
@@ -280,7 +282,7 @@ var _ = g.Describe("[Feature:ImagePrune][registry][Serial][Suite:openshift/regis
 		err = AssertDeletedStorageFiles(deleted, expectedDeletions)
 		o.Expect(err).NotTo(o.HaveOccurred())
 
-		err = oc.AsAdmin().ImageClient().ImageV1().Images().Delete(childImg3, nil)
+		err = oc.AsAdmin().ImageClient().ImageV1().Images().Delete(ctx, childImg3, metav1.DeleteOptions{})
 		o.Expect(err).NotTo(o.HaveOccurred())
 		deleted, err = RunHardPrune(oc, dryRun)
 		o.Expect(err).NotTo(o.HaveOccurred())
@@ -325,11 +327,11 @@ var _ = g.Describe("[Feature:ImagePrune][registry][Serial][Suite:openshift/regis
 		}
 	}
 
-	g.It("should show orphaned blob deletions in dry-run mode", func() {
+	g.It("should show orphaned blob deletions in dry-run mode [apigroup:image.openshift.io]", func() {
 		testHardPrune(true)
 	})
 
-	g.It("should delete orphaned blobs", func() {
+	g.It("should delete orphaned blobs [apigroup:image.openshift.io]", func() {
 		testHardPrune(false)
 	})
 })
@@ -362,7 +364,7 @@ func (ba byAgeDesc) Less(i, j int) bool {
 
 // GetRegistryPod returns the youngest registry pod deployed.
 func GetRegistryPod(podsGetter kcoreclient.PodsGetter) (*kapiv1.Pod, error) {
-	podList, err := podsGetter.Pods(metav1.NamespaceDefault).List(metav1.ListOptions{
+	podList, err := podsGetter.Pods(metav1.NamespaceDefault).List(context.Background(), metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labels.Set{"deploymentconfig": "docker-registry"}).String(),
 	})
 	if err != nil {

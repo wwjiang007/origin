@@ -1,18 +1,25 @@
 package cluster
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
+	v1 "k8s.io/api/core/v1"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/watch"
+	clientset "k8s.io/client-go/kubernetes"
 	kclientset "k8s.io/client-go/kubernetes"
-	reale2e "k8s.io/kubernetes/test/e2e"
+	watchtools "k8s.io/client-go/tools/watch"
 	e2e "k8s.io/kubernetes/test/e2e/framework"
 
 	"github.com/openshift/origin/test/extended/cluster/metrics"
@@ -28,7 +35,7 @@ const checkPodRunningTimeout = 5 * time.Minute
 var podLabelMap = map[string]string{"purpose": "test"}
 var rootDir string
 
-var _ = g.Describe("[Feature:Performance][Serial][Slow] Load cluster", func() {
+var _ = g.Describe("[sig-scalability][Feature:Performance] Load cluster", func() {
 	defer g.GinkgoRecover()
 	var (
 		oc                = exutil.NewCLIWithoutNamespace("cl")
@@ -36,7 +43,7 @@ var _ = g.Describe("[Feature:Performance][Serial][Slow] Load cluster", func() {
 		_                 = exutil.FixturePath("testdata", "cluster", "quickstarts", "cakephp-mysql.json")
 		_                 = exutil.FixturePath("testdata", "cluster", "quickstarts", "dancer-mysql.json")
 		_                 = exutil.FixturePath("testdata", "cluster", "quickstarts", "django-postgresql.json")
-		_                 = exutil.FixturePath("testdata", "cluster", "quickstarts", "nodejs-mongodb.json")
+		_                 = exutil.FixturePath("testdata", "cluster", "quickstarts", "nodejs-postgresql.json")
 		_                 = exutil.FixturePath("testdata", "cluster", "quickstarts", "rails-postgresql.json")
 	)
 
@@ -44,26 +51,16 @@ var _ = g.Describe("[Feature:Performance][Serial][Slow] Load cluster", func() {
 	g.BeforeEach(func() {
 		var err error
 		c = oc.AdminKubeClient()
-		viperConfig := reale2e.GetViperConfig()
-		if viperConfig == "" {
-			e2e.Logf("Undefined config file, using built-in config %v\n", masterVertFixture)
-			reale2e.SetViperConfig(masterVertFixture)
-			path := strings.Split(masterVertFixture, "/")
-			rootDir = strings.Join(path[:len(path)-5], "/")
-			err = ParseConfig(masterVertFixture, true)
-		} else {
-			if _, err := os.Stat(viperConfig); os.IsNotExist(err) {
-				e2e.Failf("Config file not found: \"%v\"\n", err)
-			}
-			e2e.Logf("Using config \"%v\"\n", viperConfig)
-			err = ParseConfig(viperConfig, false)
-		}
+		e2e.Logf("Undefined config file, using built-in config %v\n", masterVertFixture)
+		path := strings.Split(masterVertFixture, "/")
+		rootDir = strings.Join(path[:len(path)-5], "/")
+		err = ParseConfig(masterVertFixture, true)
 		if err != nil {
 			e2e.Failf("Error parsing config: %v\n", err)
 		}
 	})
 
-	g.It("should load the cluster", func() {
+	g.It("should populate the cluster [Slow][Serial][apigroup:template.openshift.io][apigroup:apps.openshift.io][apigroup:build.openshift.io]", func() {
 		project := ConfigContext.ClusterLoader.Projects
 		tuningSets := ConfigContext.ClusterLoader.TuningSets
 		sync := ConfigContext.ClusterLoader.Sync
@@ -152,7 +149,7 @@ var _ = g.Describe("[Feature:Performance][Serial][Slow] Load cluster", func() {
 						}
 					}
 					step := metrics.NewTemplateStepDuration(rateDelay, stepPause)
-					err := CreateTemplates(oc, c, nsName, reale2e.GetViperConfig(), template, tuning, &step)
+					err := CreateTemplates(oc, c, nsName, template, tuning, &step)
 					o.Expect(err).NotTo(o.HaveOccurred())
 					steps = append(steps, step)
 				}
@@ -163,7 +160,7 @@ var _ = g.Describe("[Feature:Performance][Serial][Slow] Load cluster", func() {
 					var err error
 					if pod.File != "" {
 						// Parse Pod file into struct
-						path, err = mkPath(pod.File, reale2e.GetViperConfig())
+						path, err = mkPath(pod.File)
 						o.Expect(err).NotTo(o.HaveOccurred())
 					}
 
@@ -178,7 +175,7 @@ var _ = g.Describe("[Feature:Performance][Serial][Slow] Load cluster", func() {
 						configMapName := InjectConfigMap(c, nsName, pod.Parameters, config)
 						// Cleanup ConfigMap at some point after the Pods are created
 						defer func() {
-							_ = c.CoreV1().ConfigMaps(nsName).Delete(configMapName, nil)
+							_ = c.CoreV1().ConfigMaps(nsName).Delete(context.Background(), configMapName, metav1.DeleteOptions{})
 						}()
 					}
 					// TODO sjug: pass label via config
@@ -237,7 +234,7 @@ var _ = g.Describe("[Feature:Performance][Serial][Slow] Load cluster", func() {
 		if ConfigContext.ClusterLoader.Cleanup == true {
 			for _, ns := range namespaces {
 				e2e.Logf("Deleting project %s", ns)
-				err := oc.AsAdmin().KubeClient().CoreV1().Namespaces().Delete(ns, nil)
+				err := oc.AsAdmin().KubeClient().CoreV1().Namespaces().Delete(context.Background(), ns, metav1.DeleteOptions{})
 				o.Expect(err).NotTo(o.HaveOccurred())
 			}
 		}
@@ -248,7 +245,7 @@ var _ = g.Describe("[Feature:Performance][Serial][Slow] Load cluster", func() {
 func postCreateWait(oc *util.CLI, namespaces []string) error {
 	// Wait for builds and deployments to complete
 	for _, ns := range namespaces {
-		rcList, err := oc.AdminKubeClient().CoreV1().ReplicationControllers(ns).List(metav1.ListOptions{})
+		rcList, err := oc.AdminKubeClient().CoreV1().ReplicationControllers(ns).List(context.Background(), metav1.ListOptions{})
 		if err != nil {
 			return fmt.Errorf("Error listing RCs: %v", err)
 		}
@@ -257,7 +254,7 @@ func postCreateWait(oc *util.CLI, namespaces []string) error {
 			e2e.Logf("Waiting for %d RCs in namespace %s", rcCount, ns)
 			for _, rc := range rcList.Items {
 				e2e.Logf("Waiting for RC: %s", rc.Name)
-				err := e2e.WaitForRCToStabilize(oc.AdminKubeClient(), ns, rc.Name, checkPodRunningTimeout)
+				err := waitForRCToStabilize(oc.AdminKubeClient(), ns, rc.Name, checkPodRunningTimeout)
 				if err != nil {
 					return fmt.Errorf("Error in waiting for RC to stabilize: %v", err)
 				}
@@ -269,7 +266,7 @@ func postCreateWait(oc *util.CLI, namespaces []string) error {
 		}
 
 		podLabels := exutil.ParseLabelsOrDie(mapToString(podLabelMap))
-		podList, err := oc.AdminKubeClient().CoreV1().Pods(ns).List(metav1.ListOptions{LabelSelector: podLabels.String()})
+		podList, err := oc.AdminKubeClient().CoreV1().Pods(ns).List(context.Background(), metav1.ListOptions{LabelSelector: podLabels.String()})
 		if err != nil {
 			return fmt.Errorf("Error in listing pods: %v", err)
 		}
@@ -286,7 +283,7 @@ func postCreateWait(oc *util.CLI, namespaces []string) error {
 			e2e.Logf("All pods in namespace %s running", ns)
 		}
 
-		buildList, err := oc.AsAdmin().BuildClient().BuildV1().Builds(ns).List(metav1.ListOptions{})
+		buildList, err := oc.AsAdmin().BuildClient().BuildV1().Builds(ns).List(context.Background(), metav1.ListOptions{})
 		if err != nil {
 			return fmt.Errorf("Error in listing builds: %v", err)
 		}
@@ -304,7 +301,7 @@ func postCreateWait(oc *util.CLI, namespaces []string) error {
 
 		}
 
-		dcList, err := oc.AsAdmin().AppsClient().AppsV1().DeploymentConfigs(ns).List(metav1.ListOptions{})
+		dcList, err := oc.AsAdmin().AppsClient().AppsV1().DeploymentConfigs(ns).List(context.Background(), metav1.ListOptions{})
 		if err != nil {
 			return fmt.Errorf("Error listing DeploymentConfigs: %v", err)
 		}
@@ -323,7 +320,7 @@ func postCreateWait(oc *util.CLI, namespaces []string) error {
 }
 
 // mkPath returns fully qualfied file path as a string
-func mkPath(filename, config string) (string, error) {
+func mkPath(filename string) (string, error) {
 	// Use absolute path if provided in config
 	if filepath.IsAbs(filename) {
 		return filename, nil
@@ -338,10 +335,8 @@ func mkPath(filename, config string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	configDir := filepath.Dir(config)
 
 	searchPaths = append(searchPaths, filepath.Join(workingDir, filename))
-	searchPaths = append(searchPaths, filepath.Join(configDir, filename))
 
 	for _, v := range searchPaths {
 		if _, err := os.Stat(v); err == nil {
@@ -350,4 +345,36 @@ func mkPath(filename, config string) (string, error) {
 	}
 
 	return "", fmt.Errorf("unable to find pod/template file %s\n", filename)
+}
+
+// waitForRCToStabilize waits till the RC has a matching generation/replica count between spec and status.
+func waitForRCToStabilize(c clientset.Interface, ns, name string, timeout time.Duration) error {
+	options := metav1.ListOptions{FieldSelector: fields.Set{
+		"metadata.name":      name,
+		"metadata.namespace": ns,
+	}.AsSelector().String()}
+	w, err := c.CoreV1().ReplicationControllers(ns).Watch(context.Background(), options)
+	if err != nil {
+		return err
+	}
+	ctx, cancel := watchtools.ContextWithOptionalTimeout(context.Background(), timeout)
+	defer cancel()
+	_, err = watchtools.UntilWithoutRetry(ctx, w, func(event watch.Event) (bool, error) {
+		switch event.Type {
+		case watch.Deleted:
+			return false, apierrs.NewNotFound(schema.GroupResource{Resource: "replicationcontrollers"}, "")
+		}
+		switch rc := event.Object.(type) {
+		case *v1.ReplicationController:
+			if rc.Name == name && rc.Namespace == ns &&
+				rc.Generation <= rc.Status.ObservedGeneration &&
+				*(rc.Spec.Replicas) == rc.Status.Replicas {
+				return true, nil
+			}
+			e2e.Logf("Waiting for rc %s to stabilize, generation %v observed generation %v spec.replicas %d status.replicas %d",
+				name, rc.Generation, rc.Status.ObservedGeneration, *(rc.Spec.Replicas), rc.Status.Replicas)
+		}
+		return false, nil
+	})
+	return err
 }

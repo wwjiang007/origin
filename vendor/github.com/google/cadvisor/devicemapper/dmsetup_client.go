@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package devicemapper
 
 import (
@@ -18,7 +19,7 @@ import (
 	"strconv"
 	"strings"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // DmsetupClient is a low-level client for interacting with device mapper via

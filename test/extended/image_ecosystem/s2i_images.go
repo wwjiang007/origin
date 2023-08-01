@@ -1,6 +1,8 @@
 package image_ecosystem
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type ImageBaseType string
 
@@ -12,102 +14,184 @@ type tc struct {
 	// Expected output from the command
 	Expected string
 
-	// Repository is either openshift/ or rhcsl/
-	// The default is 'openshift'
-	Repository string
+	// Tag is the image tag to correlates to the Version string
+	Tag string
 
 	// Internal: We resolve this in JustBeforeEach
 	DockerImageReference string
+
+	// Architectures on which this image is available
+	Arches []string
 }
 
 // This is a complete list of supported S2I images
 var s2iImages = map[string][]tc{
 	"ruby": {
 		{
-			Version:    "22",
-			Cmd:        "ruby --version",
-			Expected:   "ruby 2.2",
-			Repository: "centos",
+			Version:  "30",
+			Cmd:      "ruby --version",
+			Expected: "ruby 3.0",
+			Tag:      "3.0-ubi8",
+			Arches:   []string{"amd64", "arm64", "ppc64le", "s390x"},
 		},
 		{
-			Version:    "23",
-			Cmd:        "ruby --version",
-			Expected:   "ruby 2.3",
-			Repository: "centos",
+			Version:  "30",
+			Cmd:      "ruby --version",
+			Expected: "ruby 3.0",
+			Tag:      "3.0-ubi7",
+			Arches:   []string{"amd64", "ppc64le", "s390x"},
 		},
 		{
-			Version:    "24",
-			Cmd:        "ruby --version",
-			Expected:   "ruby 2.4",
-			Repository: "centos",
+			Version:  "27",
+			Cmd:      "ruby --version",
+			Expected: "ruby 2.7",
+			Tag:      "2.7-ubi8",
+			Arches:   []string{"amd64", "arm64", "ppc64le", "s390x"},
+		},
+		{
+			Version:  "27",
+			Cmd:      "ruby --version",
+			Expected: "ruby 2.7",
+			Tag:      "2.7-ubi7",
+			Arches:   []string{"amd64", "ppc64le", "s390x"},
+		},
+		{
+			Version:  "25",
+			Cmd:      "ruby --version",
+			Expected: "ruby 2.5",
+			Tag:      "2.5-ubi8",
+			Arches:   []string{"amd64", "arm64", "ppc64le", "s390x"},
 		},
 	},
 	"python": {
 		{
-			Version:    "27",
-			Cmd:        "python --version",
-			Expected:   "Python 2.7",
-			Repository: "centos",
+			Version:  "27",
+			Cmd:      "python --version",
+			Expected: "Python 2.7",
+			Tag:      "2.7-ubi8",
+			Arches:   []string{"amd64", "arm64", "ppc64le", "s390x"},
 		},
 		{
-			Version:    "34",
-			Cmd:        "python --version",
-			Expected:   "Python 3.4",
-			Repository: "centos",
+			Version:  "36",
+			Cmd:      "python --version",
+			Expected: "Python 3.6",
+			Tag:      "3.6-ubi8",
+			Arches:   []string{"amd64", "arm64", "ppc64le", "s390x"},
 		},
 		{
-			Version:    "35",
-			Cmd:        "python --version",
-			Expected:   "Python 3.5",
-			Repository: "centos",
+			Version:  "38",
+			Cmd:      "python --version",
+			Expected: "Python 3.8",
+			Tag:      "3.8-ubi8",
+			Arches:   []string{"amd64", "arm64", "ppc64le", "s390x"},
 		},
 		{
-			Version:    "36",
-			Cmd:        "python --version",
-			Expected:   "Python 3.6",
-			Repository: "centos",
+			Version:  "38",
+			Cmd:      "python --version",
+			Expected: "Python 3.8",
+			Tag:      "3.8-ubi7",
+			Arches:   []string{"amd64", "ppc64le", "s390x"},
+		},
+		{
+			Version:  "39",
+			Cmd:      "python --version",
+			Expected: "Python 3.9",
+			Tag:      "3.9-ubi8",
+			Arches:   []string{"amd64", "arm64", "ppc64le", "s390x"},
 		},
 	},
 	"nodejs": {
 		{
-			Version:    "4",
-			Cmd:        "node --version",
-			Expected:   "v4",
-			Repository: "centos",
+			Version:  "16",
+			Cmd:      "node --version",
+			Expected: "v16",
+			Tag:      "16-ubi8",
+			Arches:   []string{"amd64", "arm64", "ppc64le", "s390x"},
 		},
 		{
-			Version:    "6",
-			Cmd:        "node --version",
-			Expected:   "v6",
-			Repository: "centos",
+			Version:  "14",
+			Cmd:      "node --version",
+			Expected: "v14",
+			Tag:      "14-ubi7",
+			Arches:   []string{"amd64", "ppc64le", "s390x"},
 		},
 	},
 	"perl": {
 		{
-			Version:    "520",
-			Cmd:        "perl --version",
-			Expected:   "v5.20",
-			Repository: "centos",
+			Version:  "532",
+			Cmd:      "perl --version",
+			Expected: "v5.32",
+			Tag:      "5.32-ubi8",
+			Arches:   []string{"amd64", "arm64", "ppc64le", "s390x"},
 		},
 		{
-			Version:    "524",
-			Cmd:        "perl --version",
-			Expected:   "v5.24",
-			Repository: "centos",
+			Version:  "530",
+			Cmd:      "perl --version",
+			Expected: "v5.30",
+			Tag:      "5.30-ubi8",
+			Arches:   []string{"amd64", "arm64", "ppc64le", "s390x"},
+		},
+		{
+			Version:  "530",
+			Cmd:      "perl --version",
+			Expected: "v5.30",
+			Tag:      "5.30-el7",
+			Arches:   []string{"amd64", "ppc64le", "s390x"},
+		},
+		{
+			Version:  "526",
+			Cmd:      "perl --version",
+			Expected: "v5.26",
+			Tag:      "5.26-ubi8",
+			Arches:   []string{"amd64", "arm64", "ppc64le", "s390x"},
 		},
 	},
 	"php": {
 		{
-			Version:    "56",
-			Cmd:        "php --version",
-			Expected:   "5.6",
-			Repository: "centos",
+			Version:  "80",
+			Cmd:      "php --version",
+			Expected: "8.0",
+			Tag:      "8.0-ubi8",
+			Arches:   []string{"amd64", "arm64", "ppc64le", "s390x"},
 		},
 		{
-			Version:    "70",
-			Cmd:        "php --version",
-			Expected:   "7.0",
-			Repository: "centos",
+			Version:  "74",
+			Cmd:      "php --version",
+			Expected: "7.4",
+			Tag:      "7.4-ubi8",
+			Arches:   []string{"amd64", "arm64", "ppc64le", "s390x"},
+		},
+		{
+			Version:  "73",
+			Cmd:      "php --version",
+			Expected: "7.3",
+			Tag:      "7.3-ubi7",
+			Arches:   []string{"amd64", "ppc64le", "s390x"},
+		},
+	},
+	"nginx": {
+		{
+			Version:  "120",
+			Cmd:      "nginx -V",
+			Expected: "nginx/1.20",
+			Tag:      "1.20-ubi8",
+			Arches:   []string{"amd64", "arm64", "ppc64le", "s390x"},
+		},
+		{
+			Version:  "120",
+			Cmd:      "nginx -V",
+			Expected: "nginx/1.20",
+			Tag:      "1.20-ubi7",
+			Arches:   []string{"amd64", "ppc64le", "s390x"},
+		},
+	},
+	"dotnet": {
+		{
+			Version:  "60",
+			Cmd:      "dotnet --version",
+			Expected: "6.0",
+			Tag:      "6.0-ubi8",
+			Arches:   []string{"amd64", "arm64", "s390x"},
 		},
 	},
 }
@@ -125,8 +209,5 @@ func GetTestCaseForImages() map[string][]tc {
 
 // resolveDockerImageReferences resolves the pull specs for all images
 func resolveDockerImageReference(name string, t *tc) {
-	if len(t.Repository) == 0 {
-		t.Repository = "openshift"
-	}
-	t.DockerImageReference = fmt.Sprintf("%s/%s-%s-centos7", t.Repository, name, t.Version)
+	t.DockerImageReference = fmt.Sprintf("image-registry.openshift-image-registry.svc:5000/openshift/%s:%s", name, t.Tag)
 }

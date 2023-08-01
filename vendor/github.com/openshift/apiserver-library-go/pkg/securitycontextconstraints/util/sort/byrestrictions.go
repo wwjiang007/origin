@@ -1,9 +1,10 @@
 package sort
 
 import (
+	"fmt"
 	"strings"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -26,22 +27,38 @@ func (s ByRestrictions) Less(i, j int) bool {
 // restrictive SCC is. Make sure that weak restrictions are always valued
 // higher than the combination of the strong restrictions.
 
+// To be able to reason about what restriction was favored to be more restrictive
+// ensure that number ranges between distinct restrictions are mutually exclusive.
+
 type points int
 
 const (
-	privilegedPoints points = 1000000
+	// max total 3_189_999 = 1_600_000 + 1_589_999
+	privilegedPoints points = 1_600_000
 
-	hostNetworkPoints points = 200000
-	hostPortsPoints   points = 400000
+	// max total: 1_589_999 = 800_000 + 789_999
+	hostPortsPoints points = 800_000
 
-	hostVolumePoints       points = 100000
-	nonTrivialVolumePoints points = 50000
+	// max total: 789_999 = 400_000 + 389_999
+	hostNetworkPoints points = 400_000
 
-	runAsAnyUserPoints points = 40000
-	runAsNonRootPoints points = 30000
-	runAsRangePoints   points = 20000
-	runAsUserPoints    points = 10000
+	// max total: 389_999 = 200_000 + 189_999
+	hostVolumePoints points = 200_000
 
+	// max total 189_999 = 100_000 + 89_999
+	nonTrivialVolumePoints points = 100_000
+
+	// Note: boundaries for runAs* must be considered twice,
+	// because they are accumulated for both SELinuxContext.Type
+	// and RunAsUser.Type.
+	//
+	// max total 89_999 = (40_000 * 2) + 9999
+	runAsAnyUserPoints points = 40_000
+	runAsNonRootPoints points = 30_000
+	runAsRangePoints   points = 20_000
+	runAsUserPoints    points = 10_000
+
+	// cap* max points = 9999
 	capDefaultPoints  points = 5000
 	capAddOnePoints   points = 300
 	capAllowAllPoints points = 4000
@@ -53,6 +70,54 @@ const (
 
 	noPoints points = 0
 )
+
+func moreRestrictiveReason(p, q points) string {
+	if p >= q {
+		return ""
+	}
+
+	var done bool
+	var reason string
+	dueTo := func(x points, what string) (points, points, string, bool) {
+		switch {
+		case p >= x && q >= x:
+			p -= x
+			q -= x
+		case p < x && q >= x:
+			return p, q, fmt.Sprintf("forbids %s", what), true
+		}
+		return p, q, "", false
+	}
+	if p, q, reason, done = dueTo(privilegedPoints, "privileged"); done {
+		return reason
+	}
+	if p, q, reason, done = dueTo(hostPortsPoints, "host ports"); done {
+		return reason
+	}
+	if p, q, reason, done = dueTo(hostNetworkPoints, "host networking"); done {
+		return reason
+	}
+	if p, q, reason, done = dueTo(hostVolumePoints, "host volume mounts"); done {
+		return reason
+	}
+	if p, q, reason, done = dueTo(nonTrivialVolumePoints, "non-trivial volume mounts"); done {
+		return reason
+	}
+
+	runsAsP, capP := p/10000, p%10000
+	runsAsQ, capQ := q/10000, q%10000
+
+	if runsAsP < runsAsQ {
+		// this can be either SELinuxContext.Type or RunAsUser.Type
+		return "permits less runAs strategies"
+	}
+	if capP < capQ {
+		return "permits less capabilities"
+	}
+
+	// this should never happen due to the comparison at the very top
+	return "is equally restrictive"
+}
 
 // pointValue places a value on the SCC based on the settings of the SCC that can be used
 // to determine how restrictive it is.  The lower the number, the more restrictive it is.
@@ -105,9 +170,9 @@ func pointValue(constraint *securityv1.SecurityContextConstraints) points {
 }
 
 // volumePointValue returns a score based on the volumes allowed by the SCC.
-// Allowing a host volume will return a score of 100000.  Allowance of anything other
+// Allowing a host volume will return a score of 200_000.  Allowance of anything other
 // than Secret, ConfigMap, EmptyDir, DownwardAPI, Projected, and None will result in
-// a score of 50000.  If the SCC only allows these trivial types, it will have a
+// a score of 100_000.  If the SCC only allows these trivial types, it will have a
 // score of 0.
 func volumePointValue(scc *securityv1.SecurityContextConstraints) points {
 	hasHostVolume := false
@@ -151,6 +216,7 @@ func hasCap(needle string, haystack []corev1.Capability) bool {
 // capabilitiesPointValue returns a score based on the capabilities allowed,
 // added, or removed by the SCC. This allow us to prefer the more restrictive
 // SCC.
+// It never returns a score higher than capMaxPoints and lower than capMinPoints.
 func capabilitiesPointValue(scc *securityv1.SecurityContextConstraints) points {
 	capsPoints := capDefaultPoints
 	capsPoints += capAddOnePoints * points(len(scc.DefaultAddCapabilities))

@@ -3,15 +3,18 @@ package builds
 import (
 	"fmt"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
+
+	admissionapi "k8s.io/pod-security-admission/api"
+
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Feature:Builds][Conformance] custom build with buildah", func() {
+var _ = g.Describe("[sig-builds][Feature:Builds] custom build with buildah", func() {
 	defer g.GinkgoRecover()
 	var (
-		oc                 = exutil.NewCLI("custom-build", exutil.KubeConfigPath())
+		oc                 = exutil.NewCLIWithPodSecurityLevel("custom-build", admissionapi.LevelBaseline)
 		customBuildAdd     = exutil.FixturePath("testdata", "builds", "custom-build")
 		customBuildFixture = exutil.FixturePath("testdata", "builds", "test-custom-build.yaml")
 	)
@@ -23,7 +26,7 @@ var _ = g.Describe("[Feature:Builds][Conformance] custom build with buildah", fu
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				exutil.DumpPodStates(oc)
 				exutil.DumpConfigMapStates(oc)
 				exutil.DumpPodLogsStartingWith("", oc)
@@ -31,7 +34,7 @@ var _ = g.Describe("[Feature:Builds][Conformance] custom build with buildah", fu
 		})
 
 		g.Describe("being created from new-build", func() {
-			g.It("should complete build with custom builder image", func() {
+			g.It("should complete build with custom builder image [apigroup:build.openshift.io]", func() {
 				g.By("create custom builder image")
 				err := oc.Run("new-build").Args("--binary", "--strategy=docker", "--name=custom-builder-image").Execute()
 				o.Expect(err).NotTo(o.HaveOccurred())

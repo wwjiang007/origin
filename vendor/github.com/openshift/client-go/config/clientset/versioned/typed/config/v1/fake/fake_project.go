@@ -3,7 +3,12 @@
 package fake
 
 import (
+	"context"
+	json "encoding/json"
+	"fmt"
+
 	configv1 "github.com/openshift/api/config/v1"
+	applyconfigurationsconfigv1 "github.com/openshift/client-go/config/applyconfigurations/config/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -22,7 +27,7 @@ var projectsResource = schema.GroupVersionResource{Group: "config.openshift.io",
 var projectsKind = schema.GroupVersionKind{Group: "config.openshift.io", Version: "v1", Kind: "Project"}
 
 // Get takes name of the project, and returns the corresponding project object, and an error if there is any.
-func (c *FakeProjects) Get(name string, options v1.GetOptions) (result *configv1.Project, err error) {
+func (c *FakeProjects) Get(ctx context.Context, name string, options v1.GetOptions) (result *configv1.Project, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootGetAction(projectsResource, name), &configv1.Project{})
 	if obj == nil {
@@ -32,7 +37,7 @@ func (c *FakeProjects) Get(name string, options v1.GetOptions) (result *configv1
 }
 
 // List takes label and field selectors, and returns the list of Projects that match those selectors.
-func (c *FakeProjects) List(opts v1.ListOptions) (result *configv1.ProjectList, err error) {
+func (c *FakeProjects) List(ctx context.Context, opts v1.ListOptions) (result *configv1.ProjectList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootListAction(projectsResource, projectsKind, opts), &configv1.ProjectList{})
 	if obj == nil {
@@ -53,13 +58,13 @@ func (c *FakeProjects) List(opts v1.ListOptions) (result *configv1.ProjectList, 
 }
 
 // Watch returns a watch.Interface that watches the requested projects.
-func (c *FakeProjects) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeProjects) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewRootWatchAction(projectsResource, opts))
 }
 
 // Create takes the representation of a project and creates it.  Returns the server's representation of the project, and an error, if there is any.
-func (c *FakeProjects) Create(project *configv1.Project) (result *configv1.Project, err error) {
+func (c *FakeProjects) Create(ctx context.Context, project *configv1.Project, opts v1.CreateOptions) (result *configv1.Project, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootCreateAction(projectsResource, project), &configv1.Project{})
 	if obj == nil {
@@ -69,7 +74,7 @@ func (c *FakeProjects) Create(project *configv1.Project) (result *configv1.Proje
 }
 
 // Update takes the representation of a project and updates it. Returns the server's representation of the project, and an error, if there is any.
-func (c *FakeProjects) Update(project *configv1.Project) (result *configv1.Project, err error) {
+func (c *FakeProjects) Update(ctx context.Context, project *configv1.Project, opts v1.UpdateOptions) (result *configv1.Project, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootUpdateAction(projectsResource, project), &configv1.Project{})
 	if obj == nil {
@@ -80,7 +85,7 @@ func (c *FakeProjects) Update(project *configv1.Project) (result *configv1.Proje
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeProjects) UpdateStatus(project *configv1.Project) (*configv1.Project, error) {
+func (c *FakeProjects) UpdateStatus(ctx context.Context, project *configv1.Project, opts v1.UpdateOptions) (*configv1.Project, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootUpdateSubresourceAction(projectsResource, "status", project), &configv1.Project{})
 	if obj == nil {
@@ -90,24 +95,67 @@ func (c *FakeProjects) UpdateStatus(project *configv1.Project) (*configv1.Projec
 }
 
 // Delete takes name of the project and deletes it. Returns an error if one occurs.
-func (c *FakeProjects) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeProjects) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteAction(projectsResource, name), &configv1.Project{})
+		Invokes(testing.NewRootDeleteActionWithOptions(projectsResource, name, opts), &configv1.Project{})
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeProjects) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(projectsResource, listOptions)
+func (c *FakeProjects) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewRootDeleteCollectionAction(projectsResource, listOpts)
 
 	_, err := c.Fake.Invokes(action, &configv1.ProjectList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched project.
-func (c *FakeProjects) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *configv1.Project, err error) {
+func (c *FakeProjects) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *configv1.Project, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootPatchSubresourceAction(projectsResource, name, pt, data, subresources...), &configv1.Project{})
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*configv1.Project), err
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied project.
+func (c *FakeProjects) Apply(ctx context.Context, project *applyconfigurationsconfigv1.ProjectApplyConfiguration, opts v1.ApplyOptions) (result *configv1.Project, err error) {
+	if project == nil {
+		return nil, fmt.Errorf("project provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(project)
+	if err != nil {
+		return nil, err
+	}
+	name := project.Name
+	if name == nil {
+		return nil, fmt.Errorf("project.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewRootPatchSubresourceAction(projectsResource, *name, types.ApplyPatchType, data), &configv1.Project{})
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*configv1.Project), err
+}
+
+// ApplyStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
+func (c *FakeProjects) ApplyStatus(ctx context.Context, project *applyconfigurationsconfigv1.ProjectApplyConfiguration, opts v1.ApplyOptions) (result *configv1.Project, err error) {
+	if project == nil {
+		return nil, fmt.Errorf("project provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(project)
+	if err != nil {
+		return nil, err
+	}
+	name := project.Name
+	if name == nil {
+		return nil, fmt.Errorf("project.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewRootPatchSubresourceAction(projectsResource, *name, types.ApplyPatchType, data, "status"), &configv1.Project{})
 	if obj == nil {
 		return nil, err
 	}

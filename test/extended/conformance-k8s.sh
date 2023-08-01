@@ -40,10 +40,10 @@ To recreate these results
 
     test/extended/conformance-k8s.sh
 
-Nightly conformance tests are run against release branches and reported https://openshift-gce-devel.appspot.com/builds/origin-ci-test/logs/test_branch_origin_extended_conformance_k8s/
+Nightly conformance tests are run against release branches and reported https://openshift-gce-devel.appspot.com/builds/origin-ci-test/logs/periodic-ci-origin-conformance-k8s/
 END
 
-version="${KUBERNETES_VERSION:-release-1.14}"
+version="${KUBERNETES_VERSION:-release-1.18}"
 kubernetes="${KUBERNETES_ROOT:-${OS_ROOT}/../../../k8s.io/kubernetes}"
 if [[ -d "${kubernetes}" ]]; then
   git fetch origin --tags
@@ -64,8 +64,7 @@ os::log::info "Running Kubernetes conformance suite for ${version}"
 # Execute OpenShift prerequisites
 # Disable container security
 oc adm policy add-scc-to-group privileged system:authenticated system:serviceaccounts
-oc adm policy remove-scc-from-group restricted system:authenticated
-oc adm policy remove-scc-from-group anyuid system:cluster-admins
+oc adm policy add-scc-to-group anyuid system:authenticated system:serviceaccounts
 # Mark the master nodes as unschedulable so tests ignore them
 oc get nodes -o name -l 'node-role.kubernetes.io/master' | xargs -L1 oc adm cordon
 unschedulable="$( ( oc get nodes -o name -l 'node-role.kubernetes.io/master'; ) | wc -l )"
@@ -76,17 +75,32 @@ pushd "${kubernetes}" > /dev/null
 git checkout "${version}"
 make WHAT=cmd/kubectl
 make WHAT=test/e2e/e2e.test
+make WHAT=vendor/github.com/onsi/ginkgo/v2/ginkgo
 export PATH="${kubernetes}/_output/local/bin/$( os::build::host_platform ):${PATH}"
 
 kubectl version  > "${test_report_dir}/version.txt"
 echo "-----"    >> "${test_report_dir}/version.txt"
 oc version      >> "${test_report_dir}/version.txt"
 
-# Run the test
-e2e.test '-ginkgo.focus=\[Conformance\]' \
-  -report-dir "${test_report_dir}" -ginkgo.noColor \
+# Run the test, serial tests first, then parallel
+
+rc=0
+
+ginkgo \
+  -nodes 1 -noColor '-focus=(\[Conformance\].*\[Serial\]|\[Serial\].*\[Conformance\])' $( which e2e.test ) -- \
+  -report-dir "${test_report_dir}" \
   -allowed-not-ready-nodes ${unschedulable} \
-  2>&1 | tee "${test_report_dir}/e2e.log"
+  2>&1 | tee -a "${test_report_dir}/e2e.log" || rc=1
+
+rename -v junit_ junit_serial_ ${test_report_dir}/junit*.xml
+
+ginkgo \
+  -nodes 4 -noColor '-skip=\[Serial\]' '-focus=\[Conformance\]' $( which e2e.test ) -- \
+  -report-dir "${test_report_dir}" \
+  -allowed-not-ready-nodes ${unschedulable} \
+  2>&1 | tee -a "${test_report_dir}/e2e.log" || rc=1
 
 echo
 echo "Run complete, results in ${test_report_dir}"
+
+exit $rc

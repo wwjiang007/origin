@@ -1,4 +1,4 @@
-apiVersion: v1
+apiVersion: build.openshift.io/v1
 kind: BuildConfig
 metadata:
   name: myphp
@@ -13,11 +13,12 @@ spec:
     type: Source
     sourceStrategy:
       env:
+        - name: "BUILD_LOGLEVEL"
+          value: "2"
         - name: FIELDREF_ENV
           valueFrom:
             fieldRef:
               fieldPath: metadata.nofield
       from:
-        kind: ImageStreamTag
-        namespace: openshift
-        name: 'php:7.0'
+        kind: DockerImage
+        name: registry.redhat.io/ubi8/php-74:latest

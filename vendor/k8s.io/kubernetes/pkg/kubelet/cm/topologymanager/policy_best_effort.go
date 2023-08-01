@@ -16,11 +16,11 @@ limitations under the License.
 
 package topologymanager
 
-import (
-	"k8s.io/kubernetes/pkg/kubelet/lifecycle"
-)
-
-type bestEffortPolicy struct{}
+type bestEffortPolicy struct {
+	// numaInfo represents list of NUMA Nodes available on the underlying machine and distances between them
+	numaInfo *NUMAInfo
+	opts     PolicyOptions
+}
 
 var _ Policy = &bestEffortPolicy{}
 
@@ -28,16 +28,22 @@ var _ Policy = &bestEffortPolicy{}
 const PolicyBestEffort string = "best-effort"
 
 // NewBestEffortPolicy returns best-effort policy.
-func NewBestEffortPolicy() Policy {
-	return &bestEffortPolicy{}
+func NewBestEffortPolicy(numaInfo *NUMAInfo, opts PolicyOptions) Policy {
+	return &bestEffortPolicy{numaInfo: numaInfo, opts: opts}
 }
 
 func (p *bestEffortPolicy) Name() string {
 	return PolicyBestEffort
 }
 
-func (p *bestEffortPolicy) CanAdmitPodResult(hint *TopologyHint) lifecycle.PodAdmitResult {
-	return lifecycle.PodAdmitResult{
-		Admit: true,
-	}
+func (p *bestEffortPolicy) canAdmitPodResult(hint *TopologyHint) bool {
+	return true
+}
+
+func (p *bestEffortPolicy) Merge(providersHints []map[string][]TopologyHint) (TopologyHint, bool) {
+	filteredHints := filterProvidersHints(providersHints)
+	merger := NewHintMerger(p.numaInfo, filteredHints, p.Name(), p.opts)
+	bestHint := merger.Merge()
+	admit := p.canAdmitPodResult(&bestHint)
+	return bestHint, admit
 }

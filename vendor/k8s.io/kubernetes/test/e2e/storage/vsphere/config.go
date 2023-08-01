@@ -23,7 +23,7 @@ import (
 	"os"
 
 	"gopkg.in/gcfg.v1"
-	e2elog "k8s.io/kubernetes/test/e2e/framework/log"
+	"k8s.io/kubernetes/test/e2e/framework"
 )
 
 const (
@@ -85,6 +85,11 @@ type ConfigFile struct {
 		DefaultDatastore string `gcfg:"default-datastore"`
 		ResourcePoolPath string `gcfg:"resourcepool-path"`
 	}
+	// Tag categories and tags which correspond to "built-in node labels: zones and region"
+	Labels struct {
+		Zone   string `gcfg:"zone"`
+		Region string `gcfg:"region"`
+	}
 }
 
 // GetVSphereInstances parses vsphere.conf and returns VSphere instances
@@ -98,7 +103,10 @@ func GetVSphereInstances() (map[string]*VSphere, error) {
 
 func getConfig() (*ConfigFile, error) {
 	if confFileLocation == "" {
-		return nil, fmt.Errorf("Env variable 'VSPHERE_CONF_FILE' is not set.")
+		if framework.TestContext.CloudConfig.ConfigFile == "" {
+			return nil, fmt.Errorf("env variable 'VSPHERE_CONF_FILE' is not set, and no config-file specified")
+		}
+		confFileLocation = framework.TestContext.CloudConfig.ConfigFile
 	}
 	confFile, err := os.Open(confFileLocation)
 	if err != nil {
@@ -130,13 +138,13 @@ func populateInstanceMap(cfg *ConfigFile) (map[string]*VSphere, error) {
 	if cfg.Workspace.VCenterIP == "" || cfg.Workspace.DefaultDatastore == "" || cfg.Workspace.Folder == "" || cfg.Workspace.Datacenter == "" {
 		msg := fmt.Sprintf("All fields in workspace are mandatory."+
 			" vsphere.conf does not have the workspace specified correctly. cfg.Workspace: %+v", cfg.Workspace)
-		e2elog.Logf(msg)
+		framework.Logf(msg)
 		return nil, errors.New(msg)
 	}
 	for vcServer, vcConfig := range cfg.VirtualCenter {
-		e2elog.Logf("Initializing vc server %s", vcServer)
+		framework.Logf("Initializing vc server %s", vcServer)
 		if vcServer == "" {
-			e2elog.Logf("vsphere.conf does not have the VirtualCenter IP address specified")
+			framework.Logf("vsphere.conf does not have the VirtualCenter IP address specified")
 			return nil, errors.New("vsphere.conf does not have the VirtualCenter IP address specified")
 		}
 		vcConfig.Hostname = vcServer
@@ -149,12 +157,12 @@ func populateInstanceMap(cfg *ConfigFile) (map[string]*VSphere, error) {
 		}
 		if vcConfig.Username == "" {
 			msg := fmt.Sprintf("vcConfig.Username is empty for vc %s!", vcServer)
-			e2elog.Logf(msg)
+			framework.Logf(msg)
 			return nil, errors.New(msg)
 		}
 		if vcConfig.Password == "" {
 			msg := fmt.Sprintf("vcConfig.Password is empty for vc %s!", vcServer)
-			e2elog.Logf(msg)
+			framework.Logf(msg)
 			return nil, errors.New(msg)
 		}
 		if vcConfig.Port == "" {
@@ -176,6 +184,6 @@ func populateInstanceMap(cfg *ConfigFile) (map[string]*VSphere, error) {
 		vsphereInstances[vcServer] = &vsphereIns
 	}
 
-	e2elog.Logf("ConfigFile %v \n vSphere instances %v", cfg, vsphereInstances)
+	framework.Logf("vSphere instances: %v", vsphereInstances)
 	return vsphereInstances, nil
 }

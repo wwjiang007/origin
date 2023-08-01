@@ -3,13 +3,15 @@ package builds
 import (
 	"fmt"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
+
+	admissionapi "k8s.io/pod-security-admission/api"
 
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Feature:Builds][pullsecret][Conformance] docker build using a pull secret", func() {
+var _ = g.Describe("[sig-builds][Feature:Builds][pullsecret] docker build using a pull secret", func() {
 	defer g.GinkgoRecover()
 	const (
 		buildTestPod     = "build-test-pod"
@@ -18,7 +20,7 @@ var _ = g.Describe("[Feature:Builds][pullsecret][Conformance] docker build using
 
 	var (
 		buildFixture = exutil.FixturePath("testdata", "builds", "test-docker-build-pullsecret.json")
-		oc           = exutil.NewCLI("docker-build-pullsecret", exutil.KubeConfigPath())
+		oc           = exutil.NewCLIWithPodSecurityLevel("docker-build-pullsecret", admissionapi.LevelBaseline)
 	)
 
 	g.Context("", func() {
@@ -28,7 +30,7 @@ var _ = g.Describe("[Feature:Builds][pullsecret][Conformance] docker build using
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				exutil.DumpPodStates(oc)
 				exutil.DumpConfigMapStates(oc)
 				exutil.DumpPodLogsStartingWith("", oc)
@@ -36,7 +38,7 @@ var _ = g.Describe("[Feature:Builds][pullsecret][Conformance] docker build using
 		})
 
 		g.Describe("Building from a template", func() {
-			g.It("should create a docker build that pulls using a secret run it", func() {
+			g.It("should create a docker build that pulls using a secret run it [apigroup:build.openshift.io]", func() {
 
 				g.By(fmt.Sprintf("calling oc create -f %q", buildFixture))
 				err := oc.Run("create").Args("-f", buildFixture).Execute()

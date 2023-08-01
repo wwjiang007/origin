@@ -1,4 +1,5 @@
-// +build !linux,!windows linux,!cgo
+//go:build !linux && !windows
+// +build !linux,!windows
 
 /*
 Copyright 2015 The Kubernetes Authors.
@@ -32,7 +33,7 @@ type cadvisorUnsupported struct {
 var _ Interface = new(cadvisorUnsupported)
 
 // New creates a new cAdvisor Interface for unsupported systems.
-func New(imageFsInfoProvider ImageFsInfoProvider, rootPath string, cgroupsRoots []string, usingLegacyStats bool) (Interface, error) {
+func New(imageFsInfoProvider ImageFsInfoProvider, rootPath string, cgroupsRoots []string, usingLegacyStats, localStorageCapacityIsolation bool) (Interface, error) {
 	return &cadvisorUnsupported{}, nil
 }
 
@@ -51,6 +52,10 @@ func (cu *cadvisorUnsupported) ContainerInfo(name string, req *cadvisorapi.Conta
 }
 
 func (cu *cadvisorUnsupported) ContainerInfoV2(name string, options cadvisorapiv2.RequestOptions) (map[string]cadvisorapiv2.ContainerInfo, error) {
+	return nil, errUnsupported
+}
+
+func (cu *cadvisorUnsupported) GetRequestedContainersInfo(containerName string, options cadvisorapiv2.RequestOptions) (map[string]*cadvisorapi.ContainerInfo, error) {
 	return nil, errUnsupported
 }
 

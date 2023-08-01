@@ -3,17 +3,17 @@ package image_ecosystem
 import (
 	"fmt"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[image_ecosystem][mariadb][Slow] openshift mariadb image", func() {
+var _ = g.Describe("[sig-devex][Feature:ImageEcosystem][mariadb][Slow] openshift mariadb image", func() {
 	defer g.GinkgoRecover()
 	var (
-		templatePath = exutil.FixturePath("..", "..", "examples", "db-templates", "mariadb-ephemeral-template.json")
-		oc           = exutil.NewCLI("mariadb-create", exutil.KubeConfigPath())
+		templatePath = "mariadb-ephemeral"
+		oc           = exutil.NewCLI("mariadb-create")
 	)
 
 	g.Context("", func() {
@@ -22,7 +22,7 @@ var _ = g.Describe("[image_ecosystem][mariadb][Slow] openshift mariadb image", f
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				exutil.DumpPodStates(oc)
 				exutil.DumpPodLogsStartingWith("", oc)
 				exutil.DumpImageStreams(oc)
@@ -30,11 +30,11 @@ var _ = g.Describe("[image_ecosystem][mariadb][Slow] openshift mariadb image", f
 		})
 
 		g.Describe("Creating from a template", func() {
-			g.It(fmt.Sprintf("should instantiate the template"), func() {
+			g.It(fmt.Sprintf("should instantiate the template [apigroup:image.openshift.io][apigroup:operator.openshift.io][apigroup:config.openshift.io][apigroup:apps.openshift.io]"), func() {
 				exutil.WaitForOpenShiftNamespaceImageStreams(oc)
 
-				g.By(fmt.Sprintf("calling oc process -f %q", templatePath))
-				configFile, err := oc.Run("process").Args("-f", templatePath).OutputToFile("config.json")
+				g.By(fmt.Sprintf("calling oc process %q", templatePath))
+				configFile, err := oc.Run("process").Args("openshift//" + templatePath).OutputToFile("config.json")
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				g.By(fmt.Sprintf("calling oc create -f %q", configFile))

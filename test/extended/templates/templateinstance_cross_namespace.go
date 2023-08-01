@@ -1,11 +1,13 @@
 package templates
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	corev1 "k8s.io/api/core/v1"
@@ -23,28 +25,27 @@ import (
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Conformance][templates] templateinstance cross-namespace test", func() {
+var _ = g.Describe("[sig-devex][Feature:Templates] templateinstance cross-namespace test", func() {
 	defer g.GinkgoRecover()
 
 	var (
-		cli  = exutil.NewCLI("templates", exutil.KubeConfigPath())
-		cli2 = exutil.NewCLI("templates2", exutil.KubeConfigPath())
+		cli  = exutil.NewCLI("templates")
+		cli2 = exutil.NewCLI("templates2")
 	)
 
-	g.It("should create and delete objects across namespaces", func() {
-		g.Skip("Bug 1731222: skip template tests until we determine what is broken")
+	g.It("should create and delete objects across namespaces [apigroup:user.openshift.io][apigroup:template.openshift.io]", func() {
 		err := cli2.AsAdmin().Run("adm").Args("policy", "add-role-to-user", "admin", cli.Username()).Execute()
 		o.Expect(err).NotTo(o.HaveOccurred())
 
 		// parameters for templateinstance
-		_, err = cli.KubeClient().CoreV1().Secrets(cli.Namespace()).Create(&kapiv1.Secret{
+		_, err = cli.KubeClient().CoreV1().Secrets(cli.Namespace()).Create(context.Background(), &kapiv1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "secret",
 			},
 			Data: map[string][]byte{
 				"NAMESPACE": []byte(cli2.Namespace()),
 			},
-		})
+		}, metav1.CreateOptions{})
 		o.Expect(err).NotTo(o.HaveOccurred())
 
 		templateinstance := &templatev1.TemplateInstance{
@@ -87,12 +88,12 @@ var _ = g.Describe("[Conformance][templates] templateinstance cross-namespace te
 		o.Expect(err).NotTo(o.HaveOccurred())
 
 		g.By("creating the templateinstance")
-		_, err = cli.TemplateClient().TemplateV1().TemplateInstances(cli.Namespace()).Create(templateinstance)
+		_, err = cli.TemplateClient().TemplateV1().TemplateInstances(cli.Namespace()).Create(context.Background(), templateinstance, metav1.CreateOptions{})
 		o.Expect(err).NotTo(o.HaveOccurred())
 
 		// wait for templateinstance controller to do its thing
 		err = wait.Poll(time.Second, time.Minute, func() (bool, error) {
-			templateinstance, err = cli.TemplateClient().TemplateV1().TemplateInstances(cli.Namespace()).Get(templateinstance.Name, metav1.GetOptions{})
+			templateinstance, err = cli.TemplateClient().TemplateV1().TemplateInstances(cli.Namespace()).Get(context.Background(), templateinstance.Name, metav1.GetOptions{})
 			if err != nil {
 				return false, err
 			}
@@ -110,33 +111,75 @@ var _ = g.Describe("[Conformance][templates] templateinstance cross-namespace te
 		})
 		o.Expect(err).NotTo(o.HaveOccurred())
 
-		framework.Logf("Template Instance object: %#v", templateinstance)
-		_, err = cli.KubeClient().CoreV1().Secrets(cli.Namespace()).Get("secret1", metav1.GetOptions{})
-		o.Expect(err).NotTo(o.HaveOccurred())
+		tiJSON, _ := json.MarshalIndent(templateinstance, "", "    ")
+		framework.Logf("Template Instance object : %s", string(tiJSON))
 
-		_, err = cli.KubeClient().CoreV1().Secrets(cli2.Namespace()).Get("secret2", metav1.GetOptions{})
+		s1, err := cli.KubeClient().CoreV1().Secrets(cli.Namespace()).Get(context.Background(), "secret1", metav1.GetOptions{})
 		o.Expect(err).NotTo(o.HaveOccurred())
+		s1JSON, _ := json.MarshalIndent(s1, "", "    ")
+		framework.Logf("secret1: %s", string(s1JSON))
+
+		s2, err := cli.KubeClient().CoreV1().Secrets(cli2.Namespace()).Get(context.Background(), "secret2", metav1.GetOptions{})
+		o.Expect(err).NotTo(o.HaveOccurred())
+		s2JSON, _ := json.MarshalIndent(s2, "", "    ")
+		framework.Logf("secret2: %s", string(s2JSON))
 
 		g.By("deleting the templateinstance")
 		foreground := metav1.DeletePropagationForeground
-		err = cli.TemplateClient().TemplateV1().TemplateInstances(cli.Namespace()).Delete(templateinstance.Name, &metav1.DeleteOptions{PropagationPolicy: &foreground})
+		err = cli.TemplateClient().TemplateV1().TemplateInstances(cli.Namespace()).Delete(context.Background(), templateinstance.Name, metav1.DeleteOptions{PropagationPolicy: &foreground})
 		o.Expect(err).NotTo(o.HaveOccurred())
 
 		// wait for garbage collector to do its thing
 		err = wait.Poll(100*time.Millisecond, 30*time.Second, func() (bool, error) {
-			_, err = cli.TemplateClient().TemplateV1().TemplateInstances(cli.Namespace()).Get(templateinstance.Name, metav1.GetOptions{})
+			t, err := cli.TemplateClient().TemplateV1().TemplateInstances(cli.Namespace()).Get(context.Background(), templateinstance.Name, metav1.GetOptions{})
 			if kerrors.IsNotFound(err) {
 				return true, nil
 			}
+
+			tiJSON, _ := json.MarshalIndent(t, "", "    ")
+			framework.Logf("Template Instance object during deletion : %s", string(tiJSON))
+
+			// for either secret, errors like `IsNotFound` are to be expected for the secrets during the
+			// templateinstance deletion process;  we just cannot assume which order the deletes of each
+			// object translate to etcd
+
+			s1, e1 := cli.KubeClient().CoreV1().Secrets(cli.Namespace()).Get(context.Background(), "secret1", metav1.GetOptions{})
+			if e1 != nil {
+				framework.Logf("error secret1 during deletion: %s", e1.Error())
+			} else {
+				s1JSON, _ := json.MarshalIndent(s1, "", "    ")
+				framework.Logf("secret1 during deletion: %s", string(s1JSON))
+			}
+			s2, e2 := cli.KubeClient().CoreV1().Secrets(cli2.Namespace()).Get(context.Background(), "secret2", metav1.GetOptions{})
+			if e2 != nil {
+				framework.Logf("error secret2 during deletion: %s", e2.Error())
+			} else {
+				s2JSON, _ := json.MarshalIndent(s2, "", "    ")
+				framework.Logf("secret2: during deletion: %s", string(s2JSON))
+			}
+
 			return false, err
 		})
 		o.Expect(err).NotTo(o.HaveOccurred())
 
-		_, err = cli.KubeClient().CoreV1().Secrets(cli.Namespace()).Get("secret1", metav1.GetOptions{})
-		o.Expect(kerrors.IsNotFound(err)).To(o.BeTrue())
+		// Template instances use a finalizer to delete objects, rather than owner references. As a result, objects
+		// created by the template can be deleted after the TemplateInstance itself is deleted.
+		err = wait.Poll(100*time.Millisecond, 30*time.Second, func() (bool, error) {
+			_, e1 := cli.KubeClient().CoreV1().Secrets(cli.Namespace()).Get(context.Background(), "secret1", metav1.GetOptions{})
+			_, e2 := cli.KubeClient().CoreV1().Secrets(cli.Namespace()).Get(context.Background(), "secret2", metav1.GetOptions{})
+			if e1 == nil || e2 == nil {
+				return false, nil
+			}
+			if !kerrors.IsNotFound(e1) {
+				return false, e1
+			}
+			if !kerrors.IsNotFound(e2) {
+				return false, e2
+			}
+			return true, nil
+		})
+		o.Expect(err).NotTo(o.HaveOccurred())
 
-		_, err = cli.KubeClient().CoreV1().Secrets(cli2.Namespace()).Get("secret2", metav1.GetOptions{})
-		o.Expect(kerrors.IsNotFound(err)).To(o.BeTrue())
 	})
 })
 

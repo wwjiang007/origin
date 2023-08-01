@@ -108,8 +108,8 @@ DOCKER_CONFIG_JSON="${HOME}/.docker/config.json"
 VERBOSE=true os::cmd::expect_success "oc new-project dc-ns"
 os::cmd::expect_success "oc delete all --all"
 os::cmd::expect_success "oc delete secrets --all"
-os::cmd::expect_success "oc secrets new image-ns-pull .dockerconfigjson=${DOCKER_CONFIG_JSON}"
-os::cmd::expect_success "oc secrets new-dockercfg image-ns-pull-old --docker-email=fake@example.org --docker-username=imagensbuilder --docker-server=${docker_registry} --docker-password=${token}"
+os::cmd::expect_success "oc create secret generic image-ns-pull --from-file=.dockerconfigjson=${DOCKER_CONFIG_JSON} --type=kubernetes.io/dockerconfigjson"
+os::cmd::expect_success "oc create secret docker-registry image-ns-pull-old --docker-email=fake@example.org --docker-username=imagensbuilder --docker-server=${docker_registry} --docker-password=${token}"
 
 os::cmd::expect_success "oc process -f test/extended/testdata/image-pull-secrets/pod-with-no-pull-secret.yaml --param=DOCKER_REGISTRY=${docker_registry} | oc create -f - "
 os::cmd::try_until_text "oc describe pod/no-pull-pod" "Back-off pulling image"
@@ -161,7 +161,7 @@ os::cmd::expect_success "oc set volumes dc/nginx --add --configmap-name=default-
 os::cmd::try_until_text "oc get pods -l deployment-config.name=nginx" 'Running'
 
 # only show single pods in status if they are really single
-os::cmd::expect_success 'oc create -f test/integration/testdata/test-deployment-config.yaml'
+os::cmd::expect_success 'oc create -f test/extended/testdata/test-deployment-config.yaml'
 os::cmd::try_until_text 'oc status' 'dc\/test-deployment-config deploys docker\.io\/openshift\/origin-pod:latest' "$(( 2 * TIME_MIN ))"
 os::cmd::try_until_text 'oc status' 'deployment #1 deployed.*- 1 pod' "$(( 2 * TIME_MIN ))"
 os::cmd::expect_success_and_not_text 'oc status' 'pod\/test-deployment-config-1-[0-9a-z]{5} runs openshift\/origin-pod'
@@ -181,7 +181,7 @@ os::cmd::try_until_text "oc get pods/kube-apiserver -o 'jsonpath={.status.condit
 os::cmd::try_until_text "oc get pods/kube-apiserver -o 'jsonpath={.status.podIP}'" "172"
 kube_ip="$(oc get pods/kube-apiserver -o 'jsonpath={.status.podIP}')"
 kube_kubectl="${tmp}/kube-kubeconfig"
-os::cmd::try_until_text "oc login --config ${kube_kubectl}../kube-kubeconfig https://${kube_ip}:443 --token=secret --insecure-skip-tls-verify=true --loglevel=8" ' as "secret" using the token provided.'
+os::cmd::try_until_text "oc login --kubeconfig ${kube_kubectl}../kube-kubeconfig https://${kube_ip}:443 --token=secret --insecure-skip-tls-verify=true --loglevel=8" ' as "secret" using the token provided.'
 os::test::junit::declare_suite_end
 
 os::test::junit::declare_suite_end

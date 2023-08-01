@@ -1,16 +1,18 @@
 package events
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 type inMemoryEventRecorder struct {
 	events []*corev1.Event
 	source string
+	ctx    context.Context
 	sync.Mutex
 }
 
@@ -37,10 +39,17 @@ func (r *inMemoryEventRecorder) ComponentName() string {
 	return r.source
 }
 
+func (r *inMemoryEventRecorder) Shutdown() {}
+
 func (r *inMemoryEventRecorder) ForComponent(component string) Recorder {
 	r.Lock()
 	defer r.Unlock()
 	r.source = component
+	return r
+}
+
+func (r *inMemoryEventRecorder) WithContext(ctx context.Context) Recorder {
+	r.ctx = ctx
 	return r
 }
 

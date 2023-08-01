@@ -18,32 +18,31 @@ package qos
 
 import (
 	v1 "k8s.io/api/core/v1"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
+	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 	v1qos "k8s.io/kubernetes/pkg/apis/core/v1/helper/qos"
+	"k8s.io/kubernetes/pkg/features"
 	"k8s.io/kubernetes/pkg/kubelet/types"
 )
 
 const (
-	// PodInfraOOMAdj is very docker specific. For arbitrary runtime, it may not make
-	// sense to set sandbox level oom score, e.g. a sandbox could only be a namespace
-	// without a process.
-	// TODO: Handle infra container oom score adj in a runtime agnostic way.
-	PodInfraOOMAdj        int = -998
-	KubeletOOMScoreAdj    int = -999
-	DockerOOMScoreAdj     int = -999
+	// KubeletOOMScoreAdj is the OOM score adjustment for Kubelet
+	KubeletOOMScoreAdj int = -999
+	// KubeProxyOOMScoreAdj is the OOM score adjustment for kube-proxy
 	KubeProxyOOMScoreAdj  int = -999
-	guaranteedOOMScoreAdj int = -998
+	guaranteedOOMScoreAdj int = -997
 	besteffortOOMScoreAdj int = 1000
 )
 
-// GetContainerOOMAdjust returns the amount by which the OOM score of all processes in the
+// GetContainerOOMScoreAdjust returns the amount by which the OOM score of all processes in the
 // container should be adjusted.
 // The OOM score of a process is the percentage of memory it consumes
 // multiplied by 10 (barring exceptional cases) + a configurable quantity which is between -1000
 // and 1000. Containers with higher OOM scores are killed if the system runs out of memory.
 // See https://lwn.net/Articles/391222/ for more information.
 func GetContainerOOMScoreAdjust(pod *v1.Pod, container *v1.Container, memoryCapacity int64) int {
-	if types.IsCriticalPod(pod) {
-		// Critical pods should be the last to get killed.
+	if types.IsNodeCriticalPod(pod) {
+		// Only node critical pod should be the last to get killed.
 		return guaranteedOOMScoreAdj
 	}
 
@@ -64,6 +63,11 @@ func GetContainerOOMScoreAdjust(pod *v1.Pod, container *v1.Container, memoryCapa
 	// targets for OOM kills.
 	// Note that this is a heuristic, it won't work if a container has many small processes.
 	memoryRequest := container.Resources.Requests.Memory().Value()
+	if utilfeature.DefaultFeatureGate.Enabled(features.InPlacePodVerticalScaling) {
+		if cs, ok := podutil.GetContainerStatus(pod.Status.ContainerStatuses, container.Name); ok {
+			memoryRequest = cs.AllocatedResources.Memory().Value()
+		}
+	}
 	oomScoreAdjust := 1000 - (1000*memoryRequest)/memoryCapacity
 	// A guaranteed pod using 100% of memory can have an OOM score of 10. Ensure
 	// that burstable pods have a higher OOM score adjustment.

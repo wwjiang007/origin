@@ -1,3 +1,4 @@
+//go:build freebsd || linux || darwin
 // +build freebsd linux darwin
 
 /*
@@ -19,16 +20,15 @@ limitations under the License.
 package util
 
 import (
+	"context"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/url"
 	"os"
 	"path/filepath"
-	"time"
 
 	"golang.org/x/sys/unix"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -56,8 +56,8 @@ func CreateListener(endpoint string) (net.Listener, error) {
 		return nil, fmt.Errorf("error creating socket directory %q: %v", filepath.Dir(addr), err)
 	}
 
-	// Create the socket on a tempfile and move it to the destination socket to handle improprer cleanup
-	file, err := ioutil.TempFile(filepath.Dir(addr), "")
+	// Create the socket on a tempfile and move it to the destination socket to handle improper cleanup
+	file, err := os.CreateTemp(filepath.Dir(addr), "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create temporary file: %v", err)
 	}
@@ -78,8 +78,8 @@ func CreateListener(endpoint string) (net.Listener, error) {
 	return l, nil
 }
 
-// GetAddressAndDialer returns the address parsed from the given endpoint and a dialer.
-func GetAddressAndDialer(endpoint string) (string, func(addr string, timeout time.Duration) (net.Conn, error), error) {
+// GetAddressAndDialer returns the address parsed from the given endpoint and a context dialer.
+func GetAddressAndDialer(endpoint string) (string, func(ctx context.Context, addr string) (net.Conn, error), error) {
 	protocol, addr, err := parseEndpointWithFallbackProtocol(endpoint, unixProtocol)
 	if err != nil {
 		return "", nil, err
@@ -91,8 +91,8 @@ func GetAddressAndDialer(endpoint string) (string, func(addr string, timeout tim
 	return addr, dial, nil
 }
 
-func dial(addr string, timeout time.Duration) (net.Conn, error) {
-	return net.DialTimeout(unixProtocol, addr, timeout)
+func dial(ctx context.Context, addr string) (net.Conn, error) {
+	return (&net.Dialer{}).DialContext(ctx, unixProtocol, addr)
 }
 
 func parseEndpointWithFallbackProtocol(endpoint string, fallbackProtocol string) (protocol string, addr string, err error) {
@@ -100,7 +100,7 @@ func parseEndpointWithFallbackProtocol(endpoint string, fallbackProtocol string)
 		fallbackEndpoint := fallbackProtocol + "://" + endpoint
 		protocol, addr, err = parseEndpoint(fallbackEndpoint)
 		if err == nil {
-			klog.Warningf("Using %q as endpoint is deprecated, please consider using full url format %q.", endpoint, fallbackEndpoint)
+			klog.InfoS("Using this endpoint is deprecated, please consider using full URL format", "endpoint", endpoint, "URL", fallbackEndpoint)
 		}
 	}
 	return

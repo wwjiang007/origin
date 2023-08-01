@@ -1,15 +1,17 @@
 package builds
 
 import (
+	"context"
 	"time"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	admissionapi "k8s.io/pod-security-admission/api"
 
 	buildv1 "github.com/openshift/api/build/v1"
 	exutil "github.com/openshift/origin/test/extended/util"
@@ -38,14 +40,14 @@ func init() {
 	Encoder = annotationEncoderCodecFactory.LegacyCodec(buildv1.GroupVersion)
 }
 
-var _ = g.Describe("[Feature:Builds][Slow] build can have container image source", func() {
+var _ = g.Describe("[sig-builds][Feature:Builds][Slow] build can have container image source", func() {
 	defer g.GinkgoRecover()
 	var (
 		buildConfigFixture = exutil.FixturePath("testdata", "builds", "test-imagesource-buildconfig.yaml")
 		s2iBuildFixture    = exutil.FixturePath("testdata", "builds", "test-imageresolution-s2i-build.yaml")
 		dockerBuildFixture = exutil.FixturePath("testdata", "builds", "test-imageresolution-docker-build.yaml")
 		customBuildFixture = exutil.FixturePath("testdata", "builds", "test-imageresolution-custom-build.yaml")
-		oc                 = exutil.NewCLI("build-image-source", exutil.KubeConfigPath())
+		oc                 = exutil.NewCLIWithPodSecurityLevel("build-image-source", admissionapi.LevelRestricted)
 		imageSourceLabel   = exutil.ParseLabelsOrDie("app=imagesourceapp")
 		imageDockerLabel   = exutil.ParseLabelsOrDie("app=imagedockerapp")
 		sourceBuildLabel   = exutil.ParseLabelsOrDie("openshift.io/build.name=imagesourcebuild")
@@ -53,7 +55,7 @@ var _ = g.Describe("[Feature:Builds][Slow] build can have container image source
 		customBuildLabel   = exutil.ParseLabelsOrDie("openshift.io/build.name=imagecustombuild")
 	)
 
-	g.Context("", func() {
+	g.Context("[apigroup:image.openshift.io]", func() {
 		g.BeforeEach(func() {
 			exutil.PreTestDump()
 		})
@@ -65,7 +67,7 @@ var _ = g.Describe("[Feature:Builds][Slow] build can have container image source
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				exutil.DumpPodStates(oc)
 				exutil.DumpConfigMapStates(oc)
 				exutil.DumpPodLogsStartingWith("", oc)
@@ -73,7 +75,7 @@ var _ = g.Describe("[Feature:Builds][Slow] build can have container image source
 		})
 
 		g.Describe("buildconfig with input source image and s2i strategy", func() {
-			g.It("should complete successfully and contain the expected file", func() {
+			g.It("should complete successfully and contain the expected file [apigroup:build.openshift.io]", func() {
 				g.By("Creating build configs for source build")
 				err := oc.Run("create").Args("-f", buildConfigFixture).Execute()
 				o.Expect(err).NotTo(o.HaveOccurred())
@@ -90,17 +92,17 @@ var _ = g.Describe("[Feature:Builds][Slow] build can have container image source
 				pods, err := exutil.WaitForPods(oc.KubeClient().CoreV1().Pods(oc.Namespace()), imageSourceLabel, exutil.CheckPodIsRunning, 1, 4*time.Minute)
 				o.Expect(err).NotTo(o.HaveOccurred())
 				o.Expect(len(pods)).To(o.Equal(1))
-				pod, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(pods[0], metav1.GetOptions{})
+				pod, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(context.Background(), pods[0], metav1.GetOptions{})
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				g.By("expecting the pod to contain the file from the input image")
 				out, err := oc.Run("exec").Args(pod.Name, "-c", pod.Spec.Containers[0].Name, "--", "ls", "-R", "-l", "injected/opt/app-root").Output()
 				o.Expect(err).NotTo(o.HaveOccurred())
-				o.Expect(out).To(o.ContainSubstring("bin -> ../../rh/rh-ruby25/root/usr/bin"))
+				o.Expect(out).To(o.ContainSubstring("bin -> ../../rh/6/root/usr/bin"))
 			})
 		})
 		g.Describe("buildconfig with input source image and docker strategy", func() {
-			g.It("should complete successfully and contain the expected file", func() {
+			g.It("should complete successfully and contain the expected file [apigroup:build.openshift.io]", func() {
 				g.By("Creating build configs for docker build")
 				err := oc.Run("create").Args("-f", buildConfigFixture).Execute()
 				o.Expect(err).NotTo(o.HaveOccurred())
@@ -117,17 +119,17 @@ var _ = g.Describe("[Feature:Builds][Slow] build can have container image source
 				pods, err := exutil.WaitForPods(oc.KubeClient().CoreV1().Pods(oc.Namespace()), imageDockerLabel, exutil.CheckPodIsRunning, 1, 4*time.Minute)
 				o.Expect(err).NotTo(o.HaveOccurred())
 				o.Expect(len(pods)).To(o.Equal(1))
-				pod, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(pods[0], metav1.GetOptions{})
+				pod, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(context.Background(), pods[0], metav1.GetOptions{})
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				g.By("expecting the pod to contain the file from the input image")
 				out, err := oc.Run("exec").Args(pod.Name, "-c", pod.Spec.Containers[0].Name, "--", "ls", "-R", "-l", "injected/opt/app-root").Output()
 				o.Expect(err).NotTo(o.HaveOccurred())
-				o.Expect(out).To(o.ContainSubstring("bin -> ../../rh/rh-ruby25/root/usr/bin"))
+				o.Expect(out).To(o.ContainSubstring("bin -> ../../rh/6/root/usr/bin"))
 			})
 		})
 		g.Describe("creating a build with an input source image and s2i strategy", func() {
-			g.It("should resolve the imagestream references and secrets", func() {
+			g.It("should resolve the imagestream references and secrets [apigroup:build.openshift.io]", func() {
 				g.By("Creating build configs for input image")
 				err := oc.Run("create").Args("-f", buildConfigFixture).Execute()
 				o.Expect(err).NotTo(o.HaveOccurred())
@@ -144,7 +146,7 @@ var _ = g.Describe("[Feature:Builds][Slow] build can have container image source
 				pods, err := exutil.WaitForPods(oc.KubeClient().CoreV1().Pods(oc.Namespace()), sourceBuildLabel, exutil.CheckPodNoOp, 1, 4*time.Minute)
 				o.Expect(err).NotTo(o.HaveOccurred())
 				o.Expect(len(pods)).To(o.Equal(1))
-				pod, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(pods[0], metav1.GetOptions{})
+				pod, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(context.Background(), pods[0], metav1.GetOptions{})
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				foundEnv := false
@@ -172,7 +174,7 @@ var _ = g.Describe("[Feature:Builds][Slow] build can have container image source
 			})
 		})
 		g.Describe("creating a build with an input source image and docker strategy", func() {
-			g.It("should resolve the imagestream references and secrets", func() {
+			g.It("should resolve the imagestream references and secrets [apigroup:build.openshift.io]", func() {
 				g.By("Creating build configs for input image")
 				err := oc.Run("create").Args("-f", buildConfigFixture).Execute()
 				o.Expect(err).NotTo(o.HaveOccurred())
@@ -189,7 +191,7 @@ var _ = g.Describe("[Feature:Builds][Slow] build can have container image source
 				pods, err := exutil.WaitForPods(oc.KubeClient().CoreV1().Pods(oc.Namespace()), dockerBuildLabel, exutil.CheckPodNoOp, 1, 4*time.Minute)
 				o.Expect(err).NotTo(o.HaveOccurred())
 				o.Expect(len(pods)).To(o.Equal(1))
-				pod, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(pods[0], metav1.GetOptions{})
+				pod, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(context.Background(), pods[0], metav1.GetOptions{})
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				foundEnv := false
@@ -217,7 +219,7 @@ var _ = g.Describe("[Feature:Builds][Slow] build can have container image source
 			})
 		})
 		g.Describe("creating a build with an input source image and custom strategy", func() {
-			g.It("should resolve the imagestream references and secrets", func() {
+			g.It("should resolve the imagestream references and secrets [apigroup:build.openshift.io]", func() {
 				g.By("Creating build configs for input image")
 				err := oc.Run("create").Args("-f", buildConfigFixture).Execute()
 				o.Expect(err).NotTo(o.HaveOccurred())
@@ -234,7 +236,7 @@ var _ = g.Describe("[Feature:Builds][Slow] build can have container image source
 				pods, err := exutil.WaitForPods(oc.KubeClient().CoreV1().Pods(oc.Namespace()), customBuildLabel, exutil.CheckPodNoOp, 1, 4*time.Minute)
 				o.Expect(err).NotTo(o.HaveOccurred())
 				o.Expect(len(pods)).To(o.Equal(1))
-				pod, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(pods[0], metav1.GetOptions{})
+				pod, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(context.Background(), pods[0], metav1.GetOptions{})
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				foundBuildEnv := false

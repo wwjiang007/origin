@@ -1,4 +1,5 @@
-// +build windows
+//go:build !providerless && windows
+// +build !providerless,windows
 
 /*
 Copyright 2019 The Kubernetes Authors.
@@ -24,7 +25,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 type diskInfoResult struct {

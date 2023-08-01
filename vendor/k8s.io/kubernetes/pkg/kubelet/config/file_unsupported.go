@@ -1,3 +1,4 @@
+//go:build !linux
 // +build !linux
 
 /*
@@ -21,11 +22,11 @@ package config
 import (
 	"fmt"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 func (s *sourceFile) startWatch() {
-	klog.Errorf("Watching source file is unsupported in this build")
+	klog.ErrorS(nil, "Watching source file is unsupported in this build")
 }
 
 func (s *sourceFile) consumeWatchEvent(e *watchEvent) error {

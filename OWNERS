@@ -1,20 +1,34 @@
-reviewers:
-  - bparees
-  - deads2k
-  - sjenning
-  - smarterclayton
-  - soltysh
-  - tbielawa
-approvers:
-  - bparees
-  - deads2k
-  - derekwaynecarr
-  - eparis
-  - knobunc  # Network, Multi-cluster, Storage
-  - mfojtik
-  - pweil-
-  - sjenning
-  - soltysh
-  - sttts
-  - smarterclayton
-  - tbielawa # also for build and automated release tooling changes
+# See the OWNERS docs at https://go.k8s.io/owners
+
+filters:
+  ".*":
+    reviewers:
+    - bparees
+    - deads2k
+    - sjenning
+    - smarterclayton
+    - soltysh
+    approvers:
+    - bparees
+    - deads2k
+    - derekwaynecarr
+    - dgoodwin
+    - eparis
+    - knobunc  # Network, Multi-cluster, Storage
+    - mfojtik
+    - pweil-
+    - sjenning
+    - soltysh
+    - stbenjam
+    - sttts
+    - smarterclayton
+  "^\\.go.(mod|sum)$":
+    labels:
+    - "vendor-update"
+  "^vendor/.*":
+    labels:
+    - "vendor-update"
+
+# This is a Red Hat extension, mapping the Git repository to an OpenShift Bugzilla component:
+# https://bugzilla.redhat.com/enter_bug.cgi?product=OpenShift%20Container%20Platform
+component: "Test Framework"

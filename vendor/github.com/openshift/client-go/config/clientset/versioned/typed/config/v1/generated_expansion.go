@@ -20,13 +20,23 @@ type FeatureGateExpansion interface{}
 
 type ImageExpansion interface{}
 
+type ImageContentPolicyExpansion interface{}
+
+type ImageDigestMirrorSetExpansion interface{}
+
+type ImageTagMirrorSetExpansion interface{}
+
 type InfrastructureExpansion interface{}
 
 type IngressExpansion interface{}
 
 type NetworkExpansion interface{}
 
+type NodeExpansion interface{}
+
 type OAuthExpansion interface{}
+
+type OperatorHubExpansion interface{}
 
 type ProjectExpansion interface{}
 

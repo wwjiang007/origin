@@ -2,18 +2,21 @@ package oauthserver
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
+	"os"
 	"path"
 	"time"
 
 	"github.com/RangelReale/osincli"
 	"github.com/davecgh/go-spew/spew"
 
+	authorizationv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,13 +29,14 @@ import (
 	legacyconfigv1 "github.com/openshift/api/legacyconfig/v1"
 	oauthv1 "github.com/openshift/api/oauth/v1"
 	osinv1 "github.com/openshift/api/osin/v1"
-	configclient "github.com/openshift/client-go/config/clientset/versioned"
 	"github.com/openshift/library-go/pkg/config/helpers"
 	"github.com/openshift/library-go/pkg/crypto"
+	"github.com/openshift/library-go/pkg/oauth/tokenrequest"
+	"github.com/openshift/library-go/pkg/oauth/tokenrequest/challengehandlers"
 
 	"github.com/openshift/origin/test/extended/testdata"
+	"github.com/openshift/origin/test/extended/util"
 	exutil "github.com/openshift/origin/test/extended/util"
-	"github.com/openshift/origin/test/extended/util/oauthserver/tokencmd"
 )
 
 const (
@@ -50,7 +54,7 @@ const (
 	oauthConfigPath  = "/var/config/system/configmaps/oauth-config"
 	serviceCADirPath = "/var/config/system/configmaps/service-ca"
 
-	configObjectsDir = "/var/oauth/configobjects/"
+	configObjectsDir = "/var/oauth/configobjects"
 
 	RouteName = "test-oauth-route"
 	SAName    = "e2e-oauth"
@@ -63,7 +67,7 @@ var (
 	volumesDefaultMode int32 = 420
 )
 
-type NewRequestTokenOptionsFunc func(username, password string) *tokencmd.RequestTokenOptions
+type NewRequestTokenOptionsFunc func(username, password string) *tokenrequest.RequestTokenOptions
 
 // DeployOAuthServer - deployes an instance of an OpenShift OAuth server
 // very simplified for now
@@ -100,13 +104,13 @@ func DeployOAuthServer(oc *exutil.CLI, idps []osinv1.IdentityProvider, configMap
 
 	// create the secrets and configmaps the OAuth server config requires to get the server going
 	for _, cm := range configMaps {
-		if _, err := kubeClient.CoreV1().ConfigMaps(oc.Namespace()).Create(&cm); err != nil {
+		if _, err := kubeClient.CoreV1().ConfigMaps(oc.Namespace()).Create(context.Background(), &cm, metav1.CreateOptions{}); err != nil {
 			return nil, cleanupFunc, err
 		}
 		e2e.Logf("Created: %v %v/%v", "ConfigMap", oc.Namespace(), cm.Name)
 	}
 	for _, secret := range secrets {
-		if _, err := kubeClient.CoreV1().Secrets(oc.Namespace()).Create(&secret); err != nil {
+		if _, err := kubeClient.CoreV1().Secrets(oc.Namespace()).Create(context.Background(), &secret, metav1.CreateOptions{}); err != nil {
 			return nil, cleanupFunc, err
 		}
 		e2e.Logf("Created: %v %v/%v", secret.Kind, secret.Namespace, secret.Name)
@@ -117,13 +121,13 @@ func DeployOAuthServer(oc *exutil.CLI, idps []osinv1.IdentityProvider, configMap
 	if err != nil {
 		return nil, cleanupFunc, err
 	}
-	if _, err := kubeClient.CoreV1().Secrets(oc.Namespace()).Create(sessionSecret); err != nil {
+	if _, err := kubeClient.CoreV1().Secrets(oc.Namespace()).Create(context.Background(), sessionSecret, metav1.CreateOptions{}); err != nil {
 		return nil, cleanupFunc, err
 	}
 	e2e.Logf("Created: %v %v/%v", "Secret", oc.Namespace(), sessionSecret.Name)
 
 	// get the route of the future OAuth server (defined in the oauth-network.yaml fixture above)
-	route, err := oc.AdminRouteClient().RouteV1().Routes(oc.Namespace()).Get(RouteName, metav1.GetOptions{})
+	route, err := oc.AdminRouteClient().RouteV1().Routes(oc.Namespace()).Get(context.Background(), RouteName, metav1.GetOptions{})
 	if err != nil {
 		return nil, cleanupFunc, err
 	}
@@ -141,14 +145,14 @@ func DeployOAuthServer(oc *exutil.CLI, idps []osinv1.IdentityProvider, configMap
 	}
 
 	// store the config in a ConfigMap that's to be mounted into the server's pod
-	_, err = kubeClient.CoreV1().ConfigMaps(oc.Namespace()).Create(&corev1.ConfigMap{
+	_, err = kubeClient.CoreV1().ConfigMaps(oc.Namespace()).Create(context.Background(), &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "oauth-config",
 		},
 		Data: map[string]string{
 			"oauth.conf": string(configBytes),
 		},
-	})
+	}, metav1.CreateOptions{})
 	if err != nil {
 		return nil, cleanupFunc, err
 	}
@@ -167,7 +171,7 @@ func DeployOAuthServer(oc *exutil.CLI, idps []osinv1.IdentityProvider, configMap
 	}
 
 	// finally create the oauth server, wait till it starts running
-	if _, err := kubeClient.CoreV1().Pods(oc.Namespace()).Create(oauthServerPod); err != nil {
+	if _, err := kubeClient.CoreV1().Pods(oc.Namespace()).Create(context.Background(), oauthServerPod, metav1.CreateOptions{}); err != nil {
 		return nil, cleanupFunc, err
 	}
 	e2e.Logf("Created: %v %v/%v", "Pod", oc.Namespace(), oauthServerPod.Name)
@@ -186,7 +190,7 @@ func DeployOAuthServer(oc *exutil.CLI, idps []osinv1.IdentityProvider, configMap
 	})
 	e2e.Logf("Created: %v %v/%v", oauthClient.Kind, oauthClient.Namespace, oauthClient.Name)
 
-	newRequestTokenOptionFunc := func(username, password string) *tokencmd.RequestTokenOptions {
+	newRequestTokenOptionFunc := func(username, password string) *tokenrequest.RequestTokenOptions {
 		return newRequestTokenOptions(restclient.AnonymousClientConfig(oc.AdminConfig()), routeURL, oc.Namespace(), username, password)
 	}
 
@@ -194,7 +198,7 @@ func DeployOAuthServer(oc *exutil.CLI, idps []osinv1.IdentityProvider, configMap
 }
 
 func waitForOAuthServerReady(oc *exutil.CLI) error {
-	if err := exutil.WaitForUserBeAuthorized(oc, "system:serviceaccount:"+oc.Namespace()+":e2e-oauth", "*", "*"); err != nil {
+	if err := exutil.WaitForUserBeAuthorized(oc, "system:serviceaccount:"+oc.Namespace()+":e2e-oauth", &authorizationv1.ResourceAttributes{Namespace: oc.Namespace(), Verb: "*", Resource: "*"}); err != nil {
 		return err
 	}
 	if err := waitForOAuthServerPodReady(oc); err != nil {
@@ -206,7 +210,7 @@ func waitForOAuthServerReady(oc *exutil.CLI) error {
 func waitForOAuthServerPodReady(oc *exutil.CLI) error {
 	e2e.Logf("Waiting for the OAuth server pod to be ready")
 	return wait.PollImmediateInfinite(1*time.Second, func() (bool, error) {
-		pod, err := oc.AdminKubeClient().CoreV1().Pods(oc.Namespace()).Get("test-oauth-server", metav1.GetOptions{})
+		pod, err := oc.AdminKubeClient().CoreV1().Pods(oc.Namespace()).Get(context.Background(), "test-oauth-server", metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
@@ -219,7 +223,7 @@ func waitForOAuthServerPodReady(oc *exutil.CLI) error {
 }
 
 func waitForOAuthServerRouteReady(oc *exutil.CLI) error {
-	route, err := oc.AdminRouteClient().RouteV1().Routes(oc.Namespace()).Get(RouteName, metav1.GetOptions{})
+	route, err := oc.AdminRouteClient().RouteV1().Routes(oc.Namespace()).Get(context.Background(), RouteName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -320,14 +324,14 @@ func addSecretMount(volumes []corev1.Volume, volumeMounts []corev1.VolumeMount, 
 }
 
 func oauthServerConfig(oc *exutil.CLI, routeURL string, idps []osinv1.IdentityProvider) (*osinv1.OsinServerConfig, error) {
-	adminConfigClient := configclient.NewForConfigOrDie(oc.AdminConfig()).ConfigV1()
+	adminConfigClient := oc.AdminConfigClient().ConfigV1()
 
-	infrastructure, err := adminConfigClient.Infrastructures().Get("cluster", metav1.GetOptions{})
+	infrastructure, err := adminConfigClient.Infrastructures().Get(context.Background(), "cluster", metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	console, err := adminConfigClient.Consoles().Get("cluster", metav1.GetOptions{})
+	console, err := adminConfigClient.Consoles().Get(context.Background(), "cluster", metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -342,7 +346,7 @@ func oauthServerConfig(oc *exutil.CLI, routeURL string, idps []osinv1.IdentityPr
 			ServingInfo: configv1.HTTPServingInfo{
 				ServingInfo: configv1.ServingInfo{
 					BindAddress: "0.0.0.0:6443",
-					BindNetwork: "tcp4",
+					BindNetwork: "tcp",
 					// we have valid serving certs provided by service-ca
 					// this is our main server cert which is used if SNI does not match
 					CertInfo: configv1.CertInfo{
@@ -392,14 +396,14 @@ func oauthServerConfig(oc *exutil.CLI, routeURL string, idps []osinv1.IdentityPr
 }
 
 func routerCertsToSNIConfig(oc *exutil.CLI) ([]configv1.NamedCertificate, error) {
-	routerSecret, err := oc.AdminKubeClient().CoreV1().Secrets("openshift-config-managed").Get("router-certs", metav1.GetOptions{})
+	routerSecret, err := oc.AdminKubeClient().CoreV1().Secrets("openshift-config-managed").Get(context.Background(), "router-certs", metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 	localRouterSecret := routerSecret.DeepCopy()
 	localRouterSecret.ResourceVersion = ""
 	localRouterSecret.Namespace = oc.Namespace()
-	if _, err := oc.AdminKubeClient().CoreV1().Secrets(oc.Namespace()).Create(localRouterSecret); err != nil {
+	if _, err := oc.AdminKubeClient().CoreV1().Secrets(oc.Namespace()).Create(context.Background(), localRouterSecret, metav1.CreateOptions{}); err != nil {
 		return nil, err
 	}
 
@@ -461,7 +465,7 @@ func newSessionSecretsJSON() ([]byte, error) {
 	return secretsBytes, nil
 }
 
-//randomString - random string of A-Z chars with len size
+// randomString - random string of A-Z chars with len size
 func randomString(size int) string {
 	buffer := make([]byte, size)
 	for i := 0; i < size; i++ {
@@ -470,18 +474,28 @@ func randomString(size int) string {
 	return base64.RawURLEncoding.EncodeToString(buffer)
 }
 
-// getImage will grab the hypershift image version from openshift-authentication ns
+// getImage will grab the oauth-server image version from openshift-authentication ns
 func getImage(oc *exutil.CLI) (string, error) {
 	selector, _ := labels.Parse("app=oauth-openshift")
-	pods, err := oc.AdminKubeClient().CoreV1().Pods("openshift-authentication").List(metav1.ListOptions{LabelSelector: selector.String()})
+	pods, err := oc.AdminKubeClient().CoreV1().Pods("openshift-authentication").List(context.Background(), metav1.ListOptions{LabelSelector: selector.String()})
 	if err != nil {
 		return "", err
+	}
+	if len(pods.Items) == 0 {
+		// In a hosted control plane cluster the oauth server may be running outside the cluster
+		// Use a different method to find the oauth-server image
+		return determineImageFromRelease(oc)
 	}
 	return pods.Items[0].Spec.Containers[0].Image, nil
 }
 
-func newRequestTokenOptions(config *restclient.Config, oauthServerURL, oauthClientName, username, password string) *tokencmd.RequestTokenOptions {
-	options := tokencmd.NewRequestTokenOptions(config, nil, username, password, false)
+func determineImageFromRelease(oc *exutil.CLI) (string, error) {
+	return util.DetermineImageFromRelease(oc, "oauth-server")
+}
+
+func newRequestTokenOptions(config *restclient.Config, oauthServerURL, oauthClientName, username, password string) *tokenrequest.RequestTokenOptions {
+
+	options := tokenrequest.NewRequestTokenOptions(config, false, challengehandlers.NewBasicChallengeHandler(config.Host, "", os.Stdin, os.Stdout, nil, username, password))
 	// supply the info the client would otherwise ask from .well-known/oauth-authorization-server
 	oauthClientConfig := &osincli.ClientConfig{
 		ClientId:     oauthClientName,
@@ -498,7 +512,7 @@ func newRequestTokenOptions(config *restclient.Config, oauthServerURL, oauthClie
 }
 
 func createClusterRoleBinding(oc *exutil.CLI) (*rbacv1.ClusterRoleBinding, error) {
-	return oc.AdminKubeClient().RbacV1().ClusterRoleBindings().Create(&rbacv1.ClusterRoleBinding{
+	return oc.AdminKubeClient().RbacV1().ClusterRoleBindings().Create(context.Background(), &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: oc.Namespace(),
 		},
@@ -514,17 +528,17 @@ func createClusterRoleBinding(oc *exutil.CLI) (*rbacv1.ClusterRoleBinding, error
 				Namespace: oc.Namespace(),
 			},
 		},
-	})
+	}, metav1.CreateOptions{})
 }
 
 func createOAuthClient(oc *exutil.CLI, routeURL string) (*oauthv1.OAuthClient, error) {
 	return oc.AdminOAuthClient().OauthV1().OAuthClients().
-		Create(&oauthv1.OAuthClient{
+		Create(context.Background(), &oauthv1.OAuthClient{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: oc.Namespace(),
 			},
 			GrantMethod:           oauthv1.GrantHandlerAuto,
 			RedirectURIs:          []string{fmt.Sprintf("%s/oauth/token/implicit", routeURL)},
 			RespondWithChallenges: true,
-		})
+		}, metav1.CreateOptions{})
 }

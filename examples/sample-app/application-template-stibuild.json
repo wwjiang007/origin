@@ -1,6 +1,6 @@
 {
   "kind": "Template",
-  "apiVersion": "v1",
+  "apiVersion": "template.openshift.io/v1",
   "metadata": {
     "name": "ruby-helloworld-sample",
     "annotations": {
@@ -49,7 +49,7 @@
     },
     {
       "kind": "Route",
-      "apiVersion": "v1",
+      "apiVersion": "route.openshift.io/v1",
       "metadata": {
         "name": "route-edge",
         "annotations": {
@@ -70,7 +70,7 @@
     },
     {
       "kind": "ImageStream",
-      "apiVersion": "v1",
+      "apiVersion": "image.openshift.io/v1",
       "metadata": {
         "name": "origin-ruby-sample"
       },
@@ -81,12 +81,12 @@
     },
     {
       "kind": "ImageStream",
-      "apiVersion": "v1",
+      "apiVersion": "image.openshift.io/v1",
       "metadata": {
-        "name": "ruby-25-centos7"
+        "name": "ruby-27"
       },
       "spec": {
-        "dockerImageRepository": "centos/ruby-25-centos7"
+        "dockerImageRepository": "registry.access.redhat.com/ubi8/ruby-27"
       },
       "status": {
         "dockerImageRepository": ""
@@ -94,7 +94,7 @@
     },
     {
       "kind": "BuildConfig",
-      "apiVersion": "v1",
+      "apiVersion": "build.openshift.io/v1",
       "metadata": {
         "name": "ruby-sample-build",
         "labels": {
@@ -138,7 +138,7 @@
           "sourceStrategy": {
             "from": {
               "kind": "ImageStreamTag",
-              "name": "ruby-25-centos7:latest"
+              "name": "ruby-27:latest"
             },
             "env": [
               {
@@ -165,7 +165,7 @@
     },
     {
       "kind": "DeploymentConfig",
-      "apiVersion": "v1",
+      "apiVersion": "apps.openshift.io/v1",
       "metadata": {
         "name": "frontend",
         "annotations": {
@@ -288,8 +288,7 @@
             "dnsPolicy": "ClusterFirst"
           }
         }
-      },
-      "status": {}
+      }
     },
     {
       "kind": "Service",
@@ -319,7 +318,7 @@
     },
     {
       "kind": "DeploymentConfig",
-      "apiVersion": "v1",
+      "apiVersion": "apps.openshift.io/v1",
       "metadata": {
         "name": "database",
         "annotations": {
@@ -400,7 +399,7 @@
             "containers": [
               {
                 "name": "ruby-helloworld-database",
-                "image": "centos/mysql-57-centos7:latest",
+                "image": "rhel8/mysql-80:latest",
                 "ports": [
                   {
                     "containerPort": 3306,
@@ -458,8 +457,7 @@
             "dnsPolicy": "ClusterFirst"
           }
         }
-      },
-      "status": {}
+      }
     }
   ],
   "parameters": [

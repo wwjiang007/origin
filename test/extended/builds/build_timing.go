@@ -4,10 +4,13 @@ import (
 	"path/filepath"
 	"time"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
+	admissionapi "k8s.io/pod-security-admission/api"
+
 	buildv1 "github.com/openshift/api/build/v1"
+
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
@@ -28,7 +31,7 @@ func verifyStages(stages []buildv1.StageInfo, expectedStages map[string][]string
 	o.ExpectWithOffset(1, expectedStages).To(o.BeEmpty())
 }
 
-var _ = g.Describe("[Feature:Builds][timing] capture build stages and durations", func() {
+var _ = g.Describe("[sig-builds][Feature:Builds][timing] capture build stages and durations", func() {
 	var (
 		buildTimingBaseDir    = exutil.FixturePath("testdata", "builds", "build-timing")
 		isFixture             = filepath.Join(buildTimingBaseDir, "test-is.json")
@@ -36,7 +39,7 @@ var _ = g.Describe("[Feature:Builds][timing] capture build stages and durations"
 		dockerBuildDockerfile = filepath.Join(buildTimingBaseDir, "Dockerfile")
 		sourceBuildFixture    = filepath.Join(buildTimingBaseDir, "test-s2i-build.json")
 		sourceBuildBinDir     = filepath.Join(buildTimingBaseDir, "s2i-binary-dir")
-		oc                    = exutil.NewCLI("build-timing", exutil.KubeConfigPath())
+		oc                    = exutil.NewCLIWithPodSecurityLevel("build-timing", admissionapi.LevelBaseline)
 	)
 
 	g.Context("", func() {
@@ -45,14 +48,14 @@ var _ = g.Describe("[Feature:Builds][timing] capture build stages and durations"
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				exutil.DumpPodStates(oc)
 				exutil.DumpConfigMapStates(oc)
 				exutil.DumpPodLogsStartingWith("", oc)
 			}
 		})
 
-		g.It("should record build stages and durations for s2i", func() {
+		g.It("should record build stages and durations for s2i [apigroup:build.openshift.io]", func() {
 			expectedBuildStages := make(map[string][]string)
 			expectedBuildStages["PullImages"] = []string{"", "1000s"}
 			expectedBuildStages["Build"] = []string{"10ms", "1000s"}
@@ -75,7 +78,7 @@ var _ = g.Describe("[Feature:Builds][timing] capture build stages and durations"
 			verifyStages(br.Build.Status.Stages, expectedBuildStages)
 		})
 
-		g.It("should record build stages and durations for docker", func() {
+		g.It("should record build stages and durations for docker [apigroup:build.openshift.io]", func() {
 			expectedBuildStages := make(map[string][]string)
 			expectedBuildStages["PullImages"] = []string{"", "1000s"}
 			expectedBuildStages["Build"] = []string{"10ms", "1000s"}

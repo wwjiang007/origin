@@ -20,8 +20,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-
 	"k8s.io/component-base/metrics"
 	"k8s.io/component-base/metrics/legacyregistry"
 )
@@ -51,7 +49,7 @@ var (
 			Name:      "http_requests_duration_seconds",
 			Help:      "Duration in seconds to serve http requests",
 			// Use DefBuckets for now, will customize the buckets if necessary.
-			Buckets:        prometheus.DefBuckets,
+			Buckets:        metrics.DefBuckets,
 			StabilityLevel: metrics.ALPHA,
 		},
 		[]string{"method", "path", "server_type", "long_running"},
@@ -66,6 +64,18 @@ var (
 		},
 		[]string{"method", "path", "server_type", "long_running"},
 	)
+	// VolumeStatCalDuration tracks the duration in seconds to calculate volume stats.
+	// this metric is mainly for comparison between fsquota monitoring and `du` for disk usage.
+	VolumeStatCalDuration = metrics.NewHistogramVec(
+		&metrics.HistogramOpts{
+			Subsystem:      kubeletSubsystem,
+			Name:           "volume_metric_collection_duration_seconds",
+			Help:           "Duration in seconds to calculate volume stats",
+			Buckets:        metrics.DefBuckets,
+			StabilityLevel: metrics.ALPHA,
+		},
+		[]string{"metric_source"},
+	)
 )
 
 var registerMetrics sync.Once
@@ -76,10 +86,16 @@ func Register() {
 		legacyregistry.MustRegister(HTTPRequests)
 		legacyregistry.MustRegister(HTTPRequestsDuration)
 		legacyregistry.MustRegister(HTTPInflightRequests)
+		legacyregistry.MustRegister(VolumeStatCalDuration)
 	})
 }
 
 // SinceInSeconds gets the time since the specified start in seconds.
 func SinceInSeconds(start time.Time) float64 {
 	return time.Since(start).Seconds()
+}
+
+// CollectVolumeStatCalDuration collects the duration in seconds to calculate volume stats.
+func CollectVolumeStatCalDuration(metricSource string, start time.Time) {
+	VolumeStatCalDuration.WithLabelValues(metricSource).Observe(SinceInSeconds(start))
 }

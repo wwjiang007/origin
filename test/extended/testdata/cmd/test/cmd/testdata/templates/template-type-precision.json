@@ -1,6 +1,6 @@
 {
     "kind": "Template",
-    "apiVersion": "v1",
+    "apiVersion": "template.openshift.io/v1",
     "metadata": {
         "name": "template-type-precision",
         "annotations": {
@@ -18,7 +18,7 @@
               "containers": [
                 {
                   "name": "test",
-                  "image": "busybox",
+                  "image": "image-registry.openshift-image-registry.svc:5000/openshift/tools:latest",
                   "imagePullPolicy": "IfNotPresent"
                 }
               ],

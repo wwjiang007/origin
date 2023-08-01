@@ -1,7 +1,10 @@
-apiVersion: v1
+apiVersion: apps.openshift.io/v1
 kind: DeploymentConfig
 metadata:
   generateName: idling-echo-
+  labels:
+    app: idling-echo
+    deploymentconfig: idling-echo
 spec:
   replicas: 2
   selector:
@@ -16,7 +19,7 @@ spec:
         deploymentconfig: idling-echo
     spec:
       containers:
-      - image: openshift/origin-base
+      - image: image-registry.openshift-image-registry.svc:5000/openshift/tools:latest
         name: idling-tcp-echo
         command:
           - /usr/bin/socat
@@ -25,7 +28,7 @@ spec:
         ports:
         - containerPort: 8675
           protocol: TCP
-      - image: openshift/origin-base
+      - image: image-registry.openshift-image-registry.svc:5000/openshift/tools:latest
         name: idling-udp-echo
         command:
           - /usr/bin/socat

@@ -21,6 +21,9 @@ import (
 	"k8s.io/apiserver/pkg/registry/generic"
 	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
 	storageapi "k8s.io/kubernetes/pkg/apis/storage"
+	"k8s.io/kubernetes/pkg/printers"
+	printersinternal "k8s.io/kubernetes/pkg/printers/internalversion"
+	printerstorage "k8s.io/kubernetes/pkg/printers/storage"
 	"k8s.io/kubernetes/pkg/registry/storage/csinode"
 )
 
@@ -37,14 +40,17 @@ type REST struct {
 // NewStorage returns a RESTStorage object that will work against CSINodes
 func NewStorage(optsGetter generic.RESTOptionsGetter) (*CSINodeStorage, error) {
 	store := &genericregistry.Store{
-		NewFunc:                  func() runtime.Object { return &storageapi.CSINode{} },
-		NewListFunc:              func() runtime.Object { return &storageapi.CSINodeList{} },
-		DefaultQualifiedResource: storageapi.Resource("csinodes"),
+		NewFunc:                   func() runtime.Object { return &storageapi.CSINode{} },
+		NewListFunc:               func() runtime.Object { return &storageapi.CSINodeList{} },
+		DefaultQualifiedResource:  storageapi.Resource("csinodes"),
+		SingularQualifiedResource: storageapi.Resource("csinode"),
 
 		CreateStrategy:      csinode.Strategy,
 		UpdateStrategy:      csinode.Strategy,
 		DeleteStrategy:      csinode.Strategy,
 		ReturnDeletedObject: true,
+
+		TableConvertor: printerstorage.TableConvertor{TableGenerator: printers.NewTableGenerator().With(printersinternal.AddHandlers)},
 	}
 	options := &generic.StoreOptions{RESTOptions: optsGetter}
 	if err := store.CompleteWithOptions(options); err != nil {

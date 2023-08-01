@@ -4,7 +4,7 @@
 
 readonly OS_GO_PACKAGE=github.com/openshift/origin
 
-readonly OS_BUILD_ENV_GOLANG="${OS_BUILD_ENV_GOLANG:-1.12}"
+readonly OS_BUILD_ENV_GOLANG="${OS_BUILD_ENV_GOLANG:-1.13}"
 readonly OS_BUILD_ENV_IMAGE="${OS_BUILD_ENV_IMAGE:-openshift/origin-release:golang-${OS_BUILD_ENV_GOLANG}}"
 readonly OS_REQUIRED_GO_VERSION="go${OS_BUILD_ENV_GOLANG}"
 readonly OS_GLIDE_MINOR_VERSION="13"
@@ -28,7 +28,7 @@ readonly OS_OUTPUT_BINPATH="${OS_OUTPUT}/bin"
 readonly OS_OUTPUT_PKGDIR="${OS_OUTPUT}/pkgdir"
 
 readonly OS_IMAGE_COMPILE_TARGETS_LINUX=(
-  vendor/k8s.io/kubernetes/cmd/hyperkube
+  ""
 )
 readonly OS_SCRATCH_IMAGE_COMPILE_TARGETS_LINUX=(
   ""
@@ -80,12 +80,13 @@ function os::build::ldflags() {
   ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/pkg/version.gitTreeState" "${OS_GIT_TREE_STATE}"))
   ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/pkg/version.buildDate" "${buildDate}"))
 
-  ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/kubernetes/pkg/version.gitMajor" "${KUBE_GIT_MAJOR}"))
-  ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/kubernetes/pkg/version.gitMinor" "${KUBE_GIT_MINOR}"))
-  ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/kubernetes/pkg/version.gitCommit" "${OS_GIT_COMMIT}"))
-  ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/kubernetes/pkg/version.gitVersion" "${KUBE_GIT_VERSION}"))
-  ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/kubernetes/pkg/version.buildDate" "${buildDate}"))
-  ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/kubernetes/pkg/version.gitTreeState" "clean"))
+  ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/component-base/version.gitMajor" "${KUBE_GIT_MAJOR}"))
+  ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/component-base/version.gitMinor" "${KUBE_GIT_MINOR}"))
+  ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/component-base/version.gitCommit" "${OS_GIT_COMMIT}"))
+  ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/component-base/version.gitVersion" "${KUBE_GIT_VERSION}"))
+  ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/component-base/version.buildDate" "${buildDate}"))
+  ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/component-base/version.gitTreeState" "clean"))
+  
   ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/client-go/pkg/version.gitMajor" "${KUBE_GIT_MAJOR}"))
   ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/client-go/pkg/version.gitMinor" "${KUBE_GIT_MINOR}"))
   ldflags+=($(os::build::ldflag "${OS_GO_PACKAGE}/vendor/k8s.io/client-go/pkg/version.gitCommit" "${OS_GIT_COMMIT}"))

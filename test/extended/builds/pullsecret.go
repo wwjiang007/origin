@@ -1,9 +1,10 @@
 package builds
 
 import (
+	"context"
 	"fmt"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	corev1 "k8s.io/api/core/v1"
@@ -12,13 +13,13 @@ import (
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Feature:Builds][Slow] using pull secrets in a build", func() {
+var _ = g.Describe("[sig-builds][Feature:Builds][Slow] using pull secrets in a build", func() {
 	defer g.GinkgoRecover()
 	var (
 		exampleBuild    = exutil.FixturePath("testdata", "builds", "test-docker-app")
 		linkedBuild     = exutil.FixturePath("testdata", "builds", "pullsecret", "linked-nodejs-bc.yaml")
 		pullSecretBuild = exutil.FixturePath("testdata", "builds", "pullsecret", "pullsecret-nodejs-bc.yaml")
-		oc              = exutil.NewCLI("cli-pullsecret-build", exutil.KubeConfigPath())
+		oc              = exutil.NewCLI("cli-pullsecret-build")
 	)
 
 	g.Context("", func() {
@@ -28,14 +29,14 @@ var _ = g.Describe("[Feature:Builds][Slow] using pull secrets in a build", func(
 
 		g.Context("start-build test context", func() {
 			g.AfterEach(func() {
-				if g.CurrentGinkgoTestDescription().Failed {
+				if g.CurrentSpecReport().Failed() {
 					exutil.DumpPodStates(oc)
 					exutil.DumpPodLogsStartingWith("", oc)
 				}
 			})
 
 			g.Describe("binary builds", func() {
-				g.It("should be able to run a build that is implicitly pulling from the internal registry", func() {
+				g.It("should be able to run a build that is implicitly pulling from the internal registry [apigroup:build.openshift.io]", func() {
 					g.By("creating a build")
 					err := oc.Run("new-build").Args("--binary", "--strategy=docker", "--name=docker").Execute()
 					o.Expect(err).NotTo(o.HaveOccurred())
@@ -50,7 +51,7 @@ var _ = g.Describe("[Feature:Builds][Slow] using pull secrets in a build", func(
 			g.Describe("pulling from an external authenticated registry", func() {
 				g.BeforeEach(func() {
 					g.By("copying the cluster pull secret to the namespace")
-					ps, err := oc.AsAdmin().AdminKubeClient().CoreV1().Secrets("openshift-config").Get("pull-secret", metav1.GetOptions{})
+					ps, err := oc.AsAdmin().AdminKubeClient().CoreV1().Secrets("openshift-config").Get(context.Background(), "pull-secret", metav1.GetOptions{})
 					o.Expect(err).NotTo(o.HaveOccurred())
 					localPullSecret := &corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
@@ -59,7 +60,7 @@ var _ = g.Describe("[Feature:Builds][Slow] using pull secrets in a build", func(
 						Data: ps.Data,
 						Type: ps.Type,
 					}
-					_, err = oc.KubeClient().CoreV1().Secrets(oc.Namespace()).Create(localPullSecret)
+					_, err = oc.KubeClient().CoreV1().Secrets(oc.Namespace()).Create(context.Background(), localPullSecret, metav1.CreateOptions{})
 					o.Expect(err).NotTo(o.HaveOccurred())
 				})
 
@@ -70,7 +71,7 @@ var _ = g.Describe("[Feature:Builds][Slow] using pull secrets in a build", func(
 					oc.Run("delete").Args("secret", "local-ps").Execute()
 				})
 
-				g.It("should be able to use a pull secret in a build", func() {
+				g.It("should be able to use a pull secret in a build [apigroup:build.openshift.io]", func() {
 					g.By("creating build config")
 					err := oc.Run("create").Args("-f", pullSecretBuild).Execute()
 					o.Expect(err).NotTo(o.HaveOccurred())
@@ -80,7 +81,7 @@ var _ = g.Describe("[Feature:Builds][Slow] using pull secrets in a build", func(
 					br.AssertSuccess()
 				})
 
-				g.It("should be able to use a pull secret linked to the builder service account", func() {
+				g.It("should be able to use a pull secret linked to the builder service account [apigroup:build.openshift.io]", func() {
 					g.By("linking pull secret with the builder service account")
 					err := oc.Run("secrets").Args("link", "builder", "local-ps").Execute()
 					o.Expect(err).NotTo(o.HaveOccurred())

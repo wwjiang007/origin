@@ -3,12 +3,12 @@ apiVersion: v1
 items:
 
 - kind: ImageStream
-  apiVersion: v1
+  apiVersion: image.openshift.io/v1
   metadata:
     name: signer
 
 - kind: BuildConfig
-  apiVersion: v1
+  apiVersion: build.openshift.io/v1
   metadata:
     name: signer
   spec:
@@ -16,13 +16,16 @@ items:
       - type: ConfigChange
     source:
       dockerfile: |
-        FROM openshift/origin-control-plane:latest
-        RUN yum-config-manager --disable origin-local-release ||:
+        FROM quay.io/openshift/origin-cli:latest
+        WORKDIR /var/lib/origin
+        RUN yum config-manager \
+            --add-repo 'https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/$basearch/baseos/os/' \
+            --add-repo 'https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/$basearch/appstream/os/'
         RUN yum install -y skopeo && \
             yum clean all && mkdir -p gnupg && chmod -R 0777 /var/lib/origin
         RUN echo $'%echo Generating openpgp key ...\n\
-            Key-Type: DSA \n\
-            Key-Length: 1024 \n\
+            Key-Type: RSA \n\
+            Key-Length: 2048 \n\
             Subkey-Type: ELG-E \n\
             Subkey-Length: 1024 \n\
             Name-Real: Joe Tester \n\
@@ -35,9 +38,12 @@ items:
     strategy:
       type: Docker
       dockerStrategy:
+        env:
+          - name: "BUILD_LOGLEVEL"
+            value: "2"
         from:
           kind: DockerImage
-          name: openshift/origin-control-plane:latest
+          name: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
     output:
       to:
         kind: ImageStreamTag

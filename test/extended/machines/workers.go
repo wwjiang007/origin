@@ -2,11 +2,12 @@ package operators
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"text/tabwriter"
 	"time"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 	"github.com/stretchr/objx"
 
@@ -38,7 +39,7 @@ func machineClient(dc dynamic.Interface) dynamic.ResourceInterface {
 // listMachines list all machines scoped by selector
 func listMachines(dc dynamic.Interface, labelSelector string) ([]objx.Map, error) {
 	mc := machineClient(dc)
-	obj, err := mc.List(metav1.ListOptions{
+	obj, err := mc.List(context.Background(), metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
@@ -52,12 +53,23 @@ func listMachines(dc dynamic.Interface, labelSelector string) ([]objx.Map, error
 // deleteMachine deletes the named machine
 func deleteMachine(dc dynamic.Interface, machineName string) error {
 	mc := machineClient(dc)
-	return mc.Delete(machineName, &metav1.DeleteOptions{})
+	return mc.Delete(context.Background(), machineName, metav1.DeleteOptions{})
 }
 
 // machineName returns the machine name
 func machineName(item objx.Map) string {
 	return item.Get("metadata.name").String()
+}
+
+func creationTimestamp(item objx.Map) time.Time {
+	creationString := item.Get("metadata.creationTimestamp").String()
+	creation, err := time.Parse(time.RFC3339, creationString)
+	if err != nil {
+		// This should never happen as we always read creation timestamps
+		// set by the Kube API server which sets timestamps to the RFC3339 format.
+		panic(err)
+	}
+	return creation
 }
 
 // nodeNames returns the names of nodes
@@ -115,10 +127,10 @@ func isNodeReady(node corev1.Node) bool {
 	return false
 }
 
-var _ = g.Describe("[Feature:Machines][Disruptive] Managed cluster should", func() {
+var _ = g.Describe("[sig-cluster-lifecycle][Feature:Machines][Disruptive] Managed cluster should", func() {
 	defer g.GinkgoRecover()
 
-	g.It("recover from deleted worker machines", func() {
+	g.It("recover from deleted worker machines [apigroup:machine.openshift.io]", func() {
 		cfg, err := e2e.LoadConfig()
 		o.Expect(err).NotTo(o.HaveOccurred())
 		c, err := e2e.LoadClientset()
@@ -128,7 +140,7 @@ var _ = g.Describe("[Feature:Machines][Disruptive] Managed cluster should", func
 
 		g.By("checking for the openshift machine api operator")
 		// TODO: skip if platform != aws
-		skipUnlessMachineAPIOperator(c.CoreV1().Namespaces())
+		skipUnlessMachineAPIOperator(dc, c.CoreV1().Namespaces())
 
 		g.By("validating node and machine invariants")
 		// fetch all machines
@@ -142,7 +154,7 @@ var _ = g.Describe("[Feature:Machines][Disruptive] Managed cluster should", func
 		}
 
 		// fetch worker nodes
-		workerNodes, err := c.CoreV1().Nodes().List(metav1.ListOptions{
+		workerNodes, err := c.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{
 			LabelSelector: nodeLabelSelectorWorker,
 		})
 		o.Expect(err).NotTo(o.HaveOccurred())
@@ -169,7 +181,7 @@ var _ = g.Describe("[Feature:Machines][Disruptive] Managed cluster should", func
 			if err != nil {
 				return false, nil
 			}
-			workerNodes, err = c.CoreV1().Nodes().List(metav1.ListOptions{
+			workerNodes, err = c.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{
 				LabelSelector: nodeLabelSelectorWorker,
 			})
 			if err != nil {

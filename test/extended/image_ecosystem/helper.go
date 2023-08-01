@@ -1,6 +1,7 @@
 package image_ecosystem
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
@@ -9,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 
 	exutil "github.com/openshift/origin/test/extended/util"
 )
@@ -24,7 +25,7 @@ func RunInPodContainer(oc *exutil.CLI, selector labels.Selector, cmd []string) e
 		return fmt.Errorf("Got %d pods for selector %v, expected 1", len(pods), selector)
 	}
 
-	pod, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(pods[0], metav1.GetOptions{})
+	pod, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(context.Background(), pods[0], metav1.GetOptions{})
 	if err != nil {
 		return err
 	}

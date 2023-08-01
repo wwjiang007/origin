@@ -1,10 +1,11 @@
 package image_ecosystem
 
 import (
+	"context"
 	"fmt"
 	"time"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	"github.com/openshift/api/template"
@@ -174,7 +175,7 @@ func replicationTestFactory(oc *exutil.CLI, tc testCase, cleanup func()) func() 
 		o.Expect(err).NotTo(o.HaveOccurred())
 		assertReplicationIsWorking("mysql-master-2", "mysql-slave-1", 1)
 
-		pods, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).List(metav1.ListOptions{LabelSelector: exutil.ParseLabelsOrDie("deployment=mysql-slave-1").String()})
+		pods, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).List(context.Background(), metav1.ListOptions{LabelSelector: exutil.ParseLabelsOrDie("deployment=mysql-slave-1").String()})
 		o.Expect(err).NotTo(o.HaveOccurred())
 		o.Expect(len(pods.Items)).To(o.Equal(1))
 
@@ -193,16 +194,16 @@ func replicationTestFactory(oc *exutil.CLI, tc testCase, cleanup func()) func() 
 }
 
 /*
-var _ = g.Describe("[image_ecosystem][mysql][Slow] openshift mysql replication", func() {
+var _ = g.Describe("[sig-devex][Feature:ImageEcosystem][mysql][Slow] openshift mysql replication", func() {
 	defer g.GinkgoRecover()
 	g.Skip("db replica tests are currently flaky and disabled")
 
-	var oc = exutil.NewCLI("mysql-replication", exutil.KubeConfigPath())
+	var oc = exutil.NewCLI("mysql-replication")
 	var pvs = []*kapiv1.PersistentVolume{}
 	var nfspod = &kapiv1.Pod{}
 	var cleanup = func() {
 		g.By("start cleanup")
-		if g.CurrentGinkgoTestDescription().Failed {
+		if g.CurrentSpecReport().Failed() {
 			exutil.DumpPodStates(oc)
 			exutil.DumpPodLogsStartingWith("", oc)
 			exutil.DumpPersistentVolumeInfo(oc)

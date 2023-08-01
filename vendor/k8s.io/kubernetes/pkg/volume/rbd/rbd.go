@@ -17,13 +17,14 @@ limitations under the License.
 package rbd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
 	dstrings "strings"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -31,21 +32,22 @@ import (
 	"k8s.io/apimachinery/pkg/util/uuid"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	"k8s.io/kubernetes/pkg/features"
-	"k8s.io/kubernetes/pkg/util/mount"
 	"k8s.io/kubernetes/pkg/volume"
-	"k8s.io/kubernetes/pkg/volume/util"
 	volutil "k8s.io/kubernetes/pkg/volume/util"
 	"k8s.io/kubernetes/pkg/volume/util/volumepathhandler"
+	"k8s.io/mount-utils"
+	utilexec "k8s.io/utils/exec"
 	utilstrings "k8s.io/utils/strings"
 )
 
 var (
 	supportedFeatures = sets.NewString("layering")
+	pathSeparator     = string(os.PathSeparator)
 )
 
-// This is the primary entrypoint for volume plugins.
+// ProbeVolumePlugins is the primary entrypoint for volume plugins.
 func ProbeVolumePlugins() []volume.VolumePlugin {
 	return []volume.VolumePlugin{&rbdPlugin{}}
 }
@@ -69,14 +71,17 @@ const (
 	secretKeyName                  = "key" // key name used in secret
 	rbdImageFormat1                = "1"
 	rbdImageFormat2                = "2"
-	rbdDefaultAdminId              = "admin"
+	rbdDefaultAdminID              = "admin"
 	rbdDefaultAdminSecretNamespace = "default"
 	rbdDefaultPool                 = "rbd"
-	rbdDefaultUserId               = rbdDefaultAdminId
 )
 
 func getPath(uid types.UID, volName string, host volume.VolumeHost) string {
 	return host.GetPodVolumeDir(uid, utilstrings.EscapeQualifiedName(rbdPluginName), volName)
+}
+
+func (plugin *rbdPlugin) IsMigratedToCSI() bool {
+	return utilfeature.DefaultFeatureGate.Enabled(features.CSIMigrationRBD)
 }
 
 func (plugin *rbdPlugin) Init(host volume.VolumeHost) error {
@@ -108,11 +113,7 @@ func (plugin *rbdPlugin) CanSupport(spec *volume.Spec) bool {
 	return (spec.Volume != nil && spec.Volume.RBD != nil) || (spec.PersistentVolume != nil && spec.PersistentVolume.Spec.RBD != nil)
 }
 
-func (plugin *rbdPlugin) IsMigratedToCSI() bool {
-	return false
-}
-
-func (plugin *rbdPlugin) RequiresRemount() bool {
+func (plugin *rbdPlugin) RequiresRemount(spec *volume.Spec) bool {
 	return false
 }
 
@@ -122,6 +123,10 @@ func (plugin *rbdPlugin) SupportsMountOption() bool {
 
 func (plugin *rbdPlugin) SupportsBulkVolumeVerification() bool {
 	return false
+}
+
+func (plugin *rbdPlugin) SupportsSELinuxContextMount(spec *volume.Spec) (bool, error) {
+	return true, nil
 }
 
 func (plugin *rbdPlugin) GetAccessModes() []v1.PersistentVolumeAccessMode {
@@ -156,7 +161,7 @@ func (plugin *rbdPlugin) getAdminAndSecret(spec *volume.Spec) (string, string, e
 	}
 
 	if admin == "" {
-		admin = rbdDefaultAdminId
+		admin = rbdDefaultAdminID
 	}
 	secret, err := parsePVSecret(adminSecretNamespace, adminSecretName, plugin.host.GetKubeClient())
 	if err != nil {
@@ -184,12 +189,12 @@ func (plugin *rbdPlugin) ExpandVolumeDevice(spec *volume.Spec, newSize resource.
 				Image:   spec.PersistentVolume.Spec.RBD.RBDImage,
 				Pool:    spec.PersistentVolume.Spec.RBD.RBDPool,
 				plugin:  plugin,
-				manager: &RBDUtil{},
+				manager: &rbdUtil{},
 				mounter: &mount.SafeFormatAndMount{Interface: plugin.host.GetMounter(plugin.GetPluginName())},
 				exec:    plugin.host.GetExec(plugin.GetPluginName()),
 			},
 			Mon:         spec.PersistentVolume.Spec.RBD.CephMonitors,
-			adminId:     admin,
+			adminID:     admin,
 			adminSecret: secret,
 		},
 	}
@@ -197,13 +202,13 @@ func (plugin *rbdPlugin) ExpandVolumeDevice(spec *volume.Spec, newSize resource.
 	expandedSize, err := expander.ResizeImage(oldSize, newSize)
 	if err != nil {
 		return oldSize, err
-	} else {
-		return expandedSize, nil
 	}
+	return expandedSize, nil
+
 }
 
 func (plugin *rbdPlugin) NodeExpand(resizeOptions volume.NodeResizeOptions) (bool, error) {
-	fsVolume, err := util.CheckVolumeModeFilesystem(resizeOptions.VolumeSpec)
+	fsVolume, err := volutil.CheckVolumeModeFilesystem(resizeOptions.VolumeSpec)
 	if err != nil {
 		return false, fmt.Errorf("error checking VolumeMode: %v", err)
 	}
@@ -272,11 +277,11 @@ func (plugin *rbdPlugin) createMounterFromVolumeSpecAndPod(spec *volume.Spec, po
 		// if secret is provideded, retrieve it
 		kubeClient := plugin.host.GetKubeClient()
 		if kubeClient == nil {
-			return nil, fmt.Errorf("Cannot get kube client")
+			return nil, fmt.Errorf("cannot get kube client")
 		}
-		secrets, err := kubeClient.CoreV1().Secrets(secretNs).Get(secretName, metav1.GetOptions{})
+		secrets, err := kubeClient.CoreV1().Secrets(secretNs).Get(context.TODO(), secretName, metav1.GetOptions{})
 		if err != nil {
-			err = fmt.Errorf("Couldn't get secret %v/%v err: %v", secretNs, secretName, err)
+			err = fmt.Errorf("couldn't get secret %v/%v err: %v", secretNs, secretName, err)
 			return nil, err
 		}
 		for _, data := range secrets.Data {
@@ -285,9 +290,9 @@ func (plugin *rbdPlugin) createMounterFromVolumeSpecAndPod(spec *volume.Spec, po
 	}
 
 	return &rbdMounter{
-		rbd:         newRBD("", spec.Name(), img, pool, ro, plugin, &RBDUtil{}),
+		rbd:         newRBD("", spec.Name(), img, pool, ro, plugin, &rbdUtil{}),
 		Mon:         mon,
-		Id:          id,
+		ID:          id,
 		Keyring:     keyring,
 		Secret:      secret,
 		fsType:      fstype,
@@ -305,11 +310,11 @@ func (plugin *rbdPlugin) NewMounter(spec *volume.Spec, pod *v1.Pod, _ volume.Vol
 		// if secret is provideded, retrieve it
 		kubeClient := plugin.host.GetKubeClient()
 		if kubeClient == nil {
-			return nil, fmt.Errorf("Cannot get kube client")
+			return nil, fmt.Errorf("cannot get kube client")
 		}
-		secrets, err := kubeClient.CoreV1().Secrets(secretNs).Get(secretName, metav1.GetOptions{})
+		secrets, err := kubeClient.CoreV1().Secrets(secretNs).Get(context.TODO(), secretName, metav1.GetOptions{})
 		if err != nil {
-			err = fmt.Errorf("Couldn't get secret %v/%v err: %v", secretNs, secretName, err)
+			err = fmt.Errorf("couldn't get secret %v/%v err: %v", secretNs, secretName, err)
 			return nil, err
 		}
 		for _, data := range secrets.Data {
@@ -318,7 +323,7 @@ func (plugin *rbdPlugin) NewMounter(spec *volume.Spec, pod *v1.Pod, _ volume.Vol
 	}
 
 	// Inject real implementations here, test through the internal function.
-	return plugin.newMounterInternal(spec, pod.UID, &RBDUtil{}, secret)
+	return plugin.newMounterInternal(spec, pod.UID, &rbdUtil{}, secret)
 }
 
 func (plugin *rbdPlugin) newMounterInternal(spec *volume.Spec, podUID types.UID, manager diskManager, secret string) (volume.Mounter, error) {
@@ -358,7 +363,7 @@ func (plugin *rbdPlugin) newMounterInternal(spec *volume.Spec, podUID types.UID,
 	return &rbdMounter{
 		rbd:          newRBD(podUID, spec.Name(), img, pool, ro, plugin, manager),
 		Mon:          mon,
-		Id:           id,
+		ID:           id,
 		Keyring:      keyring,
 		Secret:       secret,
 		fsType:       fstype,
@@ -369,7 +374,7 @@ func (plugin *rbdPlugin) newMounterInternal(spec *volume.Spec, podUID types.UID,
 
 func (plugin *rbdPlugin) NewUnmounter(volName string, podUID types.UID) (volume.Unmounter, error) {
 	// Inject real implementations here, test through the internal function.
-	return plugin.newUnmounterInternal(volName, podUID, &RBDUtil{})
+	return plugin.newUnmounterInternal(volName, podUID, &rbdUtil{})
 }
 
 func (plugin *rbdPlugin) newUnmounterInternal(volName string, podUID types.UID, manager diskManager) (volume.Unmounter, error) {
@@ -381,17 +386,17 @@ func (plugin *rbdPlugin) newUnmounterInternal(volName string, podUID types.UID, 
 	}, nil
 }
 
-func (plugin *rbdPlugin) ConstructVolumeSpec(volumeName, mountPath string) (*volume.Spec, error) {
+func (plugin *rbdPlugin) ConstructVolumeSpec(volumeName, mountPath string) (volume.ReconstructedVolume, error) {
 	mounter := plugin.host.GetMounter(plugin.GetPluginName())
 	kvh, ok := plugin.host.(volume.KubeletVolumeHost)
 	if !ok {
-		return nil, fmt.Errorf("plugin volume host does not implement KubeletVolumeHost interface")
+		return volume.ReconstructedVolume{}, fmt.Errorf("plugin volume host does not implement KubeletVolumeHost interface")
 	}
 	hu := kvh.GetHostUtil()
 	pluginMntDir := volutil.GetPluginMountDir(plugin.host, plugin.GetPluginName())
 	sourceName, err := hu.GetDeviceNameFromMount(mounter, mountPath, pluginMntDir)
 	if err != nil {
-		return nil, err
+		return volume.ReconstructedVolume{}, err
 	}
 	s := dstrings.Split(sourceName, "-image-")
 	if len(s) != 2 {
@@ -409,11 +414,11 @@ func (plugin *rbdPlugin) ConstructVolumeSpec(volumeName, mountPath string) (*vol
 		klog.V(3).Infof("SourceName %s wrong, fallback to old format", sourceName)
 		sourceName, err = plugin.getDeviceNameFromOldMountPath(mounter, mountPath)
 		if err != nil {
-			return nil, err
+			return volume.ReconstructedVolume{}, err
 		}
 		s = dstrings.Split(sourceName, "-image-")
 		if len(s) != 2 {
-			return nil, fmt.Errorf("sourceName %s wrong, should be pool+\"-image-\"+imageName", sourceName)
+			return volume.ReconstructedVolume{}, fmt.Errorf("sourceName %s wrong, should be pool+\"-image-\"+imageName", sourceName)
 		}
 	}
 	rbdVolume := &v1.Volume{
@@ -425,7 +430,19 @@ func (plugin *rbdPlugin) ConstructVolumeSpec(volumeName, mountPath string) (*vol
 			},
 		},
 	}
-	return volume.NewSpecFromVolume(rbdVolume), nil
+
+	var mountContext string
+	if utilfeature.DefaultFeatureGate.Enabled(features.SELinuxMountReadWriteOncePod) {
+		mountContext, err = hu.GetSELinuxMountContext(mountPath)
+		if err != nil {
+			return volume.ReconstructedVolume{}, err
+		}
+	}
+
+	return volume.ReconstructedVolume{
+		Spec:                volume.NewSpecFromVolume(rbdVolume),
+		SELinuxMountContext: mountContext,
+	}, nil
 }
 
 func (plugin *rbdPlugin) ConstructBlockVolumeSpec(podUID types.UID, volumeName, mapPath string) (*volume.Spec, error) {
@@ -487,11 +504,11 @@ func (plugin *rbdPlugin) NewBlockVolumeMapper(spec *volume.Spec, pod *v1.Pod, _ 
 			// if secret is provideded, retrieve it
 			kubeClient := plugin.host.GetKubeClient()
 			if kubeClient == nil {
-				return nil, fmt.Errorf("Cannot get kube client")
+				return nil, fmt.Errorf("cannot get kube client")
 			}
-			secrets, err := kubeClient.CoreV1().Secrets(secretNs).Get(secretName, metav1.GetOptions{})
+			secrets, err := kubeClient.CoreV1().Secrets(secretNs).Get(context.TODO(), secretName, metav1.GetOptions{})
 			if err != nil {
-				err = fmt.Errorf("Couldn't get secret %v/%v err: %v", secretNs, secretName, err)
+				err = fmt.Errorf("couldn't get secret %v/%v err: %v", secretNs, secretName, err)
 				return nil, err
 			}
 			for _, data := range secrets.Data {
@@ -500,10 +517,10 @@ func (plugin *rbdPlugin) NewBlockVolumeMapper(spec *volume.Spec, pod *v1.Pod, _ 
 		}
 	}
 
-	return plugin.newBlockVolumeMapperInternal(spec, uid, &RBDUtil{}, secret, plugin.host.GetMounter(plugin.GetPluginName()), plugin.host.GetExec(plugin.GetPluginName()))
+	return plugin.newBlockVolumeMapperInternal(spec, uid, &rbdUtil{}, secret, plugin.host.GetMounter(plugin.GetPluginName()), plugin.host.GetExec(plugin.GetPluginName()))
 }
 
-func (plugin *rbdPlugin) newBlockVolumeMapperInternal(spec *volume.Spec, podUID types.UID, manager diskManager, secret string, mounter mount.Interface, exec mount.Exec) (volume.BlockVolumeMapper, error) {
+func (plugin *rbdPlugin) newBlockVolumeMapperInternal(spec *volume.Spec, podUID types.UID, manager diskManager, secret string, mounter mount.Interface, exec utilexec.Interface) (volume.BlockVolumeMapper, error) {
 	mon, err := getVolumeSourceMonitors(spec)
 	if err != nil {
 		return nil, err
@@ -529,17 +546,25 @@ func (plugin *rbdPlugin) newBlockVolumeMapperInternal(spec *volume.Spec, podUID 
 		return nil, err
 	}
 
-	return &rbdDiskMapper{
+	mapper := &rbdDiskMapper{
 		rbd:     newRBD(podUID, spec.Name(), img, pool, ro, plugin, manager),
 		mon:     mon,
 		id:      id,
 		keyring: keyring,
 		secret:  secret,
-	}, nil
+	}
+
+	blockPath, err := mapper.GetGlobalMapPath(spec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get device path: %v", err)
+	}
+	mapper.MetricsProvider = volume.NewMetricsBlock(filepath.Join(blockPath, string(podUID)))
+
+	return mapper, nil
 }
 
 func (plugin *rbdPlugin) NewBlockVolumeUnmapper(volName string, podUID types.UID) (volume.BlockVolumeUnmapper, error) {
-	return plugin.newUnmapperInternal(volName, podUID, &RBDUtil{})
+	return plugin.newUnmapperInternal(volName, podUID, &rbdUtil{})
 }
 
 func (plugin *rbdPlugin) newUnmapperInternal(volName string, podUID types.UID, manager diskManager) (volume.BlockVolumeUnmapper, error) {
@@ -567,7 +592,7 @@ func (plugin *rbdPlugin) getDeviceNameFromOldMountPath(mounter mount.Interface, 
 	return "", fmt.Errorf("can't find source name from mounted path: %s", mountPath)
 }
 
-func (plugin *rbdPlugin) NewDeleter(spec *volume.Spec) (volume.Deleter, error) {
+func (plugin *rbdPlugin) NewDeleter(logger klog.Logger, spec *volume.Spec) (volume.Deleter, error) {
 	if spec.PersistentVolume != nil && spec.PersistentVolume.Spec.RBD == nil {
 		return nil, fmt.Errorf("spec.PersistentVolume.Spec.RBD is nil")
 	}
@@ -577,7 +602,7 @@ func (plugin *rbdPlugin) NewDeleter(spec *volume.Spec) (volume.Deleter, error) {
 		return nil, err
 	}
 
-	return plugin.newDeleterInternal(spec, admin, secret, &RBDUtil{})
+	return plugin.newDeleterInternal(spec, admin, secret, &rbdUtil{})
 }
 
 func (plugin *rbdPlugin) newDeleterInternal(spec *volume.Spec, admin, secret string, manager diskManager) (volume.Deleter, error) {
@@ -585,13 +610,13 @@ func (plugin *rbdPlugin) newDeleterInternal(spec *volume.Spec, admin, secret str
 		rbdMounter: &rbdMounter{
 			rbd:         newRBD("", spec.Name(), spec.PersistentVolume.Spec.RBD.RBDImage, spec.PersistentVolume.Spec.RBD.RBDPool, false, plugin, manager),
 			Mon:         spec.PersistentVolume.Spec.RBD.CephMonitors,
-			adminId:     admin,
+			adminID:     admin,
 			adminSecret: secret,
 		}}, nil
 }
 
-func (plugin *rbdPlugin) NewProvisioner(options volume.VolumeOptions) (volume.Provisioner, error) {
-	return plugin.newProvisionerInternal(options, &RBDUtil{})
+func (plugin *rbdPlugin) NewProvisioner(logger klog.Logger, options volume.VolumeOptions) (volume.Provisioner, error) {
+	return plugin.newProvisionerInternal(options, &rbdUtil{})
 }
 
 func (plugin *rbdPlugin) newProvisionerInternal(options volume.VolumeOptions, manager diskManager) (volume.Provisioner, error) {
@@ -612,7 +637,7 @@ type rbdVolumeProvisioner struct {
 var _ volume.Provisioner = &rbdVolumeProvisioner{}
 
 func (r *rbdVolumeProvisioner) Provision(selectedNode *v1.Node, allowedTopologies []v1.TopologySelectorTerm) (*v1.PersistentVolume, error) {
-	if !volutil.AccessModesContainedInAll(r.plugin.GetAccessModes(), r.options.PVC.Spec.AccessModes) {
+	if !volutil.ContainsAllAccessModes(r.plugin.GetAccessModes(), r.options.PVC.Spec.AccessModes) {
 		return nil, fmt.Errorf("invalid AccessModes %v: only AccessModes %v are supported", r.options.PVC.Spec.AccessModes, r.plugin.GetAccessModes())
 	}
 
@@ -635,13 +660,13 @@ func (r *rbdVolumeProvisioner) Provision(selectedNode *v1.Node, allowedTopologie
 			arr := dstrings.Split(v, ",")
 			r.Mon = append(r.Mon, arr...)
 		case "adminid":
-			r.adminId = v
+			r.adminID = v
 		case "adminsecretname":
 			adminSecretName = v
 		case "adminsecretnamespace":
 			adminSecretNamespace = v
 		case "userid":
-			r.Id = v
+			r.ID = v
 		case "pool":
 			r.Pool = v
 		case "usersecretname":
@@ -657,9 +682,8 @@ func (r *rbdVolumeProvisioner) Provision(selectedNode *v1.Node, allowedTopologie
 			for _, f := range arr {
 				if !supportedFeatures.Has(f) {
 					return nil, fmt.Errorf("invalid feature %q for volume plugin %s, supported features are: %v", f, r.plugin.GetPluginName(), supportedFeatures)
-				} else {
-					r.imageFeatures = append(r.imageFeatures, f)
 				}
+				r.imageFeatures = append(r.imageFeatures, f)
 			}
 		case volume.VolumeParameterFSType:
 			fstype = v
@@ -686,14 +710,14 @@ func (r *rbdVolumeProvisioner) Provision(selectedNode *v1.Node, allowedTopologie
 	if secretName == "" && keyring == "" {
 		return nil, fmt.Errorf("must specify either keyring or user secret name")
 	}
-	if r.adminId == "" {
-		r.adminId = rbdDefaultAdminId
+	if r.adminID == "" {
+		r.adminID = rbdDefaultAdminID
 	}
 	if r.Pool == "" {
 		r.Pool = rbdDefaultPool
 	}
-	if r.Id == "" {
-		r.Id = r.adminId
+	if r.ID == "" {
+		r.ID = r.adminID
 	}
 
 	// create random image name
@@ -720,16 +744,13 @@ func (r *rbdVolumeProvisioner) Provision(selectedNode *v1.Node, allowedTopologie
 		rbd.Keyring = keyring
 	}
 
-	var volumeMode *v1.PersistentVolumeMode
-	if utilfeature.DefaultFeatureGate.Enabled(features.BlockVolume) {
-		volumeMode = r.options.PVC.Spec.VolumeMode
-		if volumeMode != nil && *volumeMode == v1.PersistentVolumeBlock {
-			// Block volumes should not have any FSType
-			fstype = ""
-		}
+	volumeMode := r.options.PVC.Spec.VolumeMode
+	if volumeMode != nil && *volumeMode == v1.PersistentVolumeBlock {
+		// Block volumes should not have any FSType
+		fstype = ""
 	}
 
-	rbd.RadosUser = r.Id
+	rbd.RadosUser = r.ID
 	rbd.FSType = fstype
 	pv.Spec.PersistentVolumeSource.RBD = rbd
 	pv.Spec.PersistentVolumeReclaimPolicy = r.options.PersistentVolumeReclaimPolicy
@@ -761,7 +782,7 @@ func (r *rbdVolumeDeleter) Delete() error {
 	return r.manager.DeleteImage(r)
 }
 
-// rbd implmenets volume.Volume interface.
+// rbd implements volume.Volume interface.
 // It's embedded in Mounter/Unmounter/Deleter.
 type rbd struct {
 	volName  string
@@ -771,10 +792,11 @@ type rbd struct {
 	ReadOnly bool
 	plugin   *rbdPlugin
 	mounter  *mount.SafeFormatAndMount
-	exec     mount.Exec
+	exec     utilexec.Interface
 	// Utility interface that provides API calls to the provider to attach/detach disks.
-	manager                diskManager
-	volume.MetricsProvider `json:"-"`
+	manager                   diskManager
+	volume.MetricsProvider    `json:"-"`
+	mountedWithSELinuxContext bool
 }
 
 var _ volume.Volume = &rbd{}
@@ -810,12 +832,12 @@ type rbdMounter struct {
 	*rbd
 	// capitalized so they can be exported in persistRBD()
 	Mon           []string
-	Id            string
+	ID            string
 	Keyring       string
-	Secret        string
+	Secret        string `datapolicy:"token"`
 	fsType        string
-	adminSecret   string
-	adminId       string
+	adminSecret   string `datapolicy:"token"`
+	adminID       string
 	mountOptions  []string
 	imageFormat   string
 	imageFeatures []string
@@ -824,19 +846,12 @@ type rbdMounter struct {
 
 var _ volume.Mounter = &rbdMounter{}
 
-func (b *rbd) GetAttributes() volume.Attributes {
+func (rbd *rbd) GetAttributes() volume.Attributes {
 	return volume.Attributes{
-		ReadOnly:        b.ReadOnly,
-		Managed:         !b.ReadOnly,
-		SupportsSELinux: true,
+		ReadOnly:       rbd.ReadOnly,
+		Managed:        !rbd.ReadOnly,
+		SELinuxRelabel: !rbd.mountedWithSELinuxContext,
 	}
-}
-
-// Checks prior to mount operations to verify that the required components (binaries, etc.)
-// to mount the volume are available on the underlying node.
-// If not, it returns an error
-func (b *rbdMounter) CanMount() error {
-	return nil
 }
 
 func (b *rbdMounter) SetUp(mounterArgs volume.MounterArgs) error {
@@ -846,10 +861,16 @@ func (b *rbdMounter) SetUp(mounterArgs volume.MounterArgs) error {
 func (b *rbdMounter) SetUpAt(dir string, mounterArgs volume.MounterArgs) error {
 	// diskSetUp checks mountpoints and prevent repeated calls
 	klog.V(4).Infof("rbd: attempting to setup at %s", dir)
-	err := diskSetUp(b.manager, *b, dir, b.mounter, mounterArgs.FsGroup)
+	err := diskSetUp(b.manager, *b, dir, b.mounter, mounterArgs.FsGroup, mounterArgs.FSGroupChangePolicy)
 	if err != nil {
 		klog.Errorf("rbd: failed to setup at %s %v", dir, err)
+		return err
 	}
+	if utilfeature.DefaultFeatureGate.Enabled(features.SELinuxMountReadWriteOncePod) {
+		// The volume must have been mounted in MountDevice with -o context.
+		b.mountedWithSELinuxContext = mounterArgs.SELinuxLabel != ""
+	}
+
 	klog.V(3).Infof("rbd: successfully setup at %s", dir)
 	return err
 }
@@ -870,7 +891,7 @@ func (c *rbdUnmounter) TearDown() error {
 func (c *rbdUnmounter) TearDownAt(dir string) error {
 	klog.V(4).Infof("rbd: attempting to teardown at %s", dir)
 	if pathExists, pathErr := mount.PathExists(dir); pathErr != nil {
-		return fmt.Errorf("Error checking if path exists: %v", pathErr)
+		return fmt.Errorf("error checking if path exists: %v", pathErr)
 	} else if !pathExists {
 		klog.Warningf("Warning: Unmount skipped because path does not exist: %v", dir)
 		return nil
@@ -887,17 +908,14 @@ var _ volume.BlockVolumeMapper = &rbdDiskMapper{}
 
 type rbdDiskMapper struct {
 	*rbd
-	mon           []string
-	id            string
-	keyring       string
-	secret        string
-	adminSecret   string
-	adminId       string
-	imageFormat   string
-	imageFeatures []string
+	mon     []string
+	id      string
+	keyring string
+	secret  string
 }
 
 var _ volume.BlockVolumeUnmapper = &rbdDiskUnmapper{}
+var _ volume.CustomBlockVolumeUnmapper = &rbdDiskUnmapper{}
 
 // GetGlobalMapPath returns global map path and error
 // path: plugins/kubernetes.io/{PluginName}/volumeDevices/{rbd pool}-image-{rbd image-name}/{podUid}
@@ -910,14 +928,6 @@ func (rbd *rbd) GetGlobalMapPath(spec *volume.Spec) (string, error) {
 // volumeName: pv0001
 func (rbd *rbd) GetPodDeviceMapPath() (string, string) {
 	return rbd.rbdPodDeviceMapPath()
-}
-
-func (rbd *rbdDiskMapper) SetUpDevice() (string, error) {
-	return "", nil
-}
-
-func (rbd *rbdDiskMapper) MapDevice(devicePath, globalMapPath, volumeMapPath, volumeMapName string, podUID types.UID) error {
-	return volutil.MapBlockVolume(devicePath, globalMapPath, volumeMapPath, volumeMapName, podUID)
 }
 
 func (rbd *rbd) rbdGlobalMapPath(spec *volume.Spec) (string, error) {
@@ -939,7 +949,7 @@ func (rbd *rbd) rbdGlobalMapPath(spec *volume.Spec) (string, error) {
 	}
 
 	mounter := &rbdMounter{
-		rbd: newRBD("", spec.Name(), img, pool, ro, rbd.plugin, &RBDUtil{}),
+		rbd: newRBD("", spec.Name(), img, pool, ro, rbd.plugin, &rbdUtil{}),
 		Mon: mon,
 	}
 	return rbd.manager.MakeGlobalVDPDName(*mounter.rbd), nil
@@ -950,13 +960,19 @@ func (rbd *rbd) rbdPodDeviceMapPath() (string, string) {
 	return rbd.plugin.host.GetPodVolumeDeviceDir(rbd.podUID, utilstrings.EscapeQualifiedName(name)), rbd.volName
 }
 
+// SupportsMetrics returns true for rbdDiskMapper as it initializes the
+// MetricsProvider.
+func (rdm *rbdDiskMapper) SupportsMetrics() bool {
+	return true
+}
+
 type rbdDiskUnmapper struct {
 	*rbdDiskMapper
 }
 
 func getPoolAndImageFromMapPath(mapPath string) (string, string, error) {
 
-	pathParts := dstrings.Split(mapPath, "/")
+	pathParts := dstrings.Split(mapPath, pathSeparator)
 	if len(pathParts) < 2 {
 		return "", "", fmt.Errorf("corrupted mapPath")
 	}
@@ -1003,6 +1019,10 @@ func (rbd *rbdDiskUnmapper) TearDownDevice(mapPath, _ string) error {
 	return nil
 }
 
+func (rbd *rbdDiskUnmapper) UnmapPodDevice() error {
+	return nil
+}
+
 func getVolumeSourceMonitors(spec *volume.Spec) ([]string, error) {
 	if spec.Volume != nil && spec.Volume.RBD != nil {
 		return spec.Volume.RBD.CephMonitors, nil
@@ -1011,7 +1031,7 @@ func getVolumeSourceMonitors(spec *volume.Spec) ([]string, error) {
 		return spec.PersistentVolume.Spec.RBD.CephMonitors, nil
 	}
 
-	return nil, fmt.Errorf("Spec does not reference a RBD volume type")
+	return nil, fmt.Errorf("spec does not reference a RBD volume type")
 }
 
 func getVolumeSourceImage(spec *volume.Spec) (string, error) {
@@ -1022,7 +1042,7 @@ func getVolumeSourceImage(spec *volume.Spec) (string, error) {
 		return spec.PersistentVolume.Spec.RBD.RBDImage, nil
 	}
 
-	return "", fmt.Errorf("Spec does not reference a RBD volume type")
+	return "", fmt.Errorf("spec does not reference a RBD volume type")
 }
 
 func getVolumeSourceFSType(spec *volume.Spec) (string, error) {
@@ -1033,7 +1053,7 @@ func getVolumeSourceFSType(spec *volume.Spec) (string, error) {
 		return spec.PersistentVolume.Spec.RBD.FSType, nil
 	}
 
-	return "", fmt.Errorf("Spec does not reference a RBD volume type")
+	return "", fmt.Errorf("spec does not reference a RBD volume type")
 }
 
 func getVolumeSourcePool(spec *volume.Spec) (string, error) {
@@ -1044,7 +1064,7 @@ func getVolumeSourcePool(spec *volume.Spec) (string, error) {
 		return spec.PersistentVolume.Spec.RBD.RBDPool, nil
 	}
 
-	return "", fmt.Errorf("Spec does not reference a RBD volume type")
+	return "", fmt.Errorf("spec does not reference a RBD volume type")
 }
 
 func getVolumeSourceUser(spec *volume.Spec) (string, error) {
@@ -1055,7 +1075,7 @@ func getVolumeSourceUser(spec *volume.Spec) (string, error) {
 		return spec.PersistentVolume.Spec.RBD.RadosUser, nil
 	}
 
-	return "", fmt.Errorf("Spec does not reference a RBD volume type")
+	return "", fmt.Errorf("spec does not reference a RBD volume type")
 }
 
 func getVolumeSourceKeyRing(spec *volume.Spec) (string, error) {
@@ -1066,7 +1086,7 @@ func getVolumeSourceKeyRing(spec *volume.Spec) (string, error) {
 		return spec.PersistentVolume.Spec.RBD.Keyring, nil
 	}
 
-	return "", fmt.Errorf("Spec does not reference a RBD volume type")
+	return "", fmt.Errorf("spec does not reference a RBD volume type")
 }
 
 func getVolumeSourceReadOnly(spec *volume.Spec) (bool, error) {
@@ -1079,7 +1099,7 @@ func getVolumeSourceReadOnly(spec *volume.Spec) (bool, error) {
 		return spec.ReadOnly, nil
 	}
 
-	return false, fmt.Errorf("Spec does not reference a RBD volume type")
+	return false, fmt.Errorf("spec does not reference a RBD volume type")
 }
 
 func getVolumeAccessModes(spec *volume.Spec) ([]v1.PersistentVolumeAccessMode, error) {
@@ -1087,9 +1107,8 @@ func getVolumeAccessModes(spec *volume.Spec) ([]v1.PersistentVolumeAccessMode, e
 	if spec.PersistentVolume != nil {
 		if spec.PersistentVolume.Spec.RBD != nil {
 			return spec.PersistentVolume.Spec.AccessModes, nil
-		} else {
-			return nil, fmt.Errorf("Spec does not reference a RBD volume type")
 		}
+		return nil, fmt.Errorf("spec does not reference a RBD volume type")
 	}
 
 	return nil, nil
@@ -1140,5 +1159,5 @@ func getSecretNameAndNamespace(spec *volume.Spec, defaultNamespace string) (stri
 		}
 		return "", "", nil
 	}
-	return "", "", fmt.Errorf("Spec does not reference an RBD volume type")
+	return "", "", fmt.Errorf("spec does not reference an RBD volume type")
 }

@@ -21,21 +21,24 @@ import (
 	"time"
 
 	v1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	"k8s.io/apimachinery/pkg/types"
 	clientset "k8s.io/client-go/kubernetes"
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
+	utilsysctl "k8s.io/component-helpers/node/util/sysctl"
 	proxyapp "k8s.io/kubernetes/cmd/kube-proxy/app"
 	"k8s.io/kubernetes/pkg/proxy"
 	proxyconfig "k8s.io/kubernetes/pkg/proxy/config"
 	"k8s.io/kubernetes/pkg/proxy/iptables"
+	proxyutiliptables "k8s.io/kubernetes/pkg/proxy/util/iptables"
 	utiliptables "k8s.io/kubernetes/pkg/util/iptables"
 	utilnode "k8s.io/kubernetes/pkg/util/node"
-	utilsysctl "k8s.io/kubernetes/pkg/util/sysctl"
 	utilexec "k8s.io/utils/exec"
+	netutils "k8s.io/utils/net"
 	utilpointer "k8s.io/utils/pointer"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 type HollowProxy struct {
@@ -43,21 +46,21 @@ type HollowProxy struct {
 }
 
 type FakeProxier struct {
-	proxyconfig.NoopEndpointSliceHandler
+	proxyconfig.NoopNodeHandler
 }
 
 func (*FakeProxier) Sync() {}
 func (*FakeProxier) SyncLoop() {
 	select {}
 }
-func (*FakeProxier) OnServiceAdd(service *v1.Service)                        {}
-func (*FakeProxier) OnServiceUpdate(oldService, service *v1.Service)         {}
-func (*FakeProxier) OnServiceDelete(service *v1.Service)                     {}
-func (*FakeProxier) OnServiceSynced()                                        {}
-func (*FakeProxier) OnEndpointsAdd(endpoints *v1.Endpoints)                  {}
-func (*FakeProxier) OnEndpointsUpdate(oldEndpoints, endpoints *v1.Endpoints) {}
-func (*FakeProxier) OnEndpointsDelete(endpoints *v1.Endpoints)               {}
-func (*FakeProxier) OnEndpointsSynced()                                      {}
+func (*FakeProxier) OnServiceAdd(service *v1.Service)                                 {}
+func (*FakeProxier) OnServiceUpdate(oldService, service *v1.Service)                  {}
+func (*FakeProxier) OnServiceDelete(service *v1.Service)                              {}
+func (*FakeProxier) OnServiceSynced()                                                 {}
+func (*FakeProxier) OnEndpointSliceAdd(slice *discoveryv1.EndpointSlice)              {}
+func (*FakeProxier) OnEndpointSliceUpdate(oldSlice, slice *discoveryv1.EndpointSlice) {}
+func (*FakeProxier) OnEndpointSliceDelete(slice *discoveryv1.EndpointSlice)           {}
+func (*FakeProxier) OnEndpointSlicesSynced()                                          {}
 
 func NewHollowProxyOrDie(
 	nodeName string,
@@ -66,8 +69,8 @@ func NewHollowProxyOrDie(
 	iptInterface utiliptables.Interface,
 	sysctl utilsysctl.Interface,
 	execer utilexec.Interface,
-	broadcaster record.EventBroadcaster,
-	recorder record.EventRecorder,
+	broadcaster events.EventBroadcaster,
+	recorder events.EventRecorder,
 	useRealProxier bool,
 	proxierSyncPeriod time.Duration,
 	proxierMinSyncPeriod time.Duration,
@@ -77,19 +80,30 @@ func NewHollowProxyOrDie(
 	var err error
 
 	if useRealProxier {
+		nodeIP := utilnode.GetNodeIP(client, nodeName)
+		if nodeIP == nil {
+			klog.InfoS("Can't determine this node's IP, assuming 127.0.0.1")
+			nodeIP = netutils.ParseIPSloppy("127.0.0.1")
+		}
+		family := v1.IPv4Protocol
+		if iptInterface.IsIPv6() {
+			family = v1.IPv6Protocol
+		}
 		// Real proxier with fake iptables, sysctl, etc underneath it.
 		//var err error
 		proxier, err = iptables.NewProxier(
+			family,
 			iptInterface,
 			sysctl,
 			execer,
 			proxierSyncPeriod,
 			proxierMinSyncPeriod,
 			false,
+			false,
 			0,
-			"10.0.0.0/8",
+			proxyutiliptables.NewNoOpLocalDetector(),
 			nodeName,
-			utilnode.GetNodeIP(client, nodeName),
+			nodeIP,
 			recorder,
 			nil,
 			[]string{},
@@ -124,8 +138,9 @@ func NewHollowProxyOrDie(
 	}, nil
 }
 
-func (hp *HollowProxy) Run() {
+func (hp *HollowProxy) Run() error {
 	if err := hp.ProxyServer.Run(); err != nil {
-		klog.Fatalf("Error while running proxy: %v\n", err)
+		return fmt.Errorf("Error while running proxy: %w", err)
 	}
+	return nil
 }

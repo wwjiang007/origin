@@ -75,7 +75,7 @@ The structure of this directory is following:
 
 * [**`test/extended/util`**](util) provides useful helpers and utilities to use in your extended test. It provides a easy-to-use interface to OpenShift CLI and also
 access to the Kubernetes [E2E framework](https://github.com/openshift/origin/tree/master/vendor/k8s.io/kubernetes/test/e2e) helpers. It also contains OpenShift helpers that are shared across multiple test cases, to make the test cases more DRY.
-* [**`test/extended/fixtures`**](fixtures) contains the JSON and YAML fixtures that are meant to be used by the extended tests.
+* [**`test/extended/testdata`**](testdata) contains the JSON and YAML fixtures that are meant to be used by the extended tests.
 * [**`test/extended/[images,builds,...]`**](builds) each of these Go packages contains extended tests that are related to each other. For example, the `images` directory should contain test cases that are exercising usage of various container images in OpenShift.
 
 Groups vs. packages
@@ -139,14 +139,14 @@ The top-level describe container should also specify the bucket into which the t
 package extended
 
 import (
-    g "github.com/onsi/ginkgo"
+    g "github.com/onsi/ginkgo/v2"
     o "github.com/onsi/gomega"
 )
 
 var _ = g.Describe("[<test bucket>] <Testing scenario>", func() {
 	defer g.GinkgoRecover()
 	var (
-		oc = exutil.NewCLI("test-name", exutil.KubeConfigPath())
+		oc = exutil.NewCLI("test-name")
 		testFixture = filepath.Join("testdata", "test.json")
 	)
 })

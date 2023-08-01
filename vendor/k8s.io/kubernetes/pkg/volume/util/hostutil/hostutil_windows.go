@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 /*
@@ -25,10 +26,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
+	"k8s.io/mount-utils"
 	utilpath "k8s.io/utils/path"
-
-	"k8s.io/kubernetes/pkg/util/mount"
 )
 
 // HostUtil implements HostUtils for Windows platforms.
@@ -122,4 +122,10 @@ func (hu *HostUtil) GetMode(pathname string) (os.FileMode, error) {
 		return 0, err
 	}
 	return info.Mode(), nil
+}
+
+// GetSELinuxMountContext returns value of -o context=XYZ mount option on
+// given mount point.
+func (hu *HostUtil) GetSELinuxMountContext(pathname string) (string, error) {
+	return "", nil
 }

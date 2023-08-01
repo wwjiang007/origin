@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package devicemapper
 
 import (
@@ -19,7 +20,7 @@ import (
 	"sync"
 	"time"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // ThinPoolWatcher maintains a cache of device name -> usage stats for a
@@ -85,13 +86,13 @@ func (w *ThinPoolWatcher) Stop() {
 }
 
 // GetUsage gets the cached usage value of the given device.
-func (w *ThinPoolWatcher) GetUsage(deviceId string) (uint64, error) {
+func (w *ThinPoolWatcher) GetUsage(deviceID string) (uint64, error) {
 	w.lock.RLock()
 	defer w.lock.RUnlock()
 
-	v, ok := w.cache[deviceId]
+	v, ok := w.cache[deviceID]
 	if !ok {
-		return 0, fmt.Errorf("no cached value for usage of device %v", deviceId)
+		return 0, fmt.Errorf("no cached value for usage of device %v", deviceID)
 	}
 
 	return v, nil
@@ -129,13 +130,15 @@ func (w *ThinPoolWatcher) Refresh() error {
 	if output, err := w.dmsetup.Message(w.poolName, 0, reserveMetadataMessage); err != nil {
 		err = fmt.Errorf("error reserving metadata for thin-pool %v: %v output: %v", w.poolName, err, string(output))
 		return err
-	} else {
-		klog.V(5).Infof("reserved metadata snapshot for thin-pool %v", w.poolName)
 	}
+	klog.V(5).Infof("reserved metadata snapshot for thin-pool %v", w.poolName)
 
 	defer func() {
 		klog.V(5).Infof("releasing metadata snapshot for thin-pool %v", w.poolName)
-		w.dmsetup.Message(w.poolName, 0, releaseMetadataMessage)
+		_, err := w.dmsetup.Message(w.poolName, 0, releaseMetadataMessage)
+		if err != nil {
+			klog.Warningf("Unable to release metadata snapshot for thin-pool %v: %s", w.poolName, err)
+		}
 	}()
 
 	klog.V(5).Infof("running thin_ls on metadata device %v", w.metadataDevice)

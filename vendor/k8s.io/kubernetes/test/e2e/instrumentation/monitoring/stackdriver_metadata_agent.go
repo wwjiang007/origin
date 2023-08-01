@@ -20,18 +20,21 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"reflect"
 	"time"
 
-	"github.com/onsi/ginkgo"
-	"golang.org/x/oauth2/google"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
 	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
+	e2eskipper "k8s.io/kubernetes/test/e2e/framework/skipper"
 	instrumentation "k8s.io/kubernetes/test/e2e/instrumentation/common"
+	admissionapi "k8s.io/pod-security-admission/api"
+
+	"github.com/onsi/ginkgo/v2"
+	"golang.org/x/oauth2/google"
 )
 
 const (
@@ -44,19 +47,20 @@ const (
 
 var _ = instrumentation.SIGDescribe("Stackdriver Monitoring", func() {
 	ginkgo.BeforeEach(func() {
-		framework.SkipUnlessProviderIs("gce", "gke")
+		e2eskipper.SkipUnlessProviderIs("gce", "gke")
 	})
 
 	f := framework.NewDefaultFramework("stackdriver-monitoring")
+	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
 	var kubeClient clientset.Interface
 
-	ginkgo.It("should run Stackdriver Metadata Agent [Feature:StackdriverMetadataAgent]", func() {
+	ginkgo.It("should run Stackdriver Metadata Agent [Feature:StackdriverMetadataAgent]", func(ctx context.Context) {
 		kubeClient = f.ClientSet
-		testAgent(f, kubeClient)
+		testAgent(ctx, f, kubeClient)
 	})
 })
 
-func testAgent(f *framework.Framework, kubeClient clientset.Interface) {
+func testAgent(ctx context.Context, f *framework.Framework, kubeClient clientset.Interface) {
 	projectID := framework.TestContext.CloudConfig.ProjectID
 	resourceType := "k8s_container"
 	uniqueContainerName := fmt.Sprintf("test-container-%v", time.Now().Unix())
@@ -66,16 +70,16 @@ func testAgent(f *framework.Framework, kubeClient clientset.Interface) {
 		resourceType,
 		uniqueContainerName)
 
-	oauthClient, err := google.DefaultClient(context.Background(), MonitoringScope)
+	oauthClient, err := google.DefaultClient(ctx, MonitoringScope)
 	if err != nil {
 		framework.Failf("Failed to create oauth client: %s", err)
 	}
 
 	// Create test pod with unique name.
-	_ = e2epod.CreateExecPodOrFail(kubeClient, f.Namespace.Name, uniqueContainerName, func(pod *v1.Pod) {
+	_ = e2epod.CreateExecPodOrFail(ctx, kubeClient, f.Namespace.Name, uniqueContainerName, func(pod *v1.Pod) {
 		pod.Spec.Containers[0].Name = uniqueContainerName
 	})
-	defer kubeClient.CoreV1().Pods(f.Namespace.Name).Delete(uniqueContainerName, &metav1.DeleteOptions{})
+	ginkgo.DeferCleanup(kubeClient.CoreV1().Pods(f.Namespace.Name).Delete, uniqueContainerName, metav1.DeleteOptions{})
 
 	// Wait a short amount of time for Metadata Agent to be created and metadata to be exported
 	time.Sleep(metadataWaitTime)
@@ -87,7 +91,7 @@ func testAgent(f *framework.Framework, kubeClient clientset.Interface) {
 	if resp.StatusCode != 200 {
 		framework.Failf("Stackdriver Metadata API returned error status: %s", resp.Status)
 	}
-	metadataAPIResponse, err := ioutil.ReadAll(resp.Body)
+	metadataAPIResponse, err := io.ReadAll(resp.Body)
 	if err != nil {
 		framework.Failf("Failed to read response from Stackdriver Metadata API: %s", err)
 	}
@@ -116,7 +120,7 @@ func verifyPodExists(response []byte, containerName string) (bool, error) {
 	var metadata Metadata
 	err := json.Unmarshal(response, &metadata)
 	if err != nil {
-		return false, fmt.Errorf("Failed to unmarshall: %s", err)
+		return false, fmt.Errorf("Failed to unmarshall: %w", err)
 	}
 
 	for _, result := range metadata.Results {
@@ -126,7 +130,7 @@ func verifyPodExists(response []byte, containerName string) (bool, error) {
 		}
 		resource, err := parseResource(rawResource)
 		if err != nil {
-			return false, fmt.Errorf("No 'resource' label: %s", err)
+			return false, fmt.Errorf("No 'resource' label: %w", err)
 		}
 		if resource.resourceType == "k8s_container" &&
 			resource.resourceLabels["container_name"] == containerName {

@@ -3,6 +3,8 @@
 package v1
 
 import (
+	"net/http"
+
 	v1 "github.com/openshift/api/operator/v1"
 	"github.com/openshift/client-go/operator/clientset/versioned/scheme"
 	rest "k8s.io/client-go/rest"
@@ -11,10 +13,15 @@ import (
 type OperatorV1Interface interface {
 	RESTClient() rest.Interface
 	AuthenticationsGetter
+	CSISnapshotControllersGetter
+	CloudCredentialsGetter
+	ClusterCSIDriversGetter
+	ConfigsGetter
 	ConsolesGetter
 	DNSesGetter
 	EtcdsGetter
 	IngressControllersGetter
+	InsightsOperatorsGetter
 	KubeAPIServersGetter
 	KubeControllerManagersGetter
 	KubeSchedulersGetter
@@ -25,6 +32,7 @@ type OperatorV1Interface interface {
 	ServiceCAsGetter
 	ServiceCatalogAPIServersGetter
 	ServiceCatalogControllerManagersGetter
+	StoragesGetter
 }
 
 // OperatorV1Client is used to interact with features provided by the operator.openshift.io group.
@@ -34,6 +42,22 @@ type OperatorV1Client struct {
 
 func (c *OperatorV1Client) Authentications() AuthenticationInterface {
 	return newAuthentications(c)
+}
+
+func (c *OperatorV1Client) CSISnapshotControllers() CSISnapshotControllerInterface {
+	return newCSISnapshotControllers(c)
+}
+
+func (c *OperatorV1Client) CloudCredentials() CloudCredentialInterface {
+	return newCloudCredentials(c)
+}
+
+func (c *OperatorV1Client) ClusterCSIDrivers() ClusterCSIDriverInterface {
+	return newClusterCSIDrivers(c)
+}
+
+func (c *OperatorV1Client) Configs() ConfigInterface {
+	return newConfigs(c)
 }
 
 func (c *OperatorV1Client) Consoles() ConsoleInterface {
@@ -50,6 +74,10 @@ func (c *OperatorV1Client) Etcds() EtcdInterface {
 
 func (c *OperatorV1Client) IngressControllers(namespace string) IngressControllerInterface {
 	return newIngressControllers(c, namespace)
+}
+
+func (c *OperatorV1Client) InsightsOperators() InsightsOperatorInterface {
+	return newInsightsOperators(c)
 }
 
 func (c *OperatorV1Client) KubeAPIServers() KubeAPIServerInterface {
@@ -92,13 +120,33 @@ func (c *OperatorV1Client) ServiceCatalogControllerManagers() ServiceCatalogCont
 	return newServiceCatalogControllerManagers(c)
 }
 
+func (c *OperatorV1Client) Storages() StorageInterface {
+	return newStorages(c)
+}
+
 // NewForConfig creates a new OperatorV1Client for the given config.
+// NewForConfig is equivalent to NewForConfigAndClient(c, httpClient),
+// where httpClient was generated with rest.HTTPClientFor(c).
 func NewForConfig(c *rest.Config) (*OperatorV1Client, error) {
 	config := *c
 	if err := setConfigDefaults(&config); err != nil {
 		return nil, err
 	}
-	client, err := rest.RESTClientFor(&config)
+	httpClient, err := rest.HTTPClientFor(&config)
+	if err != nil {
+		return nil, err
+	}
+	return NewForConfigAndClient(&config, httpClient)
+}
+
+// NewForConfigAndClient creates a new OperatorV1Client for the given config and http client.
+// Note the http client provided takes precedence over the configured transport values.
+func NewForConfigAndClient(c *rest.Config, h *http.Client) (*OperatorV1Client, error) {
+	config := *c
+	if err := setConfigDefaults(&config); err != nil {
+		return nil, err
+	}
+	client, err := rest.RESTClientForConfigAndClient(&config, h)
 	if err != nil {
 		return nil, err
 	}

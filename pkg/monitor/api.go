@@ -7,116 +7,66 @@ import (
 	"sync"
 	"time"
 
+	configclientset "github.com/openshift/client-go/config/clientset/versioned"
+	"github.com/openshift/origin/pkg/disruption/backend"
+	"github.com/openshift/origin/pkg/monitor/apiserveravailability"
+	"github.com/openshift/origin/pkg/monitor/monitorapi"
+	"github.com/openshift/origin/pkg/monitor/shutdown"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
-	clientcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
-
-	configclientset "github.com/openshift/client-go/config/clientset/versioned"
-	clientimagev1 "github.com/openshift/client-go/image/clientset/versioned/typed/image/v1"
+	"k8s.io/klog/v2"
 )
 
-// Start begins monitoring the cluster referenced by the default kube configuration until
-// context is finished.
-func Start(ctx context.Context) (*Monitor, error) {
-	m := NewMonitor()
+func GetMonitorRESTConfig() (*rest.Config, error) {
 	cfg := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(clientcmd.NewDefaultClientConfigLoadingRules(), &clientcmd.ConfigOverrides{})
 	clusterConfig, err := cfg.ClientConfig()
 	if err != nil {
 		return nil, fmt.Errorf("could not load client configuration: %v", err)
 	}
-	client, err := kubernetes.NewForConfig(clusterConfig)
+
+	return clusterConfig, nil
+}
+
+// Start begins monitoring the cluster referenced by the default kube configuration until
+// context is finished.
+func Start(ctx context.Context, restConfig *rest.Config, additionalEventIntervalRecorders []StartEventIntervalRecorderFunc, lb backend.LoadBalancerType) (*Monitor, error) {
+	m := NewMonitor()
+	client, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
 		return nil, err
 	}
-	configClient, err := configclientset.NewForConfig(clusterConfig)
+	configClient, err := configclientset.NewForConfig(restConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := startAPIMonitoring(ctx, m, clusterConfig); err != nil {
-		return nil, err
+	for _, additionalEventIntervalRecorder := range additionalEventIntervalRecorders {
+		if err := additionalEventIntervalRecorder(ctx, m, restConfig, lb); err != nil {
+			return nil, err
+		}
 	}
+
+	// read the state of the cluster apiserver client access issues *before* any test (like upgrade) begins
+	intervals, err := apiserveravailability.APIServerAvailabilityIntervalsFromCluster(client, time.Time{}, time.Time{})
+	if err != nil {
+		klog.Errorf("error reading initial apiserver availability: %v", err)
+	}
+	m.AddIntervals(intervals...)
+
 	startPodMonitoring(ctx, m, client)
 	startNodeMonitoring(ctx, m, client)
 	startEventMonitoring(ctx, m, client)
+	shutdown.StartMonitoringGracefulShutdownEvents(ctx, m, client)
+
+	// add interval creation at the same point where we add the monitors
 	startClusterOperatorMonitoring(ctx, m, configClient)
-
-	m.StartSampling(ctx)
 	return m, nil
-}
-
-func startAPIMonitoring(ctx context.Context, m *Monitor, clusterConfig *rest.Config) error {
-	pollingConfig := *clusterConfig
-	pollingConfig.Timeout = 3 * time.Second
-	pollingClient, err := clientcorev1.NewForConfig(&pollingConfig)
-	if err != nil {
-		return err
-	}
-	openshiftPollingClient, err := clientimagev1.NewForConfig(&pollingConfig)
-	if err != nil {
-		return err
-	}
-
-	m.AddSampler(
-		StartSampling(ctx, m, time.Second, func(previous bool) (condition *Condition, next bool) {
-			_, err := pollingClient.Namespaces().Get("kube-system", metav1.GetOptions{})
-			switch {
-			case err == nil && !previous:
-				condition = &Condition{
-					Level:   Info,
-					Locator: "kube-apiserver",
-					Message: "Kube API started responding to GET requests",
-				}
-			case err != nil && previous:
-				condition = &Condition{
-					Level:   Error,
-					Locator: "kube-apiserver",
-					Message: fmt.Sprintf("Kube API started failing: %v", err),
-				}
-			}
-			return condition, err == nil
-		}).ConditionWhenFailing(&Condition{
-			Level:   Error,
-			Locator: "kube-apiserver",
-			Message: fmt.Sprintf("Kube API is not responding to GET requests"),
-		}),
-	)
-
-	m.AddSampler(
-		StartSampling(ctx, m, time.Second, func(previous bool) (condition *Condition, next bool) {
-			_, err := openshiftPollingClient.ImageStreams("openshift-apiserver").Get("missing", metav1.GetOptions{})
-			if !errors.IsUnexpectedServerError(err) && errors.IsNotFound(err) {
-				err = nil
-			}
-			switch {
-			case err == nil && !previous:
-				condition = &Condition{
-					Level:   Info,
-					Locator: "openshift-apiserver",
-					Message: "OpenShift API started responding to GET requests",
-				}
-			case err != nil && previous:
-				condition = &Condition{
-					Level:   Info,
-					Locator: "openshift-apiserver",
-					Message: fmt.Sprintf("OpenShift API started failing: %v", err),
-				}
-			}
-			return condition, err == nil
-		}).ConditionWhenFailing(&Condition{
-			Level:   Error,
-			Locator: "openshift-apiserver",
-			Message: fmt.Sprintf("OpenShift API is not responding to GET requests"),
-		}),
-	)
-	return nil
 }
 
 func findContainerStatus(status []corev1.ContainerStatus, name string, position int) *corev1.ContainerStatus {
@@ -149,33 +99,15 @@ func findNodeCondition(status []corev1.NodeCondition, name corev1.NodeConditionT
 
 func locateEvent(event *corev1.Event) string {
 	if len(event.InvolvedObject.Namespace) > 0 {
+		if len(event.Source.Host) > 0 && event.InvolvedObject.Kind != "Node" {
+			return fmt.Sprintf("ns/%s %s/%s node/%s", event.InvolvedObject.Namespace, strings.ToLower(event.InvolvedObject.Kind), event.InvolvedObject.Name, event.Source.Host)
+		}
 		return fmt.Sprintf("ns/%s %s/%s", event.InvolvedObject.Namespace, strings.ToLower(event.InvolvedObject.Kind), event.InvolvedObject.Name)
 	}
+	if len(event.Source.Host) > 0 && event.InvolvedObject.Kind != "Node" {
+		return fmt.Sprintf("%s/%s node/%s", strings.ToLower(event.InvolvedObject.Kind), event.InvolvedObject.Name, event.Source.Host)
+	}
 	return fmt.Sprintf("%s/%s", strings.ToLower(event.InvolvedObject.Kind), event.InvolvedObject.Name)
-}
-
-func locatePod(pod *corev1.Pod) string {
-	return fmt.Sprintf("ns/%s pod/%s node/%s", pod.Namespace, pod.Name, pod.Spec.NodeName)
-}
-
-func locateNode(node *corev1.Node) string {
-	return fmt.Sprintf("node/%s", node.Name)
-}
-
-func locatePodContainer(pod *corev1.Pod, containerName string) string {
-	return fmt.Sprintf("ns/%s pod/%s node/%s container=%s", pod.Namespace, pod.Name, pod.Spec.NodeName, containerName)
-}
-
-func filterToSystemNamespaces(obj runtime.Object) bool {
-	m, ok := obj.(metav1.Object)
-	if !ok {
-		return true
-	}
-	ns := m.GetNamespace()
-	if len(ns) == 0 {
-		return true
-	}
-	return strings.HasPrefix(ns, "kube-") || strings.HasPrefix(ns, "openshift-") || ns == "default"
 }
 
 type errorRecordingListWatcher struct {
@@ -211,8 +143,8 @@ func (w *errorRecordingListWatcher) handle(err error) {
 	defer w.lock.Unlock()
 	if err != nil {
 		if !w.receivedError {
-			w.recorder.Record(Condition{
-				Level:   Error,
+			w.recorder.Record(monitorapi.Condition{
+				Level:   monitorapi.Error,
 				Locator: "kube-apiserver",
 				Message: fmt.Sprintf("failed contacting the API: %v", err),
 			})

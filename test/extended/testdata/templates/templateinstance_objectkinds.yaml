@@ -14,7 +14,7 @@ items:
   spec:
     template:
       kind: Template
-      apiVersion: v1
+      apiVersion: template.openshift.io/v1
       metadata:
         name: template
       objects:
@@ -40,9 +40,9 @@ items:
             spec:
               containers:
               - name: hello-openshift
-                image: openshift/hello-openshift
+                image: registry.k8s.io/e2e-test-images/agnhost:2.43
       - kind: Route
-        apiVersion: v1
+        apiVersion: route.openshift.io/v1
         metadata:
           name: route
         spec:

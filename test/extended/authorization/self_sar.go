@@ -5,19 +5,19 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	authorizationv1 "github.com/openshift/api/authorization/v1"
 	authorizationv1typedclient "github.com/openshift/client-go/authorization/clientset/versioned/typed/authorization/v1"
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Feature:OpenShiftAuthorization] self-SAR compatibility", func() {
+var _ = g.Describe("[sig-auth][Feature:OpenShiftAuthorization] self-SAR compatibility", func() {
 	defer g.GinkgoRecover()
-	oc := exutil.NewCLI("bootstrap-policy", exutil.KubeConfigPath())
+	oc := exutil.NewCLI("bootstrap-policy")
 
 	g.Context("", func() {
 		g.Describe("TestBootstrapPolicySelfSubjectAccessReviews", func() {
-			g.It(fmt.Sprintf("should succeed"), func() {
+			g.It(fmt.Sprintf("should succeed [apigroup:user.openshift.io][apigroup:authorization.openshift.io]"), func() {
 				t := g.GinkgoT()
 
 				valerieName := oc.CreateUser("valerie-").Name
@@ -56,7 +56,7 @@ var _ = g.Describe("[Feature:OpenShiftAuthorization] self-SAR compatibility", fu
 		})
 
 		g.Describe("TestSelfSubjectAccessReviewsNonExistingNamespace", func() {
-			g.It(fmt.Sprintf("should succeed"), func() {
+			g.It(fmt.Sprintf("should succeed [apigroup:user.openshift.io][apigroup:authorization.openshift.io]"), func() {
 				t := g.GinkgoT()
 
 				valerieName := oc.CreateUser("valerie-").Name

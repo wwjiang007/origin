@@ -2,7 +2,7 @@ apiVersion: v1
 kind: List
 metadata: {}
 items:
-- apiVersion: v1
+- apiVersion: build.openshift.io/v1
   kind: BuildConfig
   metadata:
     labels:
@@ -18,14 +18,17 @@ items:
         # Bug 1694859: ensure symlinks are followed
         FROM ruby
         RUN mkdir -p /opt/app-root/test-links && \
-            ln -s ../../rh/rh-ruby25/root/usr/bin /opt/app-root/test-links/bin
+            ln -s ../../rh/6/root/usr/bin /opt/app-root/test-links/bin
     strategy:
       dockerStrategy:
-        from: 
+        env:
+          - name: "BUILD_LOGLEVEL"
+            value: "2"
+        from:
           kind: ImageStreamTag
-          name: ruby:2.5
+          name: ruby:2.7-ubi8
           namespace: openshift
-- apiVersion: v1
+- apiVersion: build.openshift.io/v1
   kind: BuildConfig
   metadata:
     labels:
@@ -47,15 +50,15 @@ items:
         # Bug 1698152: ensure image source copy behavior is correct
         - destinationDir: injected/opt/app-root/test-links
           sourcePath: /opt/app-root/test-links/.
-        - destinationDir: injected/opt/rh/rh-ruby-25/root/usr/bin
-          sourcePath: /opt/rh/rh-ruby25/root/usr/bin/ruby
+        - destinationDir: injected/usr/bin
+          sourcePath: /usr/bin/ruby
     strategy:
       sourceStrategy:
         from:
           kind: ImageStreamTag
           name: ruby:latest
           namespace: openshift
-- apiVersion: v1
+- apiVersion: build.openshift.io/v1
   kind: BuildConfig
   metadata:
     labels:
@@ -77,28 +80,31 @@ items:
         # Bug 1698152: ensure image source copy behavior is correct
         - destinationDir: injected/opt/app-root/test-links
           sourcePath: /opt/app-root/test-links/.
-        - destinationDir: injected/opt/rh/rh-ruby-25/root/usr/bin
-          sourcePath: /opt/rh/rh-ruby25/root/usr/bin/ruby
+        - destinationDir: injected/usr/bin
+          sourcePath: /usr/bin/ruby
     strategy:
-      dockerStrategy: {}
+      dockerStrategy:
+        env:
+          - name: "BUILD_LOGLEVEL"
+            value: "2"
 
-- apiVersion: v1
+- apiVersion: image.openshift.io/v1
   kind: ImageStream
   metadata:
     name: inputimage
   spec: {}
-- apiVersion: v1
+- apiVersion: image.openshift.io/v1
   kind: ImageStream
   metadata:
     name: imagesourceapp
   spec: {}
-- apiVersion: v1
+- apiVersion: image.openshift.io/v1
   kind: ImageStream
   metadata:
     name: imagedockerapp
   spec: {}
 
-- apiVersion: v1
+- apiVersion: apps.openshift.io/v1
   kind: DeploymentConfig
   metadata:
     name: imagesourceapp
@@ -115,6 +121,10 @@ items:
           app: imagesourceapp
           deploymentconfig: imagesourceapp
       spec:
+        securityContext:
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
         containers:
         - image:
           imagePullPolicy: Always
@@ -128,9 +138,14 @@ items:
           - containerPort: 8888
             protocol: TCP
           terminationMessagePath: /dev/termination-log
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
         dnsPolicy: ClusterFirst
         restartPolicy: Always
-        securityContext: {}
     triggers:
     - imageChangeParams:
         automatic: true
@@ -142,7 +157,7 @@ items:
       type: ImageChange
     - type: ConfigChange
 
-- apiVersion: v1
+- apiVersion: apps.openshift.io/v1
   kind: DeploymentConfig
   metadata:
     name: imagedockerapp
@@ -159,6 +174,10 @@ items:
           app: imagedockerapp
           deploymentconfig: imagedockerapp
       spec:
+        securityContext:
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
         containers:
         - image:
           imagePullPolicy: Always
@@ -171,10 +190,15 @@ items:
             protocol: TCP
           - containerPort: 8888
             protocol: TCP
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
           terminationMessagePath: /dev/termination-log
         dnsPolicy: ClusterFirst
         restartPolicy: Always
-        securityContext: {}
     triggers:
     - imageChangeParams:
         automatic: true

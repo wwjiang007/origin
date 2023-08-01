@@ -1,6 +1,7 @@
 package networking
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"time"
@@ -8,7 +9,8 @@ import (
 	networkapi "github.com/openshift/api/network/v1"
 	networkclient "github.com/openshift/client-go/network/clientset/versioned/typed/network/v1"
 	"github.com/openshift/library-go/pkg/network/networkutils"
-	testexutil "github.com/openshift/origin/test/extended/util"
+	exutil "github.com/openshift/origin/test/extended/util"
+	"github.com/openshift/origin/test/extended/util/image"
 
 	kapiv1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -16,37 +18,37 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	e2e "k8s.io/kubernetes/test/e2e/framework"
 	frameworkpod "k8s.io/kubernetes/test/e2e/framework/pod"
+	admissionapi "k8s.io/pod-security-admission/api"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("[Area:Networking] multicast", func() {
-	oc := testexutil.NewCLI("multicast", testexutil.KubeConfigPath())
+var _ = Describe("[sig-network] multicast", func() {
+	oc := exutil.NewCLIWithPodSecurityLevel("multicast", admissionapi.LevelBaseline)
 
 	// The subnet plugin should block all multicast. The multitenant and networkpolicy
 	// plugins should implement multicast in the way that we test. For third-party
 	// plugins, the behavior is unspecified and we should not run either test.
 
-	InPluginContext([]string{networkutils.SingleTenantPluginName},
+	InopenshiftSDNModeContext([]string{networkutils.SingleTenantPluginName},
 		func() {
-			oc := testexutil.NewCLI("multicast", testexutil.KubeConfigPath())
-			f := oc.KubeFramework()
-
 			It("should block multicast traffic", func() {
+				oc := exutil.NewCLI("multicast")
+				f := oc.KubeFramework()
 				Expect(testMulticast(f, oc)).NotTo(Succeed())
 			})
 		},
 	)
 
-	InPluginContext([]string{networkutils.MultiTenantPluginName, networkutils.NetworkPolicyPluginName},
+	InopenshiftSDNModeContext([]string{networkutils.MultiTenantPluginName, networkutils.NetworkPolicyPluginName},
 		func() {
-			f := oc.KubeFramework()
-
 			It("should block multicast traffic in namespaces where it is disabled", func() {
+				f := oc.KubeFramework()
 				Expect(testMulticast(f, oc)).NotTo(Succeed())
 			})
 			It("should allow multicast traffic in namespaces where it is enabled", func() {
+				f := oc.KubeFramework()
 				makeNamespaceMulticastEnabled(oc, f.Namespace)
 				Expect(testMulticast(f, oc)).To(Succeed())
 			})
@@ -54,13 +56,13 @@ var _ = Describe("[Area:Networking] multicast", func() {
 	)
 })
 
-func makeNamespaceMulticastEnabled(oc *testexutil.CLI, ns *kapiv1.Namespace) {
+func makeNamespaceMulticastEnabled(oc *exutil.CLI, ns *kapiv1.Namespace) {
 	clientConfig := oc.AdminConfig()
 	networkClient := networkclient.NewForConfigOrDie(clientConfig)
 	var netns *networkapi.NetNamespace
 	var err error
 	err = wait.Poll(time.Second, 2*time.Minute, func() (bool, error) {
-		netns, err = networkClient.NetNamespaces().Get(ns.Name, metav1.GetOptions{})
+		netns, err = networkClient.NetNamespaces().Get(context.Background(), ns.Name, metav1.GetOptions{})
 		if err != nil {
 			if errors.IsNotFound(err) {
 				return false, nil
@@ -74,7 +76,7 @@ func makeNamespaceMulticastEnabled(oc *testexutil.CLI, ns *kapiv1.Namespace) {
 		netns.Annotations = make(map[string]string, 1)
 	}
 	netns.Annotations[networkapi.MulticastEnabledAnnotation] = "true"
-	_, err = networkClient.NetNamespaces().Update(netns)
+	_, err = networkClient.NetNamespaces().Update(context.Background(), netns, metav1.UpdateOptions{})
 	expectNoError(err)
 }
 
@@ -97,16 +99,20 @@ func makeNamespaceMulticastEnabled(oc *testexutil.CLI, ns *kapiv1.Namespace) {
 // test to have failed if we see "multicast, xmt/rcv/%loss = 5/0/100%" in the output (ie,
 // at least one of the pods was completely unable to communicate via multicast).
 
-func testMulticast(f *e2e.Framework, oc *testexutil.CLI) error {
+func testMulticast(f *e2e.Framework, oc *exutil.CLI) error {
 	makeNamespaceScheduleToAllNodes(f)
 
 	// We launch 3 pods total; pod[0] and pod[1] will end up on node[0], and pod[2]
 	// will end up on node[1], ensuring we test both intra- and inter-node multicast
 	var nodes [2]*kapiv1.Node
-	nodes[0], nodes[1] = findAppropriateNodes(f, DIFFERENT_NODE)
+	var err error
+	nodes[0], nodes[1], err = findAppropriateNodes(f, DIFFERENT_NODE)
+	if err != nil {
+		return err
+	}
 
 	var pod, ip, out [3]string
-	var err [3]error
+	var errs [3]error
 	var ch [3]chan struct{}
 	var failMatch [3]*regexp.Regexp
 
@@ -115,12 +121,12 @@ func testMulticast(f *e2e.Framework, oc *testexutil.CLI) error {
 		err := launchTestMulticastPod(f, nodes[i/2].Name, pod[i])
 		expectNoError(err)
 		var zero int64
-		defer f.ClientSet.CoreV1().Pods(f.Namespace.Name).Delete(pod[i], &metav1.DeleteOptions{GracePeriodSeconds: &zero})
+		defer f.ClientSet.CoreV1().Pods(f.Namespace.Name).Delete(context.Background(), pod[i], metav1.DeleteOptions{GracePeriodSeconds: &zero})
 	}
 
 	for i := range pod {
-		ip[i], err[i] = waitForTestMulticastPod(f, pod[i])
-		expectNoError(err[i])
+		ip[i], errs[i] = waitForTestMulticastPod(f, pod[i])
+		expectNoError(errs[i])
 		failMatch[i] = regexp.MustCompile(ip[i] + ".*multicast.*/100%")
 		ch[i] = make(chan struct{})
 	}
@@ -128,14 +134,14 @@ func testMulticast(f *e2e.Framework, oc *testexutil.CLI) error {
 	for i := range pod {
 		i := i
 		go func() {
-			out[i], err[i] = oc.Run("exec").Args(pod[i], "--", "omping", "-c", "5", "-T", "60", "-q", "-q", ip[0], ip[1], ip[2]).Output()
+			out[i], errs[i] = oc.Run("exec").Args(pod[i], "--", "omping", "-c", "5", "-T", "60", "-q", "-q", ip[0], ip[1], ip[2]).Output()
 			close(ch[i])
 		}()
 	}
 	for i := range pod {
 		<-ch[i]
-		if err[i] != nil {
-			return err[i]
+		if errs[i] != nil {
+			return errs[i]
 		}
 		for j := range pod {
 			if i != j {
@@ -163,7 +169,7 @@ func launchTestMulticastPod(f *e2e.Framework, nodeName string, podName string) e
 			Containers: []kapiv1.Container{
 				{
 					Name:    contName,
-					Image:   "openshift/test-multicast",
+					Image:   image.LocationFor("quay.io/openshifttest/multicast:1.1"),
 					Command: []string{"sleep", "1000"},
 				},
 			},
@@ -171,13 +177,13 @@ func launchTestMulticastPod(f *e2e.Framework, nodeName string, podName string) e
 			RestartPolicy: kapiv1.RestartPolicyNever,
 		},
 	}
-	_, err := f.ClientSet.CoreV1().Pods(f.Namespace.Name).Create(pod)
+	_, err := f.ClientSet.CoreV1().Pods(f.Namespace.Name).Create(context.Background(), pod, metav1.CreateOptions{})
 	return err
 }
 
 func waitForTestMulticastPod(f *e2e.Framework, podName string) (string, error) {
 	podIP := ""
-	err := frameworkpod.WaitForPodCondition(f.ClientSet, f.Namespace.Name, podName, "running", podStartTimeout, func(pod *kapiv1.Pod) (bool, error) {
+	err := frameworkpod.WaitForPodCondition(context.TODO(), f.ClientSet, f.Namespace.Name, podName, "running", podStartTimeout, func(pod *kapiv1.Pod) (bool, error) {
 		podIP = pod.Status.PodIP
 		return (podIP != "" && pod.Status.Phase != kapiv1.PodPending), nil
 	})

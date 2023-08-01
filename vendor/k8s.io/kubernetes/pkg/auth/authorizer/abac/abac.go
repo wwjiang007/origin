@@ -19,11 +19,12 @@ package abac
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"os"
 	"strings"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/authentication/user"
@@ -163,6 +164,7 @@ func subjectMatches(p abac.Policy, user user.Info) bool {
 			for _, group := range groups {
 				if p.Spec.Group == group {
 					matched = true
+					break
 				}
 			}
 			if !matched {
@@ -224,7 +226,7 @@ func resourceMatches(p abac.Policy, a authorizer.Attributes) bool {
 }
 
 // Authorize implements authorizer.Authorize
-func (pl PolicyList) Authorize(a authorizer.Attributes) (authorizer.Decision, string, error) {
+func (pl PolicyList) Authorize(ctx context.Context, a authorizer.Attributes) (authorizer.Decision, string, error) {
 	for _, p := range pl {
 		if matches(*p, a) {
 			return authorizer.DecisionAllow, "", nil

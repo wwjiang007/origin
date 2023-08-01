@@ -3,18 +3,20 @@ package builds
 import (
 	"fmt"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
+
+	admissionapi "k8s.io/pod-security-admission/api"
 
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Feature:Builds][Conformance] build without output image", func() {
+var _ = g.Describe("[sig-builds][Feature:Builds] build without output image", func() {
 	defer g.GinkgoRecover()
 	var (
 		dockerImageFixture = exutil.FixturePath("testdata", "builds", "test-docker-no-outputname.json")
 		s2iImageFixture    = exutil.FixturePath("testdata", "builds", "test-s2i-no-outputname.json")
-		oc                 = exutil.NewCLI("build-no-outputname", exutil.KubeConfigPath())
+		oc                 = exutil.NewCLIWithPodSecurityLevel("build-no-outputname", admissionapi.LevelBaseline)
 	)
 
 	g.Context("", func() {
@@ -24,7 +26,7 @@ var _ = g.Describe("[Feature:Builds][Conformance] build without output image", f
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				exutil.DumpPodStates(oc)
 				exutil.DumpConfigMapStates(oc)
 				exutil.DumpPodLogsStartingWith("", oc)
@@ -32,7 +34,7 @@ var _ = g.Describe("[Feature:Builds][Conformance] build without output image", f
 		})
 
 		g.Describe("building from templates", func() {
-			g.It(fmt.Sprintf("should create an image from a docker template without an output image reference defined"), func() {
+			g.It(fmt.Sprintf("should create an image from a docker template without an output image reference defined [apigroup:build.openshift.io]"), func() {
 				err := oc.Run("create").Args("-f", dockerImageFixture).Execute()
 				o.Expect(err).NotTo(o.HaveOccurred())
 
@@ -47,7 +49,7 @@ var _ = g.Describe("[Feature:Builds][Conformance] build without output image", f
 				o.Expect(buildLog).Should(o.ContainSubstring(`Build complete, no image push requested`))
 			})
 
-			g.It(fmt.Sprintf("should create an image from a S2i template without an output image reference defined"), func() {
+			g.It(fmt.Sprintf("should create an image from a S2i template without an output image reference defined [apigroup:build.openshift.io]"), func() {
 				err := oc.Run("create").Args("-f", s2iImageFixture).Execute()
 				o.Expect(err).NotTo(o.HaveOccurred())
 

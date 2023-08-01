@@ -1,6 +1,7 @@
 package v1helpers
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"time"
@@ -24,10 +25,20 @@ func NewFakeSharedIndexInformer() cache.SharedIndexInformer {
 
 type fakeSharedIndexInformer struct{}
 
-func (fakeSharedIndexInformer) AddEventHandler(handler cache.ResourceEventHandler) {
+func (i fakeSharedIndexInformer) AddEventHandler(handler cache.ResourceEventHandler) (cache.ResourceEventHandlerRegistration, error) {
+	return nil, nil
 }
 
-func (fakeSharedIndexInformer) AddEventHandlerWithResyncPeriod(handler cache.ResourceEventHandler, resyncPeriod time.Duration) {
+func (i fakeSharedIndexInformer) AddEventHandlerWithResyncPeriod(handler cache.ResourceEventHandler, resyncPeriod time.Duration) (cache.ResourceEventHandlerRegistration, error) {
+	return nil, nil
+}
+
+func (i fakeSharedIndexInformer) RemoveEventHandler(handle cache.ResourceEventHandlerRegistration) error {
+	panic("implement me")
+}
+
+func (i fakeSharedIndexInformer) IsStopped() bool {
+	panic("implement me")
 }
 
 func (fakeSharedIndexInformer) GetStore() cache.Store {
@@ -43,7 +54,7 @@ func (fakeSharedIndexInformer) Run(stopCh <-chan struct{}) {
 }
 
 func (fakeSharedIndexInformer) HasSynced() bool {
-	panic("implement me")
+	return true
 }
 
 func (fakeSharedIndexInformer) LastSyncResourceVersion() string {
@@ -55,6 +66,14 @@ func (fakeSharedIndexInformer) AddIndexers(indexers cache.Indexers) error {
 }
 
 func (fakeSharedIndexInformer) GetIndexer() cache.Indexer {
+	panic("implement me")
+}
+
+func (fakeSharedIndexInformer) SetWatchErrorHandler(handler cache.WatchErrorHandler) error {
+	panic("implement me")
+}
+
+func (fakeSharedIndexInformer) SetTransform(f cache.TransformFunc) error {
 	panic("implement me")
 }
 
@@ -82,17 +101,21 @@ type fakeStaticPodOperatorClient struct {
 
 func (c *fakeStaticPodOperatorClient) Informer() cache.SharedIndexInformer {
 	return &fakeSharedIndexInformer{}
+
+}
+func (c *fakeStaticPodOperatorClient) GetObjectMeta() (*metav1.ObjectMeta, error) {
+	panic("not supported")
 }
 
 func (c *fakeStaticPodOperatorClient) GetStaticPodOperatorState() (*operatorv1.StaticPodOperatorSpec, *operatorv1.StaticPodOperatorStatus, string, error) {
 	return c.fakeStaticPodOperatorSpec, c.fakeStaticPodOperatorStatus, c.resourceVersion, nil
 }
 
-func (c *fakeStaticPodOperatorClient) GetStaticPodOperatorStateWithQuorum() (*operatorv1.StaticPodOperatorSpec, *operatorv1.StaticPodOperatorStatus, string, error) {
+func (c *fakeStaticPodOperatorClient) GetStaticPodOperatorStateWithQuorum(ctx context.Context) (*operatorv1.StaticPodOperatorSpec, *operatorv1.StaticPodOperatorStatus, string, error) {
 	return c.fakeStaticPodOperatorSpec, c.fakeStaticPodOperatorStatus, c.resourceVersion, nil
 }
 
-func (c *fakeStaticPodOperatorClient) UpdateStaticPodOperatorStatus(resourceVersion string, status *operatorv1.StaticPodOperatorStatus) (*operatorv1.StaticPodOperatorStatus, error) {
+func (c *fakeStaticPodOperatorClient) UpdateStaticPodOperatorStatus(ctx context.Context, resourceVersion string, status *operatorv1.StaticPodOperatorStatus) (*operatorv1.StaticPodOperatorStatus, error) {
 	if c.resourceVersion != resourceVersion {
 		return nil, errors.NewConflict(schema.GroupResource{Group: operatorv1.GroupName, Resource: "TestOperatorConfig"}, "instance", fmt.Errorf("invalid resourceVersion"))
 	}
@@ -110,7 +133,7 @@ func (c *fakeStaticPodOperatorClient) UpdateStaticPodOperatorStatus(resourceVers
 	return c.fakeStaticPodOperatorStatus, nil
 }
 
-func (c *fakeStaticPodOperatorClient) UpdateStaticPodOperatorSpec(resourceVersion string, spec *operatorv1.StaticPodOperatorSpec) (*operatorv1.StaticPodOperatorSpec, string, error) {
+func (c *fakeStaticPodOperatorClient) UpdateStaticPodOperatorSpec(ctx context.Context, resourceVersion string, spec *operatorv1.StaticPodOperatorSpec) (*operatorv1.StaticPodOperatorSpec, string, error) {
 	if c.resourceVersion != resourceVersion {
 		return nil, "", errors.NewConflict(schema.GroupResource{Group: operatorv1.GroupName, Resource: "TestOperatorConfig"}, "instance", fmt.Errorf("invalid resourceVersion"))
 	}
@@ -131,10 +154,10 @@ func (c *fakeStaticPodOperatorClient) UpdateStaticPodOperatorSpec(resourceVersio
 func (c *fakeStaticPodOperatorClient) GetOperatorState() (*operatorv1.OperatorSpec, *operatorv1.OperatorStatus, string, error) {
 	return &c.fakeStaticPodOperatorSpec.OperatorSpec, &c.fakeStaticPodOperatorStatus.OperatorStatus, c.resourceVersion, nil
 }
-func (c *fakeStaticPodOperatorClient) UpdateOperatorSpec(string, *operatorv1.OperatorSpec) (spec *operatorv1.OperatorSpec, resourceVersion string, err error) {
+func (c *fakeStaticPodOperatorClient) UpdateOperatorSpec(ctx context.Context, s string, p *operatorv1.OperatorSpec) (spec *operatorv1.OperatorSpec, resourceVersion string, err error) {
 	panic("not supported")
 }
-func (c *fakeStaticPodOperatorClient) UpdateOperatorStatus(resourceVersion string, status *operatorv1.OperatorStatus) (*operatorv1.OperatorStatus, error) {
+func (c *fakeStaticPodOperatorClient) UpdateOperatorStatus(ctx context.Context, resourceVersion string, status *operatorv1.OperatorStatus) (*operatorv1.OperatorStatus, error) {
 	if c.resourceVersion != resourceVersion {
 		return nil, errors.NewConflict(schema.GroupResource{Group: operatorv1.GroupName, Resource: "TestOperatorConfig"}, "instance", fmt.Errorf("invalid resourceVersion"))
 	}
@@ -164,7 +187,7 @@ type fakeNodeLister struct {
 }
 
 func (n *fakeNodeLister) List(selector labels.Selector) ([]*corev1.Node, error) {
-	nodes, err := n.client.CoreV1().Nodes().List(metav1.ListOptions{LabelSelector: selector.String()})
+	nodes, err := n.client.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{LabelSelector: selector.String()})
 	if err != nil {
 		return nil, err
 	}
@@ -179,15 +202,16 @@ func (n *fakeNodeLister) Get(name string) (*corev1.Node, error) {
 	panic("implement me")
 }
 
-func (n *fakeNodeLister) ListWithPredicate(predicate corev1listers.NodeConditionPredicate) ([]*corev1.Node, error) {
-	panic("implement me")
+// NewFakeOperatorClient returns a fake operator client suitable to use in static pod controller unit tests.
+func NewFakeOperatorClient(spec *operatorv1.OperatorSpec, status *operatorv1.OperatorStatus, triggerErr func(rv string, status *operatorv1.OperatorStatus) error) OperatorClientWithFinalizers {
+	return NewFakeOperatorClientWithObjectMeta(nil, spec, status, triggerErr)
 }
 
-// NewFakeOperatorClient returns a fake operator client suitable to use in static pod controller unit tests.
-func NewFakeOperatorClient(spec *operatorv1.OperatorSpec, status *operatorv1.OperatorStatus, triggerErr func(rv string, status *operatorv1.OperatorStatus) error) OperatorClient {
+func NewFakeOperatorClientWithObjectMeta(meta *metav1.ObjectMeta, spec *operatorv1.OperatorSpec, status *operatorv1.OperatorStatus, triggerErr func(rv string, status *operatorv1.OperatorStatus) error) OperatorClientWithFinalizers {
 	return &fakeOperatorClient{
 		fakeOperatorSpec:         spec,
 		fakeOperatorStatus:       status,
+		fakeObjectMeta:           meta,
 		resourceVersion:          "0",
 		triggerStatusUpdateError: triggerErr,
 	}
@@ -196,6 +220,7 @@ func NewFakeOperatorClient(spec *operatorv1.OperatorSpec, status *operatorv1.Ope
 type fakeOperatorClient struct {
 	fakeOperatorSpec         *operatorv1.OperatorSpec
 	fakeOperatorStatus       *operatorv1.OperatorStatus
+	fakeObjectMeta           *metav1.ObjectMeta
 	resourceVersion          string
 	triggerStatusUpdateError func(rv string, status *operatorv1.OperatorStatus) error
 }
@@ -204,11 +229,19 @@ func (c *fakeOperatorClient) Informer() cache.SharedIndexInformer {
 	return &fakeSharedIndexInformer{}
 }
 
+func (c *fakeOperatorClient) GetObjectMeta() (*metav1.ObjectMeta, error) {
+	if c.fakeObjectMeta == nil {
+		return &metav1.ObjectMeta{}, nil
+	}
+
+	return c.fakeObjectMeta, nil
+}
+
 func (c *fakeOperatorClient) GetOperatorState() (*operatorv1.OperatorSpec, *operatorv1.OperatorStatus, string, error) {
 	return c.fakeOperatorSpec, c.fakeOperatorStatus, c.resourceVersion, nil
 }
 
-func (c *fakeOperatorClient) UpdateOperatorStatus(resourceVersion string, status *operatorv1.OperatorStatus) (*operatorv1.OperatorStatus, error) {
+func (c *fakeOperatorClient) UpdateOperatorStatus(ctx context.Context, resourceVersion string, status *operatorv1.OperatorStatus) (*operatorv1.OperatorStatus, error) {
 	if c.resourceVersion != resourceVersion {
 		return nil, errors.NewConflict(schema.GroupResource{Group: operatorv1.GroupName, Resource: "TestOperatorConfig"}, "instance", fmt.Errorf("invalid resourceVersion"))
 	}
@@ -225,6 +258,45 @@ func (c *fakeOperatorClient) UpdateOperatorStatus(resourceVersion string, status
 	c.fakeOperatorStatus = status
 	return c.fakeOperatorStatus, nil
 }
-func (c *fakeOperatorClient) UpdateOperatorSpec(string, *operatorv1.OperatorSpec) (spec *operatorv1.OperatorSpec, resourceVersion string, err error) {
-	panic("not supported")
+
+func (c *fakeOperatorClient) UpdateOperatorSpec(ctx context.Context, resourceVersion string, spec *operatorv1.OperatorSpec) (*operatorv1.OperatorSpec, string, error) {
+	if c.resourceVersion != resourceVersion {
+		return nil, c.resourceVersion, errors.NewConflict(schema.GroupResource{Group: operatorv1.GroupName, Resource: "TestOperatorConfig"}, "instance", fmt.Errorf("invalid resourceVersion"))
+	}
+	rv, err := strconv.Atoi(resourceVersion)
+	if err != nil {
+		return nil, c.resourceVersion, err
+	}
+	c.resourceVersion = strconv.Itoa(rv + 1)
+	c.fakeOperatorSpec = spec
+	return c.fakeOperatorSpec, c.resourceVersion, nil
+}
+
+func (c *fakeOperatorClient) EnsureFinalizer(ctx context.Context, finalizer string) error {
+	if c.fakeObjectMeta == nil {
+		c.fakeObjectMeta = &metav1.ObjectMeta{}
+	}
+	for _, f := range c.fakeObjectMeta.Finalizers {
+		if f == finalizer {
+			return nil
+		}
+	}
+	c.fakeObjectMeta.Finalizers = append(c.fakeObjectMeta.Finalizers, finalizer)
+	return nil
+}
+
+func (c *fakeOperatorClient) RemoveFinalizer(ctx context.Context, finalizer string) error {
+	newFinalizers := []string{}
+	for _, f := range c.fakeObjectMeta.Finalizers {
+		if f == finalizer {
+			continue
+		}
+		newFinalizers = append(newFinalizers, f)
+	}
+	c.fakeObjectMeta.Finalizers = newFinalizers
+	return nil
+}
+
+func (c *fakeOperatorClient) SetObjectMeta(meta *metav1.ObjectMeta) {
+	c.fakeObjectMeta = meta
 }

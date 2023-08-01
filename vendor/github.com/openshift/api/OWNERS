@@ -1,11 +1,11 @@
 reviewers:
   - adambkaplan
   - abhinavdahiya
-approvers:
   - smarterclayton
   - deads2k
   - derekwaynecarr
   - eparis
+  - JoelSpeed
   - jwforres
   - knobunc
   - sjenning
@@ -13,3 +13,17 @@ approvers:
   - soltysh
   - sttts
   - bparees
+approvers:
+  - bparees
+  - deads2k
+  - derekwaynecarr
+  - eparis
+  - JoelSpeed
+  - jwforres
+  - knobunc
+  - mfojtik
+  - sjenning
+  - smarterclayton
+  - soltysh
+  - spadgett
+  - sttts

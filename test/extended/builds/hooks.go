@@ -1,23 +1,27 @@
 package builds
 
 import (
+	"context"
+	"fmt"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	exutil "github.com/openshift/origin/test/extended/util"
+	"github.com/openshift/origin/test/extended/util/image"
+	admissionapi "k8s.io/pod-security-admission/api"
 )
 
-var _ = g.Describe("[Feature:Builds][Slow] testing build configuration hooks", func() {
+var _ = g.Describe("[sig-builds][Feature:Builds][Slow] testing build configuration hooks", func() {
 	defer g.GinkgoRecover()
 	var (
 		dockerBuildFixture = exutil.FixturePath("testdata", "builds", "build-postcommit", "docker.yaml")
 		s2iBuildFixture    = exutil.FixturePath("testdata", "builds", "build-postcommit", "sti.yaml")
 		imagestreamFixture = exutil.FixturePath("testdata", "builds", "build-postcommit", "imagestreams.yaml")
-		oc                 = exutil.NewCLI("cli-test-hooks", exutil.KubeConfigPath())
+		oc                 = exutil.NewCLIWithPodSecurityLevel("cli-test-hooks", admissionapi.LevelBaseline)
 	)
 
 	g.Context("", func() {
@@ -27,7 +31,7 @@ var _ = g.Describe("[Feature:Builds][Slow] testing build configuration hooks", f
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				exutil.DumpPodStates(oc)
 				exutil.DumpConfigMapStates(oc)
 				exutil.DumpPodLogsStartingWith("", oc)
@@ -36,7 +40,7 @@ var _ = g.Describe("[Feature:Builds][Slow] testing build configuration hooks", f
 
 		g.Describe("testing postCommit hook", func() {
 
-			g.It("should run s2i postCommit hooks", func() {
+			g.It("should run s2i postCommit hooks [apigroup:build.openshift.io]", func() {
 				oc.Run("create").Args("-f", imagestreamFixture).Execute()
 				oc.Run("create").Args("-f", s2iBuildFixture).Execute()
 
@@ -100,7 +104,7 @@ var _ = g.Describe("[Feature:Builds][Slow] testing build configuration hooks", f
 				o.Expect(len(pods)).To(o.Equal(1))
 
 				g.By("getting the pod information")
-				pod, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(pods[0], metav1.GetOptions{})
+				pod, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(context.Background(), pods[0], metav1.GetOptions{})
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				g.By("verifying the postCommit hook did not modify the final image")
@@ -110,7 +114,7 @@ var _ = g.Describe("[Feature:Builds][Slow] testing build configuration hooks", f
 
 			})
 
-			g.It("should run docker postCommit hooks", func() {
+			g.It("should run docker postCommit hooks [apigroup:build.openshift.io]", func() {
 				oc.Run("create").Args("-f", imagestreamFixture).Execute()
 				oc.Run("create").Args("-f", dockerBuildFixture).Execute()
 
@@ -162,7 +166,7 @@ var _ = g.Describe("[Feature:Builds][Slow] testing build configuration hooks", f
 				o.Expect(err).NotTo(o.HaveOccurred())
 				err = oc.Run("patch").Args("bc/mydockertest", "-p", `{"spec":{"output":{"to":{"kind":"ImageStreamTag","name":"mydockertest:latest"}}}}`).Execute()
 				o.Expect(err).NotTo(o.HaveOccurred())
-				err = oc.Run("patch").Args("bc/mydockertest", "-p", `{"spec":{"source":{"dockerfile":"FROM busybox:latest \n ENTRYPOINT /bin/sleep 600 \n"}}}`).Execute()
+				err = oc.Run("patch").Args("bc/mydockertest", "-p", fmt.Sprintf(`{"spec":{"source":{"dockerfile":"FROM %s \n ENTRYPOINT /bin/sleep 600 \n"}}}`, image.ShellImage())).Execute()
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				g.By("starting a build")
@@ -176,7 +180,7 @@ var _ = g.Describe("[Feature:Builds][Slow] testing build configuration hooks", f
 				o.Expect(len(pods)).To(o.Equal(1))
 
 				g.By("getting the pod information")
-				pod, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(pods[0], metav1.GetOptions{})
+				pod, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(context.Background(), pods[0], metav1.GetOptions{})
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				g.By("verifying the postCommit hook did not modify the final image")

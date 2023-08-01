@@ -3,7 +3,9 @@ package builds
 import (
 	"fmt"
 
-	g "github.com/onsi/ginkgo"
+	"k8s.io/pod-security-admission/api"
+
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -12,7 +14,7 @@ import (
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Feature:Builds][Conformance] s2i build with a quota", func() {
+var _ = g.Describe("[sig-builds][Feature:Builds] s2i build with a quota", func() {
 	defer g.GinkgoRecover()
 	const (
 		buildTestPod     = "build-test-pod"
@@ -21,7 +23,7 @@ var _ = g.Describe("[Feature:Builds][Conformance] s2i build with a quota", func(
 
 	var (
 		buildFixture = exutil.FixturePath("testdata", "builds", "test-s2i-build-quota.json")
-		oc           = exutil.NewCLI("s2i-build-quota", exutil.KubeConfigPath())
+		oc           = exutil.NewCLIWithPodSecurityLevel("s2i-build-quota", api.LevelPrivileged)
 	)
 
 	g.Context("", func() {
@@ -30,7 +32,7 @@ var _ = g.Describe("[Feature:Builds][Conformance] s2i build with a quota", func(
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				exutil.DumpPodStates(oc)
 				exutil.DumpConfigMapStates(oc)
 				exutil.DumpPodLogsStartingWith("", oc)
@@ -38,7 +40,7 @@ var _ = g.Describe("[Feature:Builds][Conformance] s2i build with a quota", func(
 		})
 
 		g.Describe("Building from a template", func() {
-			g.It("should create an s2i build with a quota and run it", func() {
+			g.It("should create an s2i build with a quota and run it [apigroup:build.openshift.io]", func() {
 				g.By(fmt.Sprintf("calling oc create -f %q", buildFixture))
 				err := oc.Run("create").Args("-f", buildFixture).Execute()
 				o.Expect(err).NotTo(o.HaveOccurred())
@@ -53,13 +55,10 @@ var _ = g.Describe("[Feature:Builds][Conformance] s2i build with a quota", func(
 				o.Expect(br.Build.Status.Duration).To(o.Equal(duration), "Build duration should be computed correctly")
 
 				g.By("expecting the build logs to contain the correct cgroups values")
-				// buildLog, err := br.LogsNoTimestamp()
-				_, err = br.LogsNoTimestamp()
+				buildLog, err := br.LogsNoTimestamp()
 				o.Expect(err).NotTo(o.HaveOccurred())
-				// TODO: re-enable this check when https://bugzilla.redhat.com/show_bug.cgi?id=1764323 is resolved
-				//o.Expect(buildLog).To(o.ContainSubstring("MEMORY=419430400"))
-				// TODO: re-enable this check when https://github.com/containers/buildah/issues/1213 is resolved.
-				//o.Expect(buildLog).To(o.ContainSubstring("MEMORYSWAP=419430400"))
+				o.Expect(buildLog).To(o.ContainSubstring("MEMORY=419430400"))
+				o.Expect(buildLog).To(o.ContainSubstring("MEMORYSWAP=419430400"))
 
 				testScheme := runtime.NewScheme()
 				utilruntime.Must(buildv1.Install(testScheme))

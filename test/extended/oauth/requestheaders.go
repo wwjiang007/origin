@@ -1,6 +1,7 @@
 package oauth
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
@@ -17,7 +18,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	corev1 "k8s.io/api/core/v1"
@@ -26,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 	e2e "k8s.io/kubernetes/test/e2e/framework"
+	e2eskipper "k8s.io/kubernetes/test/e2e/framework/skipper"
 
 	configv1 "github.com/openshift/api/config/v1"
 	osinv1 "github.com/openshift/api/osin/v1"
@@ -56,15 +58,28 @@ type certAuthTest struct {
 	expectedError string
 }
 
-var _ = g.Describe("[Serial] [Feature:OAuthServer] [RequestHeaders] [IdP]", func() {
-	var oc = exutil.NewCLI("request-headers", exutil.KubeConfigPath())
+var _ = g.Describe("[Serial] [sig-auth][Feature:OAuthServer] [RequestHeaders] [IdP]", func() {
+	var oc = exutil.NewCLI("request-headers")
 
-	g.It("test RequestHeaders IdP", func() {
+	g.It("test RequestHeaders IdP [apigroup:config.openshift.io][apigroup:user.openshift.io][apigroup:apps.openshift.io]", func() {
+
+		// In some rare cases, CAO might be damaged when entering this test. If it is - the results
+		// of this test might flaky. This check ensures that we capture such situation early and
+		// investigate why it wasn't ready before this test.
+		e2e.Logf("Ensuring CAO is available==True, progressing==False, degraded==False")
+		waitForAuthenticationProgressing(oc, configv1.ConditionFalse)
+
+		controlPlaneTopology, err := exutil.GetControlPlaneTopology(oc)
+		o.Expect(err).NotTo(o.HaveOccurred())
+
+		if *controlPlaneTopology == configv1.ExternalTopologyMode {
+			e2eskipper.Skipf("External clusters do not allow customization of the Identity Providers for the cluster.")
+		}
+
 		caCert, caKey := createClientCA(oc.AdminKubeClient().CoreV1())
-		defer oc.AdminKubeClient().CoreV1().ConfigMaps("openshift-config").Delete(clientCAName, &metav1.DeleteOptions{})
+		defer oc.AdminKubeClient().CoreV1().ConfigMaps("openshift-config").Delete(context.Background(), clientCAName, metav1.DeleteOptions{})
 
-		changeTime := time.Now()
-		oauthClusterOrig, err := oc.AdminConfigClient().ConfigV1().OAuths().Get("cluster", metav1.GetOptions{})
+		oauthClusterOrig, err := oc.AdminConfigClient().ConfigV1().OAuths().Get(context.Background(), "cluster", metav1.GetOptions{})
 		o.Expect(err).NotTo(o.HaveOccurred())
 
 		oauthCluster := oauthClusterOrig.DeepCopy()
@@ -88,23 +103,25 @@ var _ = g.Describe("[Serial] [Feature:OAuthServer] [RequestHeaders] [IdP]", func
 				},
 			},
 		}
-		_, err = oc.AdminConfigClient().ConfigV1().OAuths().Update(oauthCluster)
+		_, err = oc.AdminConfigClient().ConfigV1().OAuths().Update(context.Background(), oauthCluster, metav1.UpdateOptions{})
 		o.Expect(err).NotTo(o.HaveOccurred())
 		// clean up after ourselves
 		defer func() {
 			userclient := oc.AdminUserClient().UserV1()
-			userclient.Identities().Delete(fmt.Sprintf("%s:%s", idpName, testUserName), &metav1.DeleteOptions{})
-			userclient.Users().Delete(testUserName, &metav1.DeleteOptions{})
+			userclient.Identities().Delete(context.Background(), fmt.Sprintf("%s:%s", idpName, testUserName), metav1.DeleteOptions{})
+			userclient.Users().Delete(context.Background(), testUserName, metav1.DeleteOptions{})
 
-			oauthCluster, err := oc.AdminConfigClient().ConfigV1().OAuths().Get("cluster", metav1.GetOptions{})
+			oauthCluster, err := oc.AdminConfigClient().ConfigV1().OAuths().Get(context.Background(), "cluster", metav1.GetOptions{})
 			if err != nil {
 				g.Fail(fmt.Sprintf("Failed to get oauth/cluster, unable to turn it into its original state: %v", err))
 			}
 			oauthCluster.Spec = oauthClusterOrig.Spec
-			_, err = oc.AdminConfigClient().ConfigV1().OAuths().Update(oauthCluster)
+			_, err = oc.AdminConfigClient().ConfigV1().OAuths().Update(context.Background(), oauthCluster, metav1.UpdateOptions{})
 			if err != nil {
 				g.Fail(fmt.Sprintf("Failed to update oauth/cluster, unable to turn it into its original state: %v", err))
 			}
+
+			waitForNewOAuthConfig(oc)
 		}()
 
 		oauthURL := getOAuthWellKnownData(oc).Issuer
@@ -117,25 +134,20 @@ var _ = g.Describe("[Serial] [Feature:OAuthServer] [RequestHeaders] [IdP]", func
 
 		testCases := []certAuthTest{
 			{
-				name:        "/authorize - challenging-client - valid cert: we should eventually get access token in Location header",
-				cert:        goodCert,
-				key:         goodKey,
-				endpoint:    "/oauth/authorize?client_id=openshift-challenging-client&response_type=token",
-				expectToken: true,
+				name:     "/healtz - anonymous: anyone should be able to access it",
+				endpoint: "/healthz",
 			},
 			{
-				name:          "/authorize - challenging-client - unknown CA cert: expect 302 because we never get authenticated",
-				cert:          unknownCACert,
-				key:           unknownCAKey,
-				endpoint:      "/oauth/authorize?client_id=openshift-challenging-client&response_type=token",
-				expectedError: "302 Found",
+				name:     "/healthz - valid cert",
+				cert:     goodCert,
+				key:      goodKey,
+				endpoint: "/healthz",
 			},
 			{
-				name:          "/authorize - challenging-client - wrong CN cert: expect 500 because the verifier can generally return TLS errors :(",
-				cert:          badNameCert,
-				key:           badNameKey,
-				endpoint:      "/oauth/authorize?client_id=openshift-challenging-client&response_type=token",
-				expectedError: "500 Internal Server Error",
+				name:     "/healthz - unknown CA cert",
+				cert:     unknownCACert,
+				key:      unknownCAKey,
+				endpoint: "/healthz",
 			},
 			{
 				name:          "/metrics - anonymous: should not be publicly visible",
@@ -157,20 +169,25 @@ var _ = g.Describe("[Serial] [Feature:OAuthServer] [RequestHeaders] [IdP]", func
 				expectedError: "403 Forbidden",
 			},
 			{
-				name:     "/healtz - anonymous: anyone should be able to access it",
-				endpoint: "/healthz",
+				name:        "/authorize - challenging-client - valid cert: we should eventually get access token in Location header",
+				cert:        goodCert,
+				key:         goodKey,
+				endpoint:    "/oauth/authorize?client_id=openshift-challenging-client&response_type=token",
+				expectToken: true,
 			},
 			{
-				name:     "/healthz - valid cert",
-				cert:     goodCert,
-				key:      goodKey,
-				endpoint: "/healthz",
+				name:          "/authorize - challenging-client - unknown CA cert: expect 302 because we never get authenticated",
+				cert:          unknownCACert,
+				key:           unknownCAKey,
+				endpoint:      "/oauth/authorize?client_id=openshift-challenging-client&response_type=token",
+				expectedError: "302 Found",
 			},
 			{
-				name:     "/healthz - unknown CA cert",
-				cert:     unknownCACert,
-				key:      unknownCAKey,
-				endpoint: "/healthz",
+				name:          "/authorize - challenging-client - wrong CN cert: expect 500 because the verifier can generally return TLS errors :(",
+				cert:          badNameCert,
+				key:           badNameKey,
+				endpoint:      "/oauth/authorize?client_id=openshift-challenging-client&response_type=token",
+				expectedError: "500 Internal Server Error",
 			},
 		}
 
@@ -178,7 +195,7 @@ var _ = g.Describe("[Serial] [Feature:OAuthServer] [RequestHeaders] [IdP]", func
 		caCerts, err := x509.SystemCertPool()
 		o.Expect(err).NotTo(o.HaveOccurred())
 
-		routerCA, err := oc.AdminKubeClient().CoreV1().ConfigMaps("openshift-config-managed").Get("router-ca", metav1.GetOptions{})
+		routerCA, err := oc.AdminKubeClient().CoreV1().ConfigMaps("openshift-config-managed").Get(context.Background(), "default-ingress-cert", metav1.GetOptions{})
 		o.Expect(err).NotTo(o.HaveOccurred())
 
 		for _, ca := range routerCA.Data {
@@ -186,24 +203,28 @@ var _ = g.Describe("[Serial] [Feature:OAuthServer] [RequestHeaders] [IdP]", func
 			o.Expect(ok).To(o.Equal(true), "adding router certs to the system CA bundle")
 		}
 
-		waitForNewOAuthConfig(oc, caCerts, oauthURL, changeTime)
+		waitForNewOAuthConfig(oc)
 
 		for _, tc := range testCases {
 			g.By(tc.name, func() {
 				resp := oauthHTTPRequestOrFail(caCerts, oauthURL, tc.endpoint, "", tc.cert, tc.key)
-				respDump, err := httputil.DumpResponse(resp, false)
+				respDump, err := httputil.DumpResponse(resp, true)
 				o.Expect(err).NotTo(o.HaveOccurred())
 				if len(tc.expectedError) == 0 && resp.StatusCode != 200 && resp.StatusCode != 302 {
+					gatherPostMortem(oc)
 					g.Fail(fmt.Sprintf("unexpected error response status (%d) while trying to reach '%s' endpoint: %s", resp.StatusCode, tc.endpoint, respDump))
 				} else if len(tc.expectedError) > 0 {
+					gatherPostMortem(oc)
 					o.Expect(resp.Status).To(o.ContainSubstring(tc.expectedError), fmt.Sprintf("full response header: %s\n", respDump))
 				}
 
 				token := getTokenFromResponse(resp)
 				if len(token) > 0 && !tc.expectToken {
+					gatherPostMortem(oc)
 					g.Fail("did not expect to get a token")
 				}
 				if len(token) == 0 && tc.expectToken {
+					gatherPostMortem(oc)
 					g.Fail(fmt.Sprintf("Location header does not contain the access token: '%s'", resp.Header.Get("Location")))
 				}
 
@@ -216,6 +237,53 @@ var _ = g.Describe("[Serial] [Feature:OAuthServer] [RequestHeaders] [IdP]", func
 		testBrowserClientRedirectsProperly(caCerts, oauthURL)
 	})
 })
+
+func gatherPostMortem(oc *exutil.CLI) {
+	authn, err := oc.AdminConfigClient().
+		ConfigV1().
+		ClusterOperators().
+		Get(context.Background(), "authentication", metav1.GetOptions{})
+	if err != nil {
+		e2e.Logf("Error getting authentication operator: %v\n", err)
+	}
+	e2e.Logf("Authentication %v\n", authn)
+
+	deploymentName := "oauth-openshift"
+	oauthServerNamespace := "openshift-authentication"
+	deployment, err := oc.AdminKubeClient().
+		AppsV1().
+		Deployments(oauthServerNamespace).
+		Get(context.Background(), deploymentName, metav1.GetOptions{})
+	if err != nil {
+		e2e.Logf("get deployment from %s in %s: %w", deploymentName, oauthServerNamespace, err)
+	}
+	e2e.Logf("deployment for %s in %s: %s", deploymentName, oauthServerNamespace, deployment)
+
+	configmapName := "v4-0-config-system-cliconfig"
+	configmap, err := oc.AdminKubeClient().
+		CoreV1().
+		ConfigMaps(oauthServerNamespace).
+		Get(context.Background(), configmapName, metav1.GetOptions{})
+	if err != nil {
+		e2e.Logf("get configmap from %s in %s: %w", configmapName, oauthServerNamespace, err)
+	}
+	e2e.Logf("configmap for %s in %s: %s", configmapName, oauthServerNamespace, configmap)
+
+	pods, err := oc.AdminKubeClient().
+		CoreV1().
+		Pods(oauthServerNamespace).
+		List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		e2e.Logf("get pods from %s: %w", oauthServerNamespace, err)
+	}
+	for _, pod := range pods.Items {
+		logs, err := oc.Run("logs").Args(pod.Name, "-n", oauthServerNamespace).Output()
+		if err != nil {
+			e2e.Logf("get logs from %s in %s: %w", pod.Name, oauthServerNamespace, err)
+		}
+		e2e.Logf("log from %s in %s: %s", pod.Name, oauthServerNamespace, logs)
+	}
+}
 
 func testEndpointsWithValidToken(caCerts *x509.CertPool, oauthServerURL, token string) {
 	g.By("/metrics - token: requires user authorized to access the endpoint", func() {
@@ -257,7 +325,7 @@ func testBrowserClientRedirectsProperly(caCerts *x509.CertPool, oauthServerURL s
 	})
 
 	g.By("/authorize - browser-client - anonymous: specify the request header provider in the query", func() {
-		testedEndpoint := "/oauth/authorize?client_id=openshift-browser-client&response_type=token;idp=test-request-header"
+		testedEndpoint := "/oauth/authorize?client_id=openshift-browser-client&response_type=token&idp=test-request-header"
 		resp := oauthHTTPRequestOrFail(caCerts, oauthServerURL, testedEndpoint, "", nil, nil)
 		respDump, err := httputil.DumpResponse(resp, false)
 		o.Expect(err).NotTo(o.HaveOccurred())
@@ -298,14 +366,14 @@ func generateCA(cn string) (*x509.Certificate, *rsa.PrivateKey) {
 // returns CA cert and private key
 func createClientCA(client corev1client.CoreV1Interface) (*x509.Certificate, *rsa.PrivateKey) {
 	caCert, caKey := generateCA("Testing CA")
-	_, err := client.ConfigMaps("openshift-config").Create(&corev1.ConfigMap{
+	_, err := client.ConfigMaps("openshift-config").Create(context.Background(), &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: clientCAName,
 		},
 		Data: map[string]string{
 			"ca.crt": string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: caCert.Raw})),
 		},
-	})
+	}, metav1.CreateOptions{})
 	o.Expect(err).NotTo(o.HaveOccurred())
 
 	return caCert, caKey
@@ -340,55 +408,9 @@ func generateCert(caCert *x509.Certificate, caKey *rsa.PrivateKey, cn string, ek
 	return cert, priv
 }
 
-func waitForNewOAuthConfig(oc *exutil.CLI, caCerts *x509.CertPool, oauthURL string, configChanged time.Time) {
-	// check that the pods running in openshift-authentication NS already reflect our changes
-	err := wait.PollImmediate(time.Second, 2*time.Minute, func() (bool, error) {
-		pods, err := oc.AdminKubeClient().CoreV1().Pods("openshift-authentication").List(metav1.ListOptions{})
-		if err != nil {
-			return false, err
-		}
-
-		podsReady := true
-		for _, p := range pods.Items {
-			tstamp := p.GetCreationTimestamp()
-			if !tstamp.After(configChanged) {
-				podsReady = false
-			}
-			if podsReady {
-				return true, nil
-			}
-		}
-		return false, nil
-	})
-	o.Expect(err).NotTo(o.HaveOccurred())
-
-	err = wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
-		authn, err := oc.AdminConfigClient().ConfigV1().ClusterOperators().Get("authentication", metav1.GetOptions{})
-		if err != nil {
-			e2e.Logf("Error getting authentication operator: %v", err)
-			return false, err
-		}
-
-		if clusteroperatorhelpers.IsStatusConditionTrue(authn.Status.Conditions, configv1.OperatorProgressing) {
-			e2e.Logf("Waiting for progressing condition: %s", spew.Sdump(authn.Status.Conditions))
-			return false, nil
-		}
-
-		// it seems that if we do anonymous request too early, it still does not see the IdP as configured
-		resp, err := oauthHTTPRequest(caCerts, oauthURL, "/oauth/authorize?client_id=openshift-challenging-client&response_type=token", "", nil, nil)
-		if err != nil {
-			e2e.Logf("Error making OAuth request: %v", err)
-			return false, nil
-		}
-
-		if resp.StatusCode != 302 {
-			bodyBytes, _ := ioutil.ReadAll(resp.Body)
-			e2e.Logf("OAuth HTTP request response is not 302: %q (%s)", resp.Status, string(bodyBytes))
-			return false, nil
-		}
-		return true, nil
-	})
-	o.Expect(err).NotTo(o.HaveOccurred())
+func waitForNewOAuthConfig(oc *exutil.CLI) {
+	waitForAuthenticationProgressing(oc, configv1.ConditionTrue)
+	waitForAuthenticationProgressing(oc, configv1.ConditionFalse)
 }
 
 // oauthHTTPRequestOrFail wraps oauthHTTPRequest and fails the test if the request failed
@@ -416,10 +438,14 @@ func oauthHTTPRequest(caCerts *x509.CertPool, oauthBaseURL, endpoint, token stri
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	}
 
+	// Adding the token prevents the server from logging a misleading warning (which is oftentimes interpreted as
+	// a root cause of a failure). It doesn't need to be anything specific for this test.
+	req.Header.Set("X-CSRF-Token", "1")
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			RootCAs: caCerts,
 		},
+		Proxy: http.ProxyFromEnvironment,
 	}
 
 	if cert != nil {
@@ -469,8 +495,41 @@ func getTokenFromResponse(resp *http.Response) string {
 	locationTokenRegexp := regexp.MustCompile("access_token=([^&]*)")
 
 	if matches := locationTokenRegexp.FindStringSubmatch(locationHeader); len(matches) > 1 {
-		return matches[1]
+		token, err := url.QueryUnescape(matches[1])
+		if err != nil {
+			return "<query-unescape-failed-in-getTokenFromResponse>"
+		}
+		return token
 	}
 
 	return ""
+}
+
+func waitForAuthenticationProgressing(oc *exutil.CLI, expectedProgressing configv1.ConditionStatus) {
+	err := wait.PollImmediate(time.Second, 10*time.Minute, func() (bool, error) {
+		authn, err := oc.AdminConfigClient().ConfigV1().ClusterOperators().Get(context.Background(), "authentication", metav1.GetOptions{})
+		if err != nil {
+			e2e.Logf("Error getting authentication operator: %v", err)
+			return false, err
+		}
+
+		progressing := clusteroperatorhelpers.FindStatusCondition(authn.Status.Conditions, configv1.OperatorProgressing)
+		if progressing == nil || progressing.Status != expectedProgressing {
+			e2e.Logf("Waiting for progressing condition to be %q: %s", expectedProgressing, spew.Sdump(authn.Status.Conditions))
+			return false, nil
+		}
+
+		if expectedProgressing == configv1.ConditionFalse {
+			// make additional checks on availability and degraded status
+			if clusteroperatorhelpers.IsStatusConditionFalse(authn.Status.Conditions, configv1.OperatorAvailable) ||
+				clusteroperatorhelpers.IsStatusConditionTrue(authn.Status.Conditions, configv1.OperatorDegraded) {
+				e2e.Logf("Waiting for available==True, progressing==False, degraded==False: %s", spew.Sdump(authn.Status.Conditions))
+				return false, nil
+			}
+
+		}
+
+		return true, nil
+	})
+	o.Expect(err).NotTo(o.HaveOccurred())
 }

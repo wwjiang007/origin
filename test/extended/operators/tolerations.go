@@ -1,25 +1,25 @@
 package operators
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 
 	exutil "github.com/openshift/origin/test/extended/util"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
-	schedulerapi "k8s.io/kubernetes/pkg/scheduler/api"
 	e2e "k8s.io/kubernetes/test/e2e/framework"
 )
 
-var _ = Describe("[Feature:Platform] Managed cluster should", func() {
+var _ = Describe("[sig-arch] Managed cluster should", func() {
 	oc := exutil.NewCLIWithoutNamespace("operators")
 
 	It("ensure control plane operators do not make themselves unevictable", func() {
 		// iterate over the references to find valid images
-		pods, err := oc.KubeFramework().ClientSet.CoreV1().Pods("").List(metav1.ListOptions{})
+		pods, err := oc.KubeFramework().ClientSet.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{})
 		if err != nil {
 			e2e.Failf("unable to list pods: %v", err)
 		}
@@ -29,9 +29,12 @@ var _ = Describe("[Feature:Platform] Managed cluster should", func() {
 		// a pod in a namespace that begins with kube-* or openshift-* must come from our release payload
 		// TODO components in openshift-operators may not come from our payload, may want to weaken restriction
 		namespacePrefixes := sets.NewString("kube-", "openshift-")
-		excludedNamespaces := sets.NewString("openshift-kube-apiserver", "openshift-kube-controller-manager", "openshift-kube-scheduler", "openshift-etcd", "openshift-openstack-infra")
+		excludedNamespaces := sets.NewString("openshift-kube-apiserver", "openshift-kube-controller-manager", "openshift-kube-scheduler", "openshift-etcd", "openshift-openstack-infra", "openshift-ovirt-infra")
 		// exclude these pods from checks
 		whitelistPods := sets.NewString("network-operator", "dns-operator", "olm-operators", "gcp-routes-controller", "ovnkube-master", "must-gather")
+		// The kube-apiserver proxy exists only in Hypershift. It is used to proxy the kubelet->kube-apiserver connection, hence it must be a static pod
+		// which makes the kubelet add a keyless noExecution toleration, so we have to exclude it here.
+		whitelistPods.Insert("kube-apiserver-proxy")
 		for _, pod := range pods.Items {
 			// exclude non-control plane namespaces
 			if !hasPrefixSet(pod.Namespace, namespacePrefixes) {
@@ -49,11 +52,11 @@ var _ = Describe("[Feature:Platform] Managed cluster should", func() {
 				continue
 			}
 			for _, toleration := range pod.Spec.Tolerations {
-				if toleration.Operator == v1.TolerationOpExists {
+				if toleration.Operator == v1.TolerationOpExists && toleration.Effect == v1.TaintEffectNoExecute {
 					if toleration.Key == "" {
 						invalidPodTolerations.Insert(fmt.Sprintf("%s/%s tolerates all taints", pod.Namespace, pod.Name))
 					}
-					if toleration.Key == schedulerapi.TaintNodeUnreachable || toleration.Key == schedulerapi.TaintNodeNotReady {
+					if toleration.Key == v1.TaintNodeUnreachable || toleration.Key == v1.TaintNodeNotReady {
 						if toleration.TolerationSeconds == nil {
 							invalidPodTolerations.Insert(fmt.Sprintf("%s/%s tolerates %s with no tolerationSeconds", pod.Namespace, pod.Name, toleration.Key))
 						}

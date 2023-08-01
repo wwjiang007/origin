@@ -2,21 +2,23 @@ package cluster
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/test/e2e/framework"
+	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
 	imageutils "k8s.io/kubernetes/test/utils/image"
 )
 
-var _ = g.Describe("[Feature:Audit] Basic audit", func() {
+var _ = g.Describe("[sig-api-machinery][Feature:Audit] Basic audit", func() {
 	f := framework.NewDefaultFramework("audit")
 
 	g.It("should audit API calls", func() {
@@ -34,8 +36,9 @@ var _ = g.Describe("[Feature:Audit] Basic audit", func() {
 				}},
 			},
 		}
-		f.PodClient().CreateSync(pod)
-		f.PodClient().DeleteSync(pod.Name, &metav1.DeleteOptions{}, framework.DefaultPodDeletionTimeout)
+		ctx := context.Background()
+		e2epod.NewPodClient(f).CreateSync(ctx, pod)
+		e2epod.NewPodClient(f).DeleteSync(ctx, pod.Name, metav1.DeleteOptions{}, e2epod.DefaultPodDeletionTimeout)
 
 		// Create, Read, Delete secret
 		secret := &apiv1.Secret{
@@ -46,15 +49,15 @@ var _ = g.Describe("[Feature:Audit] Basic audit", func() {
 				"top-secret": []byte("foo-bar"),
 			},
 		}
-		_, err := f.ClientSet.CoreV1().Secrets(f.Namespace.Name).Create(secret)
+		_, err := f.ClientSet.CoreV1().Secrets(f.Namespace.Name).Create(ctx, secret, metav1.CreateOptions{})
 		framework.ExpectNoError(err, "failed to create audit-secret")
-		_, err = f.ClientSet.CoreV1().Secrets(f.Namespace.Name).Get(secret.Name, metav1.GetOptions{})
+		_, err = f.ClientSet.CoreV1().Secrets(f.Namespace.Name).Get(ctx, secret.Name, metav1.GetOptions{})
 		framework.ExpectNoError(err, "failed to get audit-secret")
-		err = f.ClientSet.CoreV1().Secrets(f.Namespace.Name).Delete(secret.Name, &metav1.DeleteOptions{})
+		err = f.ClientSet.CoreV1().Secrets(f.Namespace.Name).Delete(ctx, secret.Name, metav1.DeleteOptions{})
 		framework.ExpectNoError(err, "failed to delete audit-secret")
 
 		// /version should not be audited
-		_, err = f.ClientSet.CoreV1().RESTClient().Get().AbsPath("/version").DoRaw()
+		_, err = f.ClientSet.CoreV1().RESTClient().Get().AbsPath("/version").DoRaw(ctx)
 		framework.ExpectNoError(err, "failed to query version")
 
 		expectedEvents := []auditEvent{{

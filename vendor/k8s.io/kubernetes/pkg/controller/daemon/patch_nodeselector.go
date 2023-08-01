@@ -1,8 +1,10 @@
 package daemon
 
 import (
+	"context"
+
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -14,8 +16,9 @@ import (
 	projectv1 "github.com/openshift/api/project/v1"
 )
 
-func NewNodeSelectorAwareDaemonSetsController(openshiftDefaultNodeSelectorString, kubeDefaultNodeSelectorString string, namepaceInformer coreinformers.NamespaceInformer, daemonSetInformer appsinformers.DaemonSetInformer, historyInformer appsinformers.ControllerRevisionInformer, podInformer coreinformers.PodInformer, nodeInformer coreinformers.NodeInformer, kubeClient clientset.Interface, failedPodsBackoff *flowcontrol.Backoff) (*DaemonSetsController, error) {
-	controller, err := NewDaemonSetsController(daemonSetInformer, historyInformer, podInformer, nodeInformer, kubeClient, failedPodsBackoff)
+func NewNodeSelectorAwareDaemonSetsController(ctx context.Context, openshiftDefaultNodeSelectorString, kubeDefaultNodeSelectorString string, namepaceInformer coreinformers.NamespaceInformer, daemonSetInformer appsinformers.DaemonSetInformer, historyInformer appsinformers.ControllerRevisionInformer, podInformer coreinformers.PodInformer, nodeInformer coreinformers.NodeInformer, kubeClient clientset.Interface, failedPodsBackoff *flowcontrol.Backoff) (*DaemonSetsController, error) {
+	controller, err := NewDaemonSetsController(ctx, daemonSetInformer, historyInformer, podInformer, nodeInformer, kubeClient, failedPodsBackoff)
+
 	if err != nil {
 		return controller, err
 	}
@@ -37,6 +40,17 @@ func NewNodeSelectorAwareDaemonSetsController(openshiftDefaultNodeSelectorString
 	}
 
 	return controller, nil
+}
+
+func (dsc *DaemonSetsController) nodeShouldRunDaemonPod(node *v1.Node, ds *appsv1.DaemonSet) (bool, bool) {
+	shouldRun, shouldContinueRunning := NodeShouldRunDaemonPod(node, ds)
+	if shouldRun && shouldContinueRunning {
+		if matches, matchErr := dsc.namespaceNodeSelectorMatches(node, ds); !matches || matchErr != nil {
+			return false, false
+		}
+	}
+
+	return shouldRun, shouldContinueRunning
 }
 
 func (dsc *DaemonSetsController) namespaceNodeSelectorMatches(node *v1.Node, ds *appsv1.DaemonSet) (bool, error) {

@@ -1,5 +1,5 @@
 kind: BuildConfig
-apiVersion: v1
+apiVersion: build.openshift.io/v1
 metadata:
   name: statusfail-genericfailure
 spec:
@@ -9,10 +9,13 @@ spec:
   strategy:
     type: Source
     sourceStrategy:
+
       from:
         kind: DockerImage
-        name: centos/ruby-23-centos7:latest
+        name: image-registry.openshift-image-registry.svc:5000/openshift/ruby:2.7-ubi8
       scripts: "http://example.org/scripts"
       env:
         - name: http_proxy
           value: "http://%"
+        - name: "BUILD_LOGLEVEL"
+          value: "2"

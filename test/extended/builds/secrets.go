@@ -1,17 +1,20 @@
 package builds
 
 import (
+	"context"
 	"path/filepath"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	corev1 "k8s.io/api/core/v1"
+	e2eoutput "k8s.io/kubernetes/test/e2e/framework/pod/output"
+	admissionapi "k8s.io/pod-security-admission/api"
 
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Feature:Builds][Slow] can use build secrets", func() {
+var _ = g.Describe("[sig-builds][Feature:Builds][Slow] can use build secrets", func() {
 	defer g.GinkgoRecover()
 	var (
 		buildSecretBaseDir     = exutil.FixturePath("testdata", "builds", "build-secrets")
@@ -24,7 +27,7 @@ var _ = g.Describe("[Feature:Builds][Slow] can use build secrets", func() {
 		dockerBuildDockerfile  = filepath.Join(buildSecretBaseDir, "Dockerfile")
 		sourceBuildFixture     = filepath.Join(buildSecretBaseDir, "test-s2i-build.json")
 		sourceBuildBinDir      = filepath.Join(buildSecretBaseDir, "s2i-binary-dir")
-		oc                     = exutil.NewCLI("build-secrets", exutil.KubeConfigPath())
+		oc                     = exutil.NewCLIWithPodSecurityLevel("build-secrets", admissionapi.LevelBaseline)
 	)
 
 	g.Context("", func() {
@@ -33,7 +36,7 @@ var _ = g.Describe("[Feature:Builds][Slow] can use build secrets", func() {
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				exutil.DumpPodStates(oc)
 				exutil.DumpConfigMapStates(oc)
 				exutil.DumpPodLogsStartingWith("", oc)
@@ -58,7 +61,7 @@ var _ = g.Describe("[Feature:Builds][Slow] can use build secrets", func() {
 				o.Expect(err).NotTo(o.HaveOccurred())
 			})
 
-			g.It("should contain secrets during the source strategy build", func() {
+			g.It("should contain secrets during the source strategy build [apigroup:build.openshift.io][apigroup:image.openshift.io]", func() {
 				g.By("creating test build config")
 				err := oc.Run("create").Args("-f", sourceBuildFixture).Execute()
 				o.Expect(err).NotTo(o.HaveOccurred())
@@ -73,7 +76,7 @@ var _ = g.Describe("[Feature:Builds][Slow] can use build secrets", func() {
 
 				g.By("verifying the build sources were available during build and secrets were not present in the output image")
 				pod := exutil.GetPodForContainer(corev1.Container{Name: "test", Image: image})
-				oc.KubeFramework().TestContainerOutput("test-build-secret-source", pod, 0, []string{
+				e2eoutput.TestContainerOutput(context.TODO(), oc.KubeFramework(), "test-build-secret-source", pod, 0, []string{
 					"testsecret/secret1=secret1",
 					"testsecret/secret2=secret2",
 					"testsecret/secret3=secret3",
@@ -104,7 +107,7 @@ var _ = g.Describe("[Feature:Builds][Slow] can use build secrets", func() {
 
 				g.By("verifying the build sources are present in container output")
 				pod := exutil.GetPodForContainer(corev1.Container{Name: "test", Image: image})
-				oc.KubeFramework().TestContainerOutput("test-build-secret-docker", pod, 0, []string{
+				e2eoutput.TestContainerOutput(context.TODO(), oc.KubeFramework(), "test-build-secret-docker", pod, 0, []string{
 					"secret1=secret1",
 					"relative-secret2=secret2",
 					"foo=bar",

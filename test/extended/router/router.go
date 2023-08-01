@@ -1,22 +1,24 @@
 package router
 
 import (
+	"context"
 	"net/http"
 	"time"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
+	admissionapi "k8s.io/pod-security-admission/api"
 
 	routeclientset "github.com/openshift/client-go/route/clientset/versioned"
 	exutil "github.com/openshift/origin/test/extended/util"
 	"github.com/openshift/origin/test/extended/util/url"
 )
 
-var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
+var _ = g.Describe("[sig-network][Feature:Router][apigroup:operator.openshift.io]", func() {
 	defer g.GinkgoRecover()
 	var (
 		host, ns string
@@ -28,7 +30,7 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 	// this hook must be registered before the framework namespace teardown
 	// hook
 	g.AfterEach(func() {
-		if g.CurrentGinkgoTestDescription().Failed {
+		if g.CurrentSpecReport().Failed() {
 			currlabel := "router=router"
 			for _, ns := range []string{"default", "openshift-ingress", "tectonic-ingress"} {
 				//Search the router by label
@@ -40,12 +42,12 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 				if err != nil {
 					panic(err)
 				}
-				exutil.DumpPodsCommand(oc.AdminKubeClient(), ns, selector, "cat /var/lib/haproxy/router/routes.json /var/lib/haproxy/conf/haproxy.config")
+				exutil.DumpPodsCommand(oc.AdminKubeClient(), ns, selector, "cat /var/lib/haproxy/conf/haproxy.config")
 			}
 		}
 	})
 
-	oc = exutil.NewCLI("router-stress", exutil.KubeConfigPath())
+	oc = exutil.NewCLIWithPodSecurityLevel("router-stress", admissionapi.LevelBaseline)
 
 	g.BeforeEach(func() {
 		var err error
@@ -66,7 +68,7 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 			)
 		})
 
-		g.It("should serve routes that were created from an ingress", func() {
+		g.It("should serve routes that were created from an ingress [apigroup:route.openshift.io]", func() {
 			g.By("deploying an ingress rule")
 			err := oc.Run("create").Args("-f", configPath).Execute()
 			o.Expect(err).NotTo(o.HaveOccurred())
@@ -74,7 +76,7 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 			g.By("waiting for the ingress rule to be converted to routes")
 			client := routeclientset.NewForConfigOrDie(oc.AdminConfig())
 			err = wait.Poll(time.Second, time.Minute, func() (bool, error) {
-				routes, err := client.RouteV1().Routes(ns).List(metav1.ListOptions{})
+				routes, err := client.RouteV1().Routes(ns).List(context.Background(), metav1.ListOptions{})
 				if err != nil {
 					return false, err
 				}

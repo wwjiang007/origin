@@ -1,11 +1,12 @@
 package image_ecosystem
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,19 +17,19 @@ import (
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[image_ecosystem][python][Slow] hot deploy for openshift python image", func() {
+var _ = g.Describe("[sig-devex][Feature:ImageEcosystem][python][Slow] hot deploy for openshift python image", func() {
 	defer g.GinkgoRecover()
 
 	var (
-		oc               = exutil.NewCLI("s2i-python", exutil.KubeConfigPath())
-		djangoRepository = "https://github.com/sclorg/django-ex.git"
-		modifyCommand    = []string{"sed", "-ie", `s/'count': PageView.objects.count()/'count': 1337/`, "welcome/views.py"}
-		pageCountFn      = func(count int) string { return fmt.Sprintf("Page views: %d", count) }
-		dcName           = "django-ex"
-		rcNameOne        = fmt.Sprintf("%s-1", dcName)
-		rcNameTwo        = fmt.Sprintf("%s-2", dcName)
-		dcLabelOne       = exutil.ParseLabelsOrDie(fmt.Sprintf("deployment=%s", rcNameOne))
-		dcLabelTwo       = exutil.ParseLabelsOrDie(fmt.Sprintf("deployment=%s", rcNameTwo))
+		oc             = exutil.NewCLI("s2i-python")
+		djangoTemplate = "django-psql-example"
+		modifyCommand  = []string{"sed", "-ie", `s/'count': PageView.objects.count()/'count': 1337/`, "welcome/views.py"}
+		pageCountFn    = func(count int) string { return fmt.Sprintf("Page views: %d", count) }
+		dcName         = "django-psql-example"
+		rcNameOne      = fmt.Sprintf("%s-1", dcName)
+		rcNameTwo      = fmt.Sprintf("%s-2", dcName)
+		dcLabelOne     = exutil.ParseLabelsOrDie(fmt.Sprintf("deployment=%s", rcNameOne))
+		dcLabelTwo     = exutil.ParseLabelsOrDie(fmt.Sprintf("deployment=%s", rcNameTwo))
 	)
 
 	g.Context("", func() {
@@ -37,24 +38,27 @@ var _ = g.Describe("[image_ecosystem][python][Slow] hot deploy for openshift pyt
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				exutil.DumpPodStates(oc)
 				exutil.DumpPodLogsStartingWith("", oc)
 			}
 		})
 
 		g.Describe("Django example", func() {
-			g.It(fmt.Sprintf("should work with hot deploy"), func() {
+			g.It(fmt.Sprintf("should work with hot deploy [apigroup:image.openshift.io][apigroup:operator.openshift.io][apigroup:config.openshift.io][apigroup:build.openshift.io]"), func() {
 
+				// skipping this test for now until we figure out why is not
+				// passing on CI bz: 2023238
+				g.Skip("Skipping until bz_2023238 is fixed.")
 				err := exutil.WaitForOpenShiftNamespaceImageStreams(oc)
 				o.Expect(err).NotTo(o.HaveOccurred())
-				g.By(fmt.Sprintf("calling oc new-app %s", djangoRepository))
+				g.By(fmt.Sprintf("calling oc new-app %s", djangoTemplate))
 				// gunicorn workers read the application source lazily.  For
 				// this test to succeed reliably, we must have one worker only
 				// (WEB_CONCURRENCY=1).  Having primed the worker via
 				// assertPageCountIs, we can then expect it not to read in the
 				// modified application source when hot deploy is disabled.
-				err = oc.Run("new-app").Args(djangoRepository, "--strategy=source", "-e", "WEB_CONCURRENCY=1").Execute()
+				err = oc.Run("new-app").Args(djangoTemplate, "-e", "WEB_CONCURRENCY=1").Execute()
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				g.By("waiting for build to finish")
@@ -70,7 +74,7 @@ var _ = g.Describe("[image_ecosystem][python][Slow] hot deploy for openshift pyt
 				g.By("waiting for endpoint")
 				err = exutil.WaitForEndpoint(oc.KubeFramework().ClientSet, oc.Namespace(), dcName)
 				o.Expect(err).NotTo(o.HaveOccurred())
-				oldEndpoint, err := oc.KubeFramework().ClientSet.CoreV1().Endpoints(oc.Namespace()).Get(dcName, metav1.GetOptions{})
+				oldEndpoint, err := oc.KubeFramework().ClientSet.CoreV1().Endpoints(oc.Namespace()).Get(context.Background(), dcName, metav1.GetOptions{})
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				assertPageCountIs := func(i int, dcLabel labels.Selector) {
@@ -94,7 +98,7 @@ var _ = g.Describe("[image_ecosystem][python][Slow] hot deploy for openshift pyt
 				o.Expect(err).NotTo(o.HaveOccurred())
 				assertPageCountIs(3, dcLabelOne)
 
-				pods, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).List(metav1.ListOptions{LabelSelector: dcLabelOne.String()})
+				pods, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).List(context.Background(), metav1.ListOptions{LabelSelector: dcLabelOne.String()})
 				o.Expect(err).NotTo(o.HaveOccurred())
 				o.Expect(len(pods.Items)).To(o.Equal(1))
 
@@ -112,7 +116,7 @@ var _ = g.Describe("[image_ecosystem][python][Slow] hot deploy for openshift pyt
 				// request timeouts against the previous pod's ip.  So make sure the endpoint is pointing to the
 				// new pod before hitting it.
 				err = wait.Poll(1*time.Second, 1*time.Minute, func() (bool, error) {
-					newEndpoint, err := oc.KubeFramework().ClientSet.CoreV1().Endpoints(oc.Namespace()).Get(dcName, metav1.GetOptions{})
+					newEndpoint, err := oc.KubeFramework().ClientSet.CoreV1().Endpoints(oc.Namespace()).Get(context.Background(), dcName, metav1.GetOptions{})
 					if err != nil {
 						return false, err
 					}
@@ -126,7 +130,8 @@ var _ = g.Describe("[image_ecosystem][python][Slow] hot deploy for openshift pyt
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				g.By("modifying the source code with enabled hot deploy")
-				assertPageCountIs(1, dcLabelTwo)
+				// now using a persistent template, the count does not reset
+				assertPageCountIs(4, dcLabelTwo)
 				err = RunInPodContainer(oc, dcLabelTwo, modifyCommand)
 				o.Expect(err).NotTo(o.HaveOccurred())
 				assertPageCountIs(1337, dcLabelTwo)

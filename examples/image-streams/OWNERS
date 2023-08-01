@@ -5,10 +5,8 @@ reviewers:
   - jcantrill
   - hhorak
   - csrwng
-  - adambkaplan
+  - coreydaley
 approvers:
   - bparees
-  - mfojtik
-  - jcantrill
-  - csrwng
-  - adambkaplan
+  - coreydaley
+  - dperaza4dustbit

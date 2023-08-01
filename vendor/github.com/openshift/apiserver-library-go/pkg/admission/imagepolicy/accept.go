@@ -3,7 +3,7 @@ package imagepolicy
 import (
 	"fmt"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,7 +12,6 @@ import (
 	"k8s.io/apiserver/pkg/admission"
 	kapi "k8s.io/kubernetes/pkg/apis/core"
 
-	imagepolicy "github.com/openshift/apiserver-library-go/pkg/admission/imagepolicy/apis/imagepolicy/v1"
 	"github.com/openshift/apiserver-library-go/pkg/admission/imagepolicy/imagereferencemutators"
 	"github.com/openshift/apiserver-library-go/pkg/admission/imagepolicy/rules"
 	"github.com/openshift/library-go/pkg/image/reference"
@@ -28,21 +27,13 @@ type policyDecision struct {
 	resolutionErr error
 }
 
-func accept(accepter rules.Accepter, policy imageResolutionPolicy, resolver imageResolver, m imagereferencemutators.ImageReferenceMutator, annotations imagereferencemutators.AnnotationAccessor, attr admission.Attributes, excludedRules sets.String) error {
+func accept(accepter rules.Accepter, policy imageResolutionPolicy, resolver imageResolver, m imagereferencemutators.ImageReferenceMutator, annotations imagereferencemutators.AnnotationAccessor, attr admission.Attributes, excludedRules sets.String, mutationAllowed bool) error {
 	decisions := policyDecisions{}
 
 	t := attr.GetResource().GroupResource()
 	gr := metav1.GroupResource{Resource: t.Resource, Group: t.Group}
 
-	var resolveAllNames bool
-	if annotations != nil {
-		if a, ok := annotations.TemplateAnnotations(); ok {
-			resolveAllNames = a[imagepolicy.ResolveNamesAnnotation] == "*"
-		}
-		if !resolveAllNames {
-			resolveAllNames = annotations.Annotations()[imagepolicy.ResolveNamesAnnotation] == "*"
-		}
-	}
+	resolveAllNames := imagereferencemutators.ResolveAllNames(annotations)
 
 	errs := m.Mutate(func(ref *kapi.ObjectReference) error {
 		// create the attribute set for this particular reference, if we have never seen the reference
@@ -67,13 +58,22 @@ func accept(accepter rules.Accepter, policy imageResolutionPolicy, resolver imag
 					decision.resolutionErr = err
 
 				case err == nil:
+					oldDecissionAttributes := decision.attrs
 					// if we resolved properly, assign the attributes and rewrite the pull spec if we need to
 					decision.attrs = resolvedAttrs
 
 					if policy.RewriteImagePullSpec(resolvedAttrs, attr.GetOperation() == admission.Update, gr) {
-						ref.Namespace = ""
-						ref.Name = decision.attrs.Name.Exact()
-						ref.Kind = "DockerImage"
+						refUpdate := kapi.ObjectReference{Kind: "DockerImage", Name: resolvedAttrs.Name.Exact()}
+
+						// check if we are mutating object in validate phase and discard the update
+						// this allows creation of objects like imagestreams in between admit and validate
+						if !mutationAllowed && (ref.Namespace != refUpdate.Namespace || ref.Name != refUpdate.Name || ref.Kind != refUpdate.Kind) {
+							klog.V(5).Infof("image resolution changed between admit and verify: falling back to the old image attributes (attributes=%#v)", oldDecissionAttributes)
+						} else {
+							ref.Namespace = refUpdate.Namespace
+							ref.Name = refUpdate.Name
+							ref.Kind = refUpdate.Kind
+						}
 					}
 				}
 			}

@@ -10,6 +10,9 @@ import (
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// Compatibility level 4: No compatibility is provided, the API can change at any point for any reason. These capabilities should not be used by applications needing long term support.
+// +openshift:compatibility-gen:level=4
+// +openshift:compatibility-gen:internal
 type OpenShiftAPIServerConfig struct {
 	metav1.TypeMeta `json:",inline"`
 
@@ -43,7 +46,43 @@ type OpenShiftAPIServerConfig struct {
 
 	// TODO this needs to be removed.
 	APIServerArguments map[string][]string `json:"apiServerArguments"`
+
+	// apiServers holds information about enabled/disabled API servers
+	APIServers APIServers `json:"apiServers"`
 }
+
+type APIServers struct {
+	// perGroupOptions is a list of enabled/disabled API servers in addition to the defaults
+	PerGroupOptions []PerGroupOptions `json:"perGroupOptions"`
+}
+
+type PerGroupOptions struct {
+	// name is an API server name (see OpenShiftAPIserverName
+	// typed constants for a complete list of available API servers).
+	Name OpenShiftAPIserverName `json:"name"`
+
+	// enabledVersions is a list of versions that must be enabled in addition to the defaults.
+	// Must not collide with the list of disabled versions
+	EnabledVersions []string `json:"enabledVersions"`
+
+	// disabledVersions is a list of versions that must be disabled in addition to the defaults.
+	// Must not collide with the list of enabled versions
+	DisabledVersions []string `json:"disabledVersions"`
+}
+
+type OpenShiftAPIserverName string
+
+const (
+	OpenShiftAppsAPIserver          OpenShiftAPIserverName = "apps.openshift.io"
+	OpenShiftAuthorizationAPIserver OpenShiftAPIserverName = "authorization.openshift.io"
+	OpenShiftBuildAPIserver         OpenShiftAPIserverName = "build.openshift.io"
+	OpenShiftImageAPIserver         OpenShiftAPIserverName = "image.openshift.io"
+	OpenShiftProjectAPIserver       OpenShiftAPIserverName = "project.openshift.io"
+	OpenShiftQuotaAPIserver         OpenShiftAPIserverName = "quota.openshift.io"
+	OpenShiftRouteAPIserver         OpenShiftAPIserverName = "route.openshift.io"
+	OpenShiftSecurityAPIserver      OpenShiftAPIserverName = "security.openshift.io"
+	OpenShiftTemplateAPIserver      OpenShiftAPIserverName = "template.openshift.io"
+)
 
 type FrontProxyConfig struct {
 	// clientCA is a path to the CA bundle to use to verify the common name of the front proxy's client cert
@@ -155,6 +194,9 @@ type JenkinsPipelineConfig struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// Compatibility level 4: No compatibility is provided, the API can change at any point for any reason. These capabilities should not be used by applications needing long term support.
+// +openshift:compatibility-gen:level=4
+// +openshift:compatibility-gen:internal
 type OpenShiftControllerManagerConfig struct {
 	metav1.TypeMeta `json:",inline"`
 
@@ -183,6 +225,11 @@ type OpenShiftControllerManagerConfig struct {
 	Ingress            IngressControllerConfig          `json:"ingress"`
 	ImageImport        ImageImportControllerConfig      `json:"imageImport"`
 	SecurityAllocator  SecurityAllocator                `json:"securityAllocator"`
+
+	// featureGates are the set of extra OpenShift feature gates for openshift-controller-manager.
+	// These feature gates can be used to enable features that are tech preview or otherwise not available on
+	// OpenShift by default.
+	FeatureGates []string `json:"featureGates"`
 }
 
 type DeployerControllerConfig struct {
@@ -253,6 +300,10 @@ type ImageImportControllerConfig struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // BuildDefaultsConfig controls the default information for Builds
+//
+// Compatibility level 4: No compatibility is provided, the API can change at any point for any reason. These capabilities should not be used by applications needing long term support.
+// +openshift:compatibility-gen:level=4
+// +openshift:compatibility-gen:internal
 type BuildDefaultsConfig struct {
 	metav1.TypeMeta `json:",inline"`
 
@@ -300,11 +351,19 @@ type SourceStrategyDefaultsConfig struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // BuildOverridesConfig controls override settings for builds
+//
+// Compatibility level 4: No compatibility is provided, the API can change at any point for any reason. These capabilities should not be used by applications needing long term support.
+// +openshift:compatibility-gen:level=4
+// +openshift:compatibility-gen:internal
 type BuildOverridesConfig struct {
 	metav1.TypeMeta `json:",inline"`
 
-	// forcePull indicates whether the build strategy should always be set to ForcePull=true
-	ForcePull bool `json:"forcePull"`
+	// forcePull overrides, if set, the equivalent value in the builds,
+	// i.e. false disables force pull for all builds,
+	// true enables force pull for all builds,
+	// independently of what each build specifies itself
+	// +optional
+	ForcePull *bool `json:"forcePull,omitempty"`
 
 	// imageLabels is a list of labels that are applied to the resulting image.
 	// If user provided a label in their Build/BuildConfig with the same name as one in this

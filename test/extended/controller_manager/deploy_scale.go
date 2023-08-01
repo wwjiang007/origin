@@ -1,6 +1,7 @@
 package controller_manager
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -11,43 +12,42 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/scale"
-	"k8s.io/kubernetes/pkg/api/legacyscheme"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	"github.com/openshift/api/apps"
 	appsv1 "github.com/openshift/api/apps/v1"
-	appsclient "github.com/openshift/client-go/apps/clientset/versioned"
+	appsv1client "github.com/openshift/client-go/apps/clientset/versioned"
 	"github.com/openshift/library-go/pkg/apps/appsutil"
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Feature:OpenShiftControllerManager]", func() {
+var _ = g.Describe("[sig-apps][Feature:OpenShiftControllerManager]", func() {
 	defer g.GinkgoRecover()
-	oc := exutil.NewCLI("deployment-scale", exutil.KubeConfigPath())
+	oc := exutil.NewCLI("deployment-scale")
 
-	g.It("TestDeployScale", func() {
+	g.It("TestDeployScale [apigroup:apps.openshift.io]", func() {
 		t := g.GinkgoT()
 
 		namespace := oc.Namespace()
-		adminConfig := oc.UserConfig()
-		adminAppsClient := appsclient.NewForConfigOrDie(adminConfig)
+		adminAppsClient := oc.AppsClient()
 
 		config := OkDeploymentConfig(0)
 		config.Namespace = namespace
 		config.Spec.Triggers = []appsv1.DeploymentTriggerPolicy{}
 		config.Spec.Replicas = 1
 
-		dc, err := adminAppsClient.AppsV1().DeploymentConfigs(namespace).Create(config)
+		dc, err := adminAppsClient.AppsV1().DeploymentConfigs(namespace).Create(context.Background(), config, metav1.CreateOptions{})
 		if err != nil {
 			t.Fatalf("Couldn't create DeploymentConfig: %v %#v", err, config)
 		}
 		generation := dc.Generation
 
 		{
+			appsClient := appsv1client.NewForConfigOrDie(oc.UserConfig())
 			// Get scale subresource
 			scalePath := fmt.Sprintf("/apis/apps.openshift.io/v1/namespaces/%s/deploymentconfigs/%s/scale", dc.Namespace, dc.Name)
 			scale := &unstructured.Unstructured{}
-			if err := adminAppsClient.RESTClient().Get().AbsPath(scalePath).Do().Into(scale); err != nil {
+			if err := appsClient.RESTClient().Get().AbsPath(scalePath).Do(context.Background()).Into(scale); err != nil {
 				t.Fatal(err)
 			}
 			// Ensure correct type
@@ -60,21 +60,17 @@ var _ = g.Describe("[Feature:OpenShiftControllerManager]", func() {
 			}
 
 			// Ensure we can submit the same type back
-			if err := adminAppsClient.RESTClient().Put().AbsPath(scalePath).Body(scaleBytes).Do().Error(); err != nil {
+			if err := appsClient.RESTClient().Put().AbsPath(scalePath).Body(scaleBytes).Do(context.Background()).Error(); err != nil {
 				t.Fatal(err)
 			}
 		}
 
 		condition := func() (bool, error) {
-			config, err := adminAppsClient.AppsV1().DeploymentConfigs(namespace).Get(dc.Name, metav1.GetOptions{})
+			config, err := adminAppsClient.AppsV1().DeploymentConfigs(namespace).Get(context.Background(), dc.Name, metav1.GetOptions{})
 			if err != nil {
 				return false, nil
 			}
-			externalConfig := &appsv1.DeploymentConfig{}
-			if err := legacyscheme.Scheme.Convert(config, externalConfig, nil); err != nil {
-				panic(err)
-			}
-			return appsutil.HasSynced(externalConfig, generation), nil
+			return appsutil.HasSynced(config, generation), nil
 		}
 		if err := wait.PollImmediate(500*time.Millisecond, 10*time.Second, condition); err != nil {
 			t.Fatalf("Deployment config never synced: %v", err)
@@ -85,12 +81,12 @@ var _ = g.Describe("[Feature:OpenShiftControllerManager]", func() {
 		// we don't use cached discovery because DiscoveryScaleKindResolver does its own caching,
 		// so we want to re-fetch every time when we actually ask for it
 		scaleKindResolver := scale.NewDiscoveryScaleKindResolver(adminAppsClient.Discovery())
-		scaleClient, err := scale.NewForConfig(adminConfig, restMapper, dynamic.LegacyAPIPathResolverFunc, scaleKindResolver)
+		scaleClient, err := scale.NewForConfig(oc.UserConfig(), restMapper, dynamic.LegacyAPIPathResolverFunc, scaleKindResolver)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		scale, err := scaleClient.Scales(namespace).Get(apps.Resource("deploymentconfigs"), config.Name)
+		scale, err := scaleClient.Scales(namespace).Get(context.Background(), apps.Resource("deploymentconfigs"), config.Name, metav1.GetOptions{})
 		if err != nil {
 			t.Fatalf("Couldn't get DeploymentConfig scale: %v", err)
 		}
@@ -100,7 +96,7 @@ var _ = g.Describe("[Feature:OpenShiftControllerManager]", func() {
 
 		scaleUpdate := scale.DeepCopy()
 		scaleUpdate.Spec.Replicas = 3
-		updatedScale, err := scaleClient.Scales(namespace).Update(apps.Resource("deploymentconfigs"), scaleUpdate)
+		updatedScale, err := scaleClient.Scales(namespace).Update(context.Background(), apps.Resource("deploymentconfigs"), scaleUpdate, metav1.UpdateOptions{})
 		if err != nil {
 			// If this complains about "Scale" not being registered in "v1", check the kind overrides in the API registration in SubresourceGroupVersionKind
 			t.Fatalf("Couldn't update DeploymentConfig scale to %#v: %v", scaleUpdate, err)
@@ -109,7 +105,7 @@ var _ = g.Describe("[Feature:OpenShiftControllerManager]", func() {
 			t.Fatalf("Expected scale.spec.replicas=3, got %#v", scale)
 		}
 
-		persistedScale, err := scaleClient.Scales(namespace).Get(apps.Resource("deploymentconfigs"), config.Name)
+		persistedScale, err := scaleClient.Scales(namespace).Get(context.Background(), apps.Resource("deploymentconfigs"), config.Name, metav1.GetOptions{})
 		if err != nil {
 			t.Fatalf("Couldn't get DeploymentConfig scale: %v", err)
 		}

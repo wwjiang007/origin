@@ -102,7 +102,7 @@ This section covers how to perform all the steps of building, deploying, and upd
 
 1. For the sake of this demo, grant a `cluster-admin` role to the `test-admin` user and login as that user using any password you want (note that in a real world scenario, as an OpenShift user you would be granted roles from a cluster admin and you might not be able to do most of the following things - depending on your granted roles).
 
-        $ oc adm policy add-cluster-role-to-user cluster-admin test-admin --config=openshift.local.config/master/admin.kubeconfig
+        $ oc adm policy add-cluster-role-to-user cluster-admin test-admin --kubeconfig=openshift.local.config/master/admin.kubeconfig
         $ oc login --certificate-authority=openshift.local.config/master/ca.crt -u test-admin
 
 
@@ -171,7 +171,7 @@ This section covers how to perform all the steps of building, deploying, and upd
             service "frontend" created
             route "route-edge" created
             imagestream "origin-ruby-sample" created
-            imagestream "ruby-25-centos7" created
+            imagestream "ruby-27-centos7" created
             buildconfig "ruby-sample-build" created
             deploymentconfig "frontend" created
             service "database" created

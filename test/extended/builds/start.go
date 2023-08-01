@@ -1,6 +1,7 @@
 package builds
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -9,13 +10,14 @@ import (
 	"sync"
 	"time"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	e2e "k8s.io/kubernetes/test/e2e/framework"
+	admissionapi "k8s.io/pod-security-admission/api"
 
 	buildv1 "github.com/openshift/api/build/v1"
 	"github.com/openshift/api/image/docker10"
@@ -24,7 +26,7 @@ import (
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
+var _ = g.Describe("[sig-builds][Feature:Builds][Slow] starting a build using CLI", func() {
 	defer g.GinkgoRecover()
 	var (
 		buildFixture       = exutil.FixturePath("testdata", "builds", "test-build.yaml")
@@ -34,9 +36,9 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 		symlinkFixture     = exutil.FixturePath("testdata", "builds", "test-symlink-build.yaml")
 		exampleGemfileURL  = "https://raw.githubusercontent.com/openshift/ruby-hello-world/master/Gemfile"
 		exampleArchiveURL  = "https://github.com/openshift/ruby-hello-world/archive/master.zip"
-		oc                 = exutil.NewCLI("cli-start-build", exutil.KubeConfigPath())
+		oc                 = exutil.NewCLIWithPodSecurityLevel("cli-start-build", admissionapi.LevelBaseline)
 		verifyNodeSelector = func(oc *exutil.CLI, name string) {
-			pod, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(name+"-build", metav1.GetOptions{})
+			pod, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(context.Background(), name+"-build", metav1.GetOptions{})
 			o.Expect(err).NotTo(o.HaveOccurred())
 			os, ok := pod.Spec.NodeSelector[corev1.LabelOSStable]
 			o.Expect(ok).To(o.BeTrue())
@@ -55,14 +57,14 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 
 		g.Context("start-build test context", func() {
 			g.AfterEach(func() {
-				if g.CurrentGinkgoTestDescription().Failed {
+				if g.CurrentSpecReport().Failed() {
 					exutil.DumpPodStates(oc)
 					exutil.DumpPodLogsStartingWith("", oc)
 				}
 			})
 
 			g.Describe("oc start-build --wait", func() {
-				g.It("should start a build and wait for the build to complete", func() {
+				g.It("should start a build and wait for the build to complete [apigroup:build.openshift.io]", func() {
 					g.By("starting the build with --wait flag")
 					br, err := exutil.StartBuildAndWait(oc, "sample-build", "--wait")
 					o.Expect(err).NotTo(o.HaveOccurred())
@@ -70,7 +72,7 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 					verifyNodeSelector(oc, br.BuildName)
 				})
 
-				g.It("should start a build and wait for the build to fail", func() {
+				g.It("should start a build and wait for the build to fail [apigroup:build.openshift.io]", func() {
 					g.By("starting the build with --wait flag but wrong --commit")
 					br, _ := exutil.StartBuildAndWait(oc, "sample-build", "--wait", "--commit=fffffff")
 					br.AssertFailure()
@@ -81,7 +83,7 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 			})
 
 			g.Describe("oc start-build with pr ref", func() {
-				g.It("should start a build from a PR ref, wait for the build to complete, and confirm the right level was used", func() {
+				g.It("should start a build from a PR ref, wait for the build to complete, and confirm the right level was used [apigroup:build.openshift.io][apigroup:image.openshift.io]", func() {
 					g.By("make sure python imagestream has latest tag")
 					err := exutil.WaitForAnImageStreamTag(oc.AsAdmin(), "openshift", "python", "latest")
 					o.Expect(err).NotTo(o.HaveOccurred())
@@ -107,7 +109,7 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 					g.By("confirm the correct commit level was retrieved")
 					o.Expect(out).Should(o.Not(o.ContainSubstring("gunicorn")))
 
-					istag, err := oc.ImageClient().ImageV1().ImageStreamTags(oc.Namespace()).Get("bc-with-pr-ref:latest", metav1.GetOptions{})
+					istag, err := oc.ImageClient().ImageV1().ImageStreamTags(oc.Namespace()).Get(context.Background(), "bc-with-pr-ref:latest", metav1.GetOptions{})
 					o.Expect(err).NotTo(o.HaveOccurred())
 					err = imageutil.ImageWithMetadata(&istag.Image)
 					o.Expect(err).NotTo(o.HaveOccurred())
@@ -115,7 +117,7 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 					o.Expect(istag.Image.DockerImageMetadata.Object.(*docker10.DockerImage).Config.Labels).To(o.HaveKeyWithValue("io.openshift.build.commit.ref", "refs/pull/121/head"))
 					o.Expect(istag.Image.DockerImageMetadata.Object.(*docker10.DockerImage).Config.Env).To(o.ContainElement("OPENSHIFT_BUILD_REFERENCE=refs/pull/121/head"))
 
-					istag, err = oc.ImageClient().ImageV1().ImageStreamTags(oc.Namespace()).Get("bc-with-pr-ref-docker:latest", metav1.GetOptions{})
+					istag, err = oc.ImageClient().ImageV1().ImageStreamTags(oc.Namespace()).Get(context.Background(), "bc-with-pr-ref-docker:latest", metav1.GetOptions{})
 					o.Expect(err).NotTo(o.HaveOccurred())
 					err = imageutil.ImageWithMetadata(&istag.Image)
 					o.Expect(err).NotTo(o.HaveOccurred())
@@ -126,9 +128,9 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 			})
 
 			g.Describe("override environment", func() {
-				g.It("should accept environment variables", func() {
-					g.By("starting the build with -e FOO=bar,VAR=test")
-					br, err := exutil.StartBuildAndWait(oc, "sample-build", "-e", "FOO=bar,VAR=test")
+				g.It("should accept environment variables [apigroup:build.openshift.io]", func() {
+					g.By("starting the build with -e FOO=bar,-e VAR=test")
+					br, err := exutil.StartBuildAndWait(oc, "sample-build", "-e", "FOO=bar", "-e", "VAR=test")
 					br.AssertSuccess()
 					verifyNodeSelector(oc, br.BuildName)
 					buildLog, err := br.Logs()
@@ -143,7 +145,7 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 					o.Expect(buildLog).To(o.ContainSubstring("BAR=test"))
 				})
 
-				g.It("BUILD_LOGLEVEL in buildconfig should create verbose output", func() {
+				g.It("BUILD_LOGLEVEL in buildconfig should create verbose output [apigroup:build.openshift.io]", func() {
 					g.By("starting the build with buildconfig strategy env BUILD_LOGLEVEL=5")
 					br, err := exutil.StartBuildAndWait(oc, "sample-verbose-build")
 					br.AssertSuccess()
@@ -152,13 +154,13 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 					o.Expect(err).NotTo(o.HaveOccurred())
 					g.By(fmt.Sprintf("verifying the build output is verbose"))
 					o.Expect(buildLog).To(o.ContainSubstring("Creating a new S2I builder"))
-					o.Expect(buildLog).To(o.ContainSubstring("openshift-builder v"))
+					o.Expect(buildLog).To(o.MatchRegexp("openshift-builder [1-9v]"))
 					// Bug 1694871: logging before flag.Parse error
 					g.By(fmt.Sprintf("verifying the build output has no error about flag.Parse"))
 					o.Expect(buildLog).NotTo(o.ContainSubstring("ERROR: logging before flag.Parse"))
 				})
 
-				g.It("BUILD_LOGLEVEL in buildconfig can be overridden by build-loglevel", func() {
+				g.It("BUILD_LOGLEVEL in buildconfig can be overridden by build-loglevel [apigroup:build.openshift.io]", func() {
 					g.By("starting the build with buildconfig strategy env BUILD_LOGLEVEL=5 but build-loglevel=1")
 					br, err := exutil.StartBuildAndWait(oc, "sample-verbose-build", "--build-loglevel=1")
 					br.AssertSuccess()
@@ -167,7 +169,7 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 					o.Expect(err).NotTo(o.HaveOccurred())
 					g.By(fmt.Sprintf("verifying the build output is not verbose"))
 					o.Expect(buildLog).NotTo(o.ContainSubstring("Creating a new S2I builder"))
-					o.Expect(buildLog).NotTo(o.ContainSubstring("openshift-builder v"))
+					o.Expect(buildLog).NotTo(o.MatchRegexp("openshift-builder [1-9v]"))
 				})
 
 			})
@@ -181,7 +183,7 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 					fmt.Fprintf(g.GinkgoWriter, "Tried to init git repo: %v\n%s\n", err, string(out))
 				}
 
-				g.It("should accept --from-file as input", func() {
+				g.It("should accept --from-file as input [apigroup:build.openshift.io]", func() {
 					g.By("starting the build with a Dockerfile")
 					br, err := exutil.StartBuildAndWait(oc, "sample-build", fmt.Sprintf("--from-file=%s", exampleGemfile))
 					br.AssertSuccess()
@@ -195,7 +197,7 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 					o.Expect(buildLog).To(o.ContainSubstring("Build complete"))
 				})
 
-				g.It("should accept --from-dir as input", func() {
+				g.It("should accept --from-dir as input [apigroup:build.openshift.io]", func() {
 					g.By("starting the build with a directory")
 					br, err := exutil.StartBuildAndWait(oc, "sample-build", fmt.Sprintf("--from-dir=%s", exampleBuild))
 					br.AssertSuccess()
@@ -208,7 +210,7 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 					o.Expect(buildLog).To(o.ContainSubstring("Build complete"))
 				})
 
-				g.It("should accept --from-repo as input", func() {
+				g.It("should accept --from-repo as input [apigroup:build.openshift.io]", func() {
 					g.By("starting the build with a Git repository")
 					tryRepoInit(exampleBuild)
 					br, err := exutil.StartBuildAndWait(oc, "sample-build", fmt.Sprintf("--from-repo=%s", exampleBuild))
@@ -223,7 +225,7 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 					o.Expect(buildLog).To(o.ContainSubstring("Build complete"))
 				})
 
-				g.It("should accept --from-repo with --commit as input", func() {
+				g.It("should accept --from-repo with --commit as input [apigroup:build.openshift.io]", func() {
 					g.By("starting the build with a Git repository")
 					tryRepoInit(exampleBuild)
 					gitCmd := exec.Command("git", "rev-parse", "HEAD~1")
@@ -245,7 +247,7 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 				})
 
 				// run one valid binary build so we can do --from-build later
-				g.It("should reject binary build requests without a --from-xxxx value", func() {
+				g.It("should reject binary build requests without a --from-xxxx value [apigroup:build.openshift.io]", func() {
 					g.Skip("TODO: refactor such that we don't rely on external package managers (i.e. Rubygems)")
 					g.By("starting a valid build with a directory")
 					br, err := exutil.StartBuildAndWait(oc, "sample-build-binary", "--follow", fmt.Sprintf("--from-dir=%s", exampleBuild))
@@ -268,7 +270,7 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 					o.Expect(br.StartBuildStdErr).To(o.ContainSubstring("has no valid source inputs"))
 				})
 
-				g.It("shoud accept --from-file with https URL as an input", func() {
+				g.It("shoud accept --from-file with https URL as an input [apigroup:build.openshift.io]", func() {
 					g.By("starting a valid build with input file served by https")
 					br, err := exutil.StartBuildAndWait(oc, "sample-build", fmt.Sprintf("--from-file=%s", exampleGemfileURL))
 					br.AssertSuccess()
@@ -279,7 +281,7 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 					o.Expect(buildLog).To(o.ContainSubstring("Build complete"))
 				})
 
-				g.It("shoud accept --from-archive with https URL as an input", func() {
+				g.It("shoud accept --from-archive with https URL as an input [apigroup:build.openshift.io]", func() {
 					g.By("starting a valid build with input archive served by https")
 					// can't use sample-build-binary because we need contextDir due to github archives containing the top-level directory
 					br, err := exutil.StartBuildAndWait(oc, "sample-build-github-archive", fmt.Sprintf("--from-archive=%s", exampleArchiveURL))
@@ -293,7 +295,7 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 			})
 
 			g.Describe("cancel a binary build that doesn't start running in 5 minutes", func() {
-				g.It("should start a build and wait for the build to be cancelled", func() {
+				g.It("should start a build and wait for the build to be cancelled [apigroup:build.openshift.io]", func() {
 					g.By("starting a build with a nodeselector that can't be matched")
 					go func() {
 						exutil.StartBuild(oc, "sample-build-binary-invalidnodeselector", fmt.Sprintf("--from-file=%s", exampleGemfile))
@@ -312,7 +314,7 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 			})
 
 			g.Describe("cancel a build started by oc start-build --wait", func() {
-				g.It("should start a build and wait for the build to cancel", func() {
+				g.It("should start a build and wait for the build to cancel [apigroup:build.openshift.io]", func() {
 					g.By("starting the build with --wait flag")
 					var wg sync.WaitGroup
 					wg.Add(1)
@@ -339,7 +341,7 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 					})
 
 					o.Expect(buildName).ToNot(o.BeEmpty())
-					build, err := oc.BuildClient().BuildV1().Builds(oc.Namespace()).Get(buildName, metav1.GetOptions{})
+					build, err := oc.BuildClient().BuildV1().Builds(oc.Namespace()).Get(context.Background(), buildName, metav1.GetOptions{})
 					o.Expect(err).NotTo(o.HaveOccurred())
 					o.Expect(build).NotTo(o.BeNil(), "build object should exist")
 
@@ -355,7 +357,7 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 			})
 
 			g.Describe("Setting build-args on Docker builds", func() {
-				g.It("Should copy build args from BuildConfig to Build", func() {
+				g.It("Should copy build args from BuildConfig to Build [apigroup:build.openshift.io]", func() {
 					g.By("starting the build without --build-arg flag")
 					br, _ := exutil.StartBuildAndWait(oc, "sample-build-docker-args-preset")
 					br.AssertSuccess()
@@ -365,9 +367,9 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 					g.By("verifying the build output contains the build args from the BuildConfig.")
 					o.Expect(buildLog).To(o.ContainSubstring("default"))
 				})
-				g.It("Should accept build args that are specified in the Dockerfile", func() {
+				g.It("Should accept build args that are specified in the Dockerfile [apigroup:build.openshift.io]", func() {
 					g.By("starting the build with --build-arg flag")
-					br, _ := exutil.StartBuildAndWait(oc, "sample-build-docker-args", "--build-arg=foo=bar")
+					br, _ := exutil.StartBuildAndWait(oc, "sample-build-docker-args", "--build-arg=foofoo=bar")
 					br.AssertSuccess()
 					verifyNodeSelector(oc, br.BuildName)
 					buildLog, err := br.Logs()
@@ -375,7 +377,7 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 					g.By("verifying the build output contains the changes.")
 					o.Expect(buildLog).To(o.ContainSubstring("bar"))
 				})
-				g.It("Should complete with a warning on non-existent build-arg", func() {
+				g.It("Should complete with a warning on non-existent build-arg [apigroup:build.openshift.io]", func() {
 					g.By("starting the build with --build-arg flag")
 					br, _ := exutil.StartBuildAndWait(oc, "sample-build-docker-args", "--build-arg=bar=foo")
 					br.AssertSuccess()
@@ -388,7 +390,7 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 			})
 
 			g.Describe("Trigger builds with branch refs matching directories on master branch", func() {
-				g.It("Should checkout the config branch, not config directory", func() {
+				g.It("Should checkout the config branch, not config directory [apigroup:build.openshift.io]", func() {
 					g.By("calling oc new-app")
 					_, err := oc.Run("new-app").Args("https://github.com/openshift/ruby-hello-world#config").Output()
 					o.Expect(err).NotTo(o.HaveOccurred())
@@ -407,11 +409,11 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 			})
 
 			g.Describe("start a build via a webhook", func() {
-				g.It("should be able to start builds via the webhook with valid secrets and fail with invalid secrets", func() {
+				g.It("should be able to start builds via the webhook with valid secrets and fail with invalid secrets [apigroup:build.openshift.io]", func() {
 					g.By("clearing existing builds")
 					_, err := oc.Run("delete").Args("builds", "--all").Output()
 					o.Expect(err).NotTo(o.HaveOccurred())
-					builds, err := oc.BuildClient().BuildV1().Builds(oc.Namespace()).List(metav1.ListOptions{})
+					builds, err := oc.BuildClient().BuildV1().Builds(oc.Namespace()).List(context.Background(), metav1.ListOptions{})
 					o.Expect(err).NotTo(o.HaveOccurred())
 					o.Expect(builds.Items).To(o.BeEmpty())
 
@@ -436,14 +438,14 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 					curlOut, err := exec.Command("curl", curlArgs...).Output()
 					o.Expect(err).NotTo(o.HaveOccurred())
 					e2e.Logf("curl cmd: %v, output: %s", curlArgs, string(curlOut))
-					builds, err = oc.BuildClient().BuildV1().Builds(oc.Namespace()).List(metav1.ListOptions{})
+					builds, err = oc.BuildClient().BuildV1().Builds(oc.Namespace()).List(context.Background(), metav1.ListOptions{})
 					o.Expect(err).NotTo(o.HaveOccurred())
 					o.Expect(builds.Items).NotTo(o.BeEmpty())
 
 					g.By("clearing existing builds")
 					_, err = oc.Run("delete").Args("builds", "--all").Output()
 					o.Expect(err).NotTo(o.HaveOccurred())
-					builds, err = oc.BuildClient().BuildV1().Builds(oc.Namespace()).List(metav1.ListOptions{})
+					builds, err = oc.BuildClient().BuildV1().Builds(oc.Namespace()).List(context.Background(), metav1.ListOptions{})
 					o.Expect(err).NotTo(o.HaveOccurred())
 					o.Expect(builds.Items).To(o.BeEmpty())
 
@@ -457,14 +459,14 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 					curlOut, err = exec.Command("curl", curlArgs...).Output()
 					o.Expect(err).NotTo(o.HaveOccurred())
 					e2e.Logf("curl cmd: %s, output: %s", curlArgs, string(curlOut))
-					builds, err = oc.BuildClient().BuildV1().Builds(oc.Namespace()).List(metav1.ListOptions{})
+					builds, err = oc.BuildClient().BuildV1().Builds(oc.Namespace()).List(context.Background(), metav1.ListOptions{})
 					o.Expect(err).NotTo(o.HaveOccurred())
 					o.Expect(builds.Items).NotTo(o.BeEmpty())
 
 					g.By("clearing existing builds")
 					_, err = oc.Run("delete").Args("builds", "--all").Output()
 					o.Expect(err).NotTo(o.HaveOccurred())
-					builds, err = oc.BuildClient().BuildV1().Builds(oc.Namespace()).List(metav1.ListOptions{})
+					builds, err = oc.BuildClient().BuildV1().Builds(oc.Namespace()).List(context.Background(), metav1.ListOptions{})
 					o.Expect(err).NotTo(o.HaveOccurred())
 					o.Expect(builds.Items).To(o.BeEmpty())
 
@@ -478,7 +480,7 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 					curlOut, err = exec.Command("curl", curlArgs...).Output()
 					o.Expect(err).NotTo(o.HaveOccurred())
 					e2e.Logf("curl cmd: %v, output: %s", curlArgs, string(curlOut))
-					builds, err = oc.BuildClient().BuildV1().Builds(oc.Namespace()).List(metav1.ListOptions{})
+					builds, err = oc.BuildClient().BuildV1().Builds(oc.Namespace()).List(context.Background(), metav1.ListOptions{})
 					o.Expect(err).NotTo(o.HaveOccurred())
 					o.Expect(builds.Items).To(o.BeEmpty())
 
@@ -486,7 +488,7 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 			})
 
 			g.Describe("s2i build maintaining symlinks", func() {
-				g.It(fmt.Sprintf("should s2i build image and maintain symlinks"), func() {
+				g.It(fmt.Sprintf("should s2i build image and maintain symlinks [apigroup:build.openshift.io][apigroup:image.openshift.io]"), func() {
 					g.By("initializing a local git repo")
 					repo, err := exutil.NewGitRepo("symlinks")
 					o.Expect(err).NotTo(o.HaveOccurred())
@@ -513,7 +515,7 @@ var _ = g.Describe("[Feature:Builds][Slow] starting a build using CLI", func() {
 					}
 					o.Expect(err).NotTo(o.HaveOccurred())
 
-					tag, err := oc.ImageClient().ImageV1().ImageStreamTags(oc.Namespace()).Get("symlink-is:latest", metav1.GetOptions{})
+					tag, err := oc.ImageClient().ImageV1().ImageStreamTags(oc.Namespace()).Get(context.Background(), "symlink-is:latest", metav1.GetOptions{})
 					err = oc.Run("run").Args("-i", "-t", "symlink-test", "--image="+tag.Image.DockerImageReference, "--restart=Never", "--command", "--", "bash", "-c", "if [ ! -L link ]; then ls -ltr; exit 1; fi").Execute()
 					o.Expect(err).NotTo(o.HaveOccurred())
 				})

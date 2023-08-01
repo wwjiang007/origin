@@ -3,18 +3,18 @@ apiVersion: v1
 metadata: {}
 items:
 - kind: ImageStream
-  apiVersion: v1
+  apiVersion: image.openshift.io/v1
   metadata:
     name: origin-ruby-sample
-    creationTimestamp: 
+    creationTimestamp:
   spec: {}
   status:
     dockerImageRepository: ''
 - kind: BuildConfig
-  apiVersion: v1
+  apiVersion: build.openshift.io/v1
   metadata:
     name: sample-build
-    creationTimestamp: 
+    creationTimestamp:
   spec:
     triggers:
     - type: imageChange
@@ -33,14 +33,16 @@ items:
           value: 127.0.0.1:3128
         - name: HTTP_PROXY
           value: 127.0.0.1:3128
+        - name: "BUILD_LOGLEVEL"
+          value: "2"
         from:
           kind: DockerImage
-          name: docker.io/openshift/test-build-simples2i:latest
+          name: quay.io/redhat-developer/test-build-simples2i:1.2
 - kind: BuildConfig
-  apiVersion: v1
+  apiVersion: build.openshift.io/v1
   metadata:
     name: sample-s2i-build-noproxy
-    creationTimestamp: 
+    creationTimestamp:
   spec:
     triggers:
     - type: imageChange
@@ -57,17 +59,19 @@ items:
       sourceStrategy:
         from:
           kind: DockerImage
-          name: docker.io/openshift/test-build-simples2i:latest
+          name: quay.io/redhat-developer/test-build-simples2i:1.2
         env:
         - name: SOME_HTTP_PROXY
           value: https://envuser:password@proxy3.com
         - name: SOME_HTTPS_PROXY
           value: https://envuser:password@proxy4.com
+        - name: "BUILD_LOGLEVEL"
+          value: "2"
 - kind: BuildConfig
-  apiVersion: v1
+  apiVersion: build.openshift.io/v1
   metadata:
     name: sample-docker-build-noproxy
-    creationTimestamp: 
+    creationTimestamp:
   spec:
     triggers:
     - type: imageChange
@@ -84,9 +88,30 @@ items:
       dockerStrategy:
         from:
           kind: DockerImage
-          name: docker.io/centos/ruby-25-centos7
+          name: image-registry.openshift-image-registry.svc:5000/openshift/ruby:2.7-ubi8
         env:
         - name: SOME_HTTP_PROXY
           value: https://envuser:password@proxy3.com
         - name: SOME_HTTPS_PROXY
           value: https://envuser:password@proxy4.com
+        - name: "BUILD_LOGLEVEL"
+          value: "2"
+- kind: BuildConfig
+  apiVersion: build.openshift.io/v1
+  metadata:
+    name: sample-docker-build-proxy-ca
+  spec:
+    mountTrustedCA: true
+    source:
+      dockerfile: |
+        FROM registry.redhat.io/ubi8/ubi:latest
+        RUN cat /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+    strategy:
+      dockerStrategy:
+        env:
+          - name: "BUILD_LOGLEVEL"
+            value: "2"
+        from:
+          kind: ImageStreamTag
+          name: cli
+          namespace: openshift

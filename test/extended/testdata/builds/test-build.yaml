@@ -3,10 +3,10 @@ apiVersion: v1
 metadata: {}
 items:
 - kind: ImageStream
-  apiVersion: v1
+  apiVersion: image.openshift.io/v1
   metadata:
     name: origin-ruby-sample
-    creationTimestamp: 
+    creationTimestamp:
   spec: {}
   status:
     dockerImageRepository: ''
@@ -14,15 +14,15 @@ items:
   apiVersion: v1
   metadata:
     name: webhooksecret
-    creationTimestamp: 
+    creationTimestamp:
   data:
     WebHookSecretKey: c2VjcmV0dmFsdWUx
   type: Opaque
 - kind: BuildConfig
-  apiVersion: v1
+  apiVersion: build.openshift.io/v1
   metadata:
     name: sample-build
-    creationTimestamp: 
+    creationTimestamp:
   spec:
     triggers:
     - type: ImageChange
@@ -30,12 +30,12 @@ items:
     - type: Generic
       generic:
         secret: "mysecret"
-        secretReference: 
+        secretReference:
           name: "webhooksecret"
     source:
       type: Git
       git:
-        uri: git://github.com/openshift/ruby-hello-world.git
+        uri: https://github.com/openshift/ruby-hello-world.git
     strategy:
       type: Source
       sourceStrategy:
@@ -48,15 +48,15 @@ items:
           value: '5'
         from:
           kind: DockerImage
-          name: centos/ruby-25-centos7
+          name: image-registry.openshift-image-registry.svc:5000/openshift/ruby:2.7-ubi8
     resources: {}
   status:
     lastVersion: 0
 - kind: BuildConfig
-  apiVersion: v1
+  apiVersion: build.openshift.io/v1
   metadata:
     name: sample-verbose-build
-    creationTimestamp: 
+    creationTimestamp:
   spec:
     triggers:
     - type: imageChange
@@ -64,7 +64,7 @@ items:
     source:
       type: Git
       git:
-        uri: git://github.com/openshift/ruby-hello-world.git
+        uri: https://github.com/openshift/ruby-hello-world.git
     strategy:
       type: Source
       sourceStrategy:
@@ -77,15 +77,15 @@ items:
           value: '5'
         from:
           kind: DockerImage
-          name: centos/ruby-25-centos7
+          name: image-registry.openshift-image-registry.svc:5000/openshift/ruby:2.7-ubi8
     resources: {}
   status:
     lastVersion: 0
 - kind: BuildConfig
-  apiVersion: v1
+  apiVersion: build.openshift.io/v1
   metadata:
     name: sample-build-binary
-    creationTimestamp: 
+    creationTimestamp:
   spec:
     triggers:
     - type: imageChange
@@ -105,15 +105,15 @@ items:
           value: '5'
         from:
           kind: DockerImage
-          name: centos/ruby-25-centos7
+          name: image-registry.openshift-image-registry.svc:5000/openshift/ruby:2.7-ubi8
     resources: {}
   status:
     lastVersion: 0
 - kind: BuildConfig
-  apiVersion: v1
+  apiVersion: build.openshift.io/v1
   metadata:
     name: sample-build-github-archive
-    creationTimestamp: 
+    creationTimestamp:
   spec:
     triggers:
     - type: imageChange
@@ -134,15 +134,15 @@ items:
           value: '5'
         from:
           kind: DockerImage
-          name: centos/ruby-25-centos7
+          name: image-registry.openshift-image-registry.svc:5000/openshift/ruby:2.7-ubi8
     resources: {}
   status:
     lastVersion: 0
 - kind: BuildConfig
-  apiVersion: v1
+  apiVersion: build.openshift.io/v1
   metadata:
     name: sample-build-binary-invalidnodeselector
-    creationTimestamp: 
+    creationTimestamp:
   spec:
     triggers:
     - type: imageChange
@@ -162,17 +162,17 @@ items:
           value: '5'
         from:
           kind: DockerImage
-          name: centos/ruby-25-centos7
+          name: image-registry.openshift-image-registry.svc:5000/openshift/ruby:2.7-ubi8
     resources: {}
     nodeSelector:
       nodelabelkey: nodelabelvalue
   status:
     lastVersion: 0
 - kind: BuildConfig
-  apiVersion: v1
+  apiVersion: build.openshift.io/v1
   metadata:
     name: sample-build-docker-args
-    creationTimestamp: 
+    creationTimestamp:
   spec:
     triggers:
     - type: ImageChange
@@ -180,25 +180,28 @@ items:
     source:
       type: Dockerfile
       dockerfile: |-
-        FROM centos/ruby-25-centos7
-        ARG foo
-        RUN echo $foo
+        FROM registry.access.redhat.com/ubi8/ruby-27
+        ARG foofoo
+        RUN echo $foofoo
     strategy:
       type: Docker
       dockerStrategy:
+        env:
+          - name: "BUILD_LOGLEVEL"
+            value: "2"
         from:
           kind: DockerImage
-          name: docker.io/busybox:latest
+          name: image-registry.openshift-image-registry.svc:5000/openshift/tools:latest
     resources: {}
     postCommit: {}
-    nodeSelector: 
+    nodeSelector:
   status:
     lastVersion: 0
 - kind: BuildConfig
-  apiVersion: v1
+  apiVersion: build.openshift.io/v1
   metadata:
     name: sample-build-docker-args-preset
-    creationTimestamp: 
+    creationTimestamp:
   spec:
     triggers:
     - type: ImageChange
@@ -206,20 +209,23 @@ items:
     source:
       type: Dockerfile
       dockerfile: |-
-        FROM centos/ruby-25-centos7
-        ARG foo
-        RUN echo $foo
+        FROM registry.access.redhat.com/ubi8/ruby-27
+        ARG foofoo
+        RUN echo $foofoo
     strategy:
       type: Docker
       dockerStrategy:
+        env:
+          - name: "BUILD_LOGLEVEL"
+            value: "2"
         from:
           kind: DockerImage
-          name: docker.io/busybox:latest
+          name: image-registry.openshift-image-registry.svc:5000/openshift/tools:latest
         buildArgs:
-        - name: foo
+        - name: foofoo
           value: default
     resources: {}
     postCommit: {}
-    nodeSelector: 
+    nodeSelector:
   status:
     lastVersion: 0

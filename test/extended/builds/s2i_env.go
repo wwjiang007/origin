@@ -1,20 +1,23 @@
 package builds
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
 
+	admissionapi "k8s.io/pod-security-admission/api"
+
 	e2e "k8s.io/kubernetes/test/e2e/framework"
 	"k8s.io/kubernetes/test/e2e/framework/pod"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Feature:Builds][Slow] s2i build with environment file in sources", func() {
+var _ = g.Describe("[sig-builds][Feature:Builds][Slow] s2i build with environment file in sources", func() {
 	defer g.GinkgoRecover()
 	const (
 		buildTestPod     = "build-test-pod"
@@ -22,10 +25,10 @@ var _ = g.Describe("[Feature:Builds][Slow] s2i build with environment file in so
 	)
 
 	var (
-		imageStreamFixture   = exutil.FixturePath("..", "integration", "testdata", "test-image-stream.json")
+		imageStreamFixture   = exutil.FixturePath("testdata", "builds", "test-image-stream.json")
 		stiEnvBuildFixture   = exutil.FixturePath("testdata", "builds", "test-env-build.json")
 		podAndServiceFixture = exutil.FixturePath("testdata", "builds", "test-build-podsvc.json")
-		oc                   = exutil.NewCLI("build-sti-env", exutil.KubeConfigPath())
+		oc                   = exutil.NewCLIWithPodSecurityLevel("build-sti-env", admissionapi.LevelBaseline)
 	)
 
 	g.Context("", func() {
@@ -34,7 +37,7 @@ var _ = g.Describe("[Feature:Builds][Slow] s2i build with environment file in so
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				exutil.DumpPodStates(oc)
 				exutil.DumpConfigMapStates(oc)
 				exutil.DumpPodLogsStartingWith("", oc)
@@ -42,7 +45,7 @@ var _ = g.Describe("[Feature:Builds][Slow] s2i build with environment file in so
 		})
 
 		g.Describe("Building from a template", func() {
-			g.It(fmt.Sprintf("should create a image from %q template and run it in a pod", filepath.Base(stiEnvBuildFixture)), func() {
+			g.It(fmt.Sprintf("should create a image from %q template and run it in a pod [apigroup:build.openshift.io][apigroup:image.openshift.io]", filepath.Base(stiEnvBuildFixture)), func() {
 
 				g.By(fmt.Sprintf("calling oc create -f %q", imageStreamFixture))
 				err := oc.Run("create").Args("-f", imageStreamFixture).Execute()
@@ -66,7 +69,7 @@ var _ = g.Describe("[Feature:Builds][Slow] s2i build with environment file in so
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				g.By("waiting for the pod to be running")
-				err = pod.WaitForPodNameRunningInNamespace(oc.KubeFramework().ClientSet, "build-test-pod", oc.Namespace())
+				err = pod.WaitForPodNameRunningInNamespace(context.TODO(), oc.KubeFramework().ClientSet, "build-test-pod", oc.Namespace())
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				g.By("waiting for the service to become available")

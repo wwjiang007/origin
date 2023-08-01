@@ -1,12 +1,13 @@
 package images
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
 	"time"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	"github.com/docker/distribution/manifest/schema1"
@@ -30,9 +31,9 @@ const (
 	externalImageReference = "docker.io/openshift/origin-release:golang-1.4"
 )
 
-var _ = g.Describe("[Feature:ImagePrune][registry][Serial][Suite:openshift/registry/serial][local] Image prune", func() {
+var _ = g.Describe("[sig-imageregistry][Feature:ImagePrune][Serial][Suite:openshift/registry/serial][Local] Image prune [apigroup:user.openshift.io]", func() {
 	defer g.GinkgoRecover()
-	var oc = exutil.NewCLI("prune-images", exutil.KubeConfigPath())
+	var oc = exutil.NewCLI("prune-images")
 
 	var originalAcceptSchema2 *bool
 
@@ -68,7 +69,7 @@ var _ = g.Describe("[Feature:ImagePrune][registry][Serial][Suite:openshift/regis
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				dumpRegistryLogs(oc, startTime)
 			}
 			if *originalAcceptSchema2 {
@@ -77,7 +78,7 @@ var _ = g.Describe("[Feature:ImagePrune][registry][Serial][Suite:openshift/regis
 			}
 		})
 
-		g.It("should prune old image", func() { testPruneImages(oc, 1) })
+		g.It("should prune old image [apigroup:build.openshift.io][apigroup:image.openshift.io]", func() { testPruneImages(oc, 1) })
 	})
 
 	g.Describe("of schema 2", func() {
@@ -96,7 +97,7 @@ var _ = g.Describe("[Feature:ImagePrune][registry][Serial][Suite:openshift/regis
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				dumpRegistryLogs(oc, startTime)
 			}
 			if !*originalAcceptSchema2 {
@@ -105,7 +106,7 @@ var _ = g.Describe("[Feature:ImagePrune][registry][Serial][Suite:openshift/regis
 			}
 		})
 
-		g.It("should prune old image with config", func() { testPruneImages(oc, 2) })
+		g.It("should prune old image with config [apigroup:build.openshift.io][apigroup:image.openshift.io]", func() { testPruneImages(oc, 2) })
 	})
 
 	g.Describe("with --prune-registry==false", func() {
@@ -124,7 +125,7 @@ var _ = g.Describe("[Feature:ImagePrune][registry][Serial][Suite:openshift/regis
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				dumpRegistryLogs(oc, startTime)
 			}
 			if !*originalAcceptSchema2 {
@@ -133,7 +134,7 @@ var _ = g.Describe("[Feature:ImagePrune][registry][Serial][Suite:openshift/regis
 			}
 		})
 
-		g.It("should prune old image but skip registry", func() { testSoftPruneImages(oc) })
+		g.It("should prune old image but skip registry [apigroup:build.openshift.io][apigroup:image.openshift.io]", func() { testSoftPruneImages(oc) })
 	})
 
 	g.Describe("with default --all flag", func() {
@@ -152,7 +153,7 @@ var _ = g.Describe("[Feature:ImagePrune][registry][Serial][Suite:openshift/regis
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				dumpRegistryLogs(oc, startTime)
 			}
 			if !*originalAcceptSchema2 {
@@ -161,7 +162,7 @@ var _ = g.Describe("[Feature:ImagePrune][registry][Serial][Suite:openshift/regis
 			}
 		})
 
-		g.It("should prune both internally managed and external images", func() { testPruneAllImages(oc, true, 2) })
+		g.It("should prune both internally managed and external images [apigroup:build.openshift.io][apigroup:image.openshift.io]", func() { testPruneAllImages(oc, true, 2) })
 	})
 
 	g.Describe("with --all=false flag", func() {
@@ -180,7 +181,7 @@ var _ = g.Describe("[Feature:ImagePrune][registry][Serial][Suite:openshift/regis
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				dumpRegistryLogs(oc, startTime)
 			}
 			if !*originalAcceptSchema2 {
@@ -189,12 +190,12 @@ var _ = g.Describe("[Feature:ImagePrune][registry][Serial][Suite:openshift/regis
 			}
 		})
 
-		g.It("should prune only internally managed images", func() { testPruneAllImages(oc, false, 2) })
+		g.It("should prune only internally managed images [apigroup:build.openshift.io][apigroup:image.openshift.io]", func() { testPruneAllImages(oc, false, 2) })
 	})
 })
 
 func getImageName(oc *exutil.CLI, namespace, name, tag string) (string, error) {
-	istag, err := oc.AdminImageClient().ImageV1().ImageStreamTags(namespace).Get(fmt.Sprintf("%s:%s", name, tag), metav1.GetOptions{})
+	istag, err := oc.AdminImageClient().ImageV1().ImageStreamTags(namespace).Get(context.Background(), fmt.Sprintf("%s:%s", name, tag), metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -237,12 +238,12 @@ func testPruneImages(oc *exutil.CLI, schemaVersion int) {
 	o.Expect(pruneSize < keepSize).To(o.BeTrue())
 
 	g.By(fmt.Sprintf("ensure uploaded image is of schema %d", schemaVersion))
-	imgPrune, err := oc.AsAdmin().ImageClient().ImageV1().Images().Get(imgPruneName, metav1.GetOptions{})
+	imgPrune, err := oc.AsAdmin().ImageClient().ImageV1().Images().Get(context.Background(), imgPruneName, metav1.GetOptions{})
 	o.Expect(err).NotTo(o.HaveOccurred())
 	o.Expect(err).NotTo(o.HaveOccurred())
 	err = imageutil.ImageWithMetadata(imgPrune)
 	o.Expect(imgPrune.DockerImageManifestMediaType).To(o.Equal(mediaType))
-	imgKeep, err := oc.AsAdmin().ImageClient().ImageV1().Images().Get(imgKeepName, metav1.GetOptions{})
+	imgKeep, err := oc.AsAdmin().ImageClient().ImageV1().Images().Get(context.Background(), imgKeepName, metav1.GetOptions{})
 	o.Expect(err).NotTo(o.HaveOccurred())
 	o.Expect(imgKeep.DockerImageManifestMediaType).To(o.Equal(mediaType))
 
@@ -373,7 +374,7 @@ func testPruneAllImages(oc *exutil.CLI, setAllImagesToFalse bool, schemaVersion 
 	cleanUp.AddImageStream(isName)
 	o.Expect(err).NotTo(o.HaveOccurred())
 
-	managedImage, err := oc.AsAdmin().ImageClient().ImageV1().Images().Get(managedImageName, metav1.GetOptions{})
+	managedImage, err := oc.AsAdmin().ImageClient().ImageV1().Images().Get(context.Background(), managedImageName, metav1.GetOptions{})
 	o.Expect(err).NotTo(o.HaveOccurred())
 
 	externalImage, blobdgst, err := importImageAndMirrorItsSmallestBlob(oc, externalImageReference, "origin-release:latest")
@@ -466,7 +467,7 @@ func importImageAndMirrorItsSmallestBlob(oc *exutil.CLI, imageReference, destIST
 	if err != nil {
 		return nil, "", err
 	}
-	istag, err := oc.ImageClient().ImageV1().ImageStreamTags(oc.Namespace()).Get(destISTag, metav1.GetOptions{})
+	istag, err := oc.ImageClient().ImageV1().ImageStreamTags(oc.Namespace()).Get(context.Background(), destISTag, metav1.GetOptions{})
 	if err != nil {
 		return nil, "", err
 	}

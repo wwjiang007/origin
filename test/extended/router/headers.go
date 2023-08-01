@@ -2,37 +2,45 @@ package router
 
 import (
 	"bufio"
+	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"strings"
 	"time"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 	"k8s.io/kubernetes/test/e2e/framework/pod"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	e2e "k8s.io/kubernetes/test/e2e/framework"
+	e2eoutput "k8s.io/kubernetes/test/e2e/framework/pod/output"
+	admissionapi "k8s.io/pod-security-admission/api"
 
 	configv1 "github.com/openshift/api/config/v1"
+
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
+var _ = g.Describe("[sig-network][Feature:Router][apigroup:operator.openshift.io]", func() {
 	defer g.GinkgoRecover()
 	var (
 		configPath = exutil.FixturePath("testdata", "router", "router-http-echo-server.yaml")
-		oc         = exutil.NewCLI("router-headers", exutil.KubeConfigPath())
+		oc         = exutil.NewCLIWithPodSecurityLevel("router-headers", admissionapi.LevelBaseline)
 
 		routerIP  string
 		metricsIP string
 		infra     *configv1.Infrastructure
+		network   *configv1.Network
 	)
 
 	g.BeforeEach(func() {
 		var err error
-		infra, err = oc.AdminConfigClient().ConfigV1().Infrastructures().Get("cluster", metav1.GetOptions{})
+		infra, err = oc.AdminConfigClient().ConfigV1().Infrastructures().Get(context.Background(), "cluster", metav1.GetOptions{})
+		o.Expect(err).NotTo(o.HaveOccurred())
+		network, err = oc.AdminConfigClient().ConfigV1().Networks().Get(context.Background(), "cluster", metav1.GetOptions{})
 		o.Expect(err).NotTo(o.HaveOccurred())
 		routerIP, err = exutil.WaitForRouterServiceIP(oc)
 		o.Expect(err).NotTo(o.HaveOccurred())
@@ -43,23 +51,31 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 	g.Describe("The HAProxy router", func() {
 		g.It("should set Forwarded headers appropriately", func() {
 			o.Expect(infra).NotTo(o.BeNil())
+			o.Expect(network).NotTo(o.BeNil())
 
-			if !(infra.Status.PlatformStatus.Type == configv1.AWSPlatformType ||
-				infra.Status.PlatformStatus.Type == configv1.AzurePlatformType ||
-				infra.Status.PlatformStatus.Type == configv1.GCPPlatformType) {
-				g.Skip(fmt.Sprintf("BZ 1772125 -- not verified on platform type %q", infra.Status.PlatformStatus.Type))
+			platformType := infra.Status.Platform
+			if infra.Status.PlatformStatus != nil {
+				platformType = infra.Status.PlatformStatus.Type
+			}
+			switch platformType {
+			case configv1.AWSPlatformType, configv1.AzurePlatformType, configv1.GCPPlatformType:
+				// supported
+			default:
+				g.Skip(fmt.Sprintf("BZ 1772125 -- not verified on platform type %q", platformType))
 			}
 
 			defer func() {
 				// This should be done if the test fails but
 				// for now always dump the logs.
-				// if g.CurrentGinkgoTestDescription().Failed
-				dumpRouterHeadersLogs(oc, g.CurrentGinkgoTestDescription().FullTestText)
+				// if g.CurrentSpecReport().Failed()
+				dumpRouterHeadersLogs(oc, g.CurrentSpecReport().FullText())
 			}()
 
 			ns := oc.KubeFramework().Namespace.Name
-			execPodName := exutil.CreateExecPodOrFail(oc.AdminKubeClient().CoreV1(), ns, "execpod")
-			defer func() { oc.AdminKubeClient().CoreV1().Pods(ns).Delete(execPodName, metav1.NewDeleteOptions(1)) }()
+			execPod := exutil.CreateExecPodOrFail(oc.AdminKubeClient(), ns, "execpod")
+			defer func() {
+				oc.AdminKubeClient().CoreV1().Pods(ns).Delete(context.Background(), execPod.Name, *metav1.NewDeleteOptions(1))
+			}()
 
 			g.By(fmt.Sprintf("creating an http echo server from a config file %q", configPath))
 
@@ -68,7 +84,7 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 
 			var clientIP string
 			err = wait.Poll(time.Second, changeTimeoutSeconds*time.Second, func() (bool, error) {
-				pod, err := oc.KubeFramework().ClientSet.CoreV1().Pods(ns).Get("execpod", metav1.GetOptions{})
+				pod, err := oc.KubeFramework().ClientSet.CoreV1().Pods(ns).Get(context.Background(), "execpod", metav1.GetOptions{})
 				if err != nil {
 					return false, err
 				}
@@ -85,18 +101,18 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 			routerURL := fmt.Sprintf("http://%s", routerIP)
 
 			g.By("waiting for the healthz endpoint to respond")
-			healthzURI := fmt.Sprintf("http://%s:1936/healthz", metricsIP)
-			err = waitForRouterOKResponseExec(ns, execPodName, healthzURI, metricsIP, changeTimeoutSeconds)
+			healthzURI := fmt.Sprintf("http://%s/healthz", net.JoinHostPort(metricsIP, "1936"))
+			err = waitForRouterOKResponseExec(ns, execPod.Name, healthzURI, metricsIP, changeTimeoutSeconds)
 			o.Expect(err).NotTo(o.HaveOccurred())
 
 			host := "router-headers.example.com"
 			g.By(fmt.Sprintf("waiting for the route to become active"))
-			err = waitForRouterOKResponseExec(ns, execPodName, routerURL, host, changeTimeoutSeconds)
+			err = waitForRouterOKResponseExec(ns, execPod.Name, routerURL, host, changeTimeoutSeconds)
 			o.Expect(err).NotTo(o.HaveOccurred())
 
 			g.By(fmt.Sprintf("making a request and reading back the echoed headers"))
 			var payload string
-			payload, err = getRoutePayloadExec(ns, execPodName, routerURL, host)
+			payload, err = getRoutePayloadExec(ns, execPod.Name, routerURL, host)
 			o.Expect(err).NotTo(o.HaveOccurred())
 
 			// The trailing \n is being stripped, so add it back
@@ -111,7 +127,8 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 			g.By(fmt.Sprintf("inspecting the echoed headers"))
 			ffHeader := req.Header.Get("X-Forwarded-For")
 
-			switch infra.Status.PlatformStatus.Type {
+			ignoreClientIP := false
+			switch platformType {
 			case configv1.AWSPlatformType:
 				// On AWS we can only assert that we
 				// get an X-Forwarded-For header; we
@@ -175,10 +192,23 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 				// `clientIP` given the route the GET
 				// request takes. So for AWS we just
 				// expect the header to be present.
+				ignoreClientIP = true
+			}
+
+			if network.Status.NetworkType == "OVNKubernetes" {
+				// Similarly to AWS, the connection is
+				// NAT'd to an unknown address when
+				// the network plugin is
+				// OVNKubernetes, so we must disable
+				// the check in this case too.
+				ignoreClientIP = true
+			}
+
+			if ignoreClientIP {
 				if ffHeader == "" {
 					e2e.Failf("Expected X-Forwarded-For header; All headers: %#v", req.Header)
 				}
-			default:
+			} else {
 				if ffHeader != clientIP {
 					e2e.Failf("Unexpected header: '%s' (expected %s); All headers: %#v", ffHeader, clientIP, req.Header)
 				}
@@ -188,7 +218,7 @@ var _ = g.Describe("[Conformance][Area:Networking][Feature:Router]", func() {
 })
 
 func dumpRouterHeadersLogs(oc *exutil.CLI, name string) {
-	log, _ := pod.GetPodLogs(oc.AdminKubeClient(), oc.KubeFramework().Namespace.Name, "router-headers", "router")
+	log, _ := pod.GetPodLogs(context.TODO(), oc.AdminKubeClient(), oc.KubeFramework().Namespace.Name, "router-headers", "router")
 	e2e.Logf("Weighted Router test %s logs:\n %s", name, log)
 }
 
@@ -205,7 +235,7 @@ func getRoutePayloadExec(ns, execPodName, url, host string) (string, error) {
 			exit 1
 		fi
 		`, host, url)
-	output, err := e2e.RunHostCmd(ns, execPodName, cmd)
+	output, err := e2eoutput.RunHostCmd(ns, execPodName, cmd)
 	if err != nil {
 		return "", fmt.Errorf("host command failed: %v\n%s", err, output)
 	}

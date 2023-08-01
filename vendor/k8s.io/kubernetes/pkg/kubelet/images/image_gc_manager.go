@@ -17,6 +17,7 @@ limitations under the License.
 package images
 
 import (
+	"context"
 	goerrors "errors"
 	"fmt"
 	"math"
@@ -24,24 +25,28 @@ import (
 	"sync"
 	"time"
 
-	"k8s.io/klog"
+	"go.opentelemetry.io/otel/trace"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/klog/v2"
 
-	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
-	statsapi "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
+	statsapi "k8s.io/kubelet/pkg/apis/stats/v1alpha1"
 	"k8s.io/kubernetes/pkg/kubelet/container"
 	"k8s.io/kubernetes/pkg/kubelet/events"
 	"k8s.io/kubernetes/pkg/kubelet/util/sliceutils"
 )
 
+// instrumentationScope is OpenTelemetry instrumentation scope name
+const instrumentationScope = "k8s.io/kubernetes/pkg/kubelet/images"
+
 // StatsProvider is an interface for fetching stats used during image garbage
 // collection.
 type StatsProvider interface {
 	// ImageFsStats returns the stats of the image filesystem.
-	ImageFsStats() (*statsapi.FsStats, error)
+	ImageFsStats(ctx context.Context) (*statsapi.FsStats, error)
 }
 
 // ImageGCManager is an interface for managing lifecycle of all images.
@@ -49,7 +54,7 @@ type StatsProvider interface {
 type ImageGCManager interface {
 	// Applies the garbage collection policy. Errors include being unable to free
 	// enough space as per the garbage collection policy.
-	GarbageCollect() error
+	GarbageCollect(ctx context.Context) error
 
 	// Start async garbage collection of images.
 	Start()
@@ -57,7 +62,7 @@ type ImageGCManager interface {
 	GetImageList() ([]container.Image, error)
 
 	// Delete all unused images.
-	DeleteUnusedImages() error
+	DeleteUnusedImages(ctx context.Context) error
 }
 
 // ImageGCPolicy is a policy for garbage collecting images. Policy defines an allowed band in
@@ -103,6 +108,9 @@ type realImageGCManager struct {
 
 	// sandbox image exempted from GC
 	sandboxImage string
+
+	// tracer for recording spans
+	tracer trace.Tracer
 }
 
 // imageCache caches latest result of ListImages.
@@ -113,21 +121,26 @@ type imageCache struct {
 	images []container.Image
 }
 
-// set updates image cache.
+// set sorts the input list and updates image cache.
+// 'i' takes ownership of the list, you should not reference the list again
+// after calling this function.
 func (i *imageCache) set(images []container.Image) {
 	i.Lock()
 	defer i.Unlock()
+	// The image list needs to be sorted when it gets read and used in
+	// setNodeStatusImages. We sort the list on write instead of on read,
+	// because the image cache is more often read than written
+	sort.Sort(sliceutils.ByImageSize(images))
 	i.images = images
 }
 
-// get gets a sorted (by image size) image list from image cache.
-// There is a potentical data race in this function. See PR #60448
-// Because there is deepcopy function available currently, move sort
-// function inside this function
+// get gets image list from image cache.
+// NOTE: The caller of get() should not do mutating operations on the
+// returned list that could cause data race against other readers (e.g.
+// in-place sorting the returned list)
 func (i *imageCache) get() []container.Image {
 	i.Lock()
 	defer i.Unlock()
-	sort.Sort(sliceutils.ByImageSize(i.images))
 	return i.images
 }
 
@@ -141,10 +154,13 @@ type imageRecord struct {
 
 	// Size of the image in bytes.
 	size int64
+
+	// Pinned status of the image
+	pinned bool
 }
 
 // NewImageGCManager instantiates a new ImageGCManager object.
-func NewImageGCManager(runtime container.Runtime, statsProvider StatsProvider, recorder record.EventRecorder, nodeRef *v1.ObjectReference, policy ImageGCPolicy, sandboxImage string) (ImageGCManager, error) {
+func NewImageGCManager(runtime container.Runtime, statsProvider StatsProvider, recorder record.EventRecorder, nodeRef *v1.ObjectReference, policy ImageGCPolicy, sandboxImage string, tracerProvider trace.TracerProvider) (ImageGCManager, error) {
 	// Validate policy.
 	if policy.HighThresholdPercent < 0 || policy.HighThresholdPercent > 100 {
 		return nil, fmt.Errorf("invalid HighThresholdPercent %d, must be in range [0-100]", policy.HighThresholdPercent)
@@ -155,6 +171,7 @@ func NewImageGCManager(runtime container.Runtime, statsProvider StatsProvider, r
 	if policy.LowThresholdPercent > policy.HighThresholdPercent {
 		return nil, fmt.Errorf("LowThresholdPercent %d can not be higher than HighThresholdPercent %d", policy.LowThresholdPercent, policy.HighThresholdPercent)
 	}
+	tracer := tracerProvider.Tracer(instrumentationScope)
 	im := &realImageGCManager{
 		runtime:       runtime,
 		policy:        policy,
@@ -164,32 +181,33 @@ func NewImageGCManager(runtime container.Runtime, statsProvider StatsProvider, r
 		nodeRef:       nodeRef,
 		initialized:   false,
 		sandboxImage:  sandboxImage,
+		tracer:        tracer,
 	}
 
 	return im, nil
 }
 
 func (im *realImageGCManager) Start() {
+	ctx := context.Background()
 	go wait.Until(func() {
 		// Initial detection make detected time "unknown" in the past.
 		var ts time.Time
 		if im.initialized {
 			ts = time.Now()
 		}
-		_, err := im.detectImages(ts)
+		_, err := im.detectImages(ctx, ts)
 		if err != nil {
-			klog.Warningf("[imageGCManager] Failed to monitor images: %v", err)
+			klog.InfoS("Failed to monitor images", "err", err)
 		} else {
 			im.initialized = true
 		}
 	}, 5*time.Minute, wait.NeverStop)
 
 	// Start a goroutine periodically updates image cache.
-	// TODO(random-liu): Merge this with the previous loop.
 	go wait.Until(func() {
-		images, err := im.runtime.ListImages()
+		images, err := im.runtime.ListImages(ctx)
 		if err != nil {
-			klog.Warningf("[imageGCManager] Failed to update image list: %v", err)
+			klog.InfoS("Failed to update image list", "err", err)
 		} else {
 			im.imageCache.set(images)
 		}
@@ -202,20 +220,20 @@ func (im *realImageGCManager) GetImageList() ([]container.Image, error) {
 	return im.imageCache.get(), nil
 }
 
-func (im *realImageGCManager) detectImages(detectTime time.Time) (sets.String, error) {
+func (im *realImageGCManager) detectImages(ctx context.Context, detectTime time.Time) (sets.String, error) {
 	imagesInUse := sets.NewString()
 
 	// Always consider the container runtime pod sandbox image in use
-	imageRef, err := im.runtime.GetImageRef(container.ImageSpec{Image: im.sandboxImage})
+	imageRef, err := im.runtime.GetImageRef(ctx, container.ImageSpec{Image: im.sandboxImage})
 	if err == nil && imageRef != "" {
 		imagesInUse.Insert(imageRef)
 	}
 
-	images, err := im.runtime.ListImages()
+	images, err := im.runtime.ListImages(ctx)
 	if err != nil {
 		return imagesInUse, err
 	}
-	pods, err := im.runtime.GetPods(true)
+	pods, err := im.runtime.GetPods(ctx, true)
 	if err != nil {
 		return imagesInUse, err
 	}
@@ -223,7 +241,7 @@ func (im *realImageGCManager) detectImages(detectTime time.Time) (sets.String, e
 	// Make a set of images in use by containers.
 	for _, pod := range pods {
 		for _, container := range pod.Containers {
-			klog.V(5).Infof("Pod %s/%s, container %s uses image %s(%s)", pod.Namespace, pod.Name, container.Name, container.Image, container.ImageID)
+			klog.V(5).InfoS("Container uses image", "pod", klog.KRef(pod.Namespace, pod.Name), "containerName", container.Name, "containerImage", container.Image, "imageID", container.ImageID)
 			imagesInUse.Insert(container.ImageID)
 		}
 	}
@@ -234,12 +252,12 @@ func (im *realImageGCManager) detectImages(detectTime time.Time) (sets.String, e
 	im.imageRecordsLock.Lock()
 	defer im.imageRecordsLock.Unlock()
 	for _, image := range images {
-		klog.V(5).Infof("Adding image ID %s to currentImages", image.ID)
+		klog.V(5).InfoS("Adding image ID to currentImages", "imageID", image.ID)
 		currentImages.Insert(image.ID)
 
 		// New image, set it as detected now.
 		if _, ok := im.imageRecords[image.ID]; !ok {
-			klog.V(5).Infof("Image ID %s is new", image.ID)
+			klog.V(5).InfoS("Image ID is new", "imageID", image.ID)
 			im.imageRecords[image.ID] = &imageRecord{
 				firstDetected: detectTime,
 			}
@@ -247,18 +265,21 @@ func (im *realImageGCManager) detectImages(detectTime time.Time) (sets.String, e
 
 		// Set last used time to now if the image is being used.
 		if isImageUsed(image.ID, imagesInUse) {
-			klog.V(5).Infof("Setting Image ID %s lastUsed to %v", image.ID, now)
+			klog.V(5).InfoS("Setting Image ID lastUsed", "imageID", image.ID, "lastUsed", now)
 			im.imageRecords[image.ID].lastUsed = now
 		}
 
-		klog.V(5).Infof("Image ID %s has size %d", image.ID, image.Size)
+		klog.V(5).InfoS("Image ID has size", "imageID", image.ID, "size", image.Size)
 		im.imageRecords[image.ID].size = image.Size
+
+		klog.V(5).InfoS("Image ID is pinned", "imageID", image.ID, "pinned", image.Pinned)
+		im.imageRecords[image.ID].pinned = image.Pinned
 	}
 
 	// Remove old images from our records.
 	for image := range im.imageRecords {
 		if !currentImages.Has(image) {
-			klog.V(5).Infof("Image ID %s is no longer present; removing from imageRecords", image)
+			klog.V(5).InfoS("Image ID is no longer present; removing from imageRecords", "imageID", image)
 			delete(im.imageRecords, image)
 		}
 	}
@@ -266,9 +287,11 @@ func (im *realImageGCManager) detectImages(detectTime time.Time) (sets.String, e
 	return imagesInUse, nil
 }
 
-func (im *realImageGCManager) GarbageCollect() error {
+func (im *realImageGCManager) GarbageCollect(ctx context.Context) error {
+	ctx, otelSpan := im.tracer.Start(ctx, "Images/GarbageCollect")
+	defer otelSpan.End()
 	// Get disk usage on disk holding images.
-	fsStats, err := im.statsProvider.ImageFsStats()
+	fsStats, err := im.statsProvider.ImageFsStats(ctx)
 	if err != nil {
 		return err
 	}
@@ -282,7 +305,7 @@ func (im *realImageGCManager) GarbageCollect() error {
 	}
 
 	if available > capacity {
-		klog.Warningf("available %d is larger than capacity %d", available, capacity)
+		klog.InfoS("Availability is larger than capacity", "available", available, "capacity", capacity)
 		available = capacity
 	}
 
@@ -297,14 +320,14 @@ func (im *realImageGCManager) GarbageCollect() error {
 	usagePercent := 100 - int(available*100/capacity)
 	if usagePercent >= im.policy.HighThresholdPercent {
 		amountToFree := capacity*int64(100-im.policy.LowThresholdPercent)/100 - available
-		klog.Infof("[imageGCManager]: Disk usage on image filesystem is at %d%% which is over the high threshold (%d%%). Trying to free %d bytes down to the low threshold (%d%%).", usagePercent, im.policy.HighThresholdPercent, amountToFree, im.policy.LowThresholdPercent)
-		freed, err := im.freeSpace(amountToFree, time.Now())
+		klog.InfoS("Disk usage on image filesystem is over the high threshold, trying to free bytes down to the low threshold", "usage", usagePercent, "highThreshold", im.policy.HighThresholdPercent, "amountToFree", amountToFree, "lowThreshold", im.policy.LowThresholdPercent)
+		freed, err := im.freeSpace(ctx, amountToFree, time.Now())
 		if err != nil {
 			return err
 		}
 
 		if freed < amountToFree {
-			err := fmt.Errorf("failed to garbage collect required amount of images. Wanted to free %d bytes, but freed %d bytes", amountToFree, freed)
+			err := fmt.Errorf("Failed to garbage collect required amount of images. Attempted to free %d bytes, but only found %d bytes eligible to free.", amountToFree, freed)
 			im.recorder.Eventf(im.nodeRef, v1.EventTypeWarning, events.FreeDiskSpaceFailed, err.Error())
 			return err
 		}
@@ -313,9 +336,9 @@ func (im *realImageGCManager) GarbageCollect() error {
 	return nil
 }
 
-func (im *realImageGCManager) DeleteUnusedImages() error {
-	klog.Infof("attempting to delete unused images")
-	_, err := im.freeSpace(math.MaxInt64, time.Now())
+func (im *realImageGCManager) DeleteUnusedImages(ctx context.Context) error {
+	klog.InfoS("Attempting to delete unused images")
+	_, err := im.freeSpace(ctx, math.MaxInt64, time.Now())
 	return err
 }
 
@@ -325,8 +348,8 @@ func (im *realImageGCManager) DeleteUnusedImages() error {
 // bytes freed is always returned.
 // Note that error may be nil and the number of bytes free may be less
 // than bytesToFree.
-func (im *realImageGCManager) freeSpace(bytesToFree int64, freeTime time.Time) (int64, error) {
-	imagesInUse, err := im.detectImages(freeTime)
+func (im *realImageGCManager) freeSpace(ctx context.Context, bytesToFree int64, freeTime time.Time) (int64, error) {
+	imagesInUse, err := im.detectImages(ctx, freeTime)
 	if err != nil {
 		return 0, err
 	}
@@ -338,8 +361,14 @@ func (im *realImageGCManager) freeSpace(bytesToFree int64, freeTime time.Time) (
 	images := make([]evictionInfo, 0, len(im.imageRecords))
 	for image, record := range im.imageRecords {
 		if isImageUsed(image, imagesInUse) {
-			klog.V(5).Infof("Image ID %s is being used", image)
+			klog.V(5).InfoS("Image ID is being used", "imageID", image)
 			continue
+		}
+		// Check if image is pinned, prevent garbage collection
+		if record.pinned {
+			klog.V(5).InfoS("Image is pinned, skipping garbage collection", "imageID", image)
+			continue
+
 		}
 		images = append(images, evictionInfo{
 			id:          image,
@@ -352,10 +381,10 @@ func (im *realImageGCManager) freeSpace(bytesToFree int64, freeTime time.Time) (
 	var deletionErrors []error
 	spaceFreed := int64(0)
 	for _, image := range images {
-		klog.V(5).Infof("Evaluating image ID %s for possible garbage collection", image.id)
+		klog.V(5).InfoS("Evaluating image ID for possible garbage collection", "imageID", image.id)
 		// Images that are currently in used were given a newer lastUsed.
 		if image.lastUsed.Equal(freeTime) || image.lastUsed.After(freeTime) {
-			klog.V(5).Infof("Image ID %s has lastUsed=%v which is >= freeTime=%v, not eligible for garbage collection", image.id, image.lastUsed, freeTime)
+			klog.V(5).InfoS("Image ID was used too recently, not eligible for garbage collection", "imageID", image.id, "lastUsed", image.lastUsed, "freeTime", freeTime)
 			continue
 		}
 
@@ -363,13 +392,13 @@ func (im *realImageGCManager) freeSpace(bytesToFree int64, freeTime time.Time) (
 		// In such a case, the image may have just been pulled down, and will be used by a container right away.
 
 		if freeTime.Sub(image.firstDetected) < im.policy.MinAge {
-			klog.V(5).Infof("Image ID %s has age %v which is less than the policy's minAge of %v, not eligible for garbage collection", image.id, freeTime.Sub(image.firstDetected), im.policy.MinAge)
+			klog.V(5).InfoS("Image ID's age is less than the policy's minAge, not eligible for garbage collection", "imageID", image.id, "age", freeTime.Sub(image.firstDetected), "minAge", im.policy.MinAge)
 			continue
 		}
 
 		// Remove image. Continue despite errors.
-		klog.Infof("[imageGCManager]: Removing image %q to free %d bytes", image.id, image.size)
-		err := im.runtime.RemoveImage(container.ImageSpec{Image: image.id})
+		klog.InfoS("Removing image to free bytes", "imageID", image.id, "size", image.size)
+		err := im.runtime.RemoveImage(ctx, container.ImageSpec{Image: image.id})
 		if err != nil {
 			deletionErrors = append(deletionErrors, err)
 			continue

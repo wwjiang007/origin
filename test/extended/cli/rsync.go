@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -9,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,11 +20,11 @@ import (
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[cli][Slow] can use rsync to upload files to pods", func() {
+var _ = g.Describe("[sig-cli][Slow] can use rsync to upload files to pods [apigroup:template.openshift.io]", func() {
 	defer g.GinkgoRecover()
 
 	var (
-		oc           = exutil.NewCLI("cli-rsync", exutil.KubeConfigPath())
+		oc           = exutil.NewCLI("cli-rsync")
 		templatePath = exutil.FixturePath("..", "..", "examples", "db-templates", "mariadb-ephemeral-template.json")
 		sourcePath1  = exutil.FixturePath("..", "..", "examples", "image-streams")
 		sourcePath2  = exutil.FixturePath("..", "..", "examples", "sample-app")
@@ -43,7 +44,7 @@ var _ = g.Describe("[cli][Slow] can use rsync to upload files to pods", func() {
 
 		g.By("Getting the mariadb pod name")
 		selector, _ := labels.Parse("name=mariadb")
-		pods, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).List(metav1.ListOptions{LabelSelector: selector.String()})
+		pods, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).List(context.Background(), metav1.ListOptions{LabelSelector: selector.String()})
 		o.Expect(err).NotTo(o.HaveOccurred())
 		o.Expect(len(pods.Items)).ToNot(o.BeZero())
 		podName = pods.Items[0].Name
@@ -224,8 +225,9 @@ var _ = g.Describe("[cli][Slow] can use rsync to upload files to pods", func() {
 					fmt.Sprintf("%s:/tmp/image-streams/", podName),
 					tempDir,
 					fmt.Sprintf("--strategy=%s", strategy)).Execute()
+				o.Expect(err).NotTo(o.HaveOccurred())
 
-				g.By(fmt.Sprintf("Verifying that files were copied to the local directory"))
+				g.By("Verifying that files were copied to the local directory")
 				files, err := ioutil.ReadDir(tempDir)
 				o.Expect(err).NotTo(o.HaveOccurred())
 				found := false
@@ -248,7 +250,7 @@ var _ = g.Describe("[cli][Slow] can use rsync to upload files to pods", func() {
 					tempDir,
 					"--delete",
 					fmt.Sprintf("--strategy=%s", strategy)).Execute()
-				g.By(fmt.Sprintf("Verifying that the expected files are in the local directory"))
+				g.By("Verifying that the expected files are in the local directory")
 				o.Expect(err).NotTo(o.HaveOccurred())
 				// After the copy with --delete, the file with 'modifiedName' should have been deleted
 				// and the file with 'originalName' should have been restored.
@@ -263,6 +265,8 @@ var _ = g.Describe("[cli][Slow] can use rsync to upload files to pods", func() {
 						foundModified = true
 					}
 				}
+				o.Expect(err).NotTo(o.HaveOccurred())
+
 				g.By("Verifying original file is in the local directory")
 				o.Expect(foundOriginal).To(o.BeTrue())
 
@@ -270,10 +274,10 @@ var _ = g.Describe("[cli][Slow] can use rsync to upload files to pods", func() {
 				o.Expect(foundModified).To(o.BeFalse())
 
 				g.By("Getting an error if copying to a destination directory where there is no write permission")
-				result, err = oc.Run("rsync").Args(
+				err = oc.Run("rsync").Args(
 					sourcePath1,
 					fmt.Sprintf("%s:/", podName),
-					fmt.Sprintf("--strategy=%s", strategy)).Output()
+					fmt.Sprintf("--strategy=%s", strategy)).Execute()
 				o.Expect(err).To(o.HaveOccurred())
 			}
 		}

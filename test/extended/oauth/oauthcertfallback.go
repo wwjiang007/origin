@@ -1,18 +1,21 @@
 package oauth
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"path"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apiserver/pkg/authentication/user"
 	"k8s.io/client-go/rest"
 	restclient "k8s.io/client-go/rest"
+	e2eskipper "k8s.io/kubernetes/test/e2e/framework/skipper"
 
+	configv1 "github.com/openshift/api/config/v1"
 	userv1client "github.com/openshift/client-go/user/clientset/versioned"
 	"github.com/openshift/library-go/pkg/crypto"
 	exutil "github.com/openshift/origin/test/extended/util"
@@ -27,11 +30,18 @@ const (
 	anonymousError    = `users.user.openshift.io "~" is forbidden: User "system:anonymous" cannot get resource "users" in API group "user.openshift.io" at the cluster scope`
 )
 
-var _ = g.Describe("[Feature:OAuthServer] OAuth server", func() {
+var _ = g.Describe("[sig-auth][Feature:OAuthServer] OAuth server", func() {
 	defer g.GinkgoRecover()
-	oc := exutil.NewCLI("oauth", exutil.KubeConfigPath())
+	oc := exutil.NewCLI("oauth")
 
-	g.It("has the correct token and certificate fallback semantics", func() {
+	g.It("has the correct token and certificate fallback semantics [apigroup:user.openshift.io]", func() {
+		controlPlaneTopology, err := exutil.GetControlPlaneTopology(oc)
+		o.Expect(err).NotTo(o.HaveOccurred())
+
+		if *controlPlaneTopology == configv1.ExternalTopologyMode {
+			e2eskipper.Skipf("External clusters do not contain a kube-control-plane-signer secret inside the cluster. The secret lives outside the cluster with the rest of the control plane.")
+		}
+
 		var (
 			// We have to generate this dynamically in order to have an invalid cert signed by a signer with the same name as the valid CA
 			invalidCert = restclient.TLSClientConfig{}
@@ -46,7 +56,7 @@ var _ = g.Describe("[Feature:OAuthServer] OAuth server", func() {
 		defer os.RemoveAll(fakecadir)
 
 		// openssl s_client shows the kube-control-plane-signer CA name sent as one of the acceptable client CAs, so use that.
-		realCASecret, err := oc.AsAdmin().KubeClient().CoreV1().Secrets("openshift-kube-apiserver-operator").Get("kube-control-plane-signer", metav1.GetOptions{})
+		realCASecret, err := oc.AsAdmin().KubeClient().CoreV1().Secrets("openshift-kube-apiserver-operator").Get(context.Background(), "kube-control-plane-signer", metav1.GetOptions{})
 		o.Expect(err).NotTo(o.HaveOccurred())
 
 		realCAPEM, ok := realCASecret.Data["tls.crt"]
@@ -94,7 +104,7 @@ var _ = g.Describe("[Feature:OAuthServer] OAuth server", func() {
 			"valid token, valid cert": {
 				token:        validToken,
 				cert:         validCert,
-				expectedUser: tokenUser,
+				expectedUser: certUser,
 			},
 			"valid token, invalid cert": {
 				token:        validToken,
@@ -107,10 +117,9 @@ var _ = g.Describe("[Feature:OAuthServer] OAuth server", func() {
 				expectedUser: tokenUser,
 			},
 			"invalid token, valid cert": {
-				token:         invalidToken,
-				cert:          validCert,
-				errorExpected: true,
-				errorString:   unauthorizedError,
+				token:        invalidToken,
+				cert:         validCert,
+				expectedUser: certUser,
 			},
 			"invalid token, invalid cert": {
 				token:         invalidToken,
@@ -149,7 +158,7 @@ var _ = g.Describe("[Feature:OAuthServer] OAuth server", func() {
 			adminConfig.CAData = oc.AdminConfig().CAData
 
 			userClient := userv1client.NewForConfigOrDie(adminConfig)
-			user, err := userClient.UserV1().Users().Get("~", metav1.GetOptions{})
+			user, err := userClient.UserV1().Users().Get(context.Background(), "~", metav1.GetOptions{})
 
 			if test.errorExpected {
 				o.Expect(err).ToNot(o.BeNil())

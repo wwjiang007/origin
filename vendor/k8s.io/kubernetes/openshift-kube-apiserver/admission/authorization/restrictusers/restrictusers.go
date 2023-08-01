@@ -13,7 +13,7 @@ import (
 	"k8s.io/apiserver/pkg/admission/initializer"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	"k8s.io/kubernetes/pkg/apis/rbac"
 
 	userv1 "github.com/openshift/api/user/v1"
@@ -33,6 +33,7 @@ func Register(plugins *admission.Plugins) {
 
 type GroupCache interface {
 	GroupsFor(string) ([]*userv1.Group, error)
+	HasSynced() bool
 }
 
 // restrictUsersAdmission implements admission.ValidateInterface and enforces
@@ -168,7 +169,7 @@ func (q *restrictUsersAdmission) Validate(ctx context.Context, a admission.Attri
 	// RoleBindingRestrictions admission plugin is DefaultAllow, hence RBRs can't use an informer,
 	// because it's impossible to know if cache is up-to-date
 	roleBindingRestrictionList, err := q.roleBindingRestrictionsGetter.RoleBindingRestrictions(ns).
-		List(metav1.ListOptions{})
+		List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return admission.NewForbidden(a, fmt.Errorf("could not list rolebinding restrictions: %v", err))
 	}

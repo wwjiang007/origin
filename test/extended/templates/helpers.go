@@ -1,13 +1,12 @@
 package templates
 
 import (
-	"crypto/tls"
+	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 	"strings"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	kappsv1 "k8s.io/api/apps/v1"
@@ -33,8 +32,6 @@ import (
 
 	buildv1client "github.com/openshift/client-go/build/clientset/versioned"
 
-	osbclient "github.com/openshift/origin/test/extended/templates/openservicebroker/client"
-
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
@@ -52,15 +49,15 @@ func init() {
 func createUser(cli *exutil.CLI, name, role string) *userv1.User {
 	name = cli.Namespace() + "-" + name
 
-	user, err := cli.AdminUserClient().UserV1().Users().Create(&userv1.User{
+	user, err := cli.AdminUserClient().UserV1().Users().Create(context.Background(), &userv1.User{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
-	})
+	}, metav1.CreateOptions{})
 	o.Expect(err).NotTo(o.HaveOccurred())
 
 	if role != "" {
-		_, err = cli.AdminAuthorizationClient().AuthorizationV1().RoleBindings(cli.Namespace()).Create(&authorizationv1.RoleBinding{
+		_, err = cli.AdminAuthorizationClient().AuthorizationV1().RoleBindings(cli.Namespace()).Create(context.Background(), &authorizationv1.RoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: fmt.Sprintf("%s-%s-binding", name, role),
 			},
@@ -73,7 +70,7 @@ func createUser(cli *exutil.CLI, name, role string) *userv1.User {
 					Name: name,
 				},
 			},
-		})
+		}, metav1.CreateOptions{})
 		o.Expect(err).NotTo(o.HaveOccurred())
 	}
 
@@ -83,15 +80,15 @@ func createUser(cli *exutil.CLI, name, role string) *userv1.User {
 func createGroup(cli *exutil.CLI, name, role string) *userv1.Group {
 	name = cli.Namespace() + "-" + name
 
-	group, err := cli.AdminUserClient().UserV1().Groups().Create(&userv1.Group{
+	group, err := cli.AdminUserClient().UserV1().Groups().Create(context.Background(), &userv1.Group{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
-	})
+	}, metav1.CreateOptions{})
 	o.Expect(err).NotTo(o.HaveOccurred())
 
 	if role != "" {
-		_, err = cli.AdminAuthorizationClient().AuthorizationV1().RoleBindings(cli.Namespace()).Create(&authorizationv1.RoleBinding{
+		_, err = cli.AdminAuthorizationClient().AuthorizationV1().RoleBindings(cli.Namespace()).Create(context.Background(), &authorizationv1.RoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: fmt.Sprintf("%s-%s-binding", name, role),
 			},
@@ -104,7 +101,7 @@ func createGroup(cli *exutil.CLI, name, role string) *userv1.Group {
 					Name: name,
 				},
 			},
-		})
+		}, metav1.CreateOptions{})
 		o.Expect(err).NotTo(o.HaveOccurred())
 	}
 
@@ -112,23 +109,23 @@ func createGroup(cli *exutil.CLI, name, role string) *userv1.Group {
 }
 
 func addUserToGroup(cli *exutil.CLI, username, groupname string) {
-	group, err := cli.AdminUserClient().UserV1().Groups().Get(groupname, metav1.GetOptions{})
+	group, err := cli.AdminUserClient().UserV1().Groups().Get(context.Background(), groupname, metav1.GetOptions{})
 	o.Expect(err).NotTo(o.HaveOccurred())
 
 	if group != nil {
 		group.Users = append(group.Users, username)
-		_, err = cli.AdminUserClient().UserV1().Groups().Update(group)
+		_, err = cli.AdminUserClient().UserV1().Groups().Update(context.Background(), group, metav1.UpdateOptions{})
 		o.Expect(err).NotTo(o.HaveOccurred())
 	}
 }
 
 func deleteGroup(cli *exutil.CLI, group *userv1.Group) {
-	err := cli.AdminUserClient().UserV1().Groups().Delete(group.Name, nil)
+	err := cli.AdminUserClient().UserV1().Groups().Delete(context.Background(), group.Name, metav1.DeleteOptions{})
 	o.Expect(err).NotTo(o.HaveOccurred())
 }
 
 func deleteUser(cli *exutil.CLI, user *userv1.User) {
-	err := cli.AdminUserClient().UserV1().Users().Delete(user.Name, nil)
+	err := cli.AdminUserClient().UserV1().Users().Delete(context.Background(), user.Name, metav1.DeleteOptions{})
 	o.Expect(err).NotTo(o.HaveOccurred())
 }
 
@@ -140,22 +137,6 @@ func setUser(cli *exutil.CLI, user *userv1.User) {
 		g.By(fmt.Sprintf("testing as %s user", user.Name))
 		cli.ChangeUser(user.Name)
 	}
-}
-
-// TSBClient returns a client to the running template service broker
-func TSBClient(oc *exutil.CLI) (osbclient.Client, error) {
-	svc, err := oc.AdminKubeClient().CoreV1().Services("openshift-template-service-broker").Get("apiserver", metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	return osbclient.NewClient(&http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}, "https://"+svc.Spec.ClusterIP+"/brokers/template.openshift.io"), nil
 }
 
 // readinessCheckers maps GroupKinds to the appropriate function.  Note that in
@@ -177,7 +158,7 @@ var readinessCheckers = map[schema.GroupVersionKind]func(runtime.Object) (bool, 
 	groupVersionKind(batchv1.SchemeGroupVersion, "Job"):         checkJobReadiness,
 }
 
-//TODO candidate for openshift/library-go
+// TODO candidate for openshift/library-go
 func isTerminalPhase(phase buildv1.BuildPhase) bool {
 	switch phase {
 	case buildv1.BuildPhaseNew,
@@ -188,7 +169,7 @@ func isTerminalPhase(phase buildv1.BuildPhase) bool {
 	return true
 }
 
-//TODO candidate for openshift/library-go
+// TODO candidate for openshift/library-go
 func checkBuildReadiness(obj runtime.Object) (bool, bool, error) {
 	b, ok := obj.(*buildv1.Build)
 	if !ok {
@@ -204,7 +185,7 @@ func checkBuildReadiness(obj runtime.Object) (bool, bool, error) {
 	return ready, failed, nil
 }
 
-//TODO candidate for openshift/library-go
+// TODO candidate for openshift/library-go
 func labelValue(name string) string {
 	if len(name) <= validation.DNS1123LabelMaxLength {
 		return name
@@ -212,7 +193,7 @@ func labelValue(name string) string {
 	return name[:validation.DNS1123LabelMaxLength]
 }
 
-//TODO candidate for openshift/library-go
+// TODO candidate for openshift/library-go
 func buildConfigSelector(name string) labels.Selector {
 	return labels.Set{buildv1.BuildConfigLabel: labelValue(name)}.AsSelector()
 }
@@ -223,7 +204,7 @@ func checkBuildConfigReadiness(oc buildv1client.Interface, obj runtime.Object) (
 		return false, false, fmt.Errorf("object %T is not v1.BuildConfig", obj)
 	}
 
-	builds, err := oc.BuildV1().Builds(bc.Namespace).List(metav1.ListOptions{LabelSelector: buildConfigSelector(bc.Name).String()})
+	builds, err := oc.BuildV1().Builds(bc.Namespace).List(context.Background(), metav1.ListOptions{LabelSelector: buildConfigSelector(bc.Name).String()})
 	if err != nil {
 		return false, false, err
 	}
@@ -285,7 +266,7 @@ func checkDeploymentReadiness(obj runtime.Object) (bool, bool, error) {
 	return ready, failed, nil
 }
 
-//TODO candidate for openshift/library-go
+// TODO candidate for openshift/library-go
 func checkDeploymentConfigReadiness(obj runtime.Object) (bool, bool, error) {
 	dc, ok := obj.(*appsv1.DeploymentConfig)
 	if !ok {
@@ -410,7 +391,7 @@ func dumpObjectReadiness(oc *exutil.CLI, templateInstance *templatev1.TemplateIn
 			return err
 		}
 
-		obj, err := oc.KubeFramework().DynamicClient.Resource(mapping.Resource).Namespace(object.Ref.Namespace).Get(object.Ref.Name, metav1.GetOptions{})
+		obj, err := oc.KubeFramework().DynamicClient.Resource(mapping.Resource).Namespace(object.Ref.Namespace).Get(context.Background(), object.Ref.Name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}

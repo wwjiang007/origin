@@ -1,12 +1,13 @@
 package authorization
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"strings"
 	"time"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	kubeauthorizationv1 "k8s.io/api/authorization/v1"
@@ -14,6 +15,7 @@ import (
 	kapierror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	utilrand "k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/discovery"
@@ -24,20 +26,24 @@ import (
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 	appsapi "k8s.io/kubernetes/pkg/apis/apps"
 	extensionsapi "k8s.io/kubernetes/pkg/apis/extensions"
+	e2e "k8s.io/kubernetes/test/e2e/framework"
 
 	oapps "github.com/openshift/api/apps"
 	authorizationv1 "github.com/openshift/api/authorization/v1"
 	"github.com/openshift/api/build"
+	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/api/image"
 	"github.com/openshift/api/oauth"
+	projectv1 "github.com/openshift/api/project/v1"
 	authorizationv1client "github.com/openshift/client-go/authorization/clientset/versioned"
 	authorizationv1typedclient "github.com/openshift/client-go/authorization/clientset/versioned/typed/authorization/v1"
 	exutil "github.com/openshift/origin/test/extended/util"
+	"github.com/openshift/origin/test/extended/util/ibmcloud"
 )
 
-var _ = g.Describe("[Feature:OpenShiftAuthorization] authorization", func() {
+var _ = g.Describe("[sig-auth][Feature:OpenShiftAuthorization] authorization", func() {
 	defer g.GinkgoRecover()
-	oc := exutil.NewCLI("bootstrap-policy", exutil.KubeConfigPath())
+	oc := exutil.NewCLI("bootstrap-policy")
 
 	g.Context("", func() {
 		g.Describe("TestClusterReaderCoverage", func() {
@@ -50,7 +56,7 @@ var _ = g.Describe("[Feature:OpenShiftAuthorization] authorization", func() {
 				discoveryClient := discovery.NewDiscoveryClientForConfigOrDie(clusterAdminClientConfig)
 
 				// (map[string]*metav1.APIResourceList, error)
-				allResourceList, err := discoveryClient.ServerResources()
+				_, allResourceList, err := discoveryClient.ServerGroupsAndResources()
 				if err != nil {
 					t.Fatalf("unexpected error: %v", err)
 				}
@@ -84,7 +90,7 @@ var _ = g.Describe("[Feature:OpenShiftAuthorization] authorization", func() {
 					{Resource: "imagestreams/secrets"}:     true,
 				}
 
-				readerRole, err := rbacv1client.NewForConfigOrDie(clusterAdminClientConfig).ClusterRoles().Get("cluster-reader", metav1.GetOptions{})
+				readerRole, err := rbacv1client.NewForConfigOrDie(clusterAdminClientConfig).ClusterRoles().Get(context.Background(), "cluster-reader", metav1.GetOptions{})
 				if err != nil {
 					t.Fatalf("unexpected error: %v", err)
 				}
@@ -214,6 +220,7 @@ var globalDeploymentConfigGetterUsers = sets.NewString(
 type resourceAccessReviewTest struct {
 	description     string
 	clientInterface authorizationv1typedclient.ResourceAccessReviewInterface
+	ocClient        *exutil.CLI
 	review          *authorizationv1.ResourceAccessReview
 
 	response authorizationv1.ResourceAccessReviewResponse
@@ -231,7 +238,7 @@ func (test resourceAccessReviewTest) run() {
 		// so that if you never have a success, we can call t.Errorf with a reasonable message
 		// exiting the poll with `failMessage=""` indicates success.
 		err = wait.Poll(PolicyCachePollInterval, PolicyCachePollTimeout, func() (bool, error) {
-			actualResponse, err := test.clientInterface.Create(test.review)
+			actualResponse, err := test.clientInterface.Create(context.Background(), test.review, metav1.CreateOptions{})
 			if len(test.err) > 0 {
 				if err == nil {
 					failMessage = fmt.Sprintf("%s: Expected error: %v", test.description, test.err)
@@ -247,12 +254,21 @@ func (test resourceAccessReviewTest) run() {
 				}
 			}
 
+			controlPlaneTopology, err := exutil.GetControlPlaneTopology(test.ocClient)
+			o.Expect(err).NotTo(o.HaveOccurred())
+
 			// many operators installed in openshift- namespaces are allowed to read all namespaces.  We simply suppress all those users from the user slice
 			// so we aren't sensitive to adding or removing them
 			actualUsersToCheck := sets.NewString()
 			for _, curr := range actualResponse.UsersSlice {
 				if strings.HasPrefix(curr, "system:serviceaccount:openshift-") {
 					continue
+				}
+				// Managed ibmcloud openshift has an IAM user that needs to be ignored
+				if strings.HasPrefix(curr, "IAM#") {
+					if *controlPlaneTopology == configv1.ExternalTopologyMode && e2e.TestContext.Provider == ibmcloud.ProviderName {
+						continue
+					}
 				}
 				actualUsersToCheck.Insert(curr)
 			}
@@ -285,6 +301,7 @@ func (test resourceAccessReviewTest) run() {
 type localResourceAccessReviewTest struct {
 	description     string
 	clientInterface authorizationv1typedclient.LocalResourceAccessReviewInterface
+	ocClient        *exutil.CLI
 	review          *authorizationv1.LocalResourceAccessReview
 
 	response authorizationv1.ResourceAccessReviewResponse
@@ -297,12 +314,12 @@ func (test localResourceAccessReviewTest) run() {
 	failMessage := ""
 	var err error
 
-	g.By("localResourceAccessReviewTest - "+test.description, func() {
+	g.By("localResourceAccessReviewTest - "+test.description+" [apigroup:authorization.openshift.io]", func() {
 		// keep trying the test until you get a success or you timeout.  Every time you have a failure, set the fail message
 		// so that if you never have a success, we can call t.Errorf with a reasonable message
 		// exiting the poll with `failMessage=""` indicates success.
 		err = wait.Poll(PolicyCachePollInterval, PolicyCachePollTimeout, func() (bool, error) {
-			actualResponse, err := test.clientInterface.Create(test.review)
+			actualResponse, err := test.clientInterface.Create(context.Background(), test.review, metav1.CreateOptions{})
 			if len(test.err) > 0 {
 				if err == nil {
 					failMessage = fmt.Sprintf("%s: Expected error: %v", test.description, test.err)
@@ -327,12 +344,21 @@ func (test localResourceAccessReviewTest) run() {
 				return false, nil
 			}
 
+			controlPlaneTopology, err := exutil.GetControlPlaneTopology(test.ocClient)
+			o.Expect(err).NotTo(o.HaveOccurred())
+
 			// many operators installed in openshift- namespaces are allowed to read all namespaces.  We simply suppress all those users from the user slice
 			// so we aren't sensitive to adding or removing them
 			actualUsersToCheck := sets.NewString()
 			for _, curr := range actualResponse.UsersSlice {
 				if strings.HasPrefix(curr, "system:serviceaccount:openshift-") {
 					continue
+				}
+				// Managed ibmcloud openshift has an IAM user that needs to be ignored
+				if strings.HasPrefix(curr, "IAM#") {
+					if *controlPlaneTopology == configv1.ExternalTopologyMode && e2e.TestContext.Provider == ibmcloud.ProviderName {
+						continue
+					}
 				}
 				// skip the ci provisioner to pass gcp: ci-provisioner@openshift-gce-devel-ci.iam.gserviceaccount.com
 				if strings.HasPrefix(curr, "ci-provisioner@") {
@@ -367,22 +393,22 @@ func (test localResourceAccessReviewTest) run() {
 }
 
 // serial because it is vulnerable to access added by other tests
-var _ = g.Describe("[Feature:OpenShiftAuthorization][Serial] authorization", func() {
+var _ = g.Describe("[sig-auth][Feature:OpenShiftAuthorization][Serial] authorization", func() {
 	defer g.GinkgoRecover()
-	oc := exutil.NewCLI("bootstrap-policy", exutil.KubeConfigPath())
+	oc := exutil.NewCLI("bootstrap-policy")
 
 	g.Context("", func() {
 		g.Describe("TestAuthorizationResourceAccessReview", func() {
-			g.It(fmt.Sprintf("should succeed"), func() {
+			g.It(fmt.Sprintf("should succeed [apigroup:authorization.openshift.io]"), func() {
 				clusterAdminAuthorizationClient := oc.AdminAuthorizationClient().AuthorizationV1()
 
-				hammerProjectName := oc.CreateProject()
+				hammerProjectName := createProject(oc, "hammer")
 				haroldName := oc.CreateUser("harold-").Name
 				haroldConfig := oc.GetClientConfigForUser(haroldName)
 				haroldAuthorizationClient := authorizationv1client.NewForConfigOrDie(haroldConfig).AuthorizationV1()
 				AddUserAdminToProject(oc, hammerProjectName, haroldName)
 
-				malletProjectName := oc.CreateProject()
+				malletProjectName := createProject(oc, "mallet")
 				markName := oc.CreateUser("mark-").Name
 				markConfig := oc.GetClientConfigForUser(markName)
 				markAuthorizationClient := authorizationv1client.NewForConfigOrDie(markConfig).AuthorizationV1()
@@ -405,6 +431,7 @@ var _ = g.Describe("[Feature:OpenShiftAuthorization][Serial] authorization", fun
 					test := localResourceAccessReviewTest{
 						description:     "who can view deploymentconfigs in hammer by harold",
 						clientInterface: haroldAuthorizationClient.LocalResourceAccessReviews(hammerProjectName),
+						ocClient:        oc,
 						review:          localRequestWhoCanViewDeploymentConfigs,
 						response: authorizationv1.ResourceAccessReviewResponse{
 							UsersSlice:  []string{oc.Username(), haroldName, valerieName},
@@ -421,6 +448,7 @@ var _ = g.Describe("[Feature:OpenShiftAuthorization][Serial] authorization", fun
 					test := localResourceAccessReviewTest{
 						description:     "who can view deploymentconfigs in mallet by mark",
 						clientInterface: markAuthorizationClient.LocalResourceAccessReviews(malletProjectName),
+						ocClient:        oc,
 						review:          localRequestWhoCanViewDeploymentConfigs,
 						response: authorizationv1.ResourceAccessReviewResponse{
 							UsersSlice:  []string{oc.Username(), markName, edgarName},
@@ -439,6 +467,7 @@ var _ = g.Describe("[Feature:OpenShiftAuthorization][Serial] authorization", fun
 					test := resourceAccessReviewTest{
 						description:     "who can view deploymentconfigs in all by mark",
 						clientInterface: markAuthorizationClient.ResourceAccessReviews(),
+						ocClient:        oc,
 						review:          requestWhoCanViewDeploymentConfigs,
 						err:             "cannot ",
 					}
@@ -450,6 +479,7 @@ var _ = g.Describe("[Feature:OpenShiftAuthorization][Serial] authorization", fun
 					test := resourceAccessReviewTest{
 						description:     "who can view deploymentconfigs in all by cluster-admin",
 						clientInterface: clusterAdminAuthorizationClient.ResourceAccessReviews(),
+						ocClient:        oc,
 						review:          requestWhoCanViewDeploymentConfigs,
 						response: authorizationv1.ResourceAccessReviewResponse{
 							UsersSlice:  []string{},
@@ -466,21 +496,21 @@ var _ = g.Describe("[Feature:OpenShiftAuthorization][Serial] authorization", fun
 	})
 })
 
-var _ = g.Describe("[Feature:OpenShiftAuthorization] authorization", func() {
+var _ = g.Describe("[sig-auth][Feature:OpenShiftAuthorization] authorization", func() {
 	defer g.GinkgoRecover()
-	oc := exutil.NewCLI("bootstrap-policy", exutil.KubeConfigPath())
+	oc := exutil.NewCLI("bootstrap-policy")
 
 	g.Context("", func() {
 		g.Describe("TestAuthorizationSubjectAccessReview", func() {
-			g.It(fmt.Sprintf("should succeed"), func() {
+			g.It(fmt.Sprintf("should succeed [apigroup:authorization.openshift.io]"), func() {
 				t := g.GinkgoT()
 
 				clusterAdminLocalSARGetter := oc.AdminKubeClient().AuthorizationV1()
 				clusterAdminAuthorizationClient := oc.AdminAuthorizationClient().AuthorizationV1()
 
 				g.By("creating projects")
-				hammerProjectName := oc.CreateProject()
-				malletProjectName := oc.CreateProject()
+				hammerProjectName := createProject(oc, "hammer")
+				malletProjectName := createProject(oc, "mallet")
 
 				haroldName := oc.CreateUser("harold-").Name
 				markName := oc.CreateUser("mark-").Name
@@ -797,15 +827,15 @@ func (test subjectAccessReviewTest) run(t g.GinkgoTInterface) {
 	PolicyCachePollInterval := 100 * time.Millisecond
 	PolicyCachePollTimeout := 10 * time.Second
 
-	g.By(test.description+" with openshift api", func() {
+	g.By(test.description+" with openshift api [apigroup:authorization.openshift.io]", func() {
 		failMessage := ""
 		err := wait.Poll(PolicyCachePollInterval, PolicyCachePollTimeout, func() (bool, error) {
 			var err error
 			var actualResponse *authorizationv1.SubjectAccessReviewResponse
 			if test.localReview != nil {
-				actualResponse, err = test.localInterface.Create(test.localReview)
+				actualResponse, err = test.localInterface.Create(context.Background(), test.localReview, metav1.CreateOptions{})
 			} else {
-				actualResponse, err = test.clusterInterface.Create(test.clusterReview)
+				actualResponse, err = test.clusterInterface.Create(context.Background(), test.clusterReview, metav1.CreateOptions{})
 			}
 			if len(test.err) > 0 {
 				if err == nil {
@@ -872,18 +902,18 @@ func (test subjectAccessReviewTest) run(t g.GinkgoTInterface) {
 				if test.localReview != nil {
 					if len(test.localReview.User) == 0 && (len(test.localReview.GroupsSlice) == 0) {
 						var tmp *kubeauthorizationv1.SelfSubjectAccessReview
-						if tmp, err = test.kubeAuthInterface.SelfSubjectAccessReviews().Create(toKubeSelfSAR(testNS, test.localReview)); err == nil {
+						if tmp, err = test.kubeAuthInterface.SelfSubjectAccessReviews().Create(context.Background(), toKubeSelfSAR(testNS, test.localReview), metav1.CreateOptions{}); err == nil {
 							actualResponse = tmp.Status
 						}
 					} else {
 						var tmp *kubeauthorizationv1.LocalSubjectAccessReview
-						if tmp, err = test.kubeAuthInterface.LocalSubjectAccessReviews(testNS).Create(toKubeLocalSAR(testNS, test.localReview)); err == nil {
+						if tmp, err = test.kubeAuthInterface.LocalSubjectAccessReviews(testNS).Create(context.Background(), toKubeLocalSAR(testNS, test.localReview), metav1.CreateOptions{}); err == nil {
 							actualResponse = tmp.Status
 						}
 					}
 				} else {
 					var tmp *kubeauthorizationv1.SubjectAccessReview
-					if tmp, err = test.kubeAuthInterface.SubjectAccessReviews().Create(toKubeClusterSAR(test.clusterReview)); err == nil {
+					if tmp, err = test.kubeAuthInterface.SubjectAccessReviews().Create(context.Background(), toKubeClusterSAR(test.clusterReview), metav1.CreateOptions{}); err == nil {
 						actualResponse = tmp.Status
 					}
 				}
@@ -930,6 +960,15 @@ func (test subjectAccessReviewTest) run(t g.GinkgoTInterface) {
 	} else if !test.kubeSkip {
 		t.Errorf("%s: missing kube auth interface and test is not whitelisted", test.description)
 	}
+}
+
+func createProject(oc *exutil.CLI, nsPrefix string) string {
+	newNamespace := fmt.Sprintf("e2e-test-%s-%s", nsPrefix, utilrand.String(5))
+	_, err := oc.ProjectClient().ProjectV1().ProjectRequests().Create(context.Background(), &projectv1.ProjectRequest{
+		ObjectMeta: metav1.ObjectMeta{Name: newNamespace},
+	}, metav1.CreateOptions{})
+	o.Expect(err).NotTo(o.HaveOccurred())
+	return newNamespace
 }
 
 // TODO handle Subresource and NonResourceAttributes
@@ -991,7 +1030,7 @@ func AddUserToRoleInProject(oc *exutil.CLI, clusterrolebinding, namespace, user 
 	roleBinding.Subjects = []corev1.ObjectReference{
 		{Kind: "User", Name: user},
 	}
-	actual, err := oc.AdminAuthorizationClient().AuthorizationV1().RoleBindings(namespace).Create(roleBinding)
+	actual, err := oc.AdminAuthorizationClient().AuthorizationV1().RoleBindings(namespace).Create(context.Background(), roleBinding, metav1.CreateOptions{})
 	o.Expect(err).NotTo(o.HaveOccurred())
 	err = oc.WaitForAccessAllowed(&kubeauthorizationv1.SelfSubjectAccessReview{
 		Spec: kubeauthorizationv1.SelfSubjectAccessReviewSpec{
@@ -1021,13 +1060,13 @@ func AddUserViewToProject(oc *exutil.CLI, namespace, user string) string {
 	return AddUserToRoleInProject(oc, "view", namespace, user)
 }
 
-var _ = g.Describe("[Feature:OpenShiftAuthorization] authorization", func() {
+var _ = g.Describe("[sig-auth][Feature:OpenShiftAuthorization] authorization", func() {
 	defer g.GinkgoRecover()
-	oc := exutil.NewCLI("bootstrap-policy", exutil.KubeConfigPath())
+	oc := exutil.NewCLI("bootstrap-policy")
 
 	g.Context("", func() {
 		g.Describe("TestAuthorizationSubjectAccessReviewAPIGroup", func() {
-			g.It(fmt.Sprintf("should succeed"), func() {
+			g.It(fmt.Sprintf("should succeed [apigroup:authorization.openshift.io]"), func() {
 				t := g.GinkgoT()
 
 				clusterAdminKubeClient := oc.AdminKubeClient()
@@ -1035,7 +1074,7 @@ var _ = g.Describe("[Feature:OpenShiftAuthorization] authorization", func() {
 				clusterAdminAuthorizationClient := oc.AdminAuthorizationClient().AuthorizationV1()
 
 				g.By("creating projects")
-				hammerProjectName := oc.CreateProject()
+				hammerProjectName := createProject(oc, "hammer")
 				haroldName := "harold-" + oc.Namespace()
 
 				g.By("adding user permissions")
@@ -1157,13 +1196,13 @@ var _ = g.Describe("[Feature:OpenShiftAuthorization] authorization", func() {
 	})
 })
 
-var _ = g.Describe("[Feature:OpenShiftAuthorization] authorization", func() {
+var _ = g.Describe("[sig-auth][Feature:OpenShiftAuthorization] authorization", func() {
 	defer g.GinkgoRecover()
-	oc := exutil.NewCLI("bootstrap-policy", exutil.KubeConfigPath())
+	oc := exutil.NewCLI("bootstrap-policy")
 
 	g.Context("", func() {
 		g.Describe("TestBrowserSafeAuthorizer", func() {
-			g.It(fmt.Sprintf("should succeed"), func() {
+			g.It(fmt.Sprintf("should succeed [apigroup:user.openshift.io]"), func() {
 				t := g.GinkgoT()
 
 				// this client has an API token so it is safe
@@ -1226,7 +1265,7 @@ var _ = g.Describe("[Feature:OpenShiftAuthorization] authorization", func() {
 						expectUnsafe: true,
 					},
 				} {
-					errProxy := tc.client.Get().AbsPath(tc.path...).Do().Error()
+					errProxy := tc.client.Get().AbsPath(tc.path...).Do(context.Background()).Error()
 					if errProxy == nil || !kapierror.IsForbidden(errProxy) || tc.expectUnsafe != isUnsafeErr(errProxy) {
 						t.Errorf("%s: expected forbidden error on GET %s, got %#v (isForbidden=%v, expectUnsafe=%v, actualUnsafe=%v)",
 							tc.name, tc.path, errProxy, kapierror.IsForbidden(errProxy), tc.expectUnsafe, isUnsafeErr(errProxy))

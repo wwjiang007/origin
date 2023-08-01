@@ -3,18 +3,18 @@ package builds
 import (
 	"fmt"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Feature:Builds][Slow] Capabilities should be dropped for s2i builders", func() {
+var _ = g.Describe("[sig-builds][Feature:Builds][Slow] Capabilities should be dropped for s2i builders", func() {
 	defer g.GinkgoRecover()
 	var (
 		s2ibuilderFixture      = exutil.FixturePath("testdata", "s2i-dropcaps", "rootable-ruby")
 		rootAccessBuildFixture = exutil.FixturePath("testdata", "s2i-dropcaps", "root-access-build.yaml")
-		oc                     = exutil.NewCLI("build-s2i-dropcaps", exutil.KubeConfigPath())
+		oc                     = exutil.NewCLI("build-s2i-dropcaps")
 	)
 
 	g.Context("", func() {
@@ -23,7 +23,7 @@ var _ = g.Describe("[Feature:Builds][Slow] Capabilities should be dropped for s2
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				exutil.DumpPodStates(oc)
 				exutil.DumpConfigMapStates(oc)
 				exutil.DumpPodLogsStartingWith("", oc)
@@ -31,7 +31,7 @@ var _ = g.Describe("[Feature:Builds][Slow] Capabilities should be dropped for s2
 		})
 
 		g.Describe("s2i build with a rootable builder", func() {
-			g.It("should not be able to switch to root with an assemble script", func() {
+			g.It("should not be able to switch to root with an assemble script [apigroup:build.openshift.io]", func() {
 
 				g.By("calling oc new-build for rootable-builder")
 				err := oc.Run("new-build").Args("--binary", "--name=rootable-ruby").Execute()

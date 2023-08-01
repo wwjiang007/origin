@@ -18,65 +18,22 @@ package winkernel
 
 import (
 	"sync"
-	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-
-	"k8s.io/component-base/metrics"
 	"k8s.io/component-base/metrics/legacyregistry"
-)
-
-const kubeProxySubsystem = "kubeproxy"
-
-var (
-	SyncProxyRulesLatency = metrics.NewHistogram(
-		&metrics.HistogramOpts{
-			Subsystem:      kubeProxySubsystem,
-			Name:           "sync_proxy_rules_duration_seconds",
-			Help:           "SyncProxyRules latency in seconds",
-			Buckets:        prometheus.ExponentialBuckets(0.001, 2, 15),
-			StabilityLevel: metrics.ALPHA,
-		},
-	)
-
-	DeprecatedSyncProxyRulesLatency = metrics.NewHistogram(
-		&metrics.HistogramOpts{
-			Subsystem:      kubeProxySubsystem,
-			Name:           "sync_proxy_rules_latency_microseconds",
-			Help:           "(Deprecated) SyncProxyRules latency in microseconds",
-			Buckets:        prometheus.ExponentialBuckets(1000, 2, 15),
-			StabilityLevel: metrics.ALPHA,
-		},
-	)
-
-	// SyncProxyRulesLastTimestamp is the timestamp proxy rules were last
-	// successfully synced.
-	SyncProxyRulesLastTimestamp = metrics.NewGauge(
-		&metrics.GaugeOpts{
-			Subsystem:      kubeProxySubsystem,
-			Name:           "sync_proxy_rules_last_timestamp_seconds",
-			Help:           "The last time proxy rules were successfully synced",
-			StabilityLevel: metrics.ALPHA,
-		},
-	)
+	"k8s.io/kubernetes/pkg/proxy/metrics"
 )
 
 var registerMetricsOnce sync.Once
 
+// RegisterMetrics registers kube-proxy metrics for Windows modes.
 func RegisterMetrics() {
 	registerMetricsOnce.Do(func() {
-		legacyregistry.MustRegister(SyncProxyRulesLatency)
-		legacyregistry.MustRegister(DeprecatedSyncProxyRulesLatency)
-		legacyregistry.MustRegister(SyncProxyRulesLastTimestamp)
+		legacyregistry.MustRegister(metrics.SyncProxyRulesLatency)
+		legacyregistry.MustRegister(metrics.SyncProxyRulesLastTimestamp)
+		legacyregistry.MustRegister(metrics.EndpointChangesPending)
+		legacyregistry.MustRegister(metrics.EndpointChangesTotal)
+		legacyregistry.MustRegister(metrics.ServiceChangesPending)
+		legacyregistry.MustRegister(metrics.ServiceChangesTotal)
+		legacyregistry.MustRegister(metrics.SyncProxyRulesLastQueuedTimestamp)
 	})
-}
-
-// Gets the time since the specified start in microseconds.
-func sinceInMicroseconds(start time.Time) float64 {
-	return float64(time.Since(start).Nanoseconds() / time.Microsecond.Nanoseconds())
-}
-
-// Gets the time since the specified start in seconds.
-func sinceInSeconds(start time.Time) float64 {
-	return time.Since(start).Seconds()
 }

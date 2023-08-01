@@ -17,6 +17,7 @@ limitations under the License.
 package pluginwatcher
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -24,13 +25,13 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"k8s.io/klog"
+	"google.golang.org/grpc/credentials/insecure"
+	"k8s.io/klog/v2"
 
-	registerapi "k8s.io/kubernetes/pkg/kubelet/apis/pluginregistration/v1"
-	v1beta1 "k8s.io/kubernetes/pkg/kubelet/pluginmanager/pluginwatcher/example_plugin_apis/v1beta1"
-	v1beta2 "k8s.io/kubernetes/pkg/kubelet/pluginmanager/pluginwatcher/example_plugin_apis/v1beta2"
+	registerapi "k8s.io/kubelet/pkg/apis/pluginregistration/v1"
+	"k8s.io/kubernetes/pkg/kubelet/pluginmanager/pluginwatcher/example_plugin_apis/v1beta1"
+	"k8s.io/kubernetes/pkg/kubelet/pluginmanager/pluginwatcher/example_plugin_apis/v1beta2"
 )
 
 type exampleHandler struct {
@@ -50,7 +51,6 @@ const (
 	exampleEventValidate   examplePluginEvent = 0
 	exampleEventRegister   examplePluginEvent = 1
 	exampleEventDeRegister examplePluginEvent = 2
-	exampleEventError      examplePluginEvent = 3
 )
 
 // NewExampleHandler provide a example handler
@@ -64,11 +64,7 @@ func NewExampleHandler(supportedVersions []string, permitDeprecatedDir bool) *ex
 	}
 }
 
-func (p *exampleHandler) ValidatePlugin(pluginName string, endpoint string, versions []string, foundInDeprecatedDir bool) error {
-	if foundInDeprecatedDir && !p.permitDeprecatedDir {
-		return fmt.Errorf("device plugin socket was found in a directory that is no longer supported and this test does not permit plugins from deprecated dir")
-	}
-
+func (p *exampleHandler) ValidatePlugin(pluginName string, endpoint string, versions []string) error {
 	p.SendEvent(pluginName, exampleEventValidate)
 
 	n, ok := p.DecreasePluginCount(pluginName)
@@ -121,26 +117,9 @@ func (p *exampleHandler) DeRegisterPlugin(pluginName string) {
 	p.SendEvent(pluginName, exampleEventDeRegister)
 }
 
-func (p *exampleHandler) EventChan(pluginName string) chan examplePluginEvent {
-	return p.eventChans[pluginName]
-}
-
 func (p *exampleHandler) SendEvent(pluginName string, event examplePluginEvent) {
-	klog.V(2).Infof("Sending %v for plugin %s over chan %v", event, pluginName, p.eventChans[pluginName])
+	klog.V(2).InfoS("Sending event for plugin", "pluginName", pluginName, "event", event, "channel", p.eventChans[pluginName])
 	p.eventChans[pluginName] <- event
-}
-
-func (p *exampleHandler) AddPluginName(pluginName string) {
-	p.m.Lock()
-	defer p.m.Unlock()
-
-	v, ok := p.ExpectedNames[pluginName]
-	if !ok {
-		p.eventChans[pluginName] = make(chan examplePluginEvent)
-		v = 1
-	}
-
-	p.ExpectedNames[pluginName] = v
 }
 
 func (p *exampleHandler) DecreasePluginCount(pluginName string) (old int, ok bool) {
@@ -160,9 +139,11 @@ func dial(unixSocketPath string, timeout time.Duration) (registerapi.Registratio
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	c, err := grpc.DialContext(ctx, unixSocketPath, grpc.WithInsecure(), grpc.WithBlock(),
-		grpc.WithDialer(func(addr string, timeout time.Duration) (net.Conn, error) {
-			return net.DialTimeout("unix", addr, timeout)
+	c, err := grpc.DialContext(ctx, unixSocketPath,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithBlock(),
+		grpc.WithContextDialer(func(ctx context.Context, addr string) (net.Conn, error) {
+			return (&net.Dialer{}).DialContext(ctx, "unix", addr)
 		}),
 	)
 

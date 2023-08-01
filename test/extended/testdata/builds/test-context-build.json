@@ -5,7 +5,7 @@
   "items": [
     {
       "kind": "BuildConfig",
-      "apiVersion": "v1",
+      "apiVersion": "build.openshift.io/v1",
       "metadata": {
         "name": "dockercontext"
       },
@@ -31,7 +31,7 @@
     },
     {
       "kind": "BuildConfig",
-      "apiVersion": "v1",
+      "apiVersion": "build.openshift.io/v1",
       "metadata": {
         "name": "s2icontext"
       },
@@ -42,7 +42,7 @@
           "git": {
             "uri":"https://github.com/sclorg/s2i-ruby-container"
           },
-          "contextDir": "2.3/test/puma-test-app"
+          "contextDir": "2.7/test/puma-test-app"
         },
         "strategy": {
           "type": "Source",
@@ -55,7 +55,7 @@
             ],
             "from": {
               "kind": "DockerImage",
-              "name": "centos/ruby-23-centos7"
+              "name": "image-registry.openshift-image-registry.svc:5000/openshift/ruby:2.7-ubi8"
             }
           }
         },
@@ -69,14 +69,14 @@
     },
     {
       "kind": "ImageStream",
-      "apiVersion": "v1",
+      "apiVersion": "image.openshift.io/v1",
       "metadata": {
         "name": "test"
       }
-    },    
+    },
     {
       "kind": "DeploymentConfig",
-      "apiVersion": "v1",
+      "apiVersion": "apps.openshift.io/v1",
       "metadata": {
         "name": "frontend"
       },

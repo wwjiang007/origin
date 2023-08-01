@@ -48,6 +48,7 @@ func GetAllFSTypesAsSet() sets.String {
 		string(securityv1.FSScaleIO),
 		string(securityv1.FSStorageOS),
 		string(securityv1.FSTypeCSI),
+		string(securityv1.FSTypeEphemeral),
 	)
 	return fstypes
 }
@@ -111,6 +112,8 @@ func GetVolumeFSType(v api.Volume) (securityv1.FSType, error) {
 		return securityv1.FSStorageOS, nil
 	case v.CSI != nil:
 		return securityv1.FSTypeCSI, nil
+	case v.Ephemeral != nil:
+		return securityv1.FSTypeEphemeral, nil
 	}
 
 	return "", fmt.Errorf("unknown volume type for volume: %#v", v)
@@ -169,6 +172,71 @@ func EqualStringSlices(a, b []string) bool {
 	for i := 0; i < len(a); i++ {
 		if a[i] != b[i] {
 			return false
+		}
+	}
+	return true
+}
+
+// IsOnlyServiceAccountTokenSources returns true if the sources of the projected volume
+// source match to what would be injected by the ServiceAccount volume projection controller
+//
+// This function is derived from pkg/security/podsecuritypolicy/util/util.go with the
+// addition of OpenShift-specific "openshift-service-ca.crt" ConfigMap source.
+//
+// This is what a sample injected volume looks like:
+//   - projected:
+//     defaultMode: 420
+//     sources:
+//   - serviceAccountToken:
+//     expirationSeconds: 3607
+//     path: token
+//   - configMap:
+//     name: kube-root-ca.crt
+//     items:
+//   - key: ca.crt
+//     path: ca.crt
+//   - downwardAPI:
+//     items:
+//   - path: namespace
+//     fieldRef:
+//     apiVersion: v1
+//     fieldPath: metadata.namespace
+//   - configMap:
+//     name: openshift-service-ca.crt
+//     items:
+//   - key: service-ca.crt
+//     path: service-ca.crt
+func IsOnlyServiceAccountTokenSources(v *api.ProjectedVolumeSource) bool {
+	for _, s := range v.Sources {
+		// reject any projected source that does not match any of our expected source types
+		if s.ServiceAccountToken == nil && s.ConfigMap == nil && s.DownwardAPI == nil {
+			return false
+		}
+		if t := s.ServiceAccountToken; t != nil && (t.Path != "token" || t.Audience != "") {
+			return false
+		}
+
+		if s.ConfigMap != nil {
+			switch cmRef := s.ConfigMap.LocalObjectReference.Name; cmRef {
+			case "kube-root-ca.crt":
+				if len(s.ConfigMap.Items) != 1 || s.ConfigMap.Items[0].Key != "ca.crt" || s.ConfigMap.Items[0].Path != "ca.crt" {
+					return false
+				}
+			case "openshift-service-ca.crt":
+				if len(s.ConfigMap.Items) != 1 || s.ConfigMap.Items[0].Key != "service-ca.crt" || s.ConfigMap.Items[0].Path != "service-ca.crt" {
+					return false
+				}
+			default:
+				return false
+			}
+		}
+
+		if s.DownwardAPI != nil {
+			for _, d := range s.DownwardAPI.Items {
+				if d.Path != "namespace" || d.FieldRef == nil || d.FieldRef.APIVersion != "v1" || d.FieldRef.FieldPath != "metadata.namespace" {
+					return false
+				}
+			}
 		}
 	}
 	return true

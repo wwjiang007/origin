@@ -2,37 +2,41 @@ package builds
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
 
+	g "github.com/onsi/ginkgo/v2"
+	o "github.com/onsi/gomega"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
+	admissionapi "k8s.io/pod-security-admission/api"
 
-	g "github.com/onsi/ginkgo"
-	o "github.com/onsi/gomega"
 	buildv1 "github.com/openshift/api/build/v1"
 	imagev1 "github.com/openshift/api/image/v1"
+
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Feature:Builds][webhook]", func() {
+var _ = g.Describe("[sig-builds][Feature:Builds][webhook]", func() {
 	defer g.GinkgoRecover()
-	oc := exutil.NewCLI("build-webhooks", exutil.KubeConfigPath())
+	oc := exutil.NewCLIWithPodSecurityLevel("build-webhooks", admissionapi.LevelBaseline)
 
-	g.It("TestWebhook", func() {
+	g.It("TestWebhook [apigroup:build.openshift.io][apigroup:image.openshift.io]", func() {
 		TestWebhook(g.GinkgoT(), oc)
 	})
-	g.It("TestWebhookGitHubPushWithImage", func() {
+	g.It("TestWebhookGitHubPushWithImage [apigroup:image.openshift.io][apigroup:build.openshift.io]", func() {
 		TestWebhookGitHubPushWithImage(g.GinkgoT(), oc)
 	})
-	g.It("TestWebhookGitHubPushWithImageStream", func() {
+	g.It("TestWebhookGitHubPushWithImageStream [apigroup:image.openshift.io][apigroup:build.openshift.io]", func() {
 		TestWebhookGitHubPushWithImageStream(g.GinkgoT(), oc)
 	})
-	g.It("TestWebhookGitHubPing", func() {
+	g.It("TestWebhookGitHubPing [apigroup:image.openshift.io][apigroup:build.openshift.io]", func() {
 		TestWebhookGitHubPing(g.GinkgoT(), oc)
 	})
 })
@@ -42,7 +46,7 @@ func TestWebhook(t g.GinkgoTInterface, oc *exutil.CLI) {
 
 	// create buildconfig
 	buildConfig := mockBuildConfigImageParms("originalimage", "imagestream", "validtag")
-	if _, err := clusterAdminBuildClient.BuildConfigs(oc.Namespace()).Create(buildConfig); err != nil {
+	if _, err := clusterAdminBuildClient.BuildConfigs(oc.Namespace()).Create(context.Background(), buildConfig, metav1.CreateOptions{}); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
@@ -104,7 +108,7 @@ func TestWebhook(t g.GinkgoTInterface, oc *exutil.CLI) {
 			o.Expect(err).NotTo(o.HaveOccurred())
 
 			g.By("checking that the build exists")
-			actual, err := clusterAdminBuildClient.Builds(oc.Namespace()).Get(returnedBuild.Name, metav1.GetOptions{})
+			actual, err := clusterAdminBuildClient.Builds(oc.Namespace()).Get(context.Background(), returnedBuild.Name, metav1.GetOptions{})
 			o.Expect(err).NotTo(o.HaveOccurred())
 
 			g.By("checking that we found the correct build")
@@ -137,7 +141,7 @@ func TestWebhookGitHubPushWithImage(t g.GinkgoTInterface, oc *exutil.CLI) {
 			},
 		},
 	}
-	if _, err := clusterAdminImageClient.ImageStreams(oc.Namespace()).Create(imageStream); err != nil {
+	if _, err := clusterAdminImageClient.ImageStreams(oc.Namespace()).Create(context.Background(), imageStream, metav1.CreateOptions{}); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
@@ -151,14 +155,14 @@ func TestWebhookGitHubPushWithImage(t g.GinkgoTInterface, oc *exutil.CLI) {
 			DockerImageReference: registryHostname + "/" + oc.Namespace() + "/imagestream:success",
 		},
 	}
-	if _, err := clusterAdminImageClient.ImageStreamMappings(oc.Namespace()).Create(ism); err != nil {
+	if _, err := clusterAdminImageClient.ImageStreamMappings(oc.Namespace()).Create(context.Background(), ism, metav1.CreateOptions{}); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
 	// create buildconfig
 	buildConfig := mockBuildConfigImageParms("originalimage", "imagestream", "validtag")
 
-	if _, err := clusterAdminBuildClient.BuildConfigs(oc.Namespace()).Create(buildConfig); err != nil {
+	if _, err := clusterAdminBuildClient.BuildConfigs(oc.Namespace()).Create(context.Background(), buildConfig, metav1.CreateOptions{}); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
@@ -182,7 +186,7 @@ func TestWebhookGitHubPushWithImage(t g.GinkgoTInterface, oc *exutil.CLI) {
 			t.Errorf("Webhook returned incomplete or wrong Build")
 		}
 
-		actual, err := clusterAdminBuildClient.Builds(oc.Namespace()).Get(returnedBuild.Name, metav1.GetOptions{})
+		actual, err := clusterAdminBuildClient.Builds(oc.Namespace()).Get(context.Background(), returnedBuild.Name, metav1.GetOptions{})
 		if err != nil {
 			t.Errorf("Created build not found in cluster: %v", err)
 		}
@@ -227,7 +231,7 @@ func TestWebhookGitHubPushWithImageStream(t g.GinkgoTInterface, oc *exutil.CLI) 
 			},
 		},
 	}
-	if _, err := clusterAdminImageClient.ImageStreams(oc.Namespace()).Create(imageStream); err != nil {
+	if _, err := clusterAdminImageClient.ImageStreams(oc.Namespace()).Create(context.Background(), imageStream, metav1.CreateOptions{}); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
@@ -241,18 +245,18 @@ func TestWebhookGitHubPushWithImageStream(t g.GinkgoTInterface, oc *exutil.CLI) 
 			DockerImageReference: registryHostname + "/" + oc.Namespace() + "/imagestream:success",
 		},
 	}
-	if _, err := clusterAdminImageClient.ImageStreamMappings(oc.Namespace()).Create(ism); err != nil {
+	if _, err := clusterAdminImageClient.ImageStreamMappings(oc.Namespace()).Create(context.Background(), ism, metav1.CreateOptions{}); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
 	// create buildconfig
 	buildConfig := mockBuildConfigImageStreamParms("originalimage", "image-stream", "validtag")
 
-	if _, err := clusterAdminBuildClient.BuildConfigs(oc.Namespace()).Create(buildConfig); err != nil {
+	if _, err := clusterAdminBuildClient.BuildConfigs(oc.Namespace()).Create(context.Background(), buildConfig, metav1.CreateOptions{}); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	watch, err := clusterAdminBuildClient.Builds(oc.Namespace()).Watch(metav1.ListOptions{})
+	watch, err := clusterAdminBuildClient.Builds(oc.Namespace()).Watch(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		t.Fatalf("Couldn't subscribe to builds: %v", err)
 	}
@@ -290,11 +294,11 @@ func TestWebhookGitHubPing(t g.GinkgoTInterface, oc *exutil.CLI) {
 
 	// create buildconfig
 	buildConfig := mockBuildConfigImageParms("originalimage", "imagestream", "validtag")
-	if _, err := clusterAdminBuildClient.BuildConfigs(oc.Namespace()).Create(buildConfig); err != nil {
+	if _, err := clusterAdminBuildClient.BuildConfigs(oc.Namespace()).Create(context.Background(), buildConfig, metav1.CreateOptions{}); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	watch, err := clusterAdminBuildClient.Builds(oc.Namespace()).Watch(metav1.ListOptions{})
+	watch, err := clusterAdminBuildClient.Builds(oc.Namespace()).Watch(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		t.Fatalf("Couldn't subscribe to builds: %v", err)
 	}

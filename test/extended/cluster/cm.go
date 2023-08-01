@@ -1,47 +1,37 @@
 package cluster
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"strings"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kclientset "k8s.io/client-go/kubernetes"
-	reale2e "k8s.io/kubernetes/test/e2e"
 	e2e "k8s.io/kubernetes/test/e2e/framework"
 
 	exutil "github.com/openshift/origin/test/extended/util"
 	"gopkg.in/yaml.v2"
 )
 
-var _ = g.Describe("[Feature:Performance][Serial][Slow] Mirror cluster", func() {
+var _ = g.Describe("[sig-scalability][Feature:Performance][Serial][Slow] Mirror cluster", func() {
 	defer g.GinkgoRecover()
 	const filename string = "cm.yml"
-	var oc = exutil.NewCLI("cl", exutil.KubeConfigPath())
+	var oc = exutil.NewCLI("cl")
 	var c kclientset.Interface
 
 	g.BeforeEach(func() {
-		var err error
 		c = oc.AdminKubeClient()
-		viperConfig := reale2e.GetViperConfig()
-		if viperConfig == "e2e" {
-			e2e.Logf("Undefined config file")
-		} else if viperConfig == "mirror" {
-			e2e.Logf("We will try to mirror the cluster state.")
-		}
-		if err != nil {
-			e2e.Failf("Error parsing config: %v\n", err)
-		}
 	})
 
 	g.It("it should read the node info", func() {
 		nodeinfo := map[string]map[string]int{}
 
-		nodes, err := c.CoreV1().Nodes().List(metav1.ListOptions{})
+		nodes, err := c.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 		if err != nil || len(nodes.Items) == 0 {
 			e2e.Failf("Error listing nodes: %v\n", err)
 		}
@@ -55,7 +45,7 @@ var _ = g.Describe("[Feature:Performance][Serial][Slow] Mirror cluster", func() 
 		e2e.Logf("We have %v\n", nodeinfo)
 	})
 
-	g.It("it should read the cluster apps", func() {
+	g.It("it should read the cluster apps [apigroup:apps.openshift.io]", func() {
 		var pods *v1.PodList
 		config := ContextType{}
 		config.ClusterLoader.Cleanup = true
@@ -66,7 +56,7 @@ var _ = g.Describe("[Feature:Performance][Serial][Slow] Mirror cluster", func() 
 			"kube-system": {}}
 
 		// Get all namespaces
-		nsList, err := c.CoreV1().Namespaces().List(metav1.ListOptions{})
+		nsList, err := c.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
 		if err != nil {
 			e2e.Failf("Error listing namespaces: %v\n", err)
 		}
@@ -82,13 +72,13 @@ var _ = g.Describe("[Feature:Performance][Serial][Slow] Mirror cluster", func() 
 			e2e.Logf("Listing objects in namespace %v", ns.Name)
 
 			// Check for DeploymentConfigs
-			dcs, err := oc.AdminAppsClient().AppsV1().DeploymentConfigs(ns.Name).List(metav1.ListOptions{})
+			dcs, err := oc.AdminAppsClient().AppsV1().DeploymentConfigs(ns.Name).List(context.Background(), metav1.ListOptions{})
 			if err != nil {
 				e2e.Failf("Error listing DeploymentConfigs: %v\n", err)
 			}
 
 			for _, dc := range dcs.Items {
-				dc, err := oc.AdminAppsClient().AppsV1().DeploymentConfigs(ns.Name).Get(dc.Name, metav1.GetOptions{})
+				dc, err := oc.AdminAppsClient().AppsV1().DeploymentConfigs(ns.Name).Get(context.Background(), dc.Name, metav1.GetOptions{})
 				if err != nil {
 					e2e.Failf("Error DC not found: %v\n", err)
 				}
@@ -103,7 +93,7 @@ var _ = g.Describe("[Feature:Performance][Serial][Slow] Mirror cluster", func() 
 			}
 
 			// List pods in namespace
-			pods, err = c.CoreV1().Pods(ns.Name).List(metav1.ListOptions{})
+			pods, err = c.CoreV1().Pods(ns.Name).List(context.Background(), metav1.ListOptions{})
 			if err != nil {
 				e2e.Failf("Error listing pods: %v\n", err)
 			}
@@ -115,7 +105,7 @@ var _ = g.Describe("[Feature:Performance][Serial][Slow] Mirror cluster", func() 
 					// If the pod is part of a deployment we will take the template name instead
 					if value, ok := pod.Labels["deployment"]; ok {
 						// Get RC that matches pod label
-						rc, err := c.CoreV1().ReplicationControllers(ns.Name).Get(value, metav1.GetOptions{})
+						rc, err := c.CoreV1().ReplicationControllers(ns.Name).Get(context.Background(), value, metav1.GetOptions{})
 						if err != nil {
 							e2e.Failf("Error RC not found: %v\n", err)
 						}

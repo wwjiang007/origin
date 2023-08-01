@@ -1,10 +1,11 @@
 package authorization
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	corev1 "k8s.io/api/core/v1"
@@ -16,12 +17,12 @@ import (
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Feature: RoleBinding Restrictions] RoleBindingRestrictions should be functional", func() {
+var _ = g.Describe("[sig-auth][Feature:RoleBindingRestrictions] RoleBindingRestrictions should be functional", func() {
 	defer g.GinkgoRecover()
-	oc := exutil.NewCLI("rolebinding-restrictions", exutil.KubeConfigPath())
+	oc := exutil.NewCLI("rolebinding-restrictions")
 	g.Context("", func() {
 		g.Describe("Create a rolebinding when there are no restrictions", func() {
-			g.It(fmt.Sprintf("should succeed"), func() {
+			g.It(fmt.Sprintf("should succeed [apigroup:authorization.openshift.io]"), func() {
 				ns := oc.Namespace()
 				user := "alice"
 				roleBindingCreate(oc, false, false, ns, user, "rb1")
@@ -29,10 +30,10 @@ var _ = g.Describe("[Feature: RoleBinding Restrictions] RoleBindingRestrictions 
 		})
 
 		g.Describe("Create a rolebinding when subject is permitted by RBR", func() {
-			g.It(fmt.Sprintf("should succeed"), func() {
+			g.It(fmt.Sprintf("should succeed [apigroup:authorization.openshift.io]"), func() {
 				ns := oc.Namespace()
 				users := []string{"bob"}
-				_, err := oc.AdminAuthorizationClient().AuthorizationV1().RoleBindingRestrictions(ns).Create(generateAllowUserRolebindingRestriction(ns, users))
+				_, err := oc.AdminAuthorizationClient().AuthorizationV1().RoleBindingRestrictions(ns).Create(context.Background(), generateAllowUserRolebindingRestriction(ns, users), metav1.CreateOptions{})
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				roleBindingCreate(oc, false, false, ns, users[0], "rb1")
@@ -40,12 +41,12 @@ var _ = g.Describe("[Feature: RoleBinding Restrictions] RoleBindingRestrictions 
 		})
 
 		g.Describe("Create a rolebinding when subject is already bound", func() {
-			g.It(fmt.Sprintf("should succeed"), func() {
+			g.It(fmt.Sprintf("should succeed [apigroup:authorization.openshift.io]"), func() {
 				users := []string{"cindy"}
 				ns := oc.Namespace()
 				roleBindingCreate(oc, false, false, ns, users[0], "rb1")
 
-				_, err := oc.AdminAuthorizationClient().AuthorizationV1().RoleBindingRestrictions(ns).Create(generateAllowUserRolebindingRestriction(ns, users))
+				_, err := oc.AdminAuthorizationClient().AuthorizationV1().RoleBindingRestrictions(ns).Create(context.Background(), generateAllowUserRolebindingRestriction(ns, users), metav1.CreateOptions{})
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				roleBindingCreate(oc, false, false, ns, users[0], "rb2")
@@ -53,12 +54,12 @@ var _ = g.Describe("[Feature: RoleBinding Restrictions] RoleBindingRestrictions 
 		})
 
 		g.Describe("Create a rolebinding when subject is not already bound and is not permitted by any RBR", func() {
-			g.It(fmt.Sprintf("should fail"), func() {
+			g.It(fmt.Sprintf("should fail [apigroup:authorization.openshift.io]"), func() {
 				ns := oc.Namespace()
 				users := []string{"dave", "eve"}
 				roleBindingCreate(oc, false, false, ns, users[0], "rb1")
 
-				_, err := oc.AdminAuthorizationClient().AuthorizationV1().RoleBindingRestrictions(ns).Create(generateAllowUserRolebindingRestriction(ns, users[:len(users)-1]))
+				_, err := oc.AdminAuthorizationClient().AuthorizationV1().RoleBindingRestrictions(ns).Create(context.Background(), generateAllowUserRolebindingRestriction(ns, users[:len(users)-1]), metav1.CreateOptions{})
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				roleBindingCreate(oc, false, true, ns, users[1], "rb2")
@@ -66,12 +67,12 @@ var _ = g.Describe("[Feature: RoleBinding Restrictions] RoleBindingRestrictions 
 		})
 
 		g.Describe("Create a RBAC rolebinding when subject is not already bound and is not permitted by any RBR", func() {
-			g.It(fmt.Sprintf("should fail"), func() {
+			g.It(fmt.Sprintf("should fail [apigroup:authorization.openshift.io]"), func() {
 				ns := oc.Namespace()
 				users := []string{"frank", "george"}
 				roleBindingCreate(oc, false, false, ns, users[0], "rb1")
 
-				_, err := oc.AdminAuthorizationClient().AuthorizationV1().RoleBindingRestrictions(ns).Create(generateAllowUserRolebindingRestriction(ns, users[:len(users)-1]))
+				_, err := oc.AdminAuthorizationClient().AuthorizationV1().RoleBindingRestrictions(ns).Create(context.Background(), generateAllowUserRolebindingRestriction(ns, users[:len(users)-1]), metav1.CreateOptions{})
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				roleBindingCreate(oc, true, true, ns, users[1], "rb2")
@@ -79,10 +80,10 @@ var _ = g.Describe("[Feature: RoleBinding Restrictions] RoleBindingRestrictions 
 		})
 
 		g.Describe("Create a rolebinding that also contains system:non-existing users", func() {
-			g.It(fmt.Sprintf("should succeed"), func() {
+			g.It(fmt.Sprintf("should succeed [apigroup:authorization.openshift.io]"), func() {
 				ns := oc.Namespace()
 				users := []string{"harry", "system:non-existing"}
-				_, err := oc.AdminAuthorizationClient().AuthorizationV1().RoleBindingRestrictions(ns).Create(generateAllowUserRolebindingRestriction(ns, users))
+				_, err := oc.AdminAuthorizationClient().AuthorizationV1().RoleBindingRestrictions(ns).Create(context.Background(), generateAllowUserRolebindingRestriction(ns, users), metav1.CreateOptions{})
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				roleBindingCreate(oc, false, false, ns, users[0], "rb1")
@@ -92,14 +93,14 @@ var _ = g.Describe("[Feature: RoleBinding Restrictions] RoleBindingRestrictions 
 		})
 
 		g.Describe("Rolebinding restrictions tests single project", func() {
-			g.It(fmt.Sprintf("should succeed"), func() {
+			g.It(fmt.Sprintf("should succeed [apigroup:authorization.openshift.io]"), func() {
 				ns := oc.Namespace()
 				users := []string{"zed", "yvette"}
 				users2 := []string{"xavier", "system:non-existing"}
 				// No restrictions, rolebinding should succeed
 				roleBindingCreate(oc, false, false, ns, users[0], "rb1")
 				// Subject bound, rolebinding restriction should succeed
-				_, err := oc.AdminAuthorizationClient().AuthorizationV1().RoleBindingRestrictions(ns).Create(generateAllowUserRolebindingRestriction(ns, users[:len(users)-1]))
+				_, err := oc.AdminAuthorizationClient().AuthorizationV1().RoleBindingRestrictions(ns).Create(context.Background(), generateAllowUserRolebindingRestriction(ns, users[:len(users)-1]), metav1.CreateOptions{})
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				// Duplicate should succeed
@@ -112,7 +113,7 @@ var _ = g.Describe("[Feature: RoleBinding Restrictions] RoleBindingRestrictions 
 				roleBindingCreate(oc, true, true, ns, users[1], "rb3")
 
 				// Create a rolebinding that also contains system:non-existing users should succeed
-				_, err = oc.AdminAuthorizationClient().AuthorizationV1().RoleBindingRestrictions(ns).Create(generateAllowUserRolebindingRestriction(ns, users2))
+				_, err = oc.AdminAuthorizationClient().AuthorizationV1().RoleBindingRestrictions(ns).Create(context.Background(), generateAllowUserRolebindingRestriction(ns, users2), metav1.CreateOptions{})
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				roleBindingCreate(oc, false, false, ns, users2[0], "rb4")
@@ -179,9 +180,9 @@ func roleBindingCreate(oc *exutil.CLI, useRBAC, shouldErr bool, ns, user, rb str
 	var rbrErr error
 	switch {
 	case useRBAC:
-		_, rbrErr = oc.AdminKubeClient().RbacV1().RoleBindings(ns).Create(generateRbacUserRolebinding(ns, user, rb))
+		_, rbrErr = oc.AdminKubeClient().RbacV1().RoleBindings(ns).Create(context.Background(), generateRbacUserRolebinding(ns, user, rb), metav1.CreateOptions{})
 	default:
-		_, rbrErr = oc.AdminAuthorizationClient().AuthorizationV1().RoleBindings(ns).Create(generateRolebinding(ns, user, rb))
+		_, rbrErr = oc.AdminAuthorizationClient().AuthorizationV1().RoleBindings(ns).Create(context.Background(), generateRolebinding(ns, user, rb), metav1.CreateOptions{})
 	}
 	if !shouldErr {
 		o.Expect(rbrErr).NotTo(o.HaveOccurred())

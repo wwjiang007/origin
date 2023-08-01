@@ -1,10 +1,12 @@
 package builds
 
 import (
+	"context"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	buildv1 "github.com/openshift/api/build/v1"
@@ -12,12 +14,12 @@ import (
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Feature:Builds][Slow] builds should have deadlines", func() {
+var _ = g.Describe("[sig-builds][Feature:Builds][Slow] builds should have deadlines", func() {
 	defer g.GinkgoRecover()
 	var (
 		sourceFixture = exutil.FixturePath("testdata", "builds", "test-cds-sourcebuild.json")
 		dockerFixture = exutil.FixturePath("testdata", "builds", "test-cds-dockerbuild.json")
-		oc            = exutil.NewCLI("cli-start-build", exutil.KubeConfigPath())
+		oc            = exutil.NewCLI("cli-start-build")
 	)
 
 	g.Context("", func() {
@@ -26,7 +28,7 @@ var _ = g.Describe("[Feature:Builds][Slow] builds should have deadlines", func()
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				exutil.DumpPodStates(oc)
 				exutil.DumpConfigMapStates(oc)
 				exutil.DumpPodLogsStartingWith("", oc)
@@ -34,7 +36,7 @@ var _ = g.Describe("[Feature:Builds][Slow] builds should have deadlines", func()
 		})
 
 		g.Describe("oc start-build source-build --wait", func() {
-			g.It("Source: should start a build and wait for the build failed and build pod being killed by kubelet", func() {
+			g.It("Source: should start a build and wait for the build failed and build pod being killed by kubelet [apigroup:build.openshift.io]", func() {
 
 				g.By("calling oc create source-build")
 				err := oc.Run("create").Args("-f", sourceFixture).Execute()
@@ -49,7 +51,7 @@ var _ = g.Describe("[Feature:Builds][Slow] builds should have deadlines", func()
 				o.Expect(br.Build.Status.Phase).Should(o.BeEquivalentTo(buildv1.BuildPhaseFailed)) // the build should have failed
 
 				g.By("verifying the build pod status")
-				pod, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(GetBuildPodName(br.Build), metav1.GetOptions{})
+				pod, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(context.Background(), GetBuildPodName(br.Build), metav1.GetOptions{})
 				o.Expect(err).NotTo(o.HaveOccurred())
 				o.Expect(pod.Status.Phase).Should(o.BeEquivalentTo(corev1.PodFailed))
 				o.Expect(pod.Status.Reason).Should(o.ContainSubstring("DeadlineExceeded"))
@@ -58,7 +60,7 @@ var _ = g.Describe("[Feature:Builds][Slow] builds should have deadlines", func()
 		})
 
 		g.Describe("oc start-build docker-build --wait", func() {
-			g.It("Docker: should start a build and wait for the build failed and build pod being killed by kubelet", func() {
+			g.It("Docker: should start a build and wait for the build failed and build pod being killed by kubelet [apigroup:build.openshift.io]", func() {
 
 				g.By("calling oc create docker-build")
 				err := oc.Run("create").Args("-f", dockerFixture).Execute()
@@ -73,7 +75,7 @@ var _ = g.Describe("[Feature:Builds][Slow] builds should have deadlines", func()
 				o.Expect(br.Build.Status.Phase).Should(o.BeEquivalentTo(buildv1.BuildPhaseFailed)) // the build should have failed
 
 				g.By("verifying the build pod status")
-				pod, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(GetBuildPodName(br.Build), metav1.GetOptions{})
+				pod, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).Get(context.Background(), GetBuildPodName(br.Build), metav1.GetOptions{})
 				o.Expect(err).NotTo(o.HaveOccurred())
 				o.Expect(pod.Status.Phase).Should(o.BeEquivalentTo(corev1.PodFailed))
 				o.Expect(pod.Status.Reason).Should(o.ContainSubstring("DeadlineExceeded"))

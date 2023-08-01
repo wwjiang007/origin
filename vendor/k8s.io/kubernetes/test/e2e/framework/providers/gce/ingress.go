@@ -17,6 +17,7 @@ limitations under the License.
 package gce
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -26,7 +27,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/v2"
 	compute "google.golang.org/api/compute/v1"
 	"google.golang.org/api/googleapi"
 	v1 "k8s.io/api/core/v1"
@@ -76,14 +77,14 @@ type IngressController struct {
 }
 
 // CleanupIngressController calls cont.CleanupIngressControllerWithTimeout with hard-coded timeout
-func (cont *IngressController) CleanupIngressController() error {
-	return cont.CleanupIngressControllerWithTimeout(e2eservice.LoadBalancerCleanupTimeout)
+func (cont *IngressController) CleanupIngressController(ctx context.Context) error {
+	return cont.CleanupIngressControllerWithTimeout(ctx, e2eservice.LoadBalancerCleanupTimeout)
 }
 
 // CleanupIngressControllerWithTimeout calls the IngressController.Cleanup(false)
 // followed with deleting the static ip, and then a final IngressController.Cleanup(true)
-func (cont *IngressController) CleanupIngressControllerWithTimeout(timeout time.Duration) error {
-	pollErr := wait.Poll(5*time.Second, timeout, func() (bool, error) {
+func (cont *IngressController) CleanupIngressControllerWithTimeout(ctx context.Context, timeout time.Duration) error {
+	pollErr := wait.PollWithContext(ctx, 5*time.Second, timeout, func(ctx context.Context) (bool, error) {
 		if err := cont.Cleanup(false); err != nil {
 			framework.Logf("Monitoring glbc's cleanup of gce resources:\n%v", err)
 			return false, nil
@@ -104,7 +105,7 @@ func (cont *IngressController) CleanupIngressControllerWithTimeout(timeout time.
 	// controller. Delete this IP only after the controller has had a chance
 	// to cleanup or it might interfere with the controller, causing it to
 	// throw out confusing events.
-	if ipErr := wait.Poll(5*time.Second, 1*time.Minute, func() (bool, error) {
+	if ipErr := wait.PollWithContext(ctx, 5*time.Second, 1*time.Minute, func(ctx context.Context) (bool, error) {
 		if err := cont.deleteStaticIPs(); err != nil {
 			framework.Logf("Failed to delete static-ip: %v\n", err)
 			return false, nil
@@ -124,9 +125,9 @@ func (cont *IngressController) CleanupIngressControllerWithTimeout(timeout time.
 	return nil
 }
 
-func (cont *IngressController) getL7AddonUID() (string, error) {
+func (cont *IngressController) getL7AddonUID(ctx context.Context) (string, error) {
 	framework.Logf("Retrieving UID from config map: %v/%v", metav1.NamespaceSystem, uidConfigMap)
-	cm, err := cont.Client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Get(uidConfigMap, metav1.GetOptions{})
+	cm, err := cont.Client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Get(ctx, uidConfigMap, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -571,19 +572,8 @@ func (cont *IngressController) GetFirewallRuleName() string {
 }
 
 // GetFirewallRule returns the firewall used by the IngressController.
-// Causes a fatal error incase of an error.
-// TODO: Rename this to GetFirewallRuleOrDie and similarly rename all other
-// methods here to be consistent with rest of the code in this repo.
-func (cont *IngressController) GetFirewallRule() *compute.Firewall {
-	fw, err := cont.GetFirewallRuleOrError()
-	framework.ExpectNoError(err)
-	return fw
-}
-
-// GetFirewallRuleOrError returns the firewall used by the IngressController.
 // Returns an error if that fails.
-// TODO: Rename this to GetFirewallRule when the above method with that name is renamed.
-func (cont *IngressController) GetFirewallRuleOrError() (*compute.Firewall, error) {
+func (cont *IngressController) GetFirewallRule() (*compute.Firewall, error) {
 	gceCloud := cont.Cloud.Provider.(*Provider).gceCloud
 	fwName := cont.GetFirewallRuleName()
 	return gceCloud.GetFirewall(fwName)
@@ -614,8 +604,8 @@ func (cont *IngressController) isHTTPErrorCode(err error, code int) bool {
 }
 
 // WaitForNegBackendService waits for the expected backend service to become
-func (cont *IngressController) WaitForNegBackendService(svcPorts map[string]v1.ServicePort) error {
-	return wait.Poll(5*time.Second, 1*time.Minute, func() (bool, error) {
+func (cont *IngressController) WaitForNegBackendService(ctx context.Context, svcPorts map[string]v1.ServicePort) error {
+	return wait.PollWithContext(ctx, 5*time.Second, 1*time.Minute, func(ctx context.Context) (bool, error) {
 		err := cont.verifyBackendMode(svcPorts, negBackend)
 		if err != nil {
 			framework.Logf("Err while checking if backend service is using NEG: %v", err)
@@ -626,8 +616,8 @@ func (cont *IngressController) WaitForNegBackendService(svcPorts map[string]v1.S
 }
 
 // WaitForIgBackendService returns true only if all global backend service with matching svcPorts pointing to IG as backend
-func (cont *IngressController) WaitForIgBackendService(svcPorts map[string]v1.ServicePort) error {
-	return wait.Poll(5*time.Second, 1*time.Minute, func() (bool, error) {
+func (cont *IngressController) WaitForIgBackendService(ctx context.Context, svcPorts map[string]v1.ServicePort) error {
+	return wait.PollWithContext(ctx, 5*time.Second, 1*time.Minute, func(ctx context.Context) (bool, error) {
 		err := cont.verifyBackendMode(svcPorts, igBackend)
 		if err != nil {
 			framework.Logf("Err while checking if backend service is using IG: %v", err)
@@ -651,12 +641,12 @@ func (cont *IngressController) verifyBackendMode(svcPorts map[string]v1.ServiceP
 	gceCloud := cont.Cloud.Provider.(*Provider).gceCloud
 	beList, err := gceCloud.ListGlobalBackendServices()
 	if err != nil {
-		return fmt.Errorf("failed to list backend services: %v", err)
+		return fmt.Errorf("failed to list backend services: %w", err)
 	}
 
 	hcList, err := gceCloud.ListHealthChecks()
 	if err != nil {
-		return fmt.Errorf("failed to list health checks: %v", err)
+		return fmt.Errorf("failed to list health checks: %w", err)
 	}
 
 	// Generate short UID
@@ -755,8 +745,8 @@ func (cont *IngressController) Cleanup(del bool) error {
 }
 
 // Init initializes the IngressController with an UID
-func (cont *IngressController) Init() error {
-	uid, err := cont.getL7AddonUID()
+func (cont *IngressController) Init(ctx context.Context) error {
+	uid, err := cont.getL7AddonUID(ctx)
 	if err != nil {
 		return err
 	}
@@ -798,7 +788,7 @@ func (cont *IngressController) CreateStaticIP(name string) string {
 	return ip.Address
 }
 
-// deleteStaticIPs delets all static-ips allocated through calls to
+// deleteStaticIPs deletes all static-ips allocated through calls to
 // CreateStaticIP.
 func (cont *IngressController) deleteStaticIPs() error {
 	if cont.staticIPName != "" {

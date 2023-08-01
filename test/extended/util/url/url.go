@@ -3,6 +3,7 @@ package url
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,13 +15,16 @@ import (
 
 	o "github.com/onsi/gomega"
 
-	exutil "github.com/openshift/origin/test/extended/util"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kclientset "k8s.io/client-go/kubernetes"
 	e2e "k8s.io/kubernetes/test/e2e/framework"
+	e2eoutput "k8s.io/kubernetes/test/e2e/framework/pod/output"
+
+	exutil "github.com/openshift/origin/test/extended/util"
+	"github.com/openshift/origin/test/extended/util/image"
 )
 
 type Tester struct {
@@ -35,7 +39,7 @@ func NewTester(client kclientset.Interface, ns string) *Tester {
 }
 
 func (ut *Tester) Close() {
-	if err := ut.client.CoreV1().Pods(ut.namespace).Delete(ut.podName, metav1.NewDeleteOptions(1)); err != nil {
+	if err := ut.client.CoreV1().Pods(ut.namespace).Delete(context.Background(), ut.podName, *metav1.NewDeleteOptions(1)); err != nil {
 		e2e.Logf("Failed to delete exec pod %s: %v", ut.podName, err)
 	}
 	ut.podName = ""
@@ -65,7 +69,7 @@ func (ut *Tester) Responses(tests ...*Test) []*Response {
 	// testToScript needs to run after creating the pod
 	// in case we need to rsync files for a post body
 	script := testsToScript(tests)
-	output, err := e2e.RunHostCmd(ut.namespace, ut.podName, script)
+	output, err := e2eoutput.RunHostCmd(ut.namespace, ut.podName, script)
 	if !ut.errorPassThrough {
 		o.Expect(err).NotTo(o.HaveOccurred())
 	}
@@ -134,7 +138,7 @@ func (ut *Tester) Within(t time.Duration, tests ...*Test) {
 	o.Expect(err).ToNot(o.HaveOccurred())
 }
 
-// createExecPod creates a simple centos:7 pod in a sleep loop used as a
+// createExecPod creates a simple bash pod in a sleep loop used as a
 // vessel for kubectl exec commands.
 // Returns the name of the created pod.
 func createExecPod(clientset kclientset.Interface, ns, name string) (string, error) {
@@ -150,7 +154,7 @@ func createExecPod(clientset kclientset.Interface, ns, name string) (string, err
 				{
 					Command:         []string{"/bin/bash", "-c", "exec sleep 10000"},
 					Name:            "hostexec",
-					Image:           "centos:7",
+					Image:           image.ShellImage(),
 					ImagePullPolicy: v1.PullIfNotPresent,
 				},
 			},
@@ -159,12 +163,12 @@ func createExecPod(clientset kclientset.Interface, ns, name string) (string, err
 		},
 	}
 	client := clientset.CoreV1()
-	created, err := client.Pods(ns).Create(execPod)
+	created, err := client.Pods(ns).Create(context.Background(), execPod, metav1.CreateOptions{})
 	if err != nil {
 		return "", err
 	}
 	err = wait.PollImmediate(e2e.Poll, 5*time.Minute, func() (bool, error) {
-		retrievedPod, err := client.Pods(execPod.Namespace).Get(created.Name, metav1.GetOptions{})
+		retrievedPod, err := client.Pods(execPod.Namespace).Get(context.Background(), created.Name, metav1.GetOptions{})
 		if err != nil {
 			return false, nil
 		}
@@ -180,7 +184,7 @@ func testsToScript(tests []*Test) string {
 	testScripts := []string{
 		"set -euo pipefail",
 		`function json_escape() {`,
-		`  python -c 'import json,sys; print json.dumps(sys.stdin.read())'`,
+		`  python -c 'import json,sys; print(json.dumps(sys.stdin.read()))'`,
 		`}`,
 	}
 	for i, test := range tests {
@@ -240,6 +244,7 @@ type CURL struct {
 type Test struct {
 	Name       string
 	Req        *http.Request
+	ProxyHost  string
 	SkipVerify bool
 	// we capture this here vs. the httpRequest
 	// to facilitate passing to curl
@@ -276,9 +281,15 @@ func (ut *Test) WithHeader(hdr, value string) *Test {
 	return ut
 }
 
-func (ut *Test) Through(addr string) *Test {
-	ut.Req.Header.Set("Host", ut.Req.URL.Host)
-	ut.Req.URL.Host = addr
+// Through configures the test to send requests through the given host.  The
+// host may be specified as a host name, IPv4 address, or bracketed IPv6
+// address.  Use this method when the request specifies some host A that is
+// different from the actual host B to which the connection must be made.  For
+// example, host A may belong to a route, and host B may be an HAProxy pod that
+// serves the route.  This method is useful when DNS is not configured to
+// resolve host A's host name.
+func (ut *Test) Through(host string) *Test {
+	ut.ProxyHost = host
 	return ut
 }
 
@@ -359,7 +370,11 @@ func (ut *Test) ToShell(i int) string {
 			post = post + " -d '' "
 		}
 	}
-	cmd := fmt.Sprintf(`curl -X %s %s %s -s -S -o /tmp/body -D /tmp/headers %q`, ut.Req.Method, strings.Join(headers, " "), post, ut.Req.URL)
+	proxy := ""
+	if len(ut.ProxyHost) != 0 {
+		proxy = fmt.Sprintf("--connect-to ::%q", ut.ProxyHost)
+	}
+	cmd := fmt.Sprintf(`curl -X %s %s %s %s -s -S -o /tmp/body -D /tmp/headers %q`, ut.Req.Method, proxy, strings.Join(headers, " "), post, ut.Req.URL)
 	cmd += ` -w '{"code":%{http_code}}'`
 	if ut.SkipVerify {
 		cmd += ` -k`

@@ -2,6 +2,7 @@ package imageapis
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"reflect"
@@ -13,29 +14,27 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/diff"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	imagev1 "github.com/openshift/api/image/v1"
-	imagev1client "github.com/openshift/client-go/image/clientset/versioned"
 	"github.com/openshift/library-go/pkg/config/helpers"
 	exutil "github.com/openshift/origin/test/extended/util"
 )
 
-var _ = g.Describe("[Feature:Image] signature", func() {
+var _ = g.Describe("[sig-imageregistry][Feature:Image] signature", func() {
 	defer g.GinkgoRecover()
-	oc := exutil.NewCLI("image", exutil.KubeConfigPath())
+	oc := exutil.NewCLI("image")
 
-	g.It("TestImageAddSignature", func() {
+	g.It("TestImageAddSignature [apigroup:image.openshift.io]", func() {
 		t := g.GinkgoT()
 
-		clusterAdminConfig := oc.AdminConfig()
-		adminClient := imagev1client.NewForConfigOrDie(clusterAdminConfig)
+		adminClient := oc.AdminImageClient()
 
 		image, err := getImageFixture(oc, exutil.FixturePath("testdata", "image", "test-image.json"))
 		if err != nil {
 			t.Fatalf("failed to read image fixture: %v", err)
 		}
 
-		image, err = adminClient.ImageV1().Images().Create(image)
+		image, err = adminClient.ImageV1().Images().Create(context.Background(), image, metav1.CreateOptions{})
 		if err != nil {
 			t.Fatalf("unexpected error creating image: %v", err)
 		}
@@ -62,7 +61,7 @@ var _ = g.Describe("[Feature:Image] signature", func() {
 		}
 		signature.Name = sigName
 
-		created, err := userClient.ImageV1().ImageSignatures().Create(&signature)
+		created, err := userClient.ImageV1().ImageSignatures().Create(context.Background(), &signature, metav1.CreateOptions{})
 		if err == nil {
 			t.Fatalf("unexpected success updating image signatures")
 		}
@@ -73,11 +72,11 @@ var _ = g.Describe("[Feature:Image] signature", func() {
 		makeUserAnImageSigner(oc)
 
 		// try to create the signature again
-		created, err = userClient.ImageV1().ImageSignatures().Create(&signature)
+		created, err = userClient.ImageV1().ImageSignatures().Create(context.Background(), &signature, metav1.CreateOptions{})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		image, err = adminClient.ImageV1().Images().Get(image.Name, metav1.GetOptions{})
+		image, err = adminClient.ImageV1().Images().Get(context.Background(), image.Name, metav1.GetOptions{})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -93,7 +92,7 @@ var _ = g.Describe("[Feature:Image] signature", func() {
 		compareSignatures(t, image.Signatures[0], *created)
 
 		// try to create the signature yet again
-		created, err = userClient.ImageV1().ImageSignatures().Create(&signature)
+		created, err = userClient.ImageV1().ImageSignatures().Create(context.Background(), &signature, metav1.CreateOptions{})
 		if !kerrors.IsAlreadyExists(err) {
 			t.Fatalf("expected already exists error, not: %v", err)
 		}
@@ -104,7 +103,7 @@ var _ = g.Describe("[Feature:Image] signature", func() {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		signature.Name = newName
-		created, err = userClient.ImageV1().ImageSignatures().Create(&signature)
+		created, err = userClient.ImageV1().ImageSignatures().Create(context.Background(), &signature, metav1.CreateOptions{})
 		if !kerrors.IsAlreadyExists(err) {
 			t.Fatalf("expected already exists error, not: %v", err)
 		}
@@ -112,18 +111,19 @@ var _ = g.Describe("[Feature:Image] signature", func() {
 		// try to create a signature with the same name but different content
 		signature.Name = sigName
 		signature.Content = []byte("different")
-		_, err = userClient.ImageV1().ImageSignatures().Create(&signature)
+		_, err = userClient.ImageV1().ImageSignatures().Create(context.Background(), &signature, metav1.CreateOptions{})
 		if !kerrors.IsAlreadyExists(err) {
 			t.Fatalf("expected already exists error, not: %v", err)
 		}
 	})
 })
 
-var _ = g.Describe("[Feature:Image] signature", func() {
+var _ = g.Describe("[sig-imageregistry][Feature:Image] signature", func() {
 	defer g.GinkgoRecover()
-	oc := exutil.NewCLI("image", exutil.KubeConfigPath())
+	oc := exutil.NewCLI("image").AsAdmin()
+	ctx := context.Background()
 
-	g.It("TestImageRemoveSignature", func() {
+	g.It("TestImageRemoveSignature [apigroup:image.openshift.io]", func() {
 		t := g.GinkgoT()
 
 		adminClient := oc.AdminImageClient()
@@ -133,7 +133,7 @@ var _ = g.Describe("[Feature:Image] signature", func() {
 			t.Fatalf("failed to read image fixture: %v", err)
 		}
 
-		image, err = adminClient.ImageV1().Images().Create(image)
+		image, err = adminClient.ImageV1().Images().Create(ctx, image, metav1.CreateOptions{})
 		if err != nil {
 			t.Fatalf("unexpected error creating image: %v", err)
 		}
@@ -168,13 +168,13 @@ var _ = g.Describe("[Feature:Image] signature", func() {
 				Type:    "unknown",
 				Content: []byte(d.content),
 			}
-			_, err = userClient.ImageV1().ImageSignatures().Create(&signature)
+			_, err = userClient.ImageV1().ImageSignatures().Create(ctx, &signature, metav1.CreateOptions{})
 			if err != nil {
 				t.Fatalf("creating signature %d: unexpected error: %v", i, err)
 			}
 		}
 
-		image, err = userClient.ImageV1().Images().Get(image.Name, metav1.GetOptions{})
+		image, err = userClient.ImageV1().Images().Get(ctx, image.Name, metav1.GetOptions{})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -183,26 +183,28 @@ var _ = g.Describe("[Feature:Image] signature", func() {
 			t.Fatalf("expected 4 signatures, not %d", len(image.Signatures))
 		}
 
+		delOptions := metav1.DeleteOptions{}
+
 		// try to delete blob that does not exist
-		err = userClient.ImageV1().ImageSignatures().Delete(image.Name+"@doesnotexist", nil)
+		err = userClient.ImageV1().ImageSignatures().Delete(ctx, image.Name+"@doesnotexist", delOptions)
 		if !kerrors.IsNotFound(err) {
 			t.Fatalf("expected not found error, not: %#+v", err)
 		}
 
 		// try to delete blob with missing signature name
-		err = userClient.ImageV1().ImageSignatures().Delete(image.Name+"@", nil)
+		err = userClient.ImageV1().ImageSignatures().Delete(ctx, image.Name+"@", delOptions)
 		if !kerrors.IsBadRequest(err) {
 			t.Fatalf("expected bad request, not: %#+v", err)
 		}
 
 		// delete the first
-		err = userClient.ImageV1().ImageSignatures().Delete(image.Name+"@"+sigData[0].sigName, nil)
+		err = userClient.ImageV1().ImageSignatures().Delete(ctx, image.Name+"@"+sigData[0].sigName, delOptions)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
 		// try to delete it once more
-		err = userClient.ImageV1().ImageSignatures().Delete(image.Name+"@"+sigData[0].sigName, nil)
+		err = userClient.ImageV1().ImageSignatures().Delete(ctx, image.Name+"@"+sigData[0].sigName, delOptions)
 		if err == nil {
 			t.Fatalf("unexpected nont error")
 		} else if !kerrors.IsNotFound(err) {
@@ -210,30 +212,30 @@ var _ = g.Describe("[Feature:Image] signature", func() {
 		}
 
 		// delete the one in the middle
-		err = userClient.ImageV1().ImageSignatures().Delete(image.Name+"@"+sigData[2].sigName, nil)
+		err = userClient.ImageV1().ImageSignatures().Delete(ctx, image.Name+"@"+sigData[2].sigName, delOptions)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if image, err = userClient.ImageV1().Images().Get(image.Name, metav1.GetOptions{}); err != nil {
+		if image, err = userClient.ImageV1().Images().Get(ctx, image.Name, metav1.GetOptions{}); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		} else if len(image.Signatures) != 2 {
 			t.Fatalf("expected 2 signatures, not %d", len(image.Signatures))
 		}
 
 		// delete the one at the end
-		err = userClient.ImageV1().ImageSignatures().Delete(image.Name+"@"+sigData[3].sigName, nil)
+		err = userClient.ImageV1().ImageSignatures().Delete(ctx, image.Name+"@"+sigData[3].sigName, delOptions)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
 		// delete the last one
-		err = userClient.ImageV1().ImageSignatures().Delete(image.Name+"@"+sigData[1].sigName, nil)
+		err = userClient.ImageV1().ImageSignatures().Delete(ctx, image.Name+"@"+sigData[1].sigName, delOptions)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if image, err = userClient.ImageV1().Images().Get(image.Name, metav1.GetOptions{}); err != nil {
+		if image, err = userClient.ImageV1().Images().Get(ctx, image.Name, metav1.GetOptions{}); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		} else if len(image.Signatures) != 0 {
 			t.Fatalf("expected 2 signatures, not %d", len(image.Signatures))
@@ -258,14 +260,14 @@ func getImageFixture(oc *exutil.CLI, filename string) (*imagev1.Image, error) {
 }
 
 func makeUserAnImageSigner(oc *exutil.CLI) error {
-	rolebinding, err := oc.AdminKubeClient().RbacV1().ClusterRoleBindings().Create(&rbacv1.ClusterRoleBinding{
+	rolebinding, err := oc.AdminKubeClient().RbacV1().ClusterRoleBindings().Create(context.Background(), &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: "image-signer-" + oc.Namespace()},
 		RoleRef: rbacv1.RoleRef{
 			Kind: "ClusterRole",
 			Name: "system:image-signer",
 		},
 		Subjects: []rbacv1.Subject{{Kind: "User", Name: oc.Username()}},
-	})
+	}, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}

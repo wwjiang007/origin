@@ -1,22 +1,25 @@
 package builds
 
 import (
+	"context"
 	"fmt"
 	"time"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	imageeco "github.com/openshift/origin/test/extended/image_ecosystem"
 	exutil "github.com/openshift/origin/test/extended/util"
+	"github.com/openshift/origin/test/extended/util/image"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	admissionapi "k8s.io/pod-security-admission/api"
 )
 
-var _ = g.Describe("[Feature:Builds][Slow] builds with a context directory", func() {
+var _ = g.Describe("[sig-builds][Feature:Builds][Slow] builds with a context directory", func() {
 	defer g.GinkgoRecover()
 	var (
 		appFixture            = exutil.FixturePath("testdata", "builds", "test-context-build.json")
-		oc                    = exutil.NewCLI("contextdir", exutil.KubeConfigPath())
+		oc                    = exutil.NewCLIWithPodSecurityLevel("contextdir", admissionapi.LevelBaseline)
 		s2iBuildConfigName    = "s2icontext"
 		s2iBuildName          = "s2icontext-1"
 		dcName                = "frontend"
@@ -34,7 +37,7 @@ var _ = g.Describe("[Feature:Builds][Slow] builds with a context directory", fun
 		})
 
 		g.AfterEach(func() {
-			if g.CurrentGinkgoTestDescription().Failed {
+			if g.CurrentSpecReport().Failed() {
 				exutil.DumpPodStates(oc)
 				exutil.DumpConfigMapStates(oc)
 				exutil.DumpPodLogsStartingWith("", oc)
@@ -42,7 +45,7 @@ var _ = g.Describe("[Feature:Builds][Slow] builds with a context directory", fun
 		})
 
 		g.Describe("s2i context directory build", func() {
-			g.It(fmt.Sprintf("should s2i build an application using a context directory"), func() {
+			g.It(fmt.Sprintf("should s2i build an application using a context directory [apigroup:build.openshift.io]"), func() {
 
 				exutil.WaitForOpenShiftNamespaceImageStreams(oc)
 				g.By(fmt.Sprintf("calling oc create -f %q", appFixture))
@@ -83,7 +86,7 @@ var _ = g.Describe("[Feature:Builds][Slow] builds with a context directory", fun
 				assertPageContent("Hello world!")
 
 				g.By("checking the pod count")
-				pods, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).List(metav1.ListOptions{LabelSelector: dcLabel.String()})
+				pods, err := oc.KubeClient().CoreV1().Pods(oc.Namespace()).List(context.Background(), metav1.ListOptions{LabelSelector: dcLabel.String()})
 				o.Expect(err).NotTo(o.HaveOccurred())
 				o.Expect(len(pods.Items)).To(o.Equal(1))
 
@@ -96,12 +99,12 @@ var _ = g.Describe("[Feature:Builds][Slow] builds with a context directory", fun
 		})
 
 		g.Describe("docker context directory build", func() {
-			g.It(fmt.Sprintf("should docker build an application using a context directory"), func() {
+			g.It(fmt.Sprintf("should docker build an application using a context directory [apigroup:build.openshift.io]"), func() {
 				g.By("initializing local repo")
 				repo, err := exutil.NewGitRepo("contextdir")
 				o.Expect(err).NotTo(o.HaveOccurred())
 				defer repo.Remove()
-				err = repo.AddAndCommit("2.3/Dockerfile", "FROM busybox")
+				err = repo.AddAndCommit("2.3/Dockerfile", fmt.Sprintf("FROM %s", image.ShellImage()))
 				o.Expect(err).NotTo(o.HaveOccurred())
 
 				exutil.WaitForOpenShiftNamespaceImageStreams(oc)

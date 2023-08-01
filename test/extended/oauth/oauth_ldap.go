@@ -1,28 +1,32 @@
 package oauth
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"time"
 
-	g "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo/v2"
 	o "github.com/onsi/gomega"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	restclient "k8s.io/client-go/rest"
+	admissionapi "k8s.io/pod-security-admission/api"
 
 	configv1 "github.com/openshift/api/config/v1"
 	osinv1 "github.com/openshift/api/osin/v1"
 	userv1client "github.com/openshift/client-go/user/clientset/versioned/typed/user/v1"
-	testutil "github.com/openshift/origin/test/extended/util"
+
+	exutil "github.com/openshift/origin/test/extended/util"
+	"github.com/openshift/origin/test/extended/util/image"
 	oauthutil "github.com/openshift/origin/test/extended/util/oauthserver"
 )
 
-var _ = g.Describe("[Suite:openshift/oauth] LDAP IDP", func() {
+var _ = g.Describe("[sig-auth][Feature:LDAP] LDAP IDP", func() {
 	defer g.GinkgoRecover()
 	var (
-		oc = testutil.NewCLI("oauth-ldap-idp", testutil.KubeConfigPath())
+		oc = exutil.NewCLIWithPodSecurityLevel("oauth-ldap-idp", admissionapi.LevelPrivileged)
 
 		bindDN         = "cn=Manager,dc=example,dc=com"
 		bindPassword   = "admin"
@@ -41,15 +45,15 @@ var _ = g.Describe("[Suite:openshift/oauth] LDAP IDP", func() {
 		myEmail        = "person1smith@example.com"
 	)
 
-	g.It("should authenticate against an ldap server", func() {
+	g.It("should authenticate against an ldap server [apigroup:user.openshift.io][apigroup:route.openshift.io]", func() {
 		adminConfig := oc.AdminConfig()
 
 		// Clean up mapped identity and user.
-		defer userv1client.NewForConfigOrDie(oc.AdminConfig()).Identities().Delete(fmt.Sprintf("%s:%s", providerName, myUserDNBase64), nil)
-		defer userv1client.NewForConfigOrDie(oc.AdminConfig()).Users().Delete(userName, nil)
+		defer userv1client.NewForConfigOrDie(oc.AdminConfig()).Identities().Delete(context.Background(), fmt.Sprintf("%s:%s", providerName, myUserDNBase64), metav1.DeleteOptions{})
+		defer userv1client.NewForConfigOrDie(oc.AdminConfig()).Users().Delete(context.Background(), userName, metav1.DeleteOptions{})
 
 		g.By("setting up an OpenLDAP server")
-		ldapService, ldapCA, err := testutil.CreateLDAPTestServer(oc)
+		_, _, ldapService, ldapCA, err := exutil.CreateLDAPTestServer(oc)
 		o.Expect(err).NotTo(o.HaveOccurred())
 
 		g.By("deploying an oauth server")
@@ -95,8 +99,8 @@ var _ = g.Describe("[Suite:openshift/oauth] LDAP IDP", func() {
 		o.Expect(err).NotTo(o.HaveOccurred())
 
 		g.By("configuring LDAP users")
-		volumeMounts, volumes := testutil.LDAPClientMounts()
-		_, errs := testutil.RunOneShotCommandPod(oc, "oneshot-ldappasswd", testutil.OpenLDAPTestImage, fmt.Sprintf("ldappasswd -x -H ldap://%s -Z -D %s -w %s -s %s cn=%s,%s -vvv", ldapService, bindDN, bindPassword, goodPass, userName, searchDN), volumeMounts, volumes, nil, 5*time.Minute)
+		volumeMounts, volumes := exutil.LDAPClientMounts()
+		_, errs := exutil.RunOneShotCommandPod(oc, "oneshot-ldappasswd", image.OpenLDAPTestImage(), fmt.Sprintf("ldappasswd -x -H ldap://%s -Z -D %s -w %s -s %s cn=%s,%s -vvv", ldapService, bindDN, bindPassword, goodPass, userName, searchDN), volumeMounts, volumes, nil, 5*time.Minute)
 		o.Expect(errs).To(o.BeEmpty())
 
 		g.By("ensuring that you cannot authenticate with a bad password")
@@ -112,14 +116,14 @@ var _ = g.Describe("[Suite:openshift/oauth] LDAP IDP", func() {
 		userConfig.BearerToken = person1Token
 
 		// Confirm user name
-		user, err := userv1client.NewForConfigOrDie(userConfig).Users().Get("~", metav1.GetOptions{})
+		user, err := userv1client.NewForConfigOrDie(userConfig).Users().Get(context.Background(), "~", metav1.GetOptions{})
 		o.Expect(err).NotTo(o.HaveOccurred())
 		o.Expect(user.Name).Should(o.BeEquivalentTo(userName))
 		o.Expect(user.Identities).Should(o.HaveLen(1))
 
 		adminClient := userv1client.NewForConfigOrDie(oc.AdminConfig())
 		// Make sure the identity got created and contained the mapped attributes
-		identity, err := adminClient.Identities().Get(fmt.Sprintf("%s:%s", providerName, myUserDNBase64), metav1.GetOptions{})
+		identity, err := adminClient.Identities().Get(context.Background(), fmt.Sprintf("%s:%s", providerName, myUserDNBase64), metav1.GetOptions{})
 		o.Expect(err).NotTo(o.HaveOccurred())
 		o.Expect(identity.User.Name).Should(o.BeEquivalentTo(user.Name))
 		o.Expect(identity.ProviderName + ":" + identity.ProviderUserName).Should(o.BeEquivalentTo(user.Identities[0]))

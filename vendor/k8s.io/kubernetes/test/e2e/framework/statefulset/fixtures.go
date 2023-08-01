@@ -17,6 +17,7 @@ limitations under the License.
 package statefulset
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -27,11 +28,12 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	clientset "k8s.io/client-go/kubernetes"
-	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
-	e2efwk "k8s.io/kubernetes/test/e2e/framework"
+	"k8s.io/kubectl/pkg/util/podutils"
+	"k8s.io/kubernetes/test/e2e/framework"
+	e2epodoutput "k8s.io/kubernetes/test/e2e/framework/pod/output"
 	imageutils "k8s.io/kubernetes/test/utils/image"
+	"k8s.io/utils/pointer"
 )
 
 // NewStatefulSet creates a new Webserver StatefulSet for testing. The StatefulSet is named name, is in namespace ns,
@@ -69,7 +71,7 @@ func NewStatefulSet(name, ns, governingSvcName string, replicas int32, statefulP
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
-			Replicas: func(i int32) *int32 { return &i }(replicas),
+			Replicas: pointer.Int32(replicas),
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      labels,
@@ -112,97 +114,13 @@ func NewStatefulSetPVC(name string) v1.PersistentVolumeClaim {
 	}
 }
 
-// CreateStatefulSetService creates a Headless Service with Name name and Selector set to match labels.
-func CreateStatefulSetService(name string, labels map[string]string) *v1.Service {
-	headlessService := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
-		Spec: v1.ServiceSpec{
-			Selector: labels,
-		},
-	}
-	headlessService.Spec.Ports = []v1.ServicePort{
-		{Port: 80, Name: "http", Protocol: v1.ProtocolTCP},
-	}
-	headlessService.Spec.ClusterIP = "None"
-	return headlessService
-}
-
-// SetHTTPProbe sets the pod template's ReadinessProbe for Webserver StatefulSet containers.
-// This probe can then be controlled with BreakHTTPProbe() and RestoreHTTPProbe().
-// Note that this cannot be used together with PauseNewPods().
-func SetHTTPProbe(ss *appsv1.StatefulSet) {
-	ss.Spec.Template.Spec.Containers[0].ReadinessProbe = httpProbe
-}
-
-// BreakHTTPProbe breaks the readiness probe for Nginx StatefulSet containers in ss.
-func BreakHTTPProbe(c clientset.Interface, ss *appsv1.StatefulSet) error {
-	path := httpProbe.HTTPGet.Path
-	if path == "" {
-		return fmt.Errorf("path expected to be not empty: %v", path)
-	}
-	// Ignore 'mv' errors to make this idempotent.
-	cmd := fmt.Sprintf("mv -v /usr/local/apache2/htdocs%v /tmp/ || true", path)
-	return ExecInStatefulPods(c, ss, cmd)
-}
-
-// BreakPodHTTPProbe breaks the readiness probe for Nginx StatefulSet containers in one pod.
-func BreakPodHTTPProbe(ss *appsv1.StatefulSet, pod *v1.Pod) error {
-	path := httpProbe.HTTPGet.Path
-	if path == "" {
-		return fmt.Errorf("path expected to be not empty: %v", path)
-	}
-	// Ignore 'mv' errors to make this idempotent.
-	cmd := fmt.Sprintf("mv -v /usr/local/apache2/htdocs%v /tmp/ || true", path)
-	stdout, err := e2efwk.RunHostCmdWithRetries(pod.Namespace, pod.Name, cmd, StatefulSetPoll, StatefulPodTimeout)
-	e2efwk.Logf("stdout of %v on %v: %v", cmd, pod.Name, stdout)
-	return err
-}
-
-// RestoreHTTPProbe restores the readiness probe for Nginx StatefulSet containers in ss.
-func RestoreHTTPProbe(c clientset.Interface, ss *appsv1.StatefulSet) error {
-	path := httpProbe.HTTPGet.Path
-	if path == "" {
-		return fmt.Errorf("path expected to be not empty: %v", path)
-	}
-	// Ignore 'mv' errors to make this idempotent.
-	cmd := fmt.Sprintf("mv -v /tmp%v /usr/local/apache2/htdocs/ || true", path)
-	return ExecInStatefulPods(c, ss, cmd)
-}
-
-// RestorePodHTTPProbe restores the readiness probe for Nginx StatefulSet containers in pod.
-func RestorePodHTTPProbe(ss *appsv1.StatefulSet, pod *v1.Pod) error {
-	path := httpProbe.HTTPGet.Path
-	if path == "" {
-		return fmt.Errorf("path expected to be not empty: %v", path)
-	}
-	// Ignore 'mv' errors to make this idempotent.
-	cmd := fmt.Sprintf("mv -v /tmp%v /usr/local/apache2/htdocs/ || true", path)
-	stdout, err := e2efwk.RunHostCmdWithRetries(pod.Namespace, pod.Name, cmd, StatefulSetPoll, StatefulPodTimeout)
-	e2efwk.Logf("stdout of %v on %v: %v", cmd, pod.Name, stdout)
-	return err
-}
-
 func hasPauseProbe(pod *v1.Pod) bool {
 	probe := pod.Spec.Containers[0].ReadinessProbe
 	return probe != nil && reflect.DeepEqual(probe.Exec.Command, pauseProbe.Exec.Command)
 }
 
-var httpProbe = &v1.Probe{
-	Handler: v1.Handler{
-		HTTPGet: &v1.HTTPGetAction{
-			Path: "/index.html",
-			Port: intstr.IntOrString{IntVal: 80},
-		},
-	},
-	PeriodSeconds:    1,
-	SuccessThreshold: 1,
-	FailureThreshold: 1,
-}
-
 var pauseProbe = &v1.Probe{
-	Handler: v1.Handler{
+	ProbeHandler: v1.ProbeHandler{
 		Exec: &v1.ExecAction{Command: []string{"test", "-f", "/data/statefulset-continue"}},
 	},
 	PeriodSeconds:    1,
@@ -237,22 +155,22 @@ func PauseNewPods(ss *appsv1.StatefulSet) {
 // It fails the test if it finds any pods that are not in phase Running,
 // or if it finds more than one paused Pod existing at the same time.
 // This is a no-op if there are no paused pods.
-func ResumeNextPod(c clientset.Interface, ss *appsv1.StatefulSet) {
-	podList := GetPodList(c, ss)
+func ResumeNextPod(ctx context.Context, c clientset.Interface, ss *appsv1.StatefulSet) {
+	podList := GetPodList(ctx, c, ss)
 	resumedPod := ""
 	for _, pod := range podList.Items {
 		if pod.Status.Phase != v1.PodRunning {
-			e2efwk.Failf("Found pod in phase %q, cannot resume", pod.Status.Phase)
+			framework.Failf("Found pod in phase %q, cannot resume", pod.Status.Phase)
 		}
-		if podutil.IsPodReady(&pod) || !hasPauseProbe(&pod) {
+		if podutils.IsPodReady(&pod) || !hasPauseProbe(&pod) {
 			continue
 		}
 		if resumedPod != "" {
-			e2efwk.Failf("Found multiple paused stateful pods: %v and %v", pod.Name, resumedPod)
+			framework.Failf("Found multiple paused stateful pods: %v and %v", pod.Name, resumedPod)
 		}
-		_, err := e2efwk.RunHostCmdWithRetries(pod.Namespace, pod.Name, "dd if=/dev/zero of=/data/statefulset-continue bs=1 count=1 conv=fsync", StatefulSetPoll, StatefulPodTimeout)
-		e2efwk.ExpectNoError(err)
-		e2efwk.Logf("Resumed pod %v", pod.Name)
+		_, err := e2epodoutput.RunHostCmdWithRetries(pod.Namespace, pod.Name, "dd if=/dev/zero of=/data/statefulset-continue bs=1 count=1 conv=fsync", StatefulSetPoll, StatefulPodTimeout)
+		framework.ExpectNoError(err)
+		framework.Logf("Resumed pod %v", pod.Name)
 		resumedPod = pod.Name
 	}
 }

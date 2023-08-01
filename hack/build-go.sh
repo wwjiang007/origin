@@ -14,11 +14,7 @@ platform="$(os::build::host_platform)"
 
 build_targets=("$@")
 if [[ -z "$@" ]]; then
-  if [[ "${platform}" == linux/* ]]; then
-    build_targets=(vendor/k8s.io/kubernetes/cmd/hyperkube)
-  else
-    build_targets=(vendor/k8s.io/kubernetes/cmd/hyperkube)
-  fi
+    build_targets=(cmd/openshift-tests)
 fi
 
 OS_BUILD_PLATFORMS=("${OS_BUILD_PLATFORMS[@]:-${platform}}")

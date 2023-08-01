@@ -48,12 +48,6 @@ func MakeNodeList(nodes []string, nodeResources api.NodeResources) *api.NodeList
 	return &list
 }
 
-func NewNodeRegistry(nodes []string, nodeResources api.NodeResources) *NodeRegistry {
-	return &NodeRegistry{
-		Nodes: *MakeNodeList(nodes, nodeResources),
-	}
-}
-
 func (r *NodeRegistry) SetError(err error) {
 	r.Lock()
 	defer r.Unlock()
@@ -114,5 +108,7 @@ func (r *NodeRegistry) DeleteNode(ctx context.Context, nodeID string) error {
 }
 
 func (r *NodeRegistry) WatchNodes(ctx context.Context, options *metainternalversion.ListOptions) (watch.Interface, error) {
+	r.Lock()
+	defer r.Unlock()
 	return nil, r.Err
 }

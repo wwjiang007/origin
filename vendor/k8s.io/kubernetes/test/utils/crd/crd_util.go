@@ -17,6 +17,7 @@ limitations under the License.
 package crd
 
 import (
+	"context"
 	"fmt"
 
 	"k8s.io/utils/pointer"
@@ -28,11 +29,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/kubernetes/test/e2e/framework"
-	e2elog "k8s.io/kubernetes/test/e2e/framework/log"
 )
 
 // CleanCrdFn declares the clean up function needed to remove the CRD
-type CleanCrdFn func() error
+type CleanCrdFn func(ctx context.Context) error
 
 // TestCrd holds all the pieces needed to test with the CRD
 type TestCrd struct {
@@ -49,23 +49,23 @@ type Option func(crd *apiextensionsv1.CustomResourceDefinition)
 func CreateMultiVersionTestCRD(f *framework.Framework, group string, opts ...Option) (*TestCrd, error) {
 	suffix := framework.RandomSuffix()
 	name := fmt.Sprintf("e2e-test-%s-%s-crd", f.BaseName, suffix)
-	kind := fmt.Sprintf("E2e-test-%s-%s-crd", f.BaseName, suffix)
+	kind := fmt.Sprintf("e2e-test-%s-%s-crd", f.BaseName, suffix)
 	testcrd := &TestCrd{}
 
 	// Creating a custom resource definition for use by assorted tests.
 	config, err := framework.LoadConfig()
 	if err != nil {
-		e2elog.Failf("failed to load config: %v", err)
+		framework.Failf("failed to load config: %v", err)
 		return nil, err
 	}
 	apiExtensionClient, err := crdclientset.NewForConfig(config)
 	if err != nil {
-		e2elog.Failf("failed to initialize apiExtensionClient: %v", err)
+		framework.Failf("failed to initialize apiExtensionClient: %v", err)
 		return nil, err
 	}
 	dynamicClient, err := dynamic.NewForConfig(config)
 	if err != nil {
-		e2elog.Failf("failed to initialize dynamic client: %v", err)
+		framework.Failf("failed to initialize dynamic client: %v", err)
 		return nil, err
 	}
 
@@ -90,19 +90,14 @@ func CreateMultiVersionTestCRD(f *framework.Framework, group string, opts ...Opt
 			Served:  true,
 			Storage: true,
 			Name:    "v1",
-			Schema: &apiextensionsv1.CustomResourceValidation{
-				OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
-					XPreserveUnknownFields: pointer.BoolPtr(true),
-					Type:                   "object",
-				},
-			},
+			Schema:  fixtures.AllowAllSchema(),
 		}}
 	}
 
 	//create CRD and waits for the resource to be recognized and available.
 	crd, err = fixtures.CreateNewV1CustomResourceDefinitionWatchUnsafe(crd, apiExtensionClient)
 	if err != nil {
-		e2elog.Failf("failed to create CustomResourceDefinition: %v", err)
+		framework.Failf("failed to create CustomResourceDefinition: %v", err)
 		return nil, err
 	}
 
@@ -117,10 +112,10 @@ func CreateMultiVersionTestCRD(f *framework.Framework, group string, opts ...Opt
 	testcrd.APIExtensionClient = apiExtensionClient
 	testcrd.Crd = crd
 	testcrd.DynamicClients = resourceClients
-	testcrd.CleanUp = func() error {
+	testcrd.CleanUp = func(ctx context.Context) error {
 		err := fixtures.DeleteV1CustomResourceDefinition(crd, apiExtensionClient)
 		if err != nil {
-			e2elog.Failf("failed to delete CustomResourceDefinition(%s): %v", name, err)
+			framework.Failf("failed to delete CustomResourceDefinition(%s): %v", name, err)
 		}
 		return err
 	}

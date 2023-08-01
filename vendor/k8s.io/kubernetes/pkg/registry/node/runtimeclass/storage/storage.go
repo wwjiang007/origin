@@ -21,6 +21,9 @@ import (
 	"k8s.io/apiserver/pkg/registry/generic"
 	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/kubernetes/pkg/apis/node"
+	"k8s.io/kubernetes/pkg/printers"
+	printersinternal "k8s.io/kubernetes/pkg/printers/internalversion"
+	printerstorage "k8s.io/kubernetes/pkg/printers/storage"
 	"k8s.io/kubernetes/pkg/registry/node/runtimeclass"
 )
 
@@ -37,11 +40,14 @@ func NewREST(optsGetter generic.RESTOptionsGetter) (*REST, error) {
 		ObjectNameFunc: func(obj runtime.Object) (string, error) {
 			return obj.(*node.RuntimeClass).Name, nil
 		},
-		DefaultQualifiedResource: node.Resource("runtimeclasses"),
+		DefaultQualifiedResource:  node.Resource("runtimeclasses"),
+		SingularQualifiedResource: node.Resource("runtimeclass"),
 
 		CreateStrategy: runtimeclass.Strategy,
 		UpdateStrategy: runtimeclass.Strategy,
 		DeleteStrategy: runtimeclass.Strategy,
+
+		TableConvertor: printerstorage.TableConvertor{TableGenerator: printers.NewTableGenerator().With(printersinternal.AddHandlers)},
 	}
 	options := &generic.StoreOptions{RESTOptions: optsGetter}
 	if err := store.CompleteWithOptions(options); err != nil {
