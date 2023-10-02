@@ -19,15 +19,20 @@ package aggregator
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/emicklei/go-restful/v3"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apiserver/pkg/endpoints/metrics"
 	"k8s.io/apiserver/pkg/server"
 	"k8s.io/apiserver/pkg/server/mux"
+	"k8s.io/apiserver/pkg/server/routes"
 	"k8s.io/klog/v2"
 	v1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"k8s.io/kube-openapi/pkg/common"
@@ -37,9 +42,12 @@ import (
 	v2aggregator "k8s.io/kube-aggregator/pkg/controllers/openapi/aggregator"
 )
 
+var ErrAPIServiceNotFound = errors.New("resource not found")
+
 // SpecProxier proxies OpenAPI V3 requests to their respective APIService
 type SpecProxier interface {
 	AddUpdateAPIService(handler http.Handler, apiService *v1.APIService)
+	// UpdateAPIServiceSpec updates the APIService. It returns ErrAPIServiceNotFound if the APIService doesn't exist.
 	UpdateAPIServiceSpec(apiServiceName string) error
 	RemoveAPIServiceSpec(apiServiceName string)
 	GetAPIServiceNames() []string
@@ -73,10 +81,27 @@ func (s *specProxier) GetAPIServiceNames() []string {
 }
 
 // BuildAndRegisterAggregator registered OpenAPI aggregator handler. This function is not thread safe as it only being called on startup.
-func BuildAndRegisterAggregator(downloader Downloader, delegationTarget server.DelegationTarget, pathHandler common.PathHandlerByGroupVersion) (SpecProxier, error) {
+func BuildAndRegisterAggregator(downloader Downloader, delegationTarget server.DelegationTarget, aggregatorService *restful.Container, openAPIConfig *common.Config, pathHandler common.PathHandlerByGroupVersion) (SpecProxier, error) {
 	s := &specProxier{
 		apiServiceInfo: map[string]*openAPIV3APIServiceInfo{},
 		downloader:     downloader,
+	}
+
+	if aggregatorService != nil && openAPIConfig != nil {
+		// Make native types exposed by aggregator available to the aggregated
+		// OpenAPI (normal handle is disabled by skipOpenAPIInstallation option)
+		aggregatorLocalServiceName := "k8s_internal_local_kube_aggregator_types"
+		v3Mux := mux.NewPathRecorderMux(aggregatorLocalServiceName)
+		_ = routes.OpenAPI{
+			Config: openAPIConfig,
+		}.InstallV3(aggregatorService, v3Mux)
+
+		s.AddUpdateAPIService(v3Mux, &v1.APIService{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: aggregatorLocalServiceName,
+			},
+		})
+		s.UpdateAPIServiceSpec(aggregatorLocalServiceName)
 	}
 
 	i := 1
@@ -114,6 +139,7 @@ func (s *specProxier) AddUpdateAPIService(handler http.Handler, apiservice *v1.A
 	if apiServiceInfo, ok := s.apiServiceInfo[apiservice.Name]; ok {
 		apiServiceInfo.apiService = *apiservice
 		apiServiceInfo.handler = handler
+		return
 	}
 	s.apiServiceInfo[apiservice.Name] = &openAPIV3APIServiceInfo{
 		apiService: *apiservice,
@@ -139,7 +165,7 @@ func (s *specProxier) UpdateAPIServiceSpec(apiServiceName string) error {
 func (s *specProxier) updateAPIServiceSpecLocked(apiServiceName string) error {
 	apiService, exists := s.apiServiceInfo[apiServiceName]
 	if !exists {
-		return fmt.Errorf("APIService %s does not exist for update", apiServiceName)
+		return ErrAPIServiceNotFound
 	}
 
 	if !apiService.isLegacyAPIService {
@@ -203,6 +229,7 @@ func (s *specProxier) RemoveAPIServiceSpec(apiServiceName string) {
 	defer s.rwMutex.Unlock()
 	if apiServiceInfo, ok := s.apiServiceInfo[apiServiceName]; ok {
 		s.openAPIV2ConverterHandler.DeleteGroupVersion(getGroupVersionStringFromAPIService(apiServiceInfo.apiService))
+		_ = s.updateAPIServiceSpecLocked(openAPIV2Converter)
 		delete(s.apiServiceInfo, apiServiceName)
 	}
 }
@@ -211,9 +238,7 @@ func (s *specProxier) getOpenAPIV3Root() handler3.OpenAPIV3Discovery {
 	s.rwMutex.RLock()
 	defer s.rwMutex.RUnlock()
 
-	merged := handler3.OpenAPIV3Discovery{
-		Paths: make(map[string]handler3.OpenAPIV3DiscoveryGroupVersion),
-	}
+	paths := make(map[string][]handler3.OpenAPIV3DiscoveryGroupVersion)
 
 	for _, apiServiceInfo := range s.apiServiceInfo {
 		if apiServiceInfo.discovery == nil {
@@ -221,10 +246,10 @@ func (s *specProxier) getOpenAPIV3Root() handler3.OpenAPIV3Discovery {
 		}
 
 		for key, item := range apiServiceInfo.discovery.Paths {
-			merged.Paths[key] = item
+			paths[key] = append(paths[key], item)
 		}
 	}
-	return merged
+	return mergeOpenAPIV3RootPaths(paths)
 }
 
 // handleDiscovery is the handler for OpenAPI V3 Discovery
@@ -251,18 +276,33 @@ func (s *specProxier) handleGroupVersion(w http.ResponseWriter, r *http.Request)
 	url := strings.SplitAfterN(r.URL.Path, "/", 4)
 	targetGV := url[3]
 
+	var eligibleURLs []string
+	eligibleURLsToAPIServiceInfos := make(map[string]*openAPIV3APIServiceInfo)
+
 	for _, apiServiceInfo := range s.apiServiceInfo {
 		if apiServiceInfo.discovery == nil {
 			continue
 		}
 
-		for key := range apiServiceInfo.discovery.Paths {
-			if targetGV == key {
-				apiServiceInfo.handler.ServeHTTP(w, r)
-				return
+		for key, value := range apiServiceInfo.discovery.Paths {
+			if targetGV == key && eligibleURLsToAPIServiceInfos[value.ServerRelativeURL] == nil {
+				// add only apiServices that do not duplicate ServerRelativeURL (path + hash)
+				eligibleURLsToAPIServiceInfos[value.ServerRelativeURL] = apiServiceInfo
+				eligibleURLs = append(eligibleURLs, value.ServerRelativeURL)
+				break
 			}
 		}
+		if len(eligibleURLsToAPIServiceInfos) > 0 && !strings.HasPrefix(targetGV, "apis/") {
+			// do not search for duplicates that are not part of apis/ prefix (eg.  /version)
+			break
+		}
 	}
+
+	if len(eligibleURLs) > 0 {
+		delegateAndMergeHandleGroupVersion(w, r, eligibleURLs, eligibleURLsToAPIServiceInfos)
+		return
+	}
+
 	// No group-versions match the desired request
 	w.WriteHeader(404)
 }

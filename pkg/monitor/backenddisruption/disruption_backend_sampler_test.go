@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	monitor2 "github.com/openshift/origin/pkg/monitor"
+
 	"github.com/openshift/origin/pkg/monitor/monitorapi"
 	"github.com/stretchr/testify/assert"
 
@@ -127,7 +129,7 @@ func TestBackendSampler_checkConnection(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			backend := NewSimpleBackend(testHost, tt.fields.disruptionBackendName, tt.fields.path, tt.fields.connectionType)
+			backend := NewSimpleBackendFromOpenshiftTests(testHost, tt.fields.disruptionBackendName, tt.fields.path, tt.fields.connectionType)
 			timeout := 1 * time.Second
 			backend.timeout = &timeout
 			if len(tt.fields.expect) > 0 {
@@ -335,20 +337,21 @@ func Test_disruptionSampler_consumeSamples(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
-			parent := NewSimpleBackend("host", "backend", "path", monitorapi.NewConnectionType)
+			parent := NewSimpleBackendFromOpenshiftTests("host", "backend", "path", monitorapi.NewConnectionType)
 			backendSampler := newDisruptionSampler(parent)
 			interval := 1 * time.Second
-			monitor := newSimpleMonitor()
+			monitor := monitor2.NewRecorder()
 			fakeEventRecorder := events.NewFakeRecorder(100)
+			consumptionDone := make(chan struct{})
 			go func() {
-				backendSampler.consumeSamples(ctx, interval, monitor, fakeEventRecorder)
+				backendSampler.consumeSamples(ctx, consumptionDone, interval, monitor, fakeEventRecorder)
 			}()
 
 			// now we start supplying the samples
 			tt.produceSamples(ctx, backendSampler)
 			time.Sleep(2 * time.Second) // wait just a bit for the consumption to happen before cancelling. this must be longer than the interval above
 			cancel()
-			time.Sleep(1 * time.Second) // wait just a bit for the consumption finish and complete the deferal
+			<-consumptionDone
 
 			tt.validateSamples(t, monitor.Intervals(time.Time{}, time.Time{}))
 		})

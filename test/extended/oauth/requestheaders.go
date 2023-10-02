@@ -277,7 +277,7 @@ func gatherPostMortem(oc *exutil.CLI) {
 		e2e.Logf("get pods from %s: %w", oauthServerNamespace, err)
 	}
 	for _, pod := range pods.Items {
-		logs, err := oc.Run("logs").Args(pod.Name, "-n", oauthServerNamespace).Output()
+		logs, err := oc.AsAdmin().Run("logs").Args(pod.Name, "-n", oauthServerNamespace).Output()
 		if err != nil {
 			e2e.Logf("get logs from %s in %s: %w", pod.Name, oauthServerNamespace, err)
 		}
@@ -411,6 +411,20 @@ func generateCert(caCert *x509.Certificate, caKey *rsa.PrivateKey, cn string, ek
 func waitForNewOAuthConfig(oc *exutil.CLI) {
 	waitForAuthenticationProgressing(oc, configv1.ConditionTrue)
 	waitForAuthenticationProgressing(oc, configv1.ConditionFalse)
+
+	wait.PollUntilContextTimeout(context.Background(), time.Second, 5*time.Minute, true, func(ctx context.Context) (done bool, err error) {
+		pods, err := oc.AdminKubeClient().CoreV1().Pods("openshift-authentication").List(context.Background(), metav1.ListOptions{})
+		if err != nil {
+			return false, err
+		}
+
+		if len(pods.Items) > 3 {
+			e2e.Logf("Waiting for old pods to be cleaned up from the openshift-authentication ns. Current no. of pods: %d", len(pods.Items))
+			return false, nil
+		}
+
+		return true, nil
+	})
 }
 
 // oauthHTTPRequestOrFail wraps oauthHTTPRequest and fails the test if the request failed
