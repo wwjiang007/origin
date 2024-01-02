@@ -3,7 +3,6 @@ package legacynetworkmonitortests
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/openshift/origin/pkg/monitortestlibrary/pathologicaleventlibrary"
 	"github.com/openshift/origin/pkg/test/ginkgo/junitapi"
 	exutil "github.com/openshift/origin/test/extended/util"
+	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -92,10 +92,33 @@ func testPodSandboxCreation(events monitorapi.Intervals, clientConfig *rest.Conf
 		failures = append(failures, fmt.Sprintf("error determining platform type: %v", err))
 	}
 
+	// Filter out a list of node NotReady events, we use these to ignore some other potential problems
+	nodeNotReadyIntervals := events.Filter(func(eventInterval monitorapi.Interval) bool {
+		return eventInterval.Source == monitorapi.SourceNodeMonitor &&
+			eventInterval.StructuredLocator.Type == monitorapi.LocatorTypeNode &&
+			eventInterval.StructuredMessage.Reason == monitorapi.NodeNotReadyReason
+	})
+	logrus.Infof("found %d node NotReady intervals", len(nodeNotReadyIntervals))
+
 	for _, event := range events {
+
 		if !strings.Contains(event.Message, "reason/FailedCreatePodSandBox Failed to create pod sandbox") {
 			continue
 		}
+
+		// Skip pod sandbox failures when nodes are updating
+		var foundOverlap bool
+		for _, nui := range nodeNotReadyIntervals {
+			if nui.From.Before(event.From) && nui.To.After(event.To) {
+				logrus.Infof("%s was found to overlap with %s, ignoring pod sandbox error as we expect these if the node is NotReady", event, nui)
+				foundOverlap = true
+				break
+			}
+		}
+		if foundOverlap {
+			continue
+		}
+
 		if strings.Contains(event.Locator, "pod/simpletest-rc-to-be-deleted") &&
 			(strings.Contains(event.Message, "not found") ||
 				strings.Contains(event.Message, "pod was already deleted") ||
@@ -141,12 +164,6 @@ func testPodSandboxCreation(events monitorapi.Intervals, clientConfig *rest.Conf
 				flakes = append(flakes, fmt.Sprintf("%v - i/o timeout common flake when pinging container registry on azure - %v", event.Locator, event.Message))
 				continue
 			}
-		}
-		if strings.Contains(event.Message, "kuryr") && strings.Contains(event.Message, "deleted while processing the CNI ADD request") {
-			// This happens from time to time with Kuryr. Creating ports in Neutron for pod can take long and a controller might delete the pod before,
-			// effectively cancelling Kuryr CNI ADD request.
-			flakes = append(flakes, fmt.Sprintf("%v - pod got deleted while kuryr was still processing its creation - %v", event.Locator, event.Message))
-			continue
 		}
 
 		partialLocator := monitorapi.NonUniquePodLocatorFrom(event.Locator)
@@ -288,26 +305,30 @@ func getPodDeletionTime(events monitorapi.Intervals, podLocator string) *time.Ti
 }
 
 // bug is tracked here: https://bugzilla.redhat.com/show_bug.cgi?id=2057181
+// It was closed working as designed.
 func testOvnNodeReadinessProbe(events monitorapi.Intervals, kubeClientConfig *rest.Config) []*junitapi.JUnitTestCase {
 	const testName = "[bz-networking] ovnkube-node readiness probe should not fail repeatedly"
-	regExp := regexp.MustCompile(pathologicaleventlibrary.OvnReadinessRegExpStr)
 	var tests []*junitapi.JUnitTestCase
 	var failureOutput string
 	msgMap := map[string]bool{}
+
 	for _, event := range events {
 		msg := fmt.Sprintf("%s - %s", event.Locator, event.Message)
-		if regExp.MatchString(msg) {
+		if pathologicaleventlibrary.AllowOVNReadiness.Allows(event, "") {
+
 			if _, ok := msgMap[msg]; !ok {
 				msgMap[msg] = true
-				eventDisplayMessage, times := pathologicaleventlibrary.GetTimesAnEventHappened(msg)
+				times := pathologicaleventlibrary.GetTimesAnEventHappened(event.StructuredMessage)
 				if times > pathologicaleventlibrary.DuplicateEventThreshold {
 					// if the readiness probe failure for this pod happened AFTER the initial installation was complete,
 					// then this probe failure is unexpected and should fail.
-					isDuringInstall, err := pathologicaleventlibrary.IsEventDuringInstallation(event, kubeClientConfig, regExp)
+					isDuringInstall, err := pathologicaleventlibrary.IsEventAfterInstallation(event, kubeClientConfig)
 					if err != nil {
-						failureOutput += fmt.Sprintf("error [%v] happened when processing event [%s]\n", err, eventDisplayMessage)
+						failureOutput += fmt.Sprintf("error [%v] happened when processing event [%s]\n", err, event.String())
 					} else if !isDuringInstall {
-						failureOutput += fmt.Sprintf("event [%s] happened too frequently for %d times\n", eventDisplayMessage, times)
+						failureOutput += fmt.Sprintf("event [%s] happened too frequently: %d times\n", event.String(), times)
+					} else {
+						logrus.Infof("ignoring event that happened %d times because FirstTimestamp appears to be during install: %s", times, event.String())
 					}
 				}
 			}

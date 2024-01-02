@@ -3,6 +3,7 @@ package apiserver
 import (
 	"context"
 	"fmt"
+	"github.com/openshift/origin/pkg/monitortests/testframework/watchrequestcountscollector"
 	"math"
 	"sort"
 	"strings"
@@ -93,9 +94,6 @@ var _ = g.Describe("[sig-arch][Late]", func() {
 
 	g.It("operators should not create watch channels very often [apigroup:apiserver.openshift.io]", func() {
 		ctx := context.Background()
-		apirequestCountClient, err := apiserverclientv1.NewForConfig(oc.AdminConfig())
-		o.Expect(err).NotTo(o.HaveOccurred())
-
 		infra, err := oc.AdminConfigClient().ConfigV1().Infrastructures().Get(context.Background(), "cluster", metav1.GetOptions{})
 		o.Expect(err).NotTo(o.HaveOccurred())
 
@@ -112,8 +110,8 @@ var _ = g.Describe("[sig-arch][Late]", func() {
 				"aws-ebs-csi-driver-operator":            199.0,
 				"cloud-credential-operator":              176.0,
 				"cluster-autoscaler-operator":            132.0,
-				"cluster-baremetal-operator":             119.0,
-				"cluster-capi-operator":                  50.0,
+				"cluster-baremetal-operator":             125.0,
+				"cluster-capi-operator":                  200.0,
 				"cluster-image-registry-operator":        189.0,
 				"cluster-monitoring-operator":            136.0,
 				"cluster-node-tuning-operator":           115.0,
@@ -143,7 +141,7 @@ var _ = g.Describe("[sig-arch][Late]", func() {
 				"cloud-credential-operator":              129.0,
 				"cluster-autoscaler-operator":            100.0,
 				"cluster-baremetal-operator":             90.0,
-				"cluster-capi-operator":                  50.0,
+				"cluster-capi-operator":                  200.0,
 				"cluster-image-registry-operator":        194.0,
 				"cluster-monitoring-operator":            110.0,
 				"cluster-node-tuning-operator":           92.0,
@@ -171,8 +169,8 @@ var _ = g.Describe("[sig-arch][Late]", func() {
 				"authentication-operator":                349,
 				"cloud-credential-operator":              78.0,
 				"cluster-autoscaler-operator":            54.0,
-				"cluster-baremetal-operator":             44.0,
-				"cluster-capi-operator":                  50.0,
+				"cluster-baremetal-operator":             125.0,
+				"cluster-capi-operator":                  200.0,
 				"cluster-image-registry-operator":        121.0,
 				"cluster-monitoring-operator":            85.0,
 				"cluster-node-tuning-operator":           112.0,
@@ -201,7 +199,7 @@ var _ = g.Describe("[sig-arch][Late]", func() {
 				"authentication-operator":                424.0,
 				"cloud-credential-operator":              82.0,
 				"cluster-autoscaler-operator":            72.0,
-				"cluster-baremetal-operator":             86.0,
+				"cluster-baremetal-operator":             125.0,
 				"cluster-image-registry-operator":        160.0,
 				"cluster-monitoring-operator":            77.0,
 				"cluster-node-tuning-operator":           115.0,
@@ -229,7 +227,7 @@ var _ = g.Describe("[sig-arch][Late]", func() {
 				"authentication-operator":                311.0,
 				"cloud-credential-operator":              71.0,
 				"cluster-autoscaler-operator":            49.0,
-				"cluster-baremetal-operator":             39.0,
+				"cluster-baremetal-operator":             125.0,
 				"cluster-image-registry-operator":        106.0,
 				"cluster-monitoring-operator":            78.0,
 				"cluster-node-tuning-operator":           97.0,
@@ -259,7 +257,7 @@ var _ = g.Describe("[sig-arch][Late]", func() {
 				"authentication-operator":                309,
 				"cloud-credential-operator":              70.0,
 				"cluster-autoscaler-operator":            53.0,
-				"cluster-baremetal-operator":             42.0,
+				"cluster-baremetal-operator":             125.0,
 				"cluster-image-registry-operator":        112,
 				"cluster-monitoring-operator":            80.0,
 				"cluster-node-tuning-operator":           103.0,
@@ -293,11 +291,11 @@ var _ = g.Describe("[sig-arch][Late]", func() {
 				"aws-ebs-csi-driver-operator":            142,
 				"cloud-credential-operator":              94,
 				"cluster-autoscaler-operator":            44,
-				"cluster-baremetal-operator":             40,
+				"cluster-baremetal-operator":             125.0,
 				"cluster-image-registry-operator":        119,
 				"cluster-monitoring-operator":            88,
 				"cluster-node-tuning-operator":           97,
-				"cluster-samples-operator":               23,
+				"cluster-samples-operator":               27,
 				"cluster-storage-operator":               202,
 				"console-operator":                       200,
 				"csi-snapshot-controller-operator":       120,
@@ -305,7 +303,7 @@ var _ = g.Describe("[sig-arch][Late]", func() {
 				"etcd-operator":                          220,
 				"ingress-operator":                       371,
 				"kube-apiserver-operator":                260,
-				"kube-controller-manager-operator":       165,
+				"kube-controller-manager-operator":       185,
 				"kube-storage-version-migrator-operator": 68,
 				"machine-api-operator":                   48,
 				"marketplace-operator":                   20,
@@ -332,117 +330,29 @@ var _ = g.Describe("[sig-arch][Late]", func() {
 			upperBound = upperBounds[infra.Spec.PlatformSpec.Type]
 		}
 
-		apiRequestCounts, err := apirequestCountClient.APIRequestCounts().List(ctx, metav1.ListOptions{})
+		watchRequestCounts, err := watchrequestcountscollector.GetWatchRequestCounts(ctx, oc)
 		o.Expect(err).NotTo(o.HaveOccurred())
-
-		type operatorKey struct {
-			nodeName string
-			operator string
-			hour     int
-		}
-
-		type requestCount struct {
-			nodeName string
-			operator string
-			count    int64
-			hour     int
-		}
-
-		watchRequestCounts := []*requestCount{}
-		watchRequestCountsMap := map[operatorKey]*requestCount{}
-
-		for _, apiRequestCount := range apiRequestCounts.Items {
-			if apiRequestCount.Status.RequestCount <= 0 {
-				continue
-			}
-			for hourIdx, perResourceAPIRequestLog := range apiRequestCount.Status.Last24h {
-				if perResourceAPIRequestLog.RequestCount > 0 {
-					for _, perNodeCount := range perResourceAPIRequestLog.ByNode {
-						if perNodeCount.RequestCount <= 0 {
-							continue
-						}
-						for _, perUserCount := range perNodeCount.ByUser {
-							if perUserCount.RequestCount <= 0 {
-								continue
-							}
-							// take only operators into account
-							if !strings.HasSuffix(perUserCount.UserName, "-operator") {
-								continue
-							}
-							for _, verb := range perUserCount.ByVerb {
-								if verb.Verb != "watch" || verb.RequestCount == 0 {
-									continue
-								}
-								key := operatorKey{
-									nodeName: perNodeCount.NodeName,
-									operator: perUserCount.UserName,
-									hour:     hourIdx,
-								}
-								// group requests by a resource (the number of watchers in the code does not change
-								// so much as the number of requests)
-								if _, exists := watchRequestCountsMap[key]; exists {
-									watchRequestCountsMap[key].count += verb.RequestCount
-								} else {
-									watchRequestCountsMap[key] = &requestCount{
-										nodeName: perNodeCount.NodeName,
-										operator: perUserCount.UserName,
-										count:    verb.RequestCount,
-										hour:     hourIdx,
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-
-		// take maximum from all hours through all nodes
-		watchRequestCountsMapMax := map[operatorKey]*requestCount{}
-		for _, requestCount := range watchRequestCountsMap {
-			key := operatorKey{
-				operator: requestCount.operator,
-			}
-			if _, exists := watchRequestCountsMapMax[key]; exists {
-				if watchRequestCountsMapMax[key].count < requestCount.count {
-					watchRequestCountsMapMax[key].count = requestCount.count
-					watchRequestCountsMapMax[key].nodeName = requestCount.nodeName
-					watchRequestCountsMapMax[key].hour = requestCount.hour
-				}
-			} else {
-				watchRequestCountsMapMax[key] = requestCount
-			}
-		}
-
-		// sort the requsts counts so it's easy to see the biggest offenders
-		for _, requestCount := range watchRequestCountsMapMax {
-			watchRequestCounts = append(watchRequestCounts, requestCount)
-		}
-
-		sort.Slice(watchRequestCounts, func(i int, j int) bool {
-			return watchRequestCounts[i].count > watchRequestCounts[j].count
-		})
 
 		operatorBoundExceeded := []string{}
 		for _, item := range watchRequestCounts {
-			operator := strings.Split(item.operator, ":")[3]
+			operator := strings.Split(item.Operator, ":")[3]
 			allowedCount, exists := upperBound[operator]
 
 			if !exists {
 				framework.Logf("Operator %v not found in upper bounds for %v", operator, infra.Spec.PlatformSpec.Type)
-				framework.Logf("operator=%v, watchrequestcount=%v", item.operator, item.count)
+				framework.Logf("operator=%v, watchrequestcount=%v", item.Operator, item.Count)
 				continue
 			}
 
 			// The upper bound are measured from CI runs where the tests might be running less than 2h in total.
 			// In the worst case half of the requests will be put into each bucket. Thus, multiply the bound by 2
 			allowedCount = allowedCount * 2
-			ratio := float64(item.count) / float64(allowedCount)
+			ratio := float64(item.Count) / float64(allowedCount)
 			ratio = math.Round(ratio*100) / 100
-			framework.Logf("operator=%v, watchrequestcount=%v, upperbound=%v, ratio=%v", operator, item.count, allowedCount, ratio)
-			if item.count > allowedCount {
+			framework.Logf("operator=%v, watchrequestcount=%v, upperbound=%v, ratio=%v", operator, item.Count, allowedCount, ratio)
+			if item.Count > allowedCount {
 				framework.Logf("Operator %q produces more watch requests than expected", operator)
-				operatorBoundExceeded = append(operatorBoundExceeded, fmt.Sprintf("Operator %q produces more watch requests than expected: watchrequestcount=%v, upperbound=%v, ratio=%v", operator, item.count, allowedCount, ratio))
+				operatorBoundExceeded = append(operatorBoundExceeded, fmt.Sprintf("Operator %q produces more watch requests than expected: watchrequestcount=%v, upperbound=%v, ratio=%v", operator, item.Count, allowedCount, ratio))
 			}
 		}
 

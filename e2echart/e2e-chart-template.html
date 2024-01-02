@@ -188,19 +188,7 @@
     }
 
     function isGracefulShutdownActivity(eventInterval) {
-        if (eventInterval.locator.includes("shutdown/graceful")) {
-            return true
-        }
-
-        return false
-    }
-
-    function isAPIServerShutdownEventActivity(eventInterval) {
-        if (eventInterval.locator.includes("shutdown/apiserver")) {
-            return true
-        }
-
-        return false
+        return (eventInterval.tempSource === "APIServerGracefulShutdown")
     }
 
     function isEndpointConnectivity(eventInterval) {
@@ -221,10 +209,13 @@
     }
 
     function isNodeState(eventInterval) {
-        if (eventInterval.locator.includes("node/")) {
-            return (eventInterval.message.includes("reason/NodeUpdate ") || eventInterval.message.includes("node is not ready"))
-        }
-        return false
+        return eventInterval.tempStructuredLocator.type === "Node" &&
+            (eventInterval.tempStructuredMessage.reason === "NodeUpdate" ||
+                eventInterval.tempStructuredMessage.reason === "NotReady");
+    }
+
+    function isCloudMetrics(eventInterval) {
+        return eventInterval.tempSource === "CloudMetrics";
     }
 
     function isAlert(eventInterval) {
@@ -241,6 +232,10 @@
             } else {
                 return [item.locator, ` (pathological new)`, "PathologicalNew"];
             }
+        }
+        // TODO: hack that can likely be removed when we get to structured intervals for these
+        if (item.message.includes("interesting/true") && item.message.includes("pod sandbox")) {
+            return [item.locator, ` (pod sandbox)`, "PodSandbox"];
         }
         if (item.message.includes("interesting/true")) {
 		    return [item.locator, ` (interesting event)`, "InterestingEvent"];
@@ -307,23 +302,19 @@
     const rePhase = new RegExp("(^| )phase/([^ ]+)")
     function nodeStateValue(item) {
         let roles = ""
-        let i = item.message.indexOf("roles/")
-        if (i != -1) {
-            roles = item.message.substring(i+"roles/".length)
-            let j = roles.indexOf(" ")
-            if (j != -1) {
-                roles = roles.substring(0, j)
-            }
+        if (item.tempStructuredMessage.annotations.hasOwnProperty('roles')) {
+            roles = item.tempStructuredMessage.annotations.roles
         }
 
-        if (item.message.includes("node is not ready")) {
-            return [item.locator, ` (${roles},not ready)`, "NodeNotReady"]
+        if (item.tempStructuredMessage.reason === 'NotReady') {
+            return [item.locator, ` (${roles})`, "NodeNotReady"]
         }
-        let m = item.message.match(rePhase);
-        if (m && m[2] != "Update") {
-            return [item.locator, ` (${roles},update phases)`, m[2]];
-        }
-        return [item.locator, ` (${roles},updates)`, "Update"];
+        let m = item.tempStructuredMessage.annotations.phase;
+        return [item.locator, ` (${roles})`, m];
+    }
+
+    function cloudMetricsValue(item) {
+        return [item.locator, "", "CloudMetric"];
     }
 
     function alertSeverity(item) {
@@ -388,7 +379,15 @@
     }
 
     function defaultToolTip(item) {
-        return item.message + " " + getDurationString(((new Date(item.to)).getTime() - (new Date(item.from).getTime()))/1000);
+        let tt = item.message
+        if ('tempSource' in item) {
+            tt = tt + " source/" + item.tempSource
+        }
+        if ('display' in item) {
+            tt = tt + " display/" + item.display
+        }
+        tt = tt + " " + getDurationString(((new Date(item.to)).getTime() - (new Date(item.from).getTime()))/1000);
+        return tt
     }
 
     function createTimelineData(timelineVal, timelineData, rawEventIntervals, preconditionFunc, regex) {
@@ -488,21 +487,19 @@
 
         timelineGroups.push({group: "node-state", data: []})
         createTimelineData(nodeStateValue, timelineGroups[timelineGroups.length - 1].data, eventIntervals, isNodeState, regex)
+        // Sort the node-state intervals so rows are grouped by node
         timelineGroups[timelineGroups.length - 1].data.sort(function (e1 ,e2){
-            if (e1.label.includes("master") && e2.label.includes("worker")) {
-                return -1
-            }
-            return 0
+            return e1.label < e2.label ? -1 : e1.label > e2.label;
         })
+
+        timelineGroups.push({group: "cloud-metrics", data: []})
+        createTimelineData(cloudMetricsValue, timelineGroups[timelineGroups.length - 1].data, eventIntervals, isCloudMetrics, regex)
 
         timelineGroups.push({group: "endpoint-availability", data: []})
         createTimelineData(disruptionValue, timelineGroups[timelineGroups.length - 1].data, eventIntervals, isEndpointConnectivity, regex)
 
-        timelineGroups.push({group: "shutdown-interval", data: []})
+        timelineGroups.push({group: "apiserver-shutdown", data: []})
         createTimelineData(apiserverShutdownValue, timelineGroups[timelineGroups.length - 1].data, eventIntervals, isGracefulShutdownActivity, regex)
-
-        timelineGroups.push({group: "shutdown-events", data: []})
-        createTimelineData(apiserverShutdownEventsValue, timelineGroups[timelineGroups.length - 1].data, eventIntervals, isAPIServerShutdownEventActivity, regex)
 
         timelineGroups.push({group: "e2e-test-failed", data: []})
         createTimelineData("Failed", timelineGroups[timelineGroups.length - 1].data, eventIntervals, isE2EFailed, regex)
@@ -542,7 +539,7 @@
         const myChart = TimelinesChart();
         var ordinalScale = d3.scaleOrdinal()
             .domain([
-                'InterestingEvent', 'PathologicalKnown', "PathologicalNew", // interesting and pathological events
+                'InterestingEvent', 'PathologicalKnown', "PathologicalNew", "PodSandbox", // interesting and pathological events
                 'AlertInfo', 'AlertPending', 'AlertWarning', 'AlertCritical', // alerts
                 'OperatorUnavailable', 'OperatorDegraded', 'OperatorProgressing', // operators
                 'Update', 'Drain', 'Reboot', 'OperatingSystemUpdate', 'NodeNotReady', // nodes
@@ -552,7 +549,7 @@
                 'Degraded', 'Upgradeable', 'False', 'Unknown',
                 'PodLogInfo', 'PodLogWarning', 'PodLogError'])
             .range([
-                '#6E6E6E', '#0000ff', '#d0312d', // pathological and interesting events
+                '#6E6E6E', '#0000ff', '#d0312d', '#ffa500', // pathological and interesting events
                 '#fada5e','#fada5e','#ffa500', '#d0312d',  // alerts
                 '#d0312d', '#ffa500', '#fada5e', // operators
                 '#1e7bd9', '#4294e6', '#6aaef2', '#96cbff', '#fada5e', // nodes

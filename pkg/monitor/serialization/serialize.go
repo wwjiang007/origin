@@ -23,6 +23,8 @@ type EventInterval struct {
 	// files used in some new tests
 	Source string `json:"tempSource,omitempty"` // also temporary, unsure if this concept will survive
 
+	Display bool `json:"display,omitempty"`
+
 	// TODO: we're hoping to move these to just locator/message when everything is ready.
 	StructuredLocator monitorapi.Locator `json:"tempStructuredLocator"`
 	StructuredMessage monitorapi.Message `json:"tempStructuredMessage"`
@@ -37,7 +39,7 @@ type EventIntervalList struct {
 }
 
 func EventsToFile(filename string, events monitorapi.Intervals) error {
-	json, err := EventsToJSON(events)
+	json, err := IntervalsToJSON(events)
 	if err != nil {
 		return err
 	}
@@ -49,10 +51,10 @@ func EventsFromFile(filename string) (monitorapi.Intervals, error) {
 	if err != nil {
 		return nil, err
 	}
-	return EventsFromJSON(data)
+	return IntervalsFromJSON(data)
 }
 
-func EventsFromJSON(data []byte) (monitorapi.Intervals, error) {
+func IntervalsFromJSON(data []byte) (monitorapi.Intervals, error) {
 	var list EventIntervalList
 	if err := json.Unmarshal(data, &list); err != nil {
 		return nil, err
@@ -64,11 +66,14 @@ func EventsFromJSON(data []byte) (monitorapi.Intervals, error) {
 			return nil, err
 		}
 		events = append(events, monitorapi.Interval{
-			Source: monitorapi.IntervalSource(interval.Source),
+			Source:  monitorapi.IntervalSource(interval.Source),
+			Display: interval.Display,
 			Condition: monitorapi.Condition{
-				Level:   level,
-				Locator: interval.Locator,
-				Message: interval.Message,
+				Level:             level,
+				Locator:           interval.Locator,
+				StructuredLocator: interval.StructuredLocator,
+				Message:           interval.Message,
+				StructuredMessage: interval.StructuredMessage,
 			},
 
 			From: interval.From.Time,
@@ -89,7 +94,8 @@ func IntervalFromJSON(data []byte) (*monitorapi.Interval, error) {
 		return nil, err
 	}
 	return &monitorapi.Interval{
-		Source: monitorapi.IntervalSource(serializedInterval.Source),
+		Source:  monitorapi.IntervalSource(serializedInterval.Source),
+		Display: serializedInterval.Display,
 		Condition: monitorapi.Condition{
 			Level:             level,
 			Locator:           serializedInterval.Locator,
@@ -118,9 +124,9 @@ func IntervalToOneLineJSON(interval monitorapi.Interval) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func EventsToJSON(events monitorapi.Intervals) ([]byte, error) {
+func IntervalsToJSON(intervals monitorapi.Intervals) ([]byte, error) {
 	outputEvents := []EventInterval{}
-	for _, curr := range events {
+	for _, curr := range intervals {
 		outputEvents = append(outputEvents, monitorEventIntervalToEventInterval(curr))
 	}
 
@@ -129,20 +135,23 @@ func EventsToJSON(events monitorapi.Intervals) ([]byte, error) {
 	return json.MarshalIndent(list, "", "    ")
 }
 
-func EventsIntervalsToFile(filename string, events monitorapi.Intervals) error {
-	json, err := EventsIntervalsToJSON(events)
+func IntervalsToFile(filename string, intervals monitorapi.Intervals) error {
+	json, err := EventsIntervalsToJSON(intervals)
 	if err != nil {
 		return err
 	}
 	return ioutil.WriteFile(filename, json, 0644)
 }
 
+// TODO: this is very similar but subtly different to the function above, what is the purpose of skipping those
+// with from/to equal or empty to?
 func EventsIntervalsToJSON(events monitorapi.Intervals) ([]byte, error) {
 	outputEvents := []EventInterval{}
 	for _, curr := range events {
 		if curr.From == curr.To && !curr.To.IsZero() {
 			continue
 		}
+
 		outputEvents = append(outputEvents, monitorEventIntervalToEventInterval(curr))
 	}
 
@@ -159,25 +168,39 @@ func monitorEventIntervalToEventInterval(interval monitorapi.Interval) EventInte
 		StructuredLocator: interval.StructuredLocator,
 		StructuredMessage: interval.StructuredMessage,
 		Source:            string(interval.Source),
+		Display:           interval.Display,
 
 		From: metav1.Time{Time: interval.From},
 		To:   metav1.Time{Time: interval.To},
 	}
-
 	return ret
 }
 
 type byTime []EventInterval
 
 func (intervals byTime) Less(i, j int) bool {
+	// currently synced with https://github.com/openshift/origin/blob/9b001745ec8006eb406bd92e3555d1070b9b656e/pkg/monitor/monitorapi/types.go#L425
+
 	switch d := intervals[i].From.Sub(intervals[j].From.Time); {
 	case d < 0:
 		return true
 	case d > 0:
 		return false
 	}
+
+	switch d := intervals[i].To.Sub(intervals[j].To.Time); {
+	case d < 0:
+		return true
+	case d > 0:
+		return false
+	}
+	if intervals[i].Message != intervals[j].Message {
+		return intervals[i].Message < intervals[j].Message
+	}
+
 	return intervals[i].Locator < intervals[j].Locator
 }
+
 func (intervals byTime) Len() int { return len(intervals) }
 func (intervals byTime) Swap(i, j int) {
 	intervals[i], intervals[j] = intervals[j], intervals[i]

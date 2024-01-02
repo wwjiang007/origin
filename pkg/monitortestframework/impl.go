@@ -2,7 +2,9 @@ package monitortestframework
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -93,6 +95,17 @@ func (r *monitorTestRegistry) StartCollection(ctx context.Context, adminRESTConf
 			end := time.Now()
 			duration := end.Sub(start)
 			if err != nil {
+				var nsErr *NotSupportedError
+				if errors.As(err, &nsErr) {
+					junitCh <- &junitapi.JUnitTestCase{
+						Name:     testName,
+						Duration: duration.Seconds(),
+						SkipMessage: &junitapi.SkipMessage{
+							Message: nsErr.Reason,
+						},
+					}
+					return
+				}
 				errCh <- err
 				junitCh <- &junitapi.JUnitTestCase{
 					Name:     testName,
@@ -102,7 +115,10 @@ func (r *monitorTestRegistry) StartCollection(ctx context.Context, adminRESTConf
 					},
 					SystemOut: fmt.Sprintf("failed during setup\n%v", err),
 				}
-				return
+				var flakeErr *FlakeError
+				if !errors.As(err, &flakeErr) {
+					return
+				}
 			}
 
 			junitCh <- &junitapi.JUnitTestCase{
@@ -148,6 +164,19 @@ func (r *monitorTestRegistry) CollectData(ctx context.Context, storageDir string
 			end := time.Now()
 			duration := end.Sub(start)
 			if err != nil {
+				var nsErr *NotSupportedError
+				if errors.As(err, &nsErr) {
+					junitCh <- []*junitapi.JUnitTestCase{
+						{
+							Name:     testName,
+							Duration: duration.Seconds(),
+							SkipMessage: &junitapi.SkipMessage{
+								Message: nsErr.Reason,
+							},
+						},
+					}
+					return
+				}
 				junitCh <- []*junitapi.JUnitTestCase{
 					{
 						Name:     testName,
@@ -158,7 +187,10 @@ func (r *monitorTestRegistry) CollectData(ctx context.Context, storageDir string
 						SystemOut: fmt.Sprintf("failed during collection\n%v", err),
 					},
 				}
-				return
+				var flakeErr *FlakeError
+				if !errors.As(err, &flakeErr) {
+					return
+				}
 			}
 
 			junitCh <- []*junitapi.JUnitTestCase{
@@ -205,6 +237,18 @@ func (r *monitorTestRegistry) ConstructComputedIntervals(ctx context.Context, st
 		end := time.Now()
 		duration := end.Sub(start)
 		if err != nil {
+			var nsErr *NotSupportedError
+			if errors.As(err, &nsErr) {
+				junits = append(junits, &junitapi.JUnitTestCase{
+					Name:     testName,
+					Duration: duration.Seconds(),
+					SkipMessage: &junitapi.SkipMessage{
+						Message: nsErr.Reason,
+					},
+				})
+				continue
+			}
+
 			errs = append(errs, err)
 			junits = append(junits, &junitapi.JUnitTestCase{
 				Name:     testName,
@@ -214,7 +258,10 @@ func (r *monitorTestRegistry) ConstructComputedIntervals(ctx context.Context, st
 				},
 				SystemOut: fmt.Sprintf("failed during interval construction\n%v", err),
 			})
-			continue
+			var flakeErr *FlakeError
+			if !errors.As(err, &flakeErr) {
+				continue
+			}
 		}
 
 		junits = append(junits, &junitapi.JUnitTestCase{
@@ -239,6 +286,18 @@ func (r *monitorTestRegistry) EvaluateTestsFromConstructedIntervals(ctx context.
 		end := time.Now()
 		duration := end.Sub(start)
 		if err != nil {
+			var nsErr *NotSupportedError
+			if errors.As(err, &nsErr) {
+				junits = append(junits, &junitapi.JUnitTestCase{
+					Name:     testName,
+					Duration: duration.Seconds(),
+					SkipMessage: &junitapi.SkipMessage{
+						Message: nsErr.Reason,
+					},
+				})
+				continue
+			}
+
 			errs = append(errs, err)
 			junits = append(junits, &junitapi.JUnitTestCase{
 				Name:     testName,
@@ -248,7 +307,10 @@ func (r *monitorTestRegistry) EvaluateTestsFromConstructedIntervals(ctx context.
 				},
 				SystemOut: fmt.Sprintf("failed during test evaluation\n%v", err),
 			})
-			continue
+			var flakeErr *FlakeError
+			if !errors.As(err, &flakeErr) {
+				continue
+			}
 		}
 
 		junits = append(junits, &junitapi.JUnitTestCase{
@@ -268,10 +330,31 @@ func (r *monitorTestRegistry) WriteContentToStorage(ctx context.Context, storage
 		testName := fmt.Sprintf("[Jira:%q] monitor test %v writing to storage", monitorTest.jiraComponent, monitorTest.name)
 
 		start := time.Now()
+
+		var finalIntervalLength = len(finalIntervals)
+		fmt.Fprintf(os.Stderr, "Processing monitorTest: %s\n", monitorTest.name)
+		fmt.Fprintf(os.Stderr, "  finalIntervals size = %d\n", finalIntervalLength)
+		if finalIntervalLength > 1 {
+			fmt.Fprintf(os.Stderr, "  first interval time: From = %s; To = %s\n", finalIntervals[0].From, finalIntervals[0].To)
+		}
+		fmt.Fprintf(os.Stderr, "  last interval time: From = %s; To = %s\n", finalIntervals[finalIntervalLength-1].From, finalIntervals[finalIntervalLength-1].To)
+
 		err := writeContentToStorageWithPanicProtection(ctx, monitorTest.monitorTest, storageDir, timeSuffix, finalIntervals, finalResourceState)
 		end := time.Now()
 		duration := end.Sub(start)
 		if err != nil {
+			var nsErr *NotSupportedError
+			if errors.As(err, &nsErr) {
+				junits = append(junits, &junitapi.JUnitTestCase{
+					Name:     testName,
+					Duration: duration.Seconds(),
+					SkipMessage: &junitapi.SkipMessage{
+						Message: nsErr.Reason,
+					},
+				})
+				continue
+			}
+
 			errs = append(errs, err)
 			junits = append(junits, &junitapi.JUnitTestCase{
 				Name:     testName,
@@ -281,7 +364,10 @@ func (r *monitorTestRegistry) WriteContentToStorage(ctx context.Context, storage
 				},
 				SystemOut: fmt.Sprintf("failed during test evaluation\n%v", err),
 			})
-			continue
+			var flakeErr *FlakeError
+			if !errors.As(err, &flakeErr) {
+				continue
+			}
 		}
 
 		junits = append(junits, &junitapi.JUnitTestCase{
@@ -305,6 +391,18 @@ func (r *monitorTestRegistry) Cleanup(ctx context.Context) ([]*junitapi.JUnitTes
 		end := time.Now()
 		duration := end.Sub(start)
 		if err != nil {
+			var nsErr *NotSupportedError
+			if errors.As(err, &nsErr) {
+				junits = append(junits, &junitapi.JUnitTestCase{
+					Name:     testName,
+					Duration: duration.Seconds(),
+					SkipMessage: &junitapi.SkipMessage{
+						Message: nsErr.Reason,
+					},
+				})
+				continue
+			}
+
 			errs = append(errs, err)
 			junits = append(junits, &junitapi.JUnitTestCase{
 				Name:     testName,
@@ -314,7 +412,10 @@ func (r *monitorTestRegistry) Cleanup(ctx context.Context) ([]*junitapi.JUnitTes
 				},
 				SystemOut: fmt.Sprintf("failed during cleanup\n%v", err),
 			})
-			continue
+			var flakeErr *FlakeError
+			if !errors.As(err, &flakeErr) {
+				continue
+			}
 		}
 
 		junits = append(junits, &junitapi.JUnitTestCase{

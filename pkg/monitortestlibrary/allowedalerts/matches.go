@@ -6,6 +6,8 @@ import (
 	historicaldata2 "github.com/openshift/origin/pkg/monitortestlibrary/historicaldata"
 )
 
+// neverFailAllowance will ignore historical data and impose a FailAfter limit that should not be
+// reachable in a CI job run, so the test can never fail, only flake if beyond historical limits.
 type neverFailAllowance struct {
 	flakeDelegate AlertTestAllowanceCalculator
 }
@@ -52,5 +54,39 @@ func (d *percentileAllowances) FlakeAfter(key historicaldata2.AlertDataKey) time
 // getClosestPercentilesValues uses the backend and information about the cluster to choose the best historical p99 to operate against.
 // We enforce "don't get worse" for disruption by watching the aggregate data in CI over many runs.
 func getClosestPercentilesValues(key historicaldata2.AlertDataKey) (historicaldata2.StatisticalDuration, string, error) {
-	return getCurrentResults().BestMatchDuration(key)
+	return GetHistoricalData().BestMatchDuration(key)
+}
+
+func alwaysFlake() AlertTestAllowanceCalculator {
+	return &alwaysFlakeAllowance{}
+}
+
+// alwaysFlakeAllowance is for alerts we want to flake a test if they occur at all.
+type alwaysFlakeAllowance struct {
+}
+
+func (d *alwaysFlakeAllowance) FailAfter(key historicaldata2.AlertDataKey) (time.Duration, error) {
+	// make it effectively impossible for a test failure here, we only want flakes
+	return 24 * time.Hour, nil
+}
+
+func (d *alwaysFlakeAllowance) FlakeAfter(key historicaldata2.AlertDataKey) time.Duration {
+	return 1 * time.Second
+}
+
+func failOnAny() AlertTestAllowanceCalculator {
+	return &alwaysFailAllowance{}
+}
+
+// alwaysFailAllowance is for alerts we want to fail a test if they occur at all.
+type alwaysFailAllowance struct {
+}
+
+func (d *alwaysFailAllowance) FailAfter(key historicaldata2.AlertDataKey) (time.Duration, error) {
+	return 1 * time.Second, nil
+}
+
+func (d *alwaysFailAllowance) FlakeAfter(key historicaldata2.AlertDataKey) time.Duration {
+	// flake is irrelevant here, we're going to fail on ANY duration
+	return 24 * time.Hour
 }

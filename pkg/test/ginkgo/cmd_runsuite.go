@@ -15,18 +15,22 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/openshift/origin/pkg/monitortestframework"
+	"github.com/sirupsen/logrus"
 
 	"github.com/onsi/ginkgo/v2"
+	"github.com/openshift/origin/pkg/clioptions/clusterinfo"
 	"github.com/openshift/origin/pkg/defaultmonitortests"
 	"github.com/openshift/origin/pkg/disruption/backend/sampler"
 	"github.com/openshift/origin/pkg/monitor"
 	monitorserialization "github.com/openshift/origin/pkg/monitor/serialization"
+	"github.com/openshift/origin/pkg/monitortestframework"
 	"github.com/openshift/origin/pkg/riskanalysis"
 	"github.com/openshift/origin/pkg/test/ginkgo/junitapi"
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/rest"
 )
 
 const (
@@ -64,6 +68,9 @@ type GinkgoRunSuiteOptions struct {
 	FromRepository string
 
 	StartTime time.Time
+
+	ExactMonitorTests   []string
+	DisableMonitorTests []string
 }
 
 func NewGinkgoRunSuiteOptions(streams genericclioptions.IOStreams) *GinkgoRunSuiteOptions {
@@ -73,6 +80,9 @@ func NewGinkgoRunSuiteOptions(streams genericclioptions.IOStreams) *GinkgoRunSui
 }
 
 func (o *GinkgoRunSuiteOptions) BindFlags(flags *pflag.FlagSet) {
+
+	monitorNames := defaultmonitortests.ListAllMonitorTests()
+
 	flags.BoolVar(&o.DryRun, "dry-run", o.DryRun, "Print the tests to run without executing them.")
 	flags.BoolVar(&o.PrintCommands, "print-commands", o.PrintCommands, "Print the sub-commands that would be executed instead.")
 	flags.StringVar(&o.ClusterStabilityDuringTest, "cluster-stability", o.ClusterStabilityDuringTest, "cluster stability during test, usually dependent on the job: Stable or Disruptive. Empty default will be treated as Stable.")
@@ -82,6 +92,9 @@ func (o *GinkgoRunSuiteOptions) BindFlags(flags *pflag.FlagSet) {
 	flags.DurationVar(&o.Timeout, "timeout", o.Timeout, "Set the maximum time a test can run before being aborted. This is read from the suite by default, but will be 10 minutes otherwise.")
 	flags.BoolVar(&o.IncludeSuccessOutput, "include-success", o.IncludeSuccessOutput, "Print output from successful tests.")
 	flags.IntVar(&o.Parallelism, "max-parallel-tests", o.Parallelism, "Maximum number of tests running in parallel. 0 defaults to test suite recommended value, which is different in each suite.")
+	flags.StringSliceVar(&o.ExactMonitorTests, "monitor", o.ExactMonitorTests,
+		fmt.Sprintf("list of exactly which monitors to enable. All others will be disabled.  Current monitors are: [%s]", strings.Join(monitorNames, ", ")))
+	flags.StringSliceVar(&o.DisableMonitorTests, "disable-monitor", o.DisableMonitorTests, "list of monitors to disable.  Defaults for others will be honored.")
 }
 
 func (o *GinkgoRunSuiteOptions) Validate() error {
@@ -215,6 +228,17 @@ func (o *GinkgoRunSuiteOptions) Run(suite *TestSuite, junitSuiteName string, mon
 		return nil
 	}
 
+	restConfig, err := clusterinfo.GetMonitorRESTConfig()
+	if err != nil {
+		return err
+	}
+
+	// skip tests due to newer k8s
+	tests, err = o.filterOutRebaseTests(restConfig, tests)
+	if err != nil {
+		return err
+	}
+
 	if len(o.JUnitDir) > 0 {
 		if _, err := os.Stat(o.JUnitDir); err != nil {
 			if !os.IsNotExist(err) {
@@ -232,11 +256,6 @@ func (o *GinkgoRunSuiteOptions) Run(suite *TestSuite, junitSuiteName string, mon
 	}
 	if parallelism == 0 {
 		parallelism = 10
-	}
-
-	restConfig, err := monitor.GetMonitorRESTConfig()
-	if err != nil {
-		return err
 	}
 
 	ctx, cancelFn := context.WithCancel(context.Background())
@@ -258,12 +277,17 @@ func (o *GinkgoRunSuiteOptions) Run(suite *TestSuite, junitSuiteName string, mon
 	}()
 	signal.Notify(abortCh, syscall.SIGINT, syscall.SIGTERM)
 
+	monitorTests, err := defaultmonitortests.NewMonitorTestsFor(monitorTestInfo)
+	if err != nil {
+		logrus.Errorf("Error getting monitor tests: %v", err)
+	}
+
 	monitorEventRecorder := monitor.NewRecorder()
 	m := monitor.NewMonitor(
 		monitorEventRecorder,
 		restConfig,
 		o.JUnitDir,
-		defaultmonitortests.NewMonitorTestsFor(monitorTestInfo),
+		monitorTests,
 	)
 	if err := m.Start(ctx); err != nil {
 		return err
@@ -532,7 +556,7 @@ func (o *GinkgoRunSuiteOptions) Run(suite *TestSuite, junitSuiteName string, mon
 			}
 		}
 
-		wasMasterNodeUpdated = monitor.WasMasterNodeUpdated(events)
+		wasMasterNodeUpdated = clusterinfo.WasMasterNodeUpdated(events)
 	}
 
 	// report the outcome of the test
@@ -547,7 +571,7 @@ func (o *GinkgoRunSuiteOptions) Run(suite *TestSuite, junitSuiteName string, mon
 			fmt.Fprintf(o.Out, "error: Unable to write e2e JUnit xml results: %v", err)
 		}
 
-		if err := riskanalysis.WriteJobRunTestFailureSummary(o.JUnitDir, timeSuffix, finalSuiteResults, wasMasterNodeUpdated); err != nil {
+		if err := riskanalysis.WriteJobRunTestFailureSummary(o.JUnitDir, timeSuffix, finalSuiteResults, wasMasterNodeUpdated, ""); err != nil {
 			fmt.Fprintf(o.Out, "error: Unable to write e2e job run failures summary: %v", err)
 		}
 	}
@@ -568,4 +592,41 @@ func (o *GinkgoRunSuiteOptions) Run(suite *TestSuite, junitSuiteName string, mon
 
 	fmt.Fprintf(o.Out, "%d pass, %d skip (%s)\n", pass, skip, duration)
 	return ctx.Err()
+}
+
+func (o *GinkgoRunSuiteOptions) filterOutRebaseTests(restConfig *rest.Config, tests []*testCase) ([]*testCase, error) {
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(restConfig)
+	if err != nil {
+		return nil, err
+	}
+	serverVersion, err := discoveryClient.ServerVersion()
+	if err != nil {
+		return nil, err
+	}
+	// TODO: this version along with below exclusions lists needs to be updated
+	// for the rebase in-progress.
+	if !strings.HasPrefix(serverVersion.Minor, "29") {
+		return tests, nil
+	}
+
+	// Below list should only be filled in when we're trying to land k8s rebase.
+	// Don't pile them up!
+	exclusions := []string{
+		// compare https://github.com/kubernetes/kubernetes/pull/119454
+		`[sig-network] Services should complete a service status lifecycle`,
+		`[sig-storage] In-tree Volumes [Driver: vsphere]`,
+	}
+
+	matches := make([]*testCase, 0, len(tests))
+outerLoop:
+	for _, test := range tests {
+		for _, excl := range exclusions {
+			if strings.Contains(test.name, excl) {
+				fmt.Fprintf(o.Out, "Skipping %q due to rebase in-progress\n", test.name)
+				continue outerLoop
+			}
+		}
+		matches = append(matches, test)
+	}
+	return matches, nil
 }

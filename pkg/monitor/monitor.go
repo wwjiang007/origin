@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/openshift/origin/pkg/riskanalysis"
+
 	"github.com/openshift/origin/pkg/monitortestframework"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -158,11 +160,17 @@ func (m *Monitor) SerializeResults(ctx context.Context, junitSuiteName, timeSuff
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	// don't bound the intervals that we return
-	finalIntervals := m.recorder.Intervals(time.Time{}, time.Time{})
+	// We bound the intervals by the monitor stop/start time to limit the scope to when
+	// the monitors run (e.g., during upgrade phase and during e2e phase post upgrade).
+	// The tests will not be able to discover intervals outside of the current phase (e.g.,
+	// tests that check intervals for the e2e phase will not see intervals during upgrade
+	// phase and vice versa).  If it turns out visibility throughout the entire run yields
+	// useful testing, we can comeback and tweak this accordingly.
+	finalIntervals := m.recorder.Intervals(m.startTime, m.stopTime)
+
 	finalResources := m.recorder.CurrentResourceState()
 	// TODO stop taking timesuffix as an arg and make this authoritative.
-	//timeSuffix := fmt.Sprintf("_%s", time.Now().UTC().Format("20060102-150405"))
+	// timeSuffix := fmt.Sprintf("_%s", time.Now().UTC().Format("20060102-150405"))
 
 	eventDir := filepath.Join(m.storageDir, monitorapi.EventDir)
 	if err := os.MkdirAll(eventDir, os.ModePerm); err != nil {
@@ -171,6 +179,9 @@ func (m *Monitor) SerializeResults(ctx context.Context, junitSuiteName, timeSuff
 	}
 
 	fmt.Fprintf(os.Stderr, "Writing to storage.\n")
+	fmt.Fprintf(os.Stderr, "  m.startTime = %s\n", m.startTime)
+	fmt.Fprintf(os.Stderr, "  m.stopTime  = %s\n", m.stopTime)
+
 	monitorTestJunits, err := m.monitorTestRegistry.WriteContentToStorage(
 		ctx,
 		m.storageDir,
@@ -185,15 +196,20 @@ func (m *Monitor) SerializeResults(ctx context.Context, junitSuiteName, timeSuff
 	m.junits = append(m.junits, monitorTestJunits...)
 
 	fmt.Fprintf(os.Stderr, "Writing junits.\n")
-	if err := m.serializeJunit(ctx, m.storageDir, junitSuiteName, timeSuffix); err != nil {
+	var junitSuite *junitapi.JUnitTestSuite
+	if junitSuite, err = m.serializeJunit(ctx, m.storageDir, junitSuiteName, timeSuffix); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to write junit xml, err: %v\n", err)
 		return err
+	}
+
+	if err := riskanalysis.WriteJobRunTestFailureSummary(m.storageDir, timeSuffix, junitSuite, "", "_monitor"); err != nil {
+		fmt.Fprintf(os.Stderr, "error: Unable to write e2e job run failures summary: %v", err)
 	}
 
 	return nil
 }
 
-func (m *Monitor) serializeJunit(ctx context.Context, storageDir, junitSuiteName, fileSuffix string) error {
+func (m *Monitor) serializeJunit(ctx context.Context, storageDir, junitSuiteName, fileSuffix string) (*junitapi.JUnitTestSuite, error) {
 	junitSuite := junitapi.JUnitTestSuite{
 		Name:       junitSuiteName,
 		NumTests:   0,
@@ -218,10 +234,10 @@ func (m *Monitor) serializeJunit(ctx context.Context, storageDir, junitSuiteName
 
 	out, err := xml.MarshalIndent(junitSuite, "", "    ")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	filePrefix := "e2e-monitor-tests"
 	path := filepath.Join(storageDir, fmt.Sprintf("%s_%s.xml", filePrefix, fileSuffix))
 	fmt.Fprintf(os.Stderr, "Writing JUnit report to %s\n", path)
-	return os.WriteFile(path, test.StripANSI(out), 0640)
+	return &junitSuite, os.WriteFile(path, test.StripANSI(out), 0640)
 }

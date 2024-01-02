@@ -35,7 +35,7 @@ type RecorderWriter interface {
 	RecordAt(t time.Time, conditions ...Condition)
 
 	AddIntervals(eventIntervals ...Interval)
-	StartInterval(t time.Time, condition Condition) int
+	StartInterval(interval Interval) int
 	EndInterval(startedInterval int, t time.Time) *Interval
 }
 
@@ -108,6 +108,9 @@ const (
 	LocatorTypeKubeEvent         LocatorType = "KubeEvent"
 	LocatorTypeE2ETest           LocatorType = "E2ETest"
 	LocatorTypeAPIServerShutdown LocatorType = "APIServerShutdown"
+	LocatorTypeClusterVersion    LocatorType = "ClusterVersion"
+	LocatorTypeKind              LocatorType = "Kind"
+	LocatorTypeCloudMetrics      LocatorType = "CloudMetrics"
 )
 
 type LocatorKey string
@@ -116,11 +119,14 @@ const (
 	LocatorServer             LocatorKey = "server"   // TODO this looks like a bad name.  Aggregated apiserver?  Do we even need it?
 	LocatorShutdown           LocatorKey = "shutdown" // TODO this should not exist.  This is a reason and message
 	LocatorClusterOperatorKey LocatorKey = "clusteroperator"
+	LocatorClusterVersionKey  LocatorKey = "clusterversion"
 	LocatorNamespaceKey       LocatorKey = "namespace"
+	LocatorDeploymentKey      LocatorKey = "deployment"
 	LocatorNodeKey            LocatorKey = "node"
 	LocatorEtcdMemberKey      LocatorKey = "etcd-member"
 	LocatorKindKey            LocatorKey = "kind"
 	LocatorNameKey            LocatorKey = "name"
+	LocatorHmsgKey            LocatorKey = "hmsg"
 	LocatorPodKey             LocatorKey = "pod"
 	LocatorUIDKey             LocatorKey = "uid"
 	LocatorMirrorUIDKey       LocatorKey = "mirror-uid"
@@ -135,8 +141,10 @@ const (
 	LocatorConnectionKey            LocatorKey = "connection"
 	LocatorProtocolKey              LocatorKey = "protocol"
 	LocatorTargetKey                LocatorKey = "target"
+	LocatorRowKey                   LocatorKey = "row"
 	LocatorShutdownKey              LocatorKey = "shutdown"
 	LocatorServerKey                LocatorKey = "server"
+	LocatorMetricKey                LocatorKey = "metric"
 )
 
 type Locator struct {
@@ -165,6 +173,9 @@ const (
 	PodReasonForceDelete           IntervalReason = "ForceDelete"
 	PodReasonDeleted               IntervalReason = "Deleted"
 	PodReasonScheduled             IntervalReason = "Scheduled"
+	PodReasonEvicted               IntervalReason = "Evicted"
+	PodReasonPreempted             IntervalReason = "Preempted"
+	PodReasonFailed                IntervalReason = "Failed"
 
 	ContainerReasonContainerExit      IntervalReason = "ContainerExit"
 	ContainerReasonContainerStart     IntervalReason = "ContainerStart"
@@ -184,33 +195,57 @@ const (
 	NodeNotReadyReason IntervalReason = "NotReady"
 	NodeFailedLease    IntervalReason = "FailedToUpdateLease"
 
+	MachineConfigChangeReason  IntervalReason = "MachineConfigChange"
+	MachineConfigReachedReason IntervalReason = "MachineConfigReached"
+
 	Timeout IntervalReason = "Timeout"
 
 	E2ETestStarted  IntervalReason = "E2ETestStarted"
 	E2ETestFinished IntervalReason = "E2ETestFinished"
+
+	CloudMetricsExtrenuous                IntervalReason = "CloudMetricsExtrenuous"
+	FailedToDeleteCGroupsPath             IntervalReason = "FailedToDeleteCGroupsPath"
+	FailedToAuthenticateWithOpenShiftUser IntervalReason = "FailedToAuthenticateWithOpenShiftUser"
 )
 
 type AnnotationKey string
 
 const (
+	AnnotationAlertState         AnnotationKey = "alertstate"
+	AnnotationState              AnnotationKey = "state"
+	AnnotationSeverity           AnnotationKey = "severity"
 	AnnotationReason             AnnotationKey = "reason"
 	AnnotationContainerExitCode  AnnotationKey = "code"
 	AnnotationCause              AnnotationKey = "cause"
+	AnnotationConfig             AnnotationKey = "config"
+	AnnotationContainer          AnnotationKey = "container"
+	AnnotationImage              AnnotationKey = "image"
+	AnnotationInteresting        AnnotationKey = "interesting"
+	AnnotationCount              AnnotationKey = "count"
 	AnnotationNode               AnnotationKey = "node"
 	AnnotationEtcdLocalMember    AnnotationKey = "local-member-id"
 	AnnotationEtcdTerm           AnnotationKey = "term"
 	AnnotationEtcdLeader         AnnotationKey = "leader"
 	AnnotationPreviousEtcdLeader AnnotationKey = "prev-leader"
+	AnnotationPathological       AnnotationKey = "pathological"
 	AnnotationConstructed        AnnotationKey = "constructed"
-	AnnotationPodPhase           AnnotationKey = "phase"
+	AnnotationPhase              AnnotationKey = "phase"
 	AnnotationIsStaticPod        AnnotationKey = "mirrored"
 	// TODO this looks wrong. seems like it ought to be set in the to/from
 	AnnotationDuration       AnnotationKey = "duration"
 	AnnotationRequestAuditID AnnotationKey = "request-audit-id"
+	AnnotationRoles          AnnotationKey = "roles"
 	AnnotationStatus         AnnotationKey = "status"
 	AnnotationCondition      AnnotationKey = "condition"
 )
 
+// ConstructionOwner was originally meant to signify that an interval was derived from other intervals.
+// This allowed for the possibility of testing interval generation by feeding in only source intervals,
+// and checking what was generated.
+// TODO: likely want to drop this concept in favor of Source, plus a flag automatically applied to any
+// intervals coming back from the monitor test call to generate calculated intervals. Source
+// will replace the use of what constructed the interval, and the flag will allow us to see what is derived
+// and what isn't.
 type ConstructionOwner string
 
 const (
@@ -229,6 +264,9 @@ type Message struct {
 	Annotations map[AnnotationKey]string `json:"annotations"`
 }
 
+// IntervalSource is used to type/categorize all intervals based on what created them.
+// This is intended to be used to group, and when combined with the display flag, signal that
+// they should be visible by default in the UIs that render interval charts.
 type IntervalSource string
 
 const (
@@ -236,15 +274,22 @@ const (
 	SourceAPIServerShutdown       IntervalSource = "APIServerShutdown"
 	SourceDisruption              IntervalSource = "Disruption"
 	SourceE2ETest                 IntervalSource = "E2ETest"
+	SourceKubeEvent               IntervalSource = "KubeEvent"
 	SourceNetworkManagerLog       IntervalSource = "NetworkMangerLog"
 	SourceNodeMonitor             IntervalSource = "NodeMonitor"
+	SourceKubeletLog              IntervalSource = "KubeletLog"
 	SourcePodLog                  IntervalSource = "PodLog"
+	SourceEtcdLog                 IntervalSource = "EtcdLog"
 	SourcePodMonitor              IntervalSource = "PodMonitor"
-	SourceKubeEvent               IntervalSource = "KubeEvent"
-	SourceTestData                IntervalSource = "TestData"                // some tests have no real source to assign
+	APIServerGracefulShutdown     IntervalSource = "APIServerGracefulShutdown"
+	SourceTestData                IntervalSource = "TestData" // some tests have no real source to assign
+	SourceOVSVswitchdLog          IntervalSource = "OVSVswitchdLog"
 	SourcePathologicalEventMarker IntervalSource = "PathologicalEventMarker" // not sure if this is really helpful since the events all have a different origin
 	SourceClusterOperatorMonitor  IntervalSource = "ClusterOperatorMonitor"
 	SourceOperatorState           IntervalSource = "OperatorState"
+	SourceNodeState                              = "NodeState"
+	SourcePodState                               = "PodState"
+	SourceCloudMetrics                           = "CloudMetrics"
 )
 
 type Interval struct {
@@ -303,13 +348,15 @@ func (i Message) OldMessage() string {
 }
 
 func (i Locator) OldLocator() string {
-	keys := sets.NewString()
+	keys := []string{}
 	for k := range i.Keys {
-		keys.Insert(string(k))
+		keys = append(keys, string(k))
 	}
 
+	keys = sortKeys(keys)
+
 	annotations := []string{}
-	for _, k := range keys.List() {
+	for _, k := range keys {
 		v := i.Keys[LocatorKey(k)]
 		if LocatorKey(k) == LocatorE2ETestKey {
 			annotations = append(annotations, fmt.Sprintf("%v/%q", k, v))
@@ -317,9 +364,55 @@ func (i Locator) OldLocator() string {
 			annotations = append(annotations, fmt.Sprintf("%v/%v", k, v))
 		}
 	}
+
 	annotationString := strings.Join(annotations, " ")
 
 	return annotationString
+}
+
+// sortKeys ensures that some keys appear in the order we require (least specific to most), so rows with locators
+// are grouped together. (i.e. keeping containers within the same pod together, or rows for a specific container)
+// Blindly going through the keys results in alphabetical ordering, container comes first, and then we've
+// got container events separated from their pod events on the intervals chart.
+// This will hopefully eventually go away but for now we need it.
+// Courtesy of ChatGPT but unit tested.
+func sortKeys(keys []string) []string {
+
+	// Ensure these keys appear in this order. Other keys can be mixed in and will appear at the end in alphabetical
+	// order.
+	orderedKeys := []string{"namespace", "node", "pod", "uid", "server", "container", "shutdown", "row"}
+
+	// Create a map to store the indices of keys in the orderedKeys array.
+	// This will allow us to efficiently check if a key is in orderedKeys and find its position.
+	orderedKeyIndices := make(map[string]int)
+
+	for i, key := range orderedKeys {
+		orderedKeyIndices[key] = i
+	}
+
+	// Define a custom sorting function that orders the keys based on the orderedKeys array.
+	sort.Slice(keys, func(i, j int) bool {
+		// Get the indices of keys i and j in orderedKeys.
+		indexI, existsI := orderedKeyIndices[keys[i]]
+		indexJ, existsJ := orderedKeyIndices[keys[j]]
+
+		// If both keys exist in orderedKeys, sort them based on their order.
+		if existsI && existsJ {
+			return indexI < indexJ
+		}
+
+		// If only one of the keys exists in orderedKeys, move it to the front.
+		if existsI {
+			return true
+		} else if existsJ {
+			return false
+		}
+
+		// If neither key is in orderedKeys, sort alphabetically so we have predictable ordering
+		return keys[i] < keys[j]
+	})
+
+	return keys
 }
 
 type IntervalFilter func(i Interval) bool
@@ -349,6 +442,8 @@ type Intervals []Interval
 var _ sort.Interface = Intervals{}
 
 func (intervals Intervals) Less(i, j int) bool {
+	// currently synced with https://github.com/openshift/origin/blob/9b001745ec8006eb406bd92e3555d1070b9b656e/pkg/monitor/serialization/serialize.go#L175
+
 	switch d := intervals[i].From.Sub(intervals[j].From); {
 	case d < 0:
 		return true
@@ -361,7 +456,11 @@ func (intervals Intervals) Less(i, j int) bool {
 	case d > 0:
 		return false
 	}
-	return intervals[i].Message < intervals[j].Message
+	if intervals[i].Message != intervals[j].Message {
+		return intervals[i].Message < intervals[j].Message
+	}
+
+	return intervals[i].Locator < intervals[j].Locator
 }
 func (intervals Intervals) Len() int { return len(intervals) }
 func (intervals Intervals) Swap(i, j int) {
@@ -436,6 +535,11 @@ func IsInE2ENamespace(eventInterval Interval) bool {
 
 func IsInNamespaces(namespaces sets.String) EventIntervalMatchesFunc {
 	return func(eventInterval Interval) bool {
+		// For new, structured locators:
+		if ns, ok := eventInterval.StructuredLocator.Keys[LocatorNamespaceKey]; ok {
+			return namespaces.Has(ns)
+		}
+		// TODO: For legacy locators, can be removed soon
 		ns := NamespaceFromLocator(eventInterval.Locator)
 		return namespaces.Has(ns)
 	}

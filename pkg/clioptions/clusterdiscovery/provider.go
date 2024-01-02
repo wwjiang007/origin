@@ -8,6 +8,7 @@ import (
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 
+	"github.com/openshift/origin/test/extended/util/image"
 	e2e "k8s.io/kubernetes/test/e2e/framework"
 
 	exutil "github.com/openshift/origin/test/extended/util"
@@ -65,11 +66,22 @@ func InitializeTestFramework(context *e2e.TestContextType, config *ClusterConfig
 	e2e.AfterReadingAllFlags(context)
 	context.DumpLogsOnFailure = true
 
-	// these constants are taken from kube e2e and used by tests
-	context.IPFamily = "ipv4"
-	if config.HasIPv6 && !config.HasIPv4 {
-		context.IPFamily = "ipv6"
+	// IPFamily constants are taken from kube e2e and used by tests
+	context.IPFamily = config.IPFamily
+
+	// As an extra precaution for now, we do not run this check on all tests since some might fail to pull
+	// release payload information
+	if config.HasNoOptionalCapabilities {
+		imageStreamString, _, err := exutil.NewCLIWithoutNamespace("").AsAdmin().Run("adm", "release", "info", `-ojsonpath={.references}`).Outputs()
+		if err != nil {
+			return err
+		}
+
+		if err := image.InitializeReleasePullSpecString(imageStreamString, config.HasNoOptionalCapabilities); err != nil {
+			return err
+		}
 	}
+
 	return nil
 }
 

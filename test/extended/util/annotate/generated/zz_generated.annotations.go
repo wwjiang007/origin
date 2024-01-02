@@ -47,6 +47,8 @@ var Annotations = map[string]string{
 
 	"[sig-api-machinery][Feature:ClusterResourceQuota] Cluster resource quota should control resource limits across namespaces [apigroup:quota.openshift.io][apigroup:image.openshift.io][apigroup:monitoring.coreos.com][apigroup:template.openshift.io]": " [Suite:openshift/conformance/parallel]",
 
+	"[sig-api-machinery][Feature:ResourceQuota] Object count check the quota after import-image with --all option [Skipped:Disconnected]": " [Suite:openshift/conformance/parallel]",
+
 	"[sig-api-machinery][Feature:ResourceQuota] Object count should properly count the number of imagestreams resources [apigroup:image.openshift.io]": " [Suite:openshift/conformance/parallel]",
 
 	"[sig-api-machinery][Feature:ResourceQuota] Object count should properly count the number of persistentvolumeclaims resources [Serial]": " [Suite:openshift/conformance/serial]",
@@ -201,7 +203,7 @@ var Annotations = map[string]string{
 
 	"[sig-arch] [Conformance] sysctl whitelists net.ipv4.tcp_syncookies": " [Suite:openshift/conformance/parallel/minimal]",
 
-	"[sig-arch] ocp payload should be based on existing source OLM version should contain the source commit id": " [Suite:openshift/conformance/parallel]",
+	"[sig-arch] ocp payload should be based on existing source OLM version should contain the source commit id": " [Skipped:NoOptionalCapabilities] [Suite:openshift/conformance/parallel]",
 
 	"[sig-arch][Early] CRDs for openshift.io should have a status in the CRD schema": " [Suite:openshift/conformance/parallel]",
 
@@ -217,7 +219,13 @@ var Annotations = map[string]string{
 
 	"[sig-arch][Feature:ClusterUpgrade] Cluster should remain functional during upgrade [Disruptive]": " [Serial]",
 
+	"[sig-arch][Late] all registered tls artifacts must have no metadata violation regressions": " [Suite:openshift/conformance/parallel]",
+
+	"[sig-arch][Late] all tls artifacts must be registered": " [Suite:openshift/conformance/parallel]",
+
 	"[sig-arch][Late] clients should not use APIs that are removed in upcoming releases [apigroup:apiserver.openshift.io]": " [Suite:openshift/conformance/parallel]",
+
+	"[sig-arch][Late] collect certificate data": " [Suite:openshift/conformance/parallel]",
 
 	"[sig-arch][Late] operators should not create watch channels very often [apigroup:apiserver.openshift.io]": " [Suite:openshift/conformance/parallel]",
 
@@ -903,6 +911,10 @@ var Annotations = map[string]string{
 
 	"[sig-cluster-lifecycle] TestAdminAck should succeed [apigroup:config.openshift.io]": " [Suite:openshift/conformance/parallel]",
 
+	"[sig-cluster-lifecycle][Feature:Machines] Managed cluster should [sig-scheduling][Early] control plane machine set operator should not cause an early rollout": " [Suite:openshift/conformance/parallel]",
+
+	"[sig-cluster-lifecycle][Feature:Machines] Managed cluster should [sig-scheduling][Early] control plane machine set operator should not have any events": " [Suite:openshift/conformance/parallel]",
+
 	"[sig-cluster-lifecycle][Feature:Machines] Managed cluster should have machine resources [apigroup:machine.openshift.io]": " [Suite:openshift/conformance/parallel]",
 
 	"[sig-cluster-lifecycle][Feature:Machines][Disruptive] Managed cluster should recover from deleted worker machines [apigroup:machine.openshift.io]": " [Serial]",
@@ -951,10 +963,6 @@ var Annotations = map[string]string{
 
 	"[sig-devex][Feature:ImageEcosystem][Slow] openshift images should be SCL enabled returning s2i usage when running the image \"image-registry.openshift-image-registry.svc:5000/openshift/ruby:2.5-ubi8\" should print the usage": "",
 
-	"[sig-devex][Feature:ImageEcosystem][Slow] openshift images should be SCL enabled returning s2i usage when running the image \"image-registry.openshift-image-registry.svc:5000/openshift/ruby:2.7-ubi7\" should print the usage": "",
-
-	"[sig-devex][Feature:ImageEcosystem][Slow] openshift images should be SCL enabled returning s2i usage when running the image \"image-registry.openshift-image-registry.svc:5000/openshift/ruby:2.7-ubi8\" should print the usage": "",
-
 	"[sig-devex][Feature:ImageEcosystem][Slow] openshift images should be SCL enabled returning s2i usage when running the image \"image-registry.openshift-image-registry.svc:5000/openshift/ruby:3.0-ubi7\" should print the usage": "",
 
 	"[sig-devex][Feature:ImageEcosystem][Slow] openshift images should be SCL enabled returning s2i usage when running the image \"image-registry.openshift-image-registry.svc:5000/openshift/ruby:3.0-ubi8\" should print the usage": "",
@@ -995,10 +1003,6 @@ var Annotations = map[string]string{
 
 	"[sig-devex][Feature:ImageEcosystem][Slow] openshift images should be SCL enabled using the SCL in s2i images \"image-registry.openshift-image-registry.svc:5000/openshift/ruby:2.5-ubi8\" should be SCL enabled": "",
 
-	"[sig-devex][Feature:ImageEcosystem][Slow] openshift images should be SCL enabled using the SCL in s2i images \"image-registry.openshift-image-registry.svc:5000/openshift/ruby:2.7-ubi7\" should be SCL enabled": "",
-
-	"[sig-devex][Feature:ImageEcosystem][Slow] openshift images should be SCL enabled using the SCL in s2i images \"image-registry.openshift-image-registry.svc:5000/openshift/ruby:2.7-ubi8\" should be SCL enabled": "",
-
 	"[sig-devex][Feature:ImageEcosystem][Slow] openshift images should be SCL enabled using the SCL in s2i images \"image-registry.openshift-image-registry.svc:5000/openshift/ruby:3.0-ubi7\" should be SCL enabled": "",
 
 	"[sig-devex][Feature:ImageEcosystem][Slow] openshift images should be SCL enabled using the SCL in s2i images \"image-registry.openshift-image-registry.svc:5000/openshift/ruby:3.0-ubi8\" should be SCL enabled": "",
@@ -1023,9 +1027,9 @@ var Annotations = map[string]string{
 
 	"[sig-devex][Feature:ImageEcosystem][ruby][Slow] hot deploy for openshift ruby image Rails example should work with hot deploy [apigroup:image.openshift.io][apigroup:operator.openshift.io][apigroup:config.openshift.io][apigroup:build.openshift.io]": "",
 
-	"[sig-devex][Feature:OpenShiftControllerManager] TestAutomaticCreationOfPullSecrets [apigroup:config.openshift.io][apigroup:image.openshift.io]": " [Suite:openshift/conformance/parallel]",
+	"[sig-devex][Feature:OpenShiftControllerManager] TestAutomaticCreationOfPullSecrets [apigroup:config.openshift.io][apigroup:image.openshift.io]": " [Skipped:NoOptionalCapabilities] [Suite:openshift/conformance/parallel]",
 
-	"[sig-devex][Feature:OpenShiftControllerManager] TestDockercfgTokenDeletedController [apigroup:image.openshift.io]": " [Suite:openshift/conformance/parallel]",
+	"[sig-devex][Feature:OpenShiftControllerManager] TestDockercfgTokenDeletedController [apigroup:image.openshift.io]": " [Skipped:NoOptionalCapabilities] [Suite:openshift/conformance/parallel]",
 
 	"[sig-devex][Feature:Templates] template-api TestTemplate [apigroup:template.openshift.io]": " [Suite:openshift/conformance/parallel]",
 
@@ -1061,9 +1065,9 @@ var Annotations = map[string]string{
 
 	"[sig-etcd][Feature:EtcdVerticalScaling][Suite:openshift/etcd/scaling] etcd is able to vertically scale up and down with a single node [Timeout:60m][apigroup:machine.openshift.io]": "",
 
-	"[sig-imageregistry] Image registry [apigroup:route.openshift.io] should redirect on blob pull [apigroup:image.openshift.io]": " [Suite:openshift/conformance/parallel]",
+	"[sig-imageregistry] Image registry [apigroup:route.openshift.io] should redirect on blob pull [apigroup:image.openshift.io]": " [Skipped:NoOptionalCapabilities] [Suite:openshift/conformance/parallel]",
 
-	"[sig-imageregistry][Feature:ImageAppend] Image append should create images by appending them [apigroup:image.openshift.io]": " [Skipped:Disconnected] [Suite:openshift/conformance/parallel]",
+	"[sig-imageregistry][Feature:ImageAppend] Image append should create images by appending them [apigroup:image.openshift.io]": " [Skipped:Disconnected] [Skipped:NoOptionalCapabilities] [Suite:openshift/conformance/parallel]",
 
 	"[sig-imageregistry][Feature:ImageExtract] Image extract should extract content from an image [apigroup:image.openshift.io]": " [Skipped:Disconnected] [Suite:openshift/conformance/parallel]",
 
@@ -1192,8 +1196,6 @@ var Annotations = map[string]string{
 	"[sig-instrumentation] Prometheus [apigroup:image.openshift.io] when installed on the cluster when using openshift-sdn should be able to get the sdn ovs flows": " [Skipped:Disconnected] [Suite:openshift/conformance/parallel]",
 
 	"[sig-instrumentation][Late] Alerts shouldn't exceed the series limit of total series sent via telemetry from each cluster": " [Suite:openshift/conformance/parallel]",
-
-	"[sig-instrumentation][Late] Alerts shouldn't report any unexpected alerts in firing or pending state": " [Suite:openshift/conformance/parallel]",
 
 	"[sig-instrumentation][Late] OpenShift alerting rules [apigroup:image.openshift.io] should have a runbook_url annotation if the alert is critical": " [Skipped:Disconnected] [Suite:openshift/conformance/parallel]",
 
@@ -1407,6 +1409,8 @@ var Annotations = map[string]string{
 
 	"[sig-node-tuning] NTO should OCP-66086 NTO Prevent from stalld continually restarting [Slow]": "",
 
+	"[sig-node-tuning] NTO should SNO installation does not finish due to wait for non-existing machine-config [Early]": " [Suite:openshift/conformance/parallel]",
+
 	"[sig-node] Managed cluster record the number of nodes at the beginning of the tests [Early]": " [Suite:openshift/conformance/parallel]",
 
 	"[sig-node] Managed cluster should report ready nodes the entire duration of the test run [Late][apigroup:monitoring.coreos.com]": " [Skipped:Disconnected] [Suite:openshift/conformance/parallel]",
@@ -1447,25 +1451,25 @@ var Annotations = map[string]string{
 
 	"[sig-node][apigroup:config.openshift.io] CPU Partitioning node validation should have correct cpuset and cpushare set in crio containers": " [Suite:openshift/conformance/parallel]",
 
-	"[sig-operator] OLM should Implement packages API server and list packagemanifest info with namespace not NULL [apigroup:packages.operators.coreos.com]": " [Suite:openshift/conformance/parallel]",
+	"[sig-operator] OLM should Implement packages API server and list packagemanifest info with namespace not NULL [apigroup:packages.operators.coreos.com]": " [Skipped:NoOptionalCapabilities] [Suite:openshift/conformance/parallel]",
 
-	"[sig-operator] OLM should be installed with catalogsources at version v1alpha1 [apigroup:operators.coreos.com]": " [Suite:openshift/conformance/parallel]",
+	"[sig-operator] OLM should be installed with catalogsources at version v1alpha1 [apigroup:operators.coreos.com]": " [Skipped:NoOptionalCapabilities] [Suite:openshift/conformance/parallel]",
 
-	"[sig-operator] OLM should be installed with clusterserviceversions at version v1alpha1 [apigroup:operators.coreos.com]": " [Suite:openshift/conformance/parallel]",
+	"[sig-operator] OLM should be installed with clusterserviceversions at version v1alpha1 [apigroup:operators.coreos.com]": " [Skipped:NoOptionalCapabilities] [Suite:openshift/conformance/parallel]",
 
-	"[sig-operator] OLM should be installed with installplans at version v1alpha1 [apigroup:operators.coreos.com]": " [Suite:openshift/conformance/parallel]",
+	"[sig-operator] OLM should be installed with installplans at version v1alpha1 [apigroup:operators.coreos.com]": " [Skipped:NoOptionalCapabilities] [Suite:openshift/conformance/parallel]",
 
-	"[sig-operator] OLM should be installed with operatorgroups at version v1 [apigroup:operators.coreos.com]": " [Suite:openshift/conformance/parallel]",
+	"[sig-operator] OLM should be installed with operatorgroups at version v1 [apigroup:operators.coreos.com]": " [Skipped:NoOptionalCapabilities] [Suite:openshift/conformance/parallel]",
 
-	"[sig-operator] OLM should be installed with packagemanifests at version v1 [apigroup:packages.operators.coreos.com]": " [Suite:openshift/conformance/parallel]",
+	"[sig-operator] OLM should be installed with packagemanifests at version v1 [apigroup:packages.operators.coreos.com]": " [Skipped:NoOptionalCapabilities] [Suite:openshift/conformance/parallel]",
 
-	"[sig-operator] OLM should be installed with subscriptions at version v1alpha1 [apigroup:operators.coreos.com]": " [Suite:openshift/conformance/parallel]",
+	"[sig-operator] OLM should be installed with subscriptions at version v1alpha1 [apigroup:operators.coreos.com]": " [Skipped:NoOptionalCapabilities] [Suite:openshift/conformance/parallel]",
 
-	"[sig-operator] OLM should have imagePullPolicy:IfNotPresent on thier deployments": " [Suite:openshift/conformance/parallel]",
+	"[sig-operator] OLM should have imagePullPolicy:IfNotPresent on thier deployments": " [Skipped:NoOptionalCapabilities] [Suite:openshift/conformance/parallel]",
 
-	"[sig-operator] an end user can use OLM Report Upgradeable in OLM ClusterOperators status [apigroup:config.openshift.io]": " [Suite:openshift/conformance/parallel]",
+	"[sig-operator] an end user can use OLM Report Upgradeable in OLM ClusterOperators status [apigroup:config.openshift.io]": " [Skipped:NoOptionalCapabilities] [Suite:openshift/conformance/parallel]",
 
-	"[sig-operator] an end user can use OLM can subscribe to the operator [apigroup:config.openshift.io]": " [Skipped:Disconnected] [Suite:openshift/conformance/parallel]",
+	"[sig-operator] an end user can use OLM can subscribe to the operator [apigroup:config.openshift.io]": " [Skipped:Disconnected] [Skipped:NoOptionalCapabilities] [Suite:openshift/conformance/parallel]",
 
 	"[sig-scalability][Feature:Performance] Load cluster should populate the cluster [Slow][Serial][apigroup:template.openshift.io][apigroup:apps.openshift.io][apigroup:build.openshift.io]": "",
 

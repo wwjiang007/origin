@@ -2,34 +2,52 @@
     "items": [
         {
             "level": "Info",
-            "locator": "node/ci-op-wh7nq7n4-206af-q9jvw-worker-a-rdxtm",
-            "message": "constructed/node-lifecycle-constructor reason/NodeUpdate phase/Drain roles/worker drained node",
+            "locator": "node/ci-op-wh7nq7n4-206af-q9jvw-worker-a-rdxtm row/NodeUpdatePhases",
+            "message": "constructed/node-lifecycle-constructor phase/Drain reason/NodeUpdate roles/worker drained node",
+            "tempSource": "NodeState",
             "tempStructuredLocator": {
-                "type": "",
-                "keys": null
+                "type": "Node",
+                "keys": {
+                    "node": "ci-op-wh7nq7n4-206af-q9jvw-worker-a-rdxtm",
+                    "row": "NodeUpdatePhases"
+                }
             },
             "tempStructuredMessage": {
-                "reason": "",
+                "reason": "NodeUpdate",
                 "cause": "",
-                "humanMessage": "",
-                "annotations": null
+                "humanMessage": "drained node",
+                "annotations": {
+                    "constructed": "node-lifecycle-constructor",
+                    "phase": "Drain",
+                    "reason": "NodeUpdate",
+                    "roles": "worker"
+                }
             },
             "from": "2023-07-18T16:40:16Z",
             "to": "2023-07-18T16:41:49Z"
         },
         {
             "level": "Warning",
-            "locator": "node/ci-op-wh7nq7n4-206af-q9jvw-worker-a-rdxtm",
-            "message": "constructed/node-lifecycle-constructor reason/NodeUpdate role/worker state/OperatingSystemUpdate never completed",
+            "locator": "node/ci-op-wh7nq7n4-206af-q9jvw-worker-a-rdxtm row/NodeUpdatePhases",
+            "message": "constructed/node-lifecycle-constructor reason/NodeUpdate roles/worker state/OperatingSystemUpdate never completed",
+            "tempSource": "NodeState",
             "tempStructuredLocator": {
-                "type": "",
-                "keys": null
+                "type": "Node",
+                "keys": {
+                    "node": "ci-op-wh7nq7n4-206af-q9jvw-worker-a-rdxtm",
+                    "row": "NodeUpdatePhases"
+                }
             },
             "tempStructuredMessage": {
-                "reason": "",
+                "reason": "NodeUpdate",
                 "cause": "",
-                "humanMessage": "",
-                "annotations": null
+                "humanMessage": "never completed",
+                "annotations": {
+                    "constructed": "node-lifecycle-constructor",
+                    "reason": "NodeUpdate",
+                    "roles": "worker",
+                    "state": "OperatingSystemUpdate"
+                }
             },
             "from": "2023-07-18T16:41:49Z",
             "to": "2023-07-19T23:58:52Z"

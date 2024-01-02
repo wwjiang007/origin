@@ -37,6 +37,10 @@ build-docs:
 	hack/generate-docs.sh
 .PHONY: build-docs
 
+openshift-tests: GO_BUILD_PACKAGES :=./cmd/openshift-tests
+openshift-tests: build
+.PHONY: openshift-tests
+
 # run repo-specific checks.
 #
 # Example:
@@ -51,9 +55,17 @@ verify: verify-origin
 #
 # Example:
 #   make update
-update: update-bindata
+update: update-tls-ownership update-bindata
 	hack/update-generated.sh
 .PHONY: update
+
+# Update TLS artifacts
+#
+# Example:
+#    make update-tls-ownership
+update-tls-ownership:
+	hack/update-tls-ownership.sh
+.PHONY: update-tls-ownership
 
 # Update external examples
 #

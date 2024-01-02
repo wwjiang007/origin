@@ -22,6 +22,7 @@ import (
 	etcddata "k8s.io/kubernetes/test/integration/etcd"
 
 	exutil "github.com/openshift/origin/test/extended/util"
+	exutilimage "github.com/openshift/origin/test/extended/util/image"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -74,7 +75,7 @@ func GetOpenshiftEtcdStorageData(namespace string) map[schema.GroupVersionResour
 
 		// github.com/openshift/api/apps/v1
 		gvr("apps.openshift.io", "v1", "deploymentconfigs"): {
-			Stub:             `{"metadata": {"name": "dc1g"}, "spec": {"selector": {"d": "c"}, "template": {"metadata": {"labels": {"d": "c"}}, "spec": {"containers": [{"image": "image-registry.openshift-image-registry.svc:5000/openshift/tools:latest", "name": "container2"}]}}}}`,
+			Stub:             fmt.Sprintf(`{"metadata": {"name": "dc1g"}, "spec": {"selector": {"d": "c"}, "template": {"metadata": {"labels": {"d": "c"}}, "spec": {"containers": [{"image": "%s", "name": "container2"}]}}}}`, exutilimage.ShellImage()),
 			ExpectedEtcdPath: "openshift.io/deploymentconfigs/" + namespace + "/dc1g",
 		},
 		// --
@@ -281,11 +282,23 @@ func testEtcd3StoragePath(t g.GinkgoTInterface, oc *exutil.CLI, etcdClient3Fn fu
 	// Apply output of git diff origin/release-1.XY origin/release-1.X(Y+1) test/integration/etcd/data.go. This is needed
 	// to apply the right data depending on the kube version of the running server. Replace this with the next current
 	// and rebase version next time. Don't pile them up.
-	if strings.HasPrefix(version.Minor, "27") {
+	if strings.HasPrefix(version.Minor, "29") {
 		for k, a := range map[schema.GroupVersionResource]etcddata.StorageData{
 			// Added etcd data.
 			// TODO: When rebase has started, add etcd storage data has been added to
-			//       k8s.io/kubernetes/test/integration/etcd/data.go in the 1.27 release.
+			//       k8s.io/kubernetes/test/integration/etcd/data.go in the 1.29 release.
+
+			// compare https://github.com/kubernetes/kubernetes/pull/121089
+			gvr("flowcontrol.apiserver.k8s.io", "v1", "flowschemas"): {
+				Stub:             `{"metadata": {"name": "fs-3"}, "spec": {"priorityLevelConfiguration": {"name": "name1"}}}`,
+				ExpectedEtcdPath: "/registry/flowschemas/fs-3",
+				ExpectedGVK:      gvkP("flowcontrol.apiserver.k8s.io", "v1beta3", "FlowSchema"),
+			},
+			gvr("flowcontrol.apiserver.k8s.io", "v1", "prioritylevelconfigurations"): {
+				Stub:             `{"metadata": {"name": "conf5"}, "spec": {"type": "Limited", "limited": {"nominalConcurrencyShares":3, "limitResponse": {"type": "Reject"}}}}`,
+				ExpectedEtcdPath: "/registry/prioritylevelconfigurations/conf5",
+				ExpectedGVK:      gvkP("flowcontrol.apiserver.k8s.io", "v1beta3", "PriorityLevelConfiguration"),
+			},
 		} {
 			if _, preexisting := etcdStorageData[k]; preexisting {
 				t.Errorf("upstream etcd storage data already has data for %v. Update current and rebase version diff to next rebase version", k)
@@ -295,11 +308,33 @@ func testEtcd3StoragePath(t g.GinkgoTInterface, oc *exutil.CLI, etcdClient3Fn fu
 
 		// Modified etcd data.
 		// TODO: When rebase has started, fixup etcd storage data that has been modified
-		//       in k8s.io/kubernetes/test/integration/etcd/data.go in the 1.27 release.
+		//       in k8s.io/kubernetes/test/integration/etcd/data.go in the 1.29 release.
+
+		// compare https://github.com/kubernetes/kubernetes/pull/120018
+		etcdStorageData[gvr("admissionregistration.k8s.io", "v1alpha1", "validatingadmissionpolicies")] = etcddata.StorageData{
+			Stub:             `{"metadata":{"name":"vap1","creationTimestamp":null},"spec":{"paramKind":{"apiVersion":"test.example.com/v1","kind":"Example"},"matchConstraints":{"resourceRules": [{"resourceNames": ["fakeName"], "apiGroups":["apps"],"apiVersions":["v1"],"operations":["CREATE", "UPDATE"], "resources":["deployments"]}]},"validations":[{"expression":"object.spec.replicas <= params.maxReplicas","message":"Too many replicas"}]}}`,
+			ExpectedEtcdPath: "/registry/validatingadmissionpolicies/vap1",
+			ExpectedGVK:      gvkP("admissionregistration.k8s.io", "v1beta1", "ValidatingAdmissionPolicy"),
+		}
+		etcdStorageData[gvr("admissionregistration.k8s.io", "v1alpha1", "validatingadmissionpolicybindings")] = etcddata.StorageData{
+			Stub:             `{"metadata":{"name":"pb1","creationTimestamp":null},"spec":{"policyName":"replicalimit-policy.example.com","paramRef":{"name":"replica-limit-test.example.com"},"validationActions":["Deny"]}}`,
+			ExpectedEtcdPath: "/registry/validatingadmissionpolicybindings/pb1",
+			ExpectedGVK:      gvkP("admissionregistration.k8s.io", "v1beta1", "ValidatingAdmissionPolicyBinding"),
+		}
+		etcdStorageData[gvr("admissionregistration.k8s.io", "v1beta1", "validatingadmissionpolicies")] = etcddata.StorageData{
+			Stub:             `{"metadata":{"name":"vap1b1","creationTimestamp":null},"spec":{"paramKind":{"apiVersion":"test.example.com/v1","kind":"Example"},"matchConstraints":{"resourceRules": [{"resourceNames": ["fakeName"], "apiGroups":["apps"],"apiVersions":["v1"],"operations":["CREATE", "UPDATE"], "resources":["deployments"]}]},"validations":[{"expression":"object.spec.replicas <= params.maxReplicas","message":"Too many replicas"}]}}`,
+			ExpectedEtcdPath: "/registry/validatingadmissionpolicies/vap1b1",
+			ExpectedGVK:      gvkP("admissionregistration.k8s.io", "v1beta1", "ValidatingAdmissionPolicy"),
+		}
+		etcdStorageData[gvr("admissionregistration.k8s.io", "v1beta1", "validatingadmissionpolicybindings")] = etcddata.StorageData{
+			Stub:             `{"metadata":{"name":"pb1b1","creationTimestamp":null},"spec":{"policyName":"replicalimit-policy.example.com","paramRef":{"name":"replica-limit-test.example.com","parameterNotFoundAction":"Deny"},"validationActions":["Deny"]}}`,
+			ExpectedEtcdPath: "/registry/validatingadmissionpolicybindings/pb1b1",
+			ExpectedGVK:      gvkP("admissionregistration.k8s.io", "v1beta1", "ValidatingAdmissionPolicyBinding"),
+		}
 
 		// Removed etcd data.
 		// TODO: When rebase has started, remove etcd storage data that has been removed
-		//       from k8s.io/kubernetes/test/integration/etcd/data.go in the 1.27 release.
+		//       from k8s.io/kubernetes/test/integration/etcd/data.go in the 1.29 release.
 		removeStorageData(t, etcdStorageData)
 	}
 

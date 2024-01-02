@@ -1,10 +1,13 @@
 package monitorapi
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"strings"
 	"time"
 
+	v1 "github.com/openshift/api/config/v1"
+	"github.com/prometheus/common/model"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/kube-openapi/pkg/util/sets"
 )
@@ -17,6 +20,8 @@ type IntervalBuilder struct {
 	structuredMessage Message
 }
 
+// NewInterval creates a new interval builder. Source is an indicator of what created this interval, used for
+// safely identifying intervals we're looking for, and for grouping in charts.
 func NewInterval(source IntervalSource, level IntervalLevel) *IntervalBuilder {
 	return &IntervalBuilder{
 		level:  level,
@@ -61,8 +66,22 @@ func (b *IntervalBuilder) Build(from, to time.Time) Interval {
 	return ret
 }
 
+// BuildNow creates the final interval with a from/to timestamp of now.
+func (b *IntervalBuilder) BuildNow() Interval {
+	now := time.Now()
+	ret := Interval{
+		Condition: b.BuildCondition(),
+		Display:   b.display,
+		Source:    b.source,
+		From:      now,
+		To:        now,
+	}
+
+	return ret
+}
+
 func (b *IntervalBuilder) Message(mb *MessageBuilder) *IntervalBuilder {
-	b.structuredMessage = mb.build()
+	b.structuredMessage = mb.Build()
 	return b
 }
 
@@ -92,23 +111,61 @@ func (b *LocatorBuilder) NodeFromName(nodeName string) Locator {
 		Build()
 }
 
-func (b *LocatorBuilder) AlertFromNames(alertName, node, namespace, pod, container string) Locator {
+func (b *LocatorBuilder) NodeFromNameWithRow(nodeName, row string) Locator {
+	return b.
+		withTargetType(LocatorTypeNode).
+		withNode(nodeName).
+		withRow(row).
+		Build()
+}
+
+func (b *LocatorBuilder) CloudNodeMetric(nodeName string, metric string) Locator {
+	return b.
+		withTargetType(LocatorTypeCloudMetrics).
+		withNode(nodeName).
+		withMetric(metric).
+		Build()
+}
+
+func (b *LocatorBuilder) ClusterVersion(cv *v1.ClusterVersion) Locator {
+	b.targetType = LocatorTypeClusterVersion
+	b.annotations[LocatorClusterVersionKey] = cv.Name
+	return b.Build()
+}
+
+func (b *LocatorBuilder) AlertFromPromSampleStream(alert *model.SampleStream) Locator {
 	b.targetType = LocatorTypeAlert
+
+	alertName := string(alert.Metric[model.AlertNameLabel])
 	if len(alertName) > 0 {
 		b.annotations[LocatorAlertKey] = alertName
 	}
+	node := string(alert.Metric["instance"])
 	if len(node) > 0 {
 		b.annotations[LocatorNodeKey] = node
 	}
+	namespace := string(alert.Metric["namespace"])
 	if len(namespace) > 0 {
 		b.annotations[LocatorNamespaceKey] = namespace
 	}
+	pod := string(alert.Metric["pod"])
 	if len(pod) > 0 {
 		b.annotations[LocatorPodKey] = pod
 	}
+	container := string(alert.Metric["container"])
 	if len(container) > 0 {
 		b.annotations[LocatorContainerKey] = container
 	}
+
+	// Some alerts include a very useful name field, ClusterOperator[Down|Degraded] for example,
+	// always comes from the namespace openshift-cluster-version, but this field is the actual
+	// name of the operator that was detected to be down. This is very useful for locators and
+	// analysis.
+	additionalName := string(alert.Metric["name"])
+	if len(additionalName) > 0 {
+		b.annotations[LocatorNameKey] = additionalName
+	}
+
 	return b.Build()
 }
 
@@ -160,6 +217,16 @@ func (b *LocatorBuilder) withNamespace(namespace string) *LocatorBuilder {
 
 func (b *LocatorBuilder) withNode(nodeName string) *LocatorBuilder {
 	b.annotations[LocatorNodeKey] = nodeName
+	return b
+}
+
+func (b *LocatorBuilder) withRow(row string) *LocatorBuilder {
+	b.annotations[LocatorRowKey] = row
+	return b
+}
+
+func (b *LocatorBuilder) withMetric(metricName string) *LocatorBuilder {
+	b.annotations[LocatorMetricKey] = metricName
 	return b
 }
 
@@ -228,24 +295,37 @@ func (b *LocatorBuilder) withServer(serverName string) *LocatorBuilder {
 	return b
 }
 
+// TODO decide whether we want to allow "random" locator keys.  deads2k is -1 on random locator keys and thinks we should enumerate every possible key we special case.
 func (b *LocatorBuilder) KubeEvent(event *corev1.Event) Locator {
-	b.targetType = LocatorTypeKubeEvent
 
-	// WARNING: we're trying to use an enum for the locator keys, but we cannot know
-	// all kinds in a cluster. Instead we'll split the kind and name into two different Keys
-	// for Events:
-	b.annotations[LocatorKindKey] = event.InvolvedObject.Kind
-	b.annotations[LocatorNameKey] = event.InvolvedObject.Name
+	// When Kube Events are displayed, we need repeats of the same event to appear on one line. To do this
+	// we hash the event message, get the first ten characters, and add it as a hmsg locator key.
+	hash := sha256.Sum256([]byte(event.Message))
+	hashStr := fmt.Sprintf("%x", hash)[:10]
+	b.annotations[LocatorHmsgKey] = hashStr
 
+	if event.InvolvedObject.Kind == "Namespace" {
+		// namespace better match the event itself.
+		return b.
+			withNamespace(event.InvolvedObject.Name).
+			Build()
+	} else if event.InvolvedObject.Kind == "Node" {
+		return b.
+			withTargetType(LocatorTypeNode).
+			withNode(event.InvolvedObject.Name).
+			Build()
+	}
+
+	// Otherwise we have to fall back to a generic "Kind" locator, likely what deads2k refers to above as sketchy.
+	// For now just preserving the old logic.
+	b.targetType = LocatorTypeKind
+	b.annotations[LocatorKey(strings.ToLower(event.InvolvedObject.Kind))] = event.InvolvedObject.Name
+	if len(event.Source.Host) > 0 && event.Source.Component == "kubelet" {
+		b.annotations[LocatorNodeKey] = event.Source.Host
+	}
 	if len(event.InvolvedObject.Namespace) > 0 {
 		b.annotations[LocatorNamespaceKey] = event.InvolvedObject.Namespace
 	}
-
-	// TODO: node + namespace is illegal, look at original impl, it may have handled this better
-	if len(event.Source.Host) > 0 && event.InvolvedObject.Kind != "Node" {
-		b.annotations[LocatorNodeKey] = event.Source.Host
-	}
-
 	return b.Build()
 }
 
@@ -400,8 +480,8 @@ func (m *MessageBuilder) HumanMessagef(messageFormat string, args ...interface{}
 	return m.HumanMessage(fmt.Sprintf(messageFormat, args...))
 }
 
-// build creates the final StructuredMessage with all data assembled by this builder.
-func (m *MessageBuilder) build() Message {
+// Build creates the final StructuredMessage with all data assembled by this builder.
+func (m *MessageBuilder) Build() Message {
 	ret := Message{
 		Annotations: map[AnnotationKey]string{},
 	}
