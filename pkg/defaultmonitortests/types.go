@@ -2,6 +2,7 @@ package defaultmonitortests
 
 import (
 	"fmt"
+
 	"github.com/openshift/origin/pkg/monitortests/testframework/watchrequestcountscollector"
 	"github.com/sirupsen/logrus"
 
@@ -43,7 +44,6 @@ import (
 	"github.com/openshift/origin/pkg/monitortests/testframework/legacytestframeworkmonitortests"
 	"github.com/openshift/origin/pkg/monitortests/testframework/timelineserializer"
 	"github.com/openshift/origin/pkg/monitortests/testframework/trackedresourcesserializer"
-	"github.com/openshift/origin/pkg/monitortests/testframework/uploadtolokiserializer"
 	"github.com/openshift/origin/pkg/monitortests/testframework/watchclusteroperators"
 	"github.com/openshift/origin/pkg/monitortests/testframework/watchevents"
 )
@@ -75,7 +75,7 @@ func NewMonitorTestsFor(info monitortestframework.MonitorTestInitializationInfo)
 	case monitortestframework.Stable:
 		startingRegistry = newDefaultMonitorTests(info)
 	case monitortestframework.Disruptive:
-		startingRegistry = newDisruptiveMonitorTests()
+		startingRegistry = newDisruptiveMonitorTests(info)
 	default:
 		panic(fmt.Sprintf("unknown cluster stability level: %q", info.ClusterStabilityDuringTest))
 	}
@@ -96,7 +96,7 @@ func NewMonitorTestsFor(info monitortestframework.MonitorTestInitializationInfo)
 func newDefaultMonitorTests(info monitortestframework.MonitorTestInitializationInfo) monitortestframework.MonitorTestRegistry {
 	monitorTestRegistry := monitortestframework.NewMonitorTestRegistry()
 
-	monitorTestRegistry.AddRegistryOrDie(newUniversalMonitorTests())
+	monitorTestRegistry.AddRegistryOrDie(newUniversalMonitorTests(info))
 
 	monitorTestRegistry.AddMonitorTestOrDie("image-registry-availability", "Image Registry", disruptionimageregistry.NewAvailabilityInvariant())
 
@@ -115,10 +115,10 @@ func newDefaultMonitorTests(info monitortestframework.MonitorTestInitializationI
 	return monitorTestRegistry
 }
 
-func newDisruptiveMonitorTests() monitortestframework.MonitorTestRegistry {
+func newDisruptiveMonitorTests(info monitortestframework.MonitorTestInitializationInfo) monitortestframework.MonitorTestRegistry {
 	monitorTestRegistry := monitortestframework.NewMonitorTestRegistry()
 
-	monitorTestRegistry.AddRegistryOrDie(newUniversalMonitorTests())
+	monitorTestRegistry.AddRegistryOrDie(newUniversalMonitorTests(info))
 
 	// this data would be interesting, but I'm betting we cannot scrub the data after the fact to exclude these.
 	// monitorTestRegistry.AddMonitorTestOrDie("image-registry-availability", "Image Registry", disruptionimageregistry.NewRecordAvailabilityOnly())
@@ -130,7 +130,7 @@ func newDisruptiveMonitorTests() monitortestframework.MonitorTestRegistry {
 	return monitorTestRegistry
 }
 
-func newUniversalMonitorTests() monitortestframework.MonitorTestRegistry {
+func newUniversalMonitorTests(info monitortestframework.MonitorTestInitializationInfo) monitortestframework.MonitorTestRegistry {
 	monitorTestRegistry := monitortestframework.NewMonitorTestRegistry()
 
 	monitorTestRegistry.AddMonitorTestOrDie("legacy-authentication-invariants", "apiserver-auth", legacyauthenticationmonitortests.NewLegacyTests())
@@ -155,14 +155,13 @@ func newUniversalMonitorTests() monitortestframework.MonitorTestRegistry {
 
 	monitorTestRegistry.AddMonitorTestOrDie("legacy-storage-invariants", "Storage", legacystoragemonitortests.NewLegacyTests())
 
-	monitorTestRegistry.AddMonitorTestOrDie("legacy-test-framework-invariants", "Test Framework", legacytestframeworkmonitortests.NewLegacyTests())
+	monitorTestRegistry.AddMonitorTestOrDie("legacy-test-framework-invariants", "Test Framework", legacytestframeworkmonitortests.NewLegacyTests(info))
 	monitorTestRegistry.AddMonitorTestOrDie("timeline-serializer", "Test Framework", timelineserializer.NewTimelineSerializer())
 	monitorTestRegistry.AddMonitorTestOrDie("interval-serializer", "Test Framework", intervalserializer.NewIntervalSerializer())
 	monitorTestRegistry.AddMonitorTestOrDie("tracked-resources-serializer", "Test Framework", trackedresourcesserializer.NewTrackedResourcesSerializer())
 	monitorTestRegistry.AddMonitorTestOrDie("cluster-info-serializer", "Test Framework", clusterinfoserializer.NewClusterInfoSerializer())
 	monitorTestRegistry.AddMonitorTestOrDie("additional-events-collector", "Test Framework", additionaleventscollector.NewIntervalSerializer())
 	monitorTestRegistry.AddMonitorTestOrDie("known-image-checker", "Test Framework", knownimagechecker.NewEnsureValidImages())
-	monitorTestRegistry.AddMonitorTestOrDie("upload-to-loki-serializer", "Test Framework", uploadtolokiserializer.NewUploadSerializer())
 	monitorTestRegistry.AddMonitorTestOrDie("e2e-test-analyzer", "Test Framework", e2etestanalyzer.NewAnalyzer())
 	monitorTestRegistry.AddMonitorTestOrDie("event-collector", "Test Framework", watchevents.NewEventWatcher())
 	monitorTestRegistry.AddMonitorTestOrDie("clusteroperator-collector", "Test Framework", watchclusteroperators.NewOperatorWatcher())

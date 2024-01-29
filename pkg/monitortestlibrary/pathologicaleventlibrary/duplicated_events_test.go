@@ -133,7 +133,18 @@ func TestAllowedRepeatedEvents(t *testing.T) {
 				Reason("BackOff").Build(),
 			expectedAllowName: "AllowBackOffRestartingFailedContainer",
 		},
+		{
+			name: "leaky statefulsets events",
+			locator: monitorapi.Locator{
+				Keys: map[monitorapi.LocatorKey]string{
+					monitorapi.LocatorNamespaceKey: "openshift-monitoring",
+				},
+			},
 
+			msg: monitorapi.NewMessage().HumanMessage("StatefulSet openshift-monitoring/prometheus-k8s is recreating terminated Pod prometheus-k8s-0").
+				Reason("RecreatingTerminatedPod").Build(),
+			expectedAllowName: "LeakyStatefulsetEvents",
+		},
 		{
 			name: "pod sandbox matches but is not allowed to repeat pathologically",
 			locator: monitorapi.Locator{
@@ -184,8 +195,8 @@ func TestAllowedRepeatedEvents(t *testing.T) {
 			}
 
 			if test.expectedAllowName != "" {
-				assert.True(t, allowed, "duplicated event should have been allowed, but we matched: %s", matchedAllowedDupe.Name())
 				require.NotNil(t, matchedAllowedDupe, "an allowed dupe even should have been returned")
+				assert.True(t, allowed, "duplicated event should have been allowed, but we matched: %s", matchedAllowedDupe.Name())
 				assert.Equal(t, test.expectedAllowName, matchedAllowedDupe.Name(), "duplicated event was not allowed by the correct SimplePathologicalEventMatcher")
 			} else {
 				require.False(t, allowed, "duplicated event should not have been allowed")
@@ -625,75 +636,6 @@ func TestPathologicalEventsTopologyAwareHintsDisabled(t *testing.T) {
 			},
 			namespace:       "openshift-dns",
 			expectedMessage: "",
-		},
-		{
-			// This is not ignored because there is no dns ready following
-			name: "fire TopologyAwareHintsDisabled when there is no dns container ready",
-			intervals: []monitorapi.Interval{
-				{
-					Condition: monitorapi.Condition{
-						Level: monitorapi.Info,
-						StructuredLocator: monitorapi.Locator{
-							Type: monitorapi.LocatorTypeE2ETest,
-							Keys: map[monitorapi.LocatorKey]string{
-								monitorapi.LocatorE2ETestKey: "[sig-node] NoExecuteTaintManager Single Pod [Serial] doesn't evict pod with tolerations from tainted nodes [Skipped:SingleReplicaTopology] [Suite:openshift/conformance/serial] [Suite:k8s]",
-							},
-						},
-						StructuredMessage: monitorapi.Message{},
-					},
-					Source: monitorapi.SourceE2ETest,
-					From:   from.Add(-10 * time.Minute),
-					To:     to.Add(10 * time.Minute),
-				},
-				{
-					Condition: monitorapi.Condition{
-						Level: monitorapi.Info,
-						StructuredLocator: monitorapi.Locator{
-							Type: monitorapi.LocatorTypePod,
-							Keys: map[monitorapi.LocatorKey]string{
-								monitorapi.LocatorNamespaceKey: "openshift-dns",
-								monitorapi.LocatorPodKey:       "dns-default-jq2qn",
-							},
-						},
-						StructuredMessage: monitorapi.Message{
-							Reason: monitorapi.PodReasonGracefulDeleteStarted,
-							Annotations: map[monitorapi.AnnotationKey]string{
-								monitorapi.AnnotationConstructed: "pod-lifecycle-constructor",
-								monitorapi.AnnotationReason:      "GracefulDelete",
-							},
-						},
-					},
-					Source: monitorapi.SourcePodState,
-					From:   from.Add(-5 * time.Minute),
-					To:     to.Add(1 * time.Minute),
-				},
-				{
-					Condition: monitorapi.Condition{
-						Level: monitorapi.Info,
-						StructuredLocator: monitorapi.Locator{
-							Type: "",
-							Keys: map[monitorapi.LocatorKey]string{
-								monitorapi.LocatorNamespaceKey:   "openshift-dns",
-								monitorapi.LocatorKey("service"): "dns-default",
-								monitorapi.LocatorHmsgKey:        "ade328ddf3",
-							},
-						},
-						StructuredMessage: monitorapi.Message{
-							Reason:       "TopologyAwareHintsDisabled",
-							HumanMessage: "Unable to allocate minimum required endpoints to each zone without exceeding overload threshold (5 endpoints, 3 zones), addressType: IPv4",
-							Annotations: map[monitorapi.AnnotationKey]string{
-								monitorapi.AnnotationReason:       "TopologyAwareHintsDisabled",
-								monitorapi.AnnotationPathological: "true",
-								monitorapi.AnnotationCount:        "23",
-							},
-						},
-					},
-					From: from.Add(11 * time.Minute),
-					To:   to.Add(12 * time.Minute),
-				},
-			},
-			namespace:       "openshift-dns",
-			expectedMessage: "1 events happened too frequently\n\nevent happened 23 times, something is wrong:  - reason/TopologyAwareHintsDisabled Unable to allocate minimum required endpoints to each zone without exceeding overload threshold (5 endpoints, 3 zones), addressType: IPv4 From: 04:11:00Z To: 04:12:00Z result=reject ",
 		},
 	}
 

@@ -53,6 +53,8 @@ var Annotations = map[string]string{
 
 	"[sig-api-machinery][Feature:ResourceQuota] Object count should properly count the number of persistentvolumeclaims resources [Serial]": " [Suite:openshift/conformance/serial]",
 
+	"[sig-api-machinery][Feature:ResourceQuota] Object count when exceed openshift.io/image-tags will ban to create new image references in the project [Skipped:Disconnected]": " [Suite:openshift/conformance/parallel]",
+
 	"[sig-api-machinery][Feature:ServerSideApply] Server-Side Apply should work for apps.openshift.io/v1, Resource=deploymentconfigs [apigroup:apps.openshift.io]": " [Suite:openshift/conformance/parallel]",
 
 	"[sig-api-machinery][Feature:ServerSideApply] Server-Side Apply should work for build.openshift.io/v1, Resource=buildconfigs [apigroup:build.openshift.io]": " [Suite:openshift/conformance/parallel]",
@@ -204,6 +206,8 @@ var Annotations = map[string]string{
 	"[sig-arch] [Conformance] sysctl whitelists net.ipv4.tcp_syncookies": " [Suite:openshift/conformance/parallel/minimal]",
 
 	"[sig-arch] ocp payload should be based on existing source OLM version should contain the source commit id": " [Skipped:NoOptionalCapabilities] [Suite:openshift/conformance/parallel]",
+
+	"[sig-arch][Early] APIs for openshift.io must have stable versions": " [Suite:openshift/conformance/parallel]",
 
 	"[sig-arch][Early] CRDs for openshift.io should have a status in the CRD schema": " [Suite:openshift/conformance/parallel]",
 
@@ -1307,6 +1311,16 @@ var Annotations = map[string]string{
 
 	"[sig-network] services when using a plugin in a mode that isolates namespaces by default should prevent connections to pods in different namespaces on the same node via service IPs": " [Suite:openshift/conformance/parallel]",
 
+	"[sig-network][Feature:CNIMigration] All nodes should be in ready state [Early][Suite:openshift/network/live-migration]": "",
+
+	"[sig-network][Feature:CNIMigration] Cluster operators should be stable [Late][Suite:openshift/network/live-migration]": "",
+
+	"[sig-network][Feature:CNIMigration] Cluster should not be live migrating before beginning migration [Early][Suite:openshift/network/live-migration]": "",
+
+	"[sig-network][Feature:CNIMigration] Should perform live migration [Disruptive][Suite:openshift/network/live-migration]": " [Serial]",
+
+	"[sig-network][Feature:CNIMigration] Target CNI should not be deployed [Early][Suite:openshift/network/live-migration]": "",
+
 	"[sig-network][Feature:EgressFirewall] egressFirewall should have no impact outside its namespace": " [Suite:openshift/conformance/parallel]",
 
 	"[sig-network][Feature:EgressFirewall] when using openshift ovn-kubernetes should ensure egressfirewall is created": " [Suite:openshift/conformance/parallel]",
@@ -1417,6 +1431,8 @@ var Annotations = map[string]string{
 
 	"[sig-node] Managed cluster should verify that nodes have no unexpected reboots [Late]": " [Suite:openshift/conformance/parallel]",
 
+	"[sig-node] [Conformance] Prevent openshift node labeling on update by the node TestOpenshiftNodeLabeling": " [Suite:openshift/conformance/parallel/minimal]",
+
 	"[sig-node] should override timeoutGracePeriodSeconds when annotation is set": " [Suite:openshift/conformance/parallel]",
 
 	"[sig-node] supplemental groups Ensure supplemental groups propagate to docker should propagate requested groups to the container [apigroup:security.openshift.io]": " [Suite:openshift/conformance/parallel]",
@@ -1518,6 +1534,10 @@ var Annotations = map[string]string{
 	"[sig-storage][Feature:CSIInlineVolumeAdmission][Serial] restricted namespace should deny pods with inline volumes when the driver uses the baseline label": " [Suite:openshift/conformance/serial]",
 
 	"[sig-storage][Feature:CSIInlineVolumeAdmission][Serial] restricted namespace should deny pods with inline volumes when the driver uses the privileged label": " [Suite:openshift/conformance/serial]",
+
+	"[sig-storage][Feature:Cluster-CSI-Snapshot-Controller-Operator][Serial][apigroup:operator.openshift.io] should restart webhook Pods if csi-snapshot-webhook-secret expiry annotation is changed": " [Suite:openshift/conformance/serial]",
+
+	"[sig-storage][Feature:Cluster-CSI-Snapshot-Controller-Operator][Serial][apigroup:operator.openshift.io] should restart webhook Pods if csi-snapshot-webhook-secret is deleted": " [Suite:openshift/conformance/serial]",
 
 	"[sig-storage][Feature:DisableStorageClass][Serial][apigroup:operator.openshift.io] should not reconcile the StorageClass when StorageClassState is Unmanaged": " [Suite:openshift/conformance/serial]",
 
