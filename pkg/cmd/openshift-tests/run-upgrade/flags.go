@@ -84,6 +84,7 @@ func (f *RunUpgradeSuiteFlags) ToOptions(args []string) (*RunUpgradeSuiteOptions
 		f.AvailableSuites,
 		args,
 		kubeconfig.NewDiscoveryGetter(adminRESTConfig),
+		kubeconfig.NewConfigClientGetter(adminRESTConfig),
 		f.GinkgoRunSuiteOptions.DryRun,
 		nil,
 	)
@@ -91,7 +92,6 @@ func (f *RunUpgradeSuiteFlags) ToOptions(args []string) (*RunUpgradeSuiteOptions
 		return nil, err
 	}
 
-	ginkgoOptions.FromRepository = f.FromRepository
 	o := &RunUpgradeSuiteOptions{
 		GinkgoRunSuiteOptions: ginkgoOptions,
 		Suite:                 suite,

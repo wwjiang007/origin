@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
+	"time"
 
 	v1 "github.com/openshift/api/config/v1"
 	configclient "github.com/openshift/client-go/config/clientset/versioned"
@@ -77,20 +79,21 @@ func (ade *SimplePathologicalEventMatcher) Name() string {
 }
 
 func (ade *SimplePathologicalEventMatcher) Matches(i monitorapi.Interval) bool {
-	l := i.StructuredLocator
-	msg := i.StructuredMessage
+	l := i.Locator
+	msg := i.Message
+	log := logrus.WithField("allower", ade.Name())
 	for lk, r := range ade.locatorKeyRegexes {
 		if !r.MatchString(l.Keys[lk]) {
-			logrus.WithField("allower", ade.Name).Debugf("key %s did not match", lk)
+			log.Debugf("%s: key %s did not match", ade.Name(), lk)
 			return false
 		}
 	}
 	if ade.messageHumanRegex != nil && !ade.messageHumanRegex.MatchString(msg.HumanMessage) {
-		logrus.WithField("allower", ade.Name).Debugf("human message did not match")
+		log.Debugf("%s: human message did not match", ade.Name())
 		return false
 	}
 	if ade.messageReasonRegex != nil && !ade.messageReasonRegex.MatchString(string(msg.Reason)) {
-		logrus.WithField("allower", ade.Name).Debugf("message reason did not match")
+		log.Debugf("%s: message reason did not match", ade.Name())
 		return false
 	}
 
@@ -105,7 +108,7 @@ func (ade *SimplePathologicalEventMatcher) Allows(i monitorapi.Interval, topolog
 		return false
 	}
 
-	msg := i.StructuredMessage
+	msg := i.Message
 	if !ade.Matches(i) {
 		return false
 	}
@@ -151,8 +154,8 @@ func (r *AllowedPathologicalEventRegistry) AddPathologicalEventMatcherOrDie(even
 // Returns true if so, the matcher name, and the matcher itself.
 // It does NOT check if the interval should be allowed.
 func (r *AllowedPathologicalEventRegistry) MatchesAny(i monitorapi.Interval) (bool, EventMatcher) {
-	l := i.StructuredLocator
-	msg := i.StructuredMessage
+	l := i.Locator
+	msg := i.Message
 	for k, m := range r.matchers {
 		allowed := m.Matches(i)
 		if allowed {
@@ -169,8 +172,8 @@ func (r *AllowedPathologicalEventRegistry) MatchesAny(i monitorapi.Interval) (bo
 func (r *AllowedPathologicalEventRegistry) AllowedByAny(
 	i monitorapi.Interval,
 	topology v1.TopologyMode) (bool, EventMatcher) {
-	l := i.StructuredLocator
-	msg := i.StructuredMessage
+	l := i.Locator
+	msg := i.Message
 	for k, m := range r.matchers {
 		allowed := m.Allows(i, topology)
 		if allowed {
@@ -461,6 +464,7 @@ func NewUniversalPathologicalEventMatchers(kubeConfig *rest.Config, finalInterva
 	registry.AddPathologicalEventMatcherOrDie(FailedScheduling)
 	registry.AddPathologicalEventMatcherOrDie(ErrorUpdatingEndpointSlices)
 	registry.AddPathologicalEventMatcherOrDie(MarketplaceStartupProbeFailure)
+	registry.AddPathologicalEventMatcherOrDie(CertificateRotation)
 
 	// Inject the dynamic allowance for etcd readiness probe failures based on the number of
 	// etcd revisions the cluster went through.
@@ -475,7 +479,9 @@ func NewUniversalPathologicalEventMatchers(kubeConfig *rest.Config, finalInterva
 	registry.AddPathologicalEventMatcherOrDie(topologyAwareMatcher)
 
 	singleNodeConnectionRefusedMatcher := newSingleNodeConnectionRefusedEventMatcher(finalIntervals)
+	singleNodeKubeAPIServerProgressingMatcher := newSingleNodeKubeAPIProgressingEventMatcher(finalIntervals)
 	registry.AddPathologicalEventMatcherOrDie(singleNodeConnectionRefusedMatcher)
+	registry.AddPathologicalEventMatcherOrDie(singleNodeKubeAPIServerProgressingMatcher)
 
 	return registry
 }
@@ -572,7 +578,6 @@ var AllowBackOffRestartingFailedContainer = &SimplePathologicalEventMatcher{
 var EtcdRequiredResourcesMissing = &SimplePathologicalEventMatcher{
 	name:               "EtcdRequiredResourcesMissing",
 	messageReasonRegex: regexp.MustCompile(`^RequiredInstallerResourcesMissing$`),
-	messageHumanRegex:  regexp.MustCompile(`secrets: etcd-all-certs-[0-9]+`),
 }
 
 // reason/OperatorStatusChanged Status for clusteroperator/etcd changed: Degraded message changed from "NodeControllerDegraded: All master nodes are ready\nEtcdMembersDegraded: 2 of 3 members are available, ip-10-0-217-93.us-west-1.compute.internal is unhealthy" to "NodeControllerDegraded: All master nodes are ready\nEtcdMembersDegraded: No unhealthy members found"
@@ -683,6 +688,11 @@ var MarketplaceStartupProbeFailure = &SimplePathologicalEventMatcher{
 	messageHumanRegex: regexp.MustCompile(`Startup probe failed`),
 }
 
+var CertificateRotation = &SimplePathologicalEventMatcher{
+	name:               "CertificateRotation",
+	messageReasonRegex: regexp.MustCompile(`^(CABundleUpdateRequired|SignerUpdateRequired|TargetUpdateRequired|CertificateUpdated|CertificateRemoved|CertificateUpdateFailed)$`),
+}
+
 // IsEventAfterInstallation returns true if the monitorEvent represents an event that happened after installation.
 func IsEventAfterInstallation(monitorEvent monitorapi.Interval, kubeClientConfig *rest.Config) (bool, error) {
 	if kubeClientConfig == nil {
@@ -694,10 +704,10 @@ func IsEventAfterInstallation(monitorEvent monitorapi.Interval, kubeClientConfig
 		return true, nil
 	}
 
-	namespace := monitorEvent.StructuredLocator.Keys[monitorapi.LocatorNamespaceKey]
-	pod := monitorEvent.StructuredLocator.Keys[monitorapi.LocatorNamespaceKey]
-	reason := monitorEvent.StructuredMessage.Reason
-	msg := monitorEvent.StructuredMessage.HumanMessage
+	namespace := monitorEvent.Locator.Keys[monitorapi.LocatorNamespaceKey]
+	pod := monitorEvent.Locator.Keys[monitorapi.LocatorNamespaceKey]
+	reason := monitorEvent.Message.Reason
+	msg := monitorEvent.Message.HumanMessage
 	kubeClient, err := kubernetes.NewForConfig(kubeClientConfig)
 	if err != nil {
 		return true, nil
@@ -798,10 +808,10 @@ func newFailedSchedulingDuringNodeUpdatePathologicalEventMatcher(finalIntervals 
 	// expected during NodeUpdate.
 	nodeUpdateIntervals := finalIntervals.Filter(func(eventInterval monitorapi.Interval) bool {
 		return eventInterval.Source == monitorapi.SourceNodeState &&
-			eventInterval.StructuredLocator.Type == monitorapi.LocatorTypeNode &&
-			eventInterval.StructuredMessage.Annotations[monitorapi.AnnotationConstructed] == monitorapi.ConstructionOwnerNodeLifecycle &&
-			eventInterval.StructuredMessage.Annotations[monitorapi.AnnotationPhase] == "Update" &&
-			strings.Contains(eventInterval.StructuredMessage.Annotations[monitorapi.AnnotationRoles], "master")
+			eventInterval.Locator.Type == monitorapi.LocatorTypeNode &&
+			eventInterval.Message.Annotations[monitorapi.AnnotationConstructed] == monitorapi.ConstructionOwnerNodeLifecycle &&
+			eventInterval.Message.Annotations[monitorapi.AnnotationPhase] == "Update" &&
+			strings.Contains(eventInterval.Message.Annotations[monitorapi.AnnotationRoles], "master")
 	})
 	logrus.Infof("found %d NodeUpdate intervals", len(nodeUpdateIntervals))
 	return &OverlapOtherIntervalsPathologicalEventMatcher{
@@ -866,7 +876,7 @@ func newTopologyAwareHintsDisabledDuringTaintTestsPathologicalEventMatcher(final
 
 	taintManagerTestIntervals := finalIntervals.Filter(func(eventInterval monitorapi.Interval) bool {
 		return eventInterval.Source == monitorapi.SourceE2ETest &&
-			strings.Contains(eventInterval.StructuredLocator.Keys[monitorapi.LocatorE2ETestKey], "NoExecuteTaintManager")
+			strings.Contains(eventInterval.Locator.Keys[monitorapi.LocatorE2ETestKey], "NoExecuteTaintManager")
 	})
 
 	// The original mechanism doesn't properly count the compensation factor the number of events that happened in the window that were batched
@@ -897,13 +907,48 @@ func newSingleNodeConnectionRefusedEventMatcher(finalIntervals monitorapi.Interv
 	const (
 		ocpAPINamespace      = "openshift-apiserver"
 		ocpOAuthAPINamespace = "openshift-oauth-apiserver"
+		defaultNamespace     = "default"
+
+		bufferTime     = time.Second * 45
+		bufferSourceID = "GeneratedSNOBufferInterval"
 	)
 	snoTopology := v1.SingleReplicaTopologyMode
+
+	// Intervals are collected as they come to the monitorapi and the `from` and `to` is recorded at that point,
+	// this works fine for most runs however for single node the events might be sent at irregular intervals.
+	// This makes it hard to determine if connection refused errors are false positives,
+	// here we collect intervals we know are acceptable for connection refused errors to occur for single node.
+	bufferInterval := []monitorapi.Interval{}
+
 	ocpAPISeverTargetDownIntervals := finalIntervals.Filter(func(eventInterval monitorapi.Interval) bool {
-		return eventInterval.Source == monitorapi.SourceAlert &&
-			eventInterval.StructuredLocator.Keys[monitorapi.LocatorAlertKey] == "TargetDown" &&
-			(eventInterval.StructuredLocator.Keys[monitorapi.LocatorNamespaceKey] == ocpAPINamespace ||
-				eventInterval.StructuredLocator.Keys[monitorapi.LocatorNamespaceKey] == ocpOAuthAPINamespace)
+
+		// If we find a graceful shutdown event, we create a buffer interval after shutdown to account
+		// for the API Server coming back up, as well as a 5 second before `from` buffer to account for a
+		// situation where the `event.from` falls exactly on the `interval.from` thus causing time.Before() logic to return false.
+		if eventInterval.Source == monitorapi.APIServerGracefulShutdown && eventInterval.Message.Reason == monitorapi.GracefulAPIServerShutdown {
+			temp := eventInterval
+			temp.Locator = monitorapi.Locator{Type: bufferSourceID, Keys: temp.Locator.Keys}
+			temp.Source = bufferSourceID
+			temp.From = eventInterval.From.Add(time.Second * -5)
+			temp.To = eventInterval.To.Add(bufferTime)
+			bufferInterval = append(bufferInterval, temp)
+		}
+
+		isTargetDownAlert := eventInterval.Source == monitorapi.SourceAlert && eventInterval.Locator.Keys[monitorapi.LocatorAlertKey] == "TargetDown"
+		identifiedSkipInterval := false
+
+		switch eventInterval.Locator.Keys[monitorapi.LocatorNamespaceKey] {
+		case ocpAPINamespace, ocpOAuthAPINamespace:
+			identifiedSkipInterval = true
+		case defaultNamespace:
+			identifiedSkipInterval = strings.Contains(eventInterval.Message.HumanMessage, "apiserver")
+		}
+
+		return isTargetDownAlert && identifiedSkipInterval
+	})
+	ocpAPISeverTargetDownIntervals = append(ocpAPISeverTargetDownIntervals, bufferInterval...)
+	sort.SliceStable(ocpAPISeverTargetDownIntervals, func(i, j int) bool {
+		return ocpAPISeverTargetDownIntervals[i].To.Before(ocpAPISeverTargetDownIntervals[j].To)
 	})
 	if len(ocpAPISeverTargetDownIntervals) > 0 {
 		logrus.Infof("found %d OCP APIServer TargetDown intervals", len(ocpAPISeverTargetDownIntervals))
@@ -915,5 +960,36 @@ func newSingleNodeConnectionRefusedEventMatcher(finalIntervals monitorapi.Interv
 			topology:          &snoTopology,
 		},
 		allowIfWithinIntervals: ocpAPISeverTargetDownIntervals,
+	}
+}
+
+// We ignore pathological errors that happen during the kube-apiserver progressing interval on SNO. The primary errors
+// that occur during this time are the kube-apiserver-operator waiting for etcd/installer to stabilize and if we're unlucky
+// an operator might call out for leader and since the KAS is down, it'll trigger a restart since it can't get leader.
+func newSingleNodeKubeAPIProgressingEventMatcher(finalIntervals monitorapi.Intervals) EventMatcher {
+	snoTopology := v1.SingleReplicaTopologyMode
+
+	ocpKubeAPIServerProgressingInterval := finalIntervals.Filter(func(eventInterval monitorapi.Interval) bool {
+
+		isNodeInstaller := eventInterval.Message.Reason == monitorapi.NodeInstallerReason
+		isOperatorSource := eventInterval.Source == monitorapi.SourceOperatorState
+		isKubeAPI := eventInterval.Locator.Keys[monitorapi.LocatorClusterOperatorKey] == "kube-apiserver"
+
+		isKubeAPIInstaller := isNodeInstaller && isOperatorSource && isKubeAPI
+		isKubeAPIInstallProgressing := isKubeAPIInstaller && eventInterval.Message.Annotations[monitorapi.AnnotationCondition] == "Progressing"
+
+		return isKubeAPIInstallProgressing
+	})
+
+	if len(ocpKubeAPIServerProgressingInterval) > 0 {
+		logrus.Infof("found %d OCP Kube APIServer Progressing intervals", len(ocpKubeAPIServerProgressingInterval))
+	}
+	return &OverlapOtherIntervalsPathologicalEventMatcher{
+		delegate: &SimplePathologicalEventMatcher{
+			name:              "KubeAPIServerProgressingDuringSingleNodeUpgrade",
+			messageHumanRegex: regexp.MustCompile(`^(clusteroperator/kube-apiserver version .* changed from |Back-off restarting failed container)`),
+			topology:          &snoTopology,
+		},
+		allowIfWithinIntervals: ocpKubeAPIServerProgressingInterval,
 	}
 }

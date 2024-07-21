@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
@@ -79,7 +80,7 @@ func (r *monitorTestRegistry) ListMonitorTests() sets.String {
 
 func (r *monitorTestRegistry) StartCollection(ctx context.Context, adminRESTConfig *rest.Config, recorder monitorapi.RecorderWriter) ([]*junitapi.JUnitTestCase, error) {
 	wg := sync.WaitGroup{}
-	junitCh := make(chan *junitapi.JUnitTestCase, len(r.monitorTests))
+	junitCh := make(chan *junitapi.JUnitTestCase, 2*len(r.monitorTests))
 	errCh := make(chan error, len(r.monitorTests))
 
 	for i := range r.monitorTests {
@@ -88,7 +89,7 @@ func (r *monitorTestRegistry) StartCollection(ctx context.Context, adminRESTConf
 			defer wg.Done()
 
 			testName := fmt.Sprintf("[Jira:%q] monitor test %v setup", invariant.jiraComponent, invariant.name)
-			fmt.Printf("  Starting %v for %v\n", invariant.name, invariant.jiraComponent)
+			logrus.Infof("  Starting %v for %v", invariant.name, invariant.jiraComponent)
 
 			start := time.Now()
 			err := startCollectionWithPanicProtection(ctx, invariant.monitorTest, adminRESTConfig, recorder)
@@ -148,9 +149,10 @@ func (r *monitorTestRegistry) StartCollection(ctx context.Context, adminRESTConf
 func (r *monitorTestRegistry) CollectData(ctx context.Context, storageDir string, beginning, end time.Time) (monitorapi.Intervals, []*junitapi.JUnitTestCase, error) {
 	wg := sync.WaitGroup{}
 	intervalsCh := make(chan monitorapi.Intervals, len(r.monitorTests))
-	junitCh := make(chan []*junitapi.JUnitTestCase, 2*len(r.monitorTests))
+	junitCh := make(chan []*junitapi.JUnitTestCase, 3*len(r.monitorTests))
 	errCh := make(chan error, len(r.monitorTests))
 
+	logrus.Infof("Starting CollectData for all monitor tests")
 	for i := range r.monitorTests {
 		wg.Add(1)
 		go func(ctx context.Context, monitorTest *monitorTesttItem) {
@@ -158,6 +160,7 @@ func (r *monitorTestRegistry) CollectData(ctx context.Context, storageDir string
 			testName := fmt.Sprintf("[Jira:%q] monitor test %v collection", monitorTest.jiraComponent, monitorTest.name)
 
 			start := time.Now()
+			logrus.Infof("  Starting CollectData for %s", testName)
 			localIntervals, localJunits, err := collectDataWithPanicProtection(ctx, monitorTest.monitorTest, storageDir, beginning, end)
 			intervalsCh <- localIntervals
 			junitCh <- localJunits
@@ -175,6 +178,7 @@ func (r *monitorTestRegistry) CollectData(ctx context.Context, storageDir string
 							},
 						},
 					}
+					logrus.WithFields(logrus.Fields{"reason": nsErr.Reason}).Warningf("  Finished CollectData for %s with not supported warning", testName)
 					return
 				}
 				junitCh <- []*junitapi.JUnitTestCase{
@@ -189,6 +193,7 @@ func (r *monitorTestRegistry) CollectData(ctx context.Context, storageDir string
 				}
 				var flakeErr *FlakeError
 				if !errors.As(err, &flakeErr) {
+					logrus.WithError(flakeErr).Errorf("  Finished CollectData for %s with flake error", testName)
 					return
 				}
 			}
@@ -199,6 +204,7 @@ func (r *monitorTestRegistry) CollectData(ctx context.Context, storageDir string
 					Duration: duration.Seconds(),
 				},
 			}
+			logrus.Infof("  Finished CollectData for %s", testName)
 		}(ctx, r.monitorTests[i])
 	}
 
@@ -220,6 +226,7 @@ func (r *monitorTestRegistry) CollectData(ctx context.Context, storageDir string
 		errs = append(errs, curr)
 	}
 
+	logrus.Infof("Finished CollectData for all monitor tests")
 	return intervals, junits, utilerrors.NewAggregate(errs)
 }
 
@@ -336,8 +343,8 @@ func (r *monitorTestRegistry) WriteContentToStorage(ctx context.Context, storage
 		fmt.Fprintf(os.Stderr, "  finalIntervals size = %d\n", finalIntervalLength)
 		if finalIntervalLength > 1 {
 			fmt.Fprintf(os.Stderr, "  first interval time: From = %s; To = %s\n", finalIntervals[0].From, finalIntervals[0].To)
+			fmt.Fprintf(os.Stderr, "  last interval time: From = %s; To = %s\n", finalIntervals[finalIntervalLength-1].From, finalIntervals[finalIntervalLength-1].To)
 		}
-		fmt.Fprintf(os.Stderr, "  last interval time: From = %s; To = %s\n", finalIntervals[finalIntervalLength-1].From, finalIntervals[finalIntervalLength-1].To)
 
 		err := writeContentToStorageWithPanicProtection(ctx, monitorTest.monitorTest, storageDir, timeSuffix, finalIntervals, finalResourceState)
 		end := time.Now()
@@ -385,8 +392,10 @@ func (r *monitorTestRegistry) Cleanup(ctx context.Context) ([]*junitapi.JUnitTes
 
 	for _, monitorTest := range r.monitorTests {
 		testName := fmt.Sprintf("[Jira:%q] monitor test %v cleanup", monitorTest.jiraComponent, monitorTest.name)
+		log := logrus.WithField("monitorTest", monitorTest.name)
 
 		start := time.Now()
+		log.Info("beginning cleanup")
 		err := cleanupWithPanicProtection(ctx, monitorTest.monitorTest)
 		end := time.Now()
 		duration := end.Sub(start)
@@ -403,6 +412,7 @@ func (r *monitorTestRegistry) Cleanup(ctx context.Context) ([]*junitapi.JUnitTes
 				continue
 			}
 
+			log.WithError(err).Error("failed during cleanup")
 			errs = append(errs, err)
 			junits = append(junits, &junitapi.JUnitTestCase{
 				Name:     testName,

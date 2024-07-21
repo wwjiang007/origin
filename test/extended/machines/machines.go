@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/objx"
 
 	v1 "github.com/openshift/api/config/v1"
-	configclient "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1"
 	machineclient "github.com/openshift/client-go/machine/clientset/versioned"
 	exutil "github.com/openshift/origin/test/extended/util"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -144,27 +143,20 @@ var _ = g.Describe("[sig-cluster-lifecycle][Feature:Machines] Managed cluster sh
 	g.It("[sig-scheduling][Early] control plane machine set operator should not have any events", func() {
 		ctx := context.Background()
 
-		nodeClient := oc.KubeClient().CoreV1().Nodes()
-		nodeList, err := nodeClient.List(ctx, metav1.ListOptions{})
+		infrastructure, err := oc.AdminConfigClient().ConfigV1().Infrastructures().Get(ctx, "cluster", metav1.GetOptions{})
+		// if the Cluster CR is not found it most likely means this is running on a UPI installation and does not have CPMSO support
+		if errors.IsNotFound(err) {
+			e2eskipper.Skipf("No Cluster object found, this frequently means there is no Control Plane Machine Set Operator, skipping test")
+		}
 		o.Expect(err).ToNot(o.HaveOccurred())
+		o.Expect(infrastructure).ToNot(o.BeNil())
 
 		// We want to skip this test on single-node clusters
 		// as the control plane machine set does not get generated.
 		// No other topology should match this condition.
-		if len(nodeList.Items) == 1 {
-			_, isWorker := nodeList.Items[0].Labels["node-role.kubernetes.io/worker"]
-			_, isControlPlane := nodeList.Items[0].Labels["node-role.kubernetes.io/control-plane"]
-
-			if isWorker && isControlPlane {
-				g.Skip("Skipping test due to a cluster being a single node cluster")
-			}
+		if infrastructure.Status.ControlPlaneTopology == v1.SingleReplicaTopologyMode {
+			g.Skip("Skipping test due to a cluster being a single node cluster")
 		}
-
-		configClient, err := configclient.NewForConfig(oc.KubeFramework().ClientConfig())
-		o.Expect(err).ToNot(o.HaveOccurred())
-
-		infrastructure, err := configClient.Infrastructures().Get(ctx, "cluster", metav1.GetOptions{})
-		o.Expect(err).ToNot(o.HaveOccurred())
 
 		platform := infrastructure.Status.PlatformStatus.Type
 
@@ -208,7 +200,7 @@ var _ = g.Describe("[sig-cluster-lifecycle][Feature:Machines] Managed cluster sh
 // Use this early in a test that relies on Machine API functionality.
 //
 // It checks to see if the machine custom resource is installed in the cluster.
-// If machines are not installed it skips the test case.
+// If machines are not installed, or there are no machines in the cluster, it skips the test case.
 // It then checks to see if the `openshift-machine-api` namespace is installed.
 // If the namespace is not present it skips the test case.
 func skipUnlessMachineAPIOperator(dc dynamic.Interface, c coreclient.NamespaceInterface) {
@@ -216,11 +208,22 @@ func skipUnlessMachineAPIOperator(dc dynamic.Interface, c coreclient.NamespaceIn
 
 	err := wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
 		// Listing the resource will return an IsNotFound error when the CRD has not been installed.
-		// Otherwise it would return an empty list.
-		_, err := machineClient.List(context.Background(), metav1.ListOptions{})
+		// Otherwise it would return an empty list if no Machines are in use, which should not be
+		// possible if the MachineAPI operator is in use.
+		machines, err := machineClient.List(context.Background(), metav1.ListOptions{})
+		// If no error was returned and the list of Machines is populated, this cluster is using MachineAPI
 		if err == nil {
+			// If the Machine CRD exists but there are no Machine objects in the cluster we should
+			// skip the test because any cluster that is using MachineAPI from the install will have
+			// Machines for the control plane nodes at the minimum.
+			if len(machines.Items) == 0 {
+				e2eskipper.Skipf("The cluster supports the Machine CRD but has no Machines available")
+			}
+
 			return true, nil
 		}
+
+		// Not found error on the Machine CRD, cluster is not using MachineAPI
 		if errors.IsNotFound(err) {
 			e2eskipper.Skipf("The cluster does not support machine instances")
 		}
@@ -230,6 +233,8 @@ func skipUnlessMachineAPIOperator(dc dynamic.Interface, c coreclient.NamespaceIn
 	o.Expect(err).NotTo(o.HaveOccurred())
 
 	err = wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
+		// Check if the openshift-machine-api namespace is present, if not then this
+		// cluster is not using MachineAPI.
 		_, err := c.Get(context.Background(), "openshift-machine-api", metav1.GetOptions{})
 		if err == nil {
 			return true, nil

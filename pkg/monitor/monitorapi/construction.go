@@ -39,11 +39,9 @@ func (b *IntervalBuilder) Display() *IntervalBuilder {
 // directly.
 func (b *IntervalBuilder) BuildCondition() Condition {
 	ret := Condition{
-		Level:             b.level,
-		Locator:           b.structuredLocator.OldLocator(),
-		StructuredLocator: b.structuredLocator,
-		Message:           b.structuredMessage.OldMessage(),
-		StructuredMessage: b.structuredMessage,
+		Level:   b.level,
+		Locator: b.structuredLocator,
+		Message: b.structuredMessage,
 	}
 
 	return ret
@@ -169,6 +167,33 @@ func (b *LocatorBuilder) AlertFromPromSampleStream(alert *model.SampleStream) Lo
 	return b.Build()
 }
 
+func (b *LocatorBuilder) PrometheusTargetDownFromPromSampleStream(sample *model.SampleStream) Locator {
+	b.targetType = LocatorTypeMetricsEndpoint
+
+	node := string(sample.Metric["node"])
+	if len(node) > 0 {
+		b.annotations[LocatorNodeKey] = node
+	}
+	namespace := string(sample.Metric["namespace"])
+	if len(namespace) > 0 {
+		b.annotations[LocatorNamespaceKey] = namespace
+	}
+	instance := string(sample.Metric["instance"])
+	if len(instance) > 0 {
+		b.annotations[LocatorInstanceKey] = instance
+	}
+	metricsPath := string(sample.Metric["metrics_path"])
+	if len(metricsPath) > 0 {
+		b.annotations[LocatorMetricsPathKey] = metricsPath
+	}
+	service := string(sample.Metric["service"])
+	if len(service) > 0 {
+		b.annotations[LocatorServiceKey] = service
+	}
+
+	return b.Build()
+}
+
 func (b *LocatorBuilder) Disruption(backendDisruptionName, thisInstanceName, loadBalancer, protocol, target string, connectionType BackendConnectionType) Locator {
 	b = b.withDisruptionRequiredOnly(backendDisruptionName, thisInstanceName).withConnectionType(connectionType)
 
@@ -266,16 +291,7 @@ func (b *LocatorBuilder) LocateDisruptionCheck(backendDisruptionName, thisInstan
 		Build()
 }
 
-func (b *LocatorBuilder) LocateServer(serverName, nodeName, namespace, podName string, isShutdown bool) Locator {
-	if isShutdown {
-		return b.
-			withShutdown().
-			withServer(serverName).
-			withNode(nodeName).
-			withNamespace(namespace).
-			withPodName(podName).
-			Build()
-	}
+func (b *LocatorBuilder) LocateServer(serverName, nodeName, namespace, podName string) Locator {
 	return b.
 		withServer(serverName).
 		withNode(nodeName).
@@ -284,15 +300,18 @@ func (b *LocatorBuilder) LocateServer(serverName, nodeName, namespace, podName s
 		Build()
 }
 
-// TODO remove this once we know what all breaks.
-func (b *LocatorBuilder) withShutdown() *LocatorBuilder {
-	b.annotations[LocatorShutdown] = "apiserver"
-	return b
-}
-
 func (b *LocatorBuilder) withServer(serverName string) *LocatorBuilder {
 	b.annotations[LocatorServerKey] = serverName
 	return b
+}
+
+func (b *LocatorBuilder) KubeAPIServerWithLB(loadBalancer string) Locator {
+	b.targetType = LocatorTypeAPIServer
+	b.annotations[LocatorServerKey] = "kube-apiserver"
+	if len(loadBalancer) > 0 {
+		b.annotations[LocatorLoadBalancerKey] = loadBalancer
+	}
+	return b.Build()
 }
 
 // TODO decide whether we want to allow "random" locator keys.  deads2k is -1 on random locator keys and thinks we should enumerate every possible key we special case.
@@ -329,16 +348,6 @@ func (b *LocatorBuilder) KubeEvent(event *corev1.Event) Locator {
 	return b.Build()
 }
 
-func (b *LocatorBuilder) APIServerShutdown(loadBalancer string) Locator {
-	b.targetType = LocatorTypeAPIServerShutdown
-	b.annotations[LocatorShutdownKey] = "graceful"
-	b.annotations[LocatorServerKey] = "kube-apiserver"
-	if len(loadBalancer) > 0 {
-		b.annotations[LocatorLoadBalancerKey] = loadBalancer
-	}
-	return b.Build()
-}
-
 func (b *LocatorBuilder) ContainerFromPod(pod *corev1.Pod, containerName string) Locator {
 	b.PodFromPod(pod)
 	b.targetType = LocatorTypeContainer
@@ -361,12 +370,17 @@ func (b *LocatorBuilder) ContainerFromNames(namespace, podName, uid, containerNa
 }
 
 func (b *LocatorBuilder) PodFromNames(namespace, podName, uid string) Locator {
-	return b.
-		withTargetType(LocatorTypePod).
-		withNamespace(namespace).
-		withPodName(podName).
-		withUID(uid).
-		Build()
+	bldr := b.withTargetType(LocatorTypePod)
+	if len(namespace) > 0 {
+		bldr = bldr.withNamespace(namespace)
+	}
+	if len(podName) > 0 {
+		bldr = bldr.withPodName(podName)
+	}
+	if len(uid) > 0 {
+		bldr = bldr.withUID(uid)
+	}
+	return bldr.Build()
 }
 
 func (b *LocatorBuilder) withPodName(podName string) *LocatorBuilder {
@@ -427,9 +441,12 @@ func NewMessage() *MessageBuilder {
 
 // ExpandMessage parses a message that was collapsed into a string to extract each annotation
 // and the original message.
-func ExpandMessage(prevMessage string) *MessageBuilder {
-	prevAnnotations := AnnotationsFromMessage(prevMessage)
-	prevNonAnnotationMessage := NonAnnotationMessage(prevMessage)
+func ExpandMessage(prevMessage Message) *MessageBuilder {
+	prevAnnotations := prevMessage.Annotations
+	prevNonAnnotationMessage := prevMessage.HumanMessage
+	if prevAnnotations == nil {
+		prevAnnotations = map[AnnotationKey]string{}
+	}
 	return &MessageBuilder{
 		annotations:  prevAnnotations,
 		humanMessage: prevNonAnnotationMessage,
@@ -480,12 +497,12 @@ func (m *MessageBuilder) HumanMessagef(messageFormat string, args ...interface{}
 	return m.HumanMessage(fmt.Sprintf(messageFormat, args...))
 }
 
-// Build creates the final StructuredMessage with all data assembled by this builder.
+// Build creates the final Message with all data assembled by this builder.
 func (m *MessageBuilder) Build() Message {
 	ret := Message{
 		Annotations: map[AnnotationKey]string{},
 	}
-	// TODO: what do we gain from a mStructuredMessage with fixed keys, vs fields on the StructuredMessage?
+	// TODO: what do we gain from a mStructuredMessage with fixed keys, vs fields on the Message?
 	// They're not really fixed, some WithAnnotation calls are floating around, but could those also be functions here?
 	for k, v := range m.annotations {
 		ret.Annotations[k] = v

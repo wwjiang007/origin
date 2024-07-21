@@ -2,6 +2,7 @@ package suiteselection
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -9,6 +10,9 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	clientconfigv1 "github.com/openshift/client-go/config/clientset/versioned"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"k8s.io/client-go/discovery"
 
@@ -20,6 +24,10 @@ import (
 
 type DiscoveryClientGetter interface {
 	GetDiscoveryClient() (discovery.AggregatedDiscoveryInterface, error)
+}
+
+type ConfigClientGetter interface {
+	GetConfigClient() (clientconfigv1.Interface, error)
 }
 
 // TestSuiteSelectionFlags is used to run a suite of tests by invoking each test
@@ -59,6 +67,7 @@ func (f *TestSuiteSelectionFlags) SelectSuite(
 	suites []*testginkgo.TestSuite,
 	args []string,
 	discoveryClientGetter DiscoveryClientGetter,
+	configClientGetter ConfigClientGetter,
 	dryRun bool,
 	additionalMatchFn testginkgo.TestMatchFunc,
 ) (*testginkgo.TestSuite, error) {
@@ -127,6 +136,26 @@ func (f *TestSuiteSelectionFlags) SelectSuite(
 				return nil, fmt.Errorf("unable to build api group filter: %w", err)
 			}
 			suite.AddRequiredMatchFunc(apiGroupFilter.includeTest)
+		}
+	}
+
+	configClient, err := configClientGetter.GetConfigClient()
+	switch {
+	case err != nil && dryRun:
+		fmt.Fprintf(f.ErrOut, "Unable to get config client, skipping FeatureGate check in the dry-run mode: %v\n", err)
+	case err != nil && !dryRun:
+		return nil, fmt.Errorf("unable to get config client, skipping FeatureGate check in the dry-run mode: %w", err)
+	default:
+		featureGateFilter, err := newFeatureGateFilter(context.TODO(), configClient)
+		switch {
+		case apierrors.IsNotFound(err):
+			// In case we are unable to determine if there is support for feature gates, exclude all featuregated tests
+			// as the test target doesnt comply with preconditions.
+			suite.AddRequiredMatchFunc(includeNonFeatureGateTest)
+		case err != nil:
+			return nil, fmt.Errorf("unable to build FeatureGate filter: %w", err)
+		default:
+			suite.AddRequiredMatchFunc(featureGateFilter.includeTest)
 		}
 	}
 

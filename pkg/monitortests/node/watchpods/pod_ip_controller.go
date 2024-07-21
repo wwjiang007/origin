@@ -171,7 +171,7 @@ func (c *SimultaneousPodIPController) sync(ctx context.Context, key string) erro
 				otherPodIP := otherIP.IP
 				if currPodIP == otherPodIP {
 					otherPodLocator := monitorapi.LocatePod(otherPod)
-					podNames.Insert(otherPodLocator)
+					podNames.Insert(otherPodLocator.OldLocator())
 				}
 			}
 		}
@@ -182,7 +182,7 @@ func (c *SimultaneousPodIPController) sync(ctx context.Context, key string) erro
 				Level:   monitorapi.Error,
 				Locator: podLocator,
 				Message: monitorapi.NewMessage().Reason(monitorapi.PodIPReused).
-					HumanMessagef("podIP %v is currently assigned to multiple pods: %v", currPodIP, strings.Join(podNames.List(), ";")).BuildString(),
+					HumanMessagef("podIP %v is currently assigned to multiple pods: %v", currPodIP, strings.Join(podNames.List(), ";")).Build(),
 			})
 		}
 	}

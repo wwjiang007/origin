@@ -20,7 +20,6 @@ import (
 	"github.com/onsi/ginkgo/v2"
 	"github.com/openshift/origin/pkg/clioptions/clusterinfo"
 	"github.com/openshift/origin/pkg/defaultmonitortests"
-	"github.com/openshift/origin/pkg/disruption/backend/sampler"
 	"github.com/openshift/origin/pkg/monitor"
 	monitorserialization "github.com/openshift/origin/pkg/monitor/serialization"
 	"github.com/openshift/origin/pkg/monitortestframework"
@@ -64,8 +63,6 @@ type GinkgoRunSuiteOptions struct {
 	DryRun        bool
 	PrintCommands bool
 	genericclioptions.IOStreams
-
-	FromRepository string
 
 	StartTime time.Time
 
@@ -135,14 +132,7 @@ func (o *GinkgoRunSuiteOptions) Run(suite *TestSuite, junitSuiteName string, mon
 	fmt.Fprintf(o.Out, "found %d tests for suite\n", len(tests))
 
 	var fallbackSyntheticTestResult []*junitapi.JUnitTestCase
-	// OPENSHIFT_SKIP_EXTERNAL_TESTS env variable allows to skip using external binary
-	// in a similar fashion when --from-repository flag is specified when invoking tests
-	// this means that images are very likely mirrored so for the time being we cannot
-	// use external binary for tests
-	// TODO (soltysh): when using external binary we should also consult that binary
-	// for the list of tests it might require to run them
-	if len(os.Getenv("OPENSHIFT_SKIP_EXTERNAL_TESTS")) == 0 &&
-		strings.EqualFold(o.FromRepository, "quay.io/openshift/community-e2e-images") {
+	if len(os.Getenv("OPENSHIFT_SKIP_EXTERNAL_TESTS")) == 0 {
 		buf := &bytes.Buffer{}
 		fmt.Fprintf(buf, "Attempting to pull tests from external binary...\n")
 		externalTests, err := externalTestsForSuite(ctx)
@@ -179,7 +169,7 @@ func (o *GinkgoRunSuiteOptions) Run(suite *TestSuite, junitSuiteName string, mon
 			SystemOut: buf.String(),
 		})
 	} else {
-		fmt.Fprintf(o.Out, "Using built-in tests only due to OPENSHIFT_SKIP_EXTERNAL_TESTS being set or --from-repository=%s not being the default\n", o.FromRepository)
+		fmt.Fprintf(o.Out, "Using built-in tests only due to OPENSHIFT_SKIP_EXTERNAL_TESTS being set\n")
 	}
 
 	fmt.Fprintf(o.Out, "found %d tests (incl externals)\n", len(tests))
@@ -264,7 +254,6 @@ func (o *GinkgoRunSuiteOptions) Run(suite *TestSuite, junitSuiteName string, mon
 	go func() {
 		<-abortCh
 		fmt.Fprintf(o.ErrOut, "Interrupted, terminating tests\n")
-		sampler.TearDownInClusterMonitors(restConfig)
 		cancelFn()
 		sig := <-abortCh
 		fmt.Fprintf(o.ErrOut, "Interrupted twice, exiting (%s)\n", sig)
@@ -484,11 +473,6 @@ func (o *GinkgoRunSuiteOptions) Run(suite *TestSuite, junitSuiteName string, mon
 			fmt.Fprintf(o.Out, "Skipped tests that failed a precondition:\n\n%s\n\n", strings.Join(skipped, "\n"))
 
 		}
-	}
-
-	// Fetch data from in-cluster monitors if available
-	if err = sampler.TearDownInClusterMonitors(restConfig); err != nil {
-		fmt.Printf("Failed to write events from in-cluster monitors, err: %v\n", err)
 	}
 
 	// monitor the cluster while the tests are running and report any detected anomalies

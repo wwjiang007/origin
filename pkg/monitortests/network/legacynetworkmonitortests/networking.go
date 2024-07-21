@@ -3,6 +3,7 @@ package legacynetworkmonitortests
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -72,13 +73,12 @@ func testPodSandboxCreation(events monitorapi.Intervals, clientConfig *rest.Conf
 	failures := []string{}
 	flakes := []string{}
 	networkOperatorProgressing := events.Filter(func(ev monitorapi.Interval) bool {
-		annotations := monitorapi.AnnotationsFromMessage(ev.Message)
+		annotations := ev.Message.Annotations
 		if annotations[monitorapi.AnnotationCondition] != string(configv1.OperatorProgressing) {
 			return false
 		}
-		locatorParts := monitorapi.LocatorParts(ev.Locator)
-		isNetwork := locatorParts[string(monitorapi.LocatorClusterOperatorKey)] == "network"
-		isMCO := locatorParts[string(monitorapi.LocatorClusterOperatorKey)] == "machine-config"
+		isNetwork := ev.Locator.Keys[monitorapi.LocatorClusterOperatorKey] == "network"
+		isMCO := ev.Locator.Keys[monitorapi.LocatorClusterOperatorKey] == "machine-config"
 		if isNetwork || isMCO {
 			return true
 		}
@@ -95,14 +95,14 @@ func testPodSandboxCreation(events monitorapi.Intervals, clientConfig *rest.Conf
 	// Filter out a list of node NotReady events, we use these to ignore some other potential problems
 	nodeNotReadyIntervals := events.Filter(func(eventInterval monitorapi.Interval) bool {
 		return eventInterval.Source == monitorapi.SourceNodeMonitor &&
-			eventInterval.StructuredLocator.Type == monitorapi.LocatorTypeNode &&
-			eventInterval.StructuredMessage.Reason == monitorapi.NodeNotReadyReason
+			eventInterval.Locator.Type == monitorapi.LocatorTypeNode &&
+			eventInterval.Message.Reason == monitorapi.NodeNotReadyReason
 	})
 	logrus.Infof("found %d node NotReady intervals", len(nodeNotReadyIntervals))
 
 	for _, event := range events {
 
-		if !strings.Contains(event.Message, "reason/FailedCreatePodSandBox Failed to create pod sandbox") {
+		if event.Message.Reason != "FailedCreatePodSandBox" {
 			continue
 		}
 
@@ -119,10 +119,10 @@ func testPodSandboxCreation(events monitorapi.Intervals, clientConfig *rest.Conf
 			continue
 		}
 
-		if strings.Contains(event.Locator, "pod/simpletest-rc-to-be-deleted") &&
-			(strings.Contains(event.Message, "not found") ||
-				strings.Contains(event.Message, "pod was already deleted") ||
-				strings.Contains(event.Message, "error adding container to network")) {
+		if strings.Contains(event.Locator.Keys[monitorapi.LocatorPodKey], "simpletest-rc-to-be-deleted") &&
+			(strings.Contains(event.Message.HumanMessage, "not found") ||
+				strings.Contains(event.Message.HumanMessage, "pod was already deleted") ||
+				strings.Contains(event.Message.HumanMessage, "error adding container to network")) {
 			// This FailedCreatePodSandBox might happen because of an upstream Garbage Collector test. This test creates at least 10 pods controlled
 			// by a ReplicationController. Then proceeds to create a second ReplicationController and sets half of the pods owned by both RCs. Tries
 			// deleting all pods owned by the first RC and checks if the half having 2 owners is not deleted. Test doesnt wait for
@@ -131,37 +131,37 @@ func testPodSandboxCreation(events monitorapi.Intervals, clientConfig *rest.Conf
 			// https://github.com/kubernetes/kubernetes/blob/70ca1dbb81d8b8c6a2ac88d62480008780d4db79/test/e2e/apimachinery/garbage_collector.go#L735
 			continue
 		}
-		if strings.Contains(event.Locator, "ns/e2e-test-tuning-") &&
-			strings.Contains(event.Message, "IFNAME") {
+		if strings.Contains(event.Locator.Keys[monitorapi.LocatorNamespaceKey], "e2e-test-tuning-") &&
+			strings.Contains(event.Message.HumanMessage, "IFNAME") {
 			// These tests are trying to cause pod sandbox failures, so the errors are intended.
 			continue
 		}
-		if strings.Contains(event.Message, "Multus") &&
-			strings.Contains(event.Message, "error getting pod") &&
-			(strings.Contains(event.Message, "connection refused") || strings.Contains(event.Message, "i/o timeout")) {
-			flakes = append(flakes, fmt.Sprintf("%v - multus is unable to get pods due to LB disruption https://bugzilla.redhat.com/show_bug.cgi?id=1927264 - %v", event.Locator, event.Message))
+		if strings.Contains(event.Message.HumanMessage, "Multus") &&
+			strings.Contains(event.Message.HumanMessage, "error getting pod") &&
+			(strings.Contains(event.Message.HumanMessage, "connection refused") || strings.Contains(event.Message.HumanMessage, "i/o timeout")) {
+			flakes = append(flakes, fmt.Sprintf("%v - multus is unable to get pods due to LB disruption https://bugzilla.redhat.com/show_bug.cgi?id=1927264 - %v", event.Locator.OldLocator(), event.Message.OldMessage()))
 			continue
 		}
-		if strings.Contains(event.Message, "Multus") && strings.Contains(event.Message, "error getting pod: Unauthorized") {
-			flakes = append(flakes, fmt.Sprintf("%v - multus is unable to get pods due to authorization https://bugzilla.redhat.com/show_bug.cgi?id=1972490 - %v", event.Locator, event.Message))
+		if strings.Contains(event.Message.HumanMessage, "Multus") && strings.Contains(event.Message.HumanMessage, "error getting pod: Unauthorized") {
+			flakes = append(flakes, fmt.Sprintf("%v - multus is unable to get pods due to authorization https://bugzilla.redhat.com/show_bug.cgi?id=1972490 - %v", event.Locator.OldLocator(), event.Message.OldMessage()))
 			continue
 		}
-		if strings.Contains(event.Message, "Multus") &&
-			strings.Contains(event.Message, "have you checked that your default network is ready? still waiting for readinessindicatorfile") {
-			flakes = append(flakes, fmt.Sprintf("%v - multus is unable to get pods as ovnkube-node pod has not yet written readinessindicatorfile (possibly not running due to image pull delays) https://bugzilla.redhat.com/show_bug.cgi?id=20671320 - %v", event.Locator, event.Message))
+		if strings.Contains(event.Message.HumanMessage, "Multus") &&
+			strings.Contains(event.Message.HumanMessage, "have you checked that your default network is ready? still waiting for readinessindicatorfile") {
+			flakes = append(flakes, fmt.Sprintf("%v - multus is unable to get pods as ovnkube-node pod has not yet written readinessindicatorfile (possibly not running due to image pull delays) https://bugzilla.redhat.com/show_bug.cgi?id=20671320 - %v", event.Locator.OldLocator(), event.Message.OldMessage()))
 			continue
 		}
-		if strings.Contains(event.Locator, "pod/whereabouts-pod") &&
-			strings.Contains(event.Message, "error adding container to network") &&
-			strings.Contains(event.Message, "Error at storage engine: Could not allocate IP in range: ip: 192.168.2.225 / - 192.168.2.230 ") {
+		if strings.Contains(event.Locator.Keys[monitorapi.LocatorPodKey], "whereabouts-pod") &&
+			strings.Contains(event.Message.HumanMessage, "error adding container to network") &&
+			strings.Contains(event.Message.HumanMessage, "Error at storage engine: Could not allocate IP in range: ip: 192.168.2.225 / - 192.168.2.230 ") {
 			// This failed to create sandbox case is expected due to the whereabouts-e2e test which creates a pod that is expected to
 			// not come up due to IP range exhausted.
 			// See https://github.com/openshift/origin/blob/93eb467cc8d293ba977549b05ae2e4b818c64327/test/extended/networking/whereabouts.go#L52
 			continue
 		}
-		if strings.Contains(event.Message, "pinging container registry") && strings.Contains(event.Message, "i/o timeout") {
+		if strings.Contains(event.Message.HumanMessage, "pinging container registry") && strings.Contains(event.Message.HumanMessage, "i/o timeout") {
 			if platform == configv1.AzurePlatformType {
-				flakes = append(flakes, fmt.Sprintf("%v - i/o timeout common flake when pinging container registry on azure - %v", event.Locator, event.Message))
+				flakes = append(flakes, fmt.Sprintf("%v - i/o timeout common flake when pinging container registry on azure - %v", event.Locator.OldLocator(), event.Message.OldMessage()))
 				continue
 			}
 		}
@@ -179,9 +179,9 @@ func testPodSandboxCreation(events monitorapi.Intervals, clientConfig *rest.Conf
 				}
 			}
 			if match != -1 {
-				flakes = append(flakes, fmt.Sprintf("%v - never deleted - network rollout - %v", event.Locator, event.Message))
+				flakes = append(flakes, fmt.Sprintf("%v - never deleted - network rollout - %v", event.Locator.OldLocator(), event.Message.OldMessage()))
 			} else {
-				failures = append(failures, fmt.Sprintf("%v - never deleted - %v", event.Locator, event.Message))
+				failures = append(failures, fmt.Sprintf("%v - never deleted - %v", event.Locator.OldLocator(), event.Message.OldMessage()))
 			}
 
 		} else {
@@ -191,13 +191,13 @@ func testPodSandboxCreation(events monitorapi.Intervals, clientConfig *rest.Conf
 				// nothing here, one second is close enough to be ok, the kubelet and CNI just didn't know
 			case timeBetweenDeleteAndFailure < 5*time.Second:
 				// withing five seconds, it ought to be long enough to know, but it's close enough to flake and not fail
-				flakes = append(flakes, fmt.Sprintf("%v - %0.2f seconds after deletion - %v", event.Locator, timeBetweenDeleteAndFailure.Seconds(), event.Message))
+				flakes = append(flakes, fmt.Sprintf("%v - %0.2f seconds after deletion - %v", event.Locator.OldLocator(), timeBetweenDeleteAndFailure.Seconds(), event.Message.OldMessage()))
 			case deletionTime.Before(event.From):
 				// something went wrong.  More than five seconds after the pod ws deleted, the CNI is trying to set up pod sandboxes and can't
-				failures = append(failures, fmt.Sprintf("%v - %0.2f seconds after deletion - %v", event.Locator, timeBetweenDeleteAndFailure.Seconds(), event.Message))
+				failures = append(failures, fmt.Sprintf("%v - %0.2f seconds after deletion - %v", event.Locator.OldLocator(), timeBetweenDeleteAndFailure.Seconds(), event.Message.OldMessage()))
 			default:
 				// something went wrong.  deletion happend after we had a failure to create the pod sandbox
-				failures = append(failures, fmt.Sprintf("%v - deletion came AFTER sandbox failure - %v", event.Locator, event.Message))
+				failures = append(failures, fmt.Sprintf("%v - deletion came AFTER sandbox failure - %v", event.Locator.OldLocator(), event.Message.OldMessage()))
 			}
 		}
 	}
@@ -247,9 +247,7 @@ func testPodSandboxCreation(events monitorapi.Intervals, clientConfig *rest.Conf
 	}
 
 	// add our successes
-	ret = append(ret, successes...)
-
-	return append(ret)
+	return append(ret, successes...)
 }
 
 // categorizeBySubset returns a map keyed by category for failures and flakes.  If a category is present in both failures and flakes, all are listed under failures.
@@ -284,7 +282,7 @@ func categorizeBySubset(categorizers []testCategorizer, failures, flakes []strin
 func getEventsByPodName(events monitorapi.Intervals) map[string]monitorapi.Intervals {
 	eventsByPods := map[string]monitorapi.Intervals{}
 	for _, event := range events {
-		if !strings.Contains(event.Locator, "pod/") {
+		if !event.Locator.HasKey(monitorapi.LocatorPodKey) {
 			continue
 		}
 		partialLocator := monitorapi.NonUniquePodLocatorFrom(event.Locator)
@@ -293,11 +291,11 @@ func getEventsByPodName(events monitorapi.Intervals) map[string]monitorapi.Inter
 	return eventsByPods
 }
 
-func getPodDeletionTime(events monitorapi.Intervals, podLocator string) *time.Time {
+func getPodDeletionTime(events monitorapi.Intervals, podLocator monitorapi.Locator) *time.Time {
 	partialLocator := monitorapi.NonUniquePodLocatorFrom(podLocator)
 	for _, event := range events {
 		currPartialLocator := monitorapi.NonUniquePodLocatorFrom(event.Locator)
-		if currPartialLocator == partialLocator && strings.Contains(event.Message, "reason/Deleted") {
+		if reflect.DeepEqual(currPartialLocator, partialLocator) && event.Message.Reason == "Deleted" {
 			return &event.From
 		}
 	}
@@ -313,12 +311,12 @@ func testOvnNodeReadinessProbe(events monitorapi.Intervals, kubeClientConfig *re
 	msgMap := map[string]bool{}
 
 	for _, event := range events {
-		msg := fmt.Sprintf("%s - %s", event.Locator, event.Message)
+		msg := fmt.Sprintf("%s - %s", event.Locator.OldLocator(), event.Message.OldMessage())
 		if pathologicaleventlibrary.AllowOVNReadiness.Allows(event, "") {
 
 			if _, ok := msgMap[msg]; !ok {
 				msgMap[msg] = true
-				times := pathologicaleventlibrary.GetTimesAnEventHappened(event.StructuredMessage)
+				times := pathologicaleventlibrary.GetTimesAnEventHappened(event.Message)
 				if times > pathologicaleventlibrary.DuplicateEventThreshold {
 					// if the readiness probe failure for this pod happened AFTER the initial installation was complete,
 					// then this probe failure is unexpected and should fail.
@@ -349,10 +347,10 @@ func testPodIPReuse(events monitorapi.Intervals) []*junitapi.JUnitTestCase {
 
 	failures := []string{}
 	for _, event := range events {
-		if reason := monitorapi.ReasonFrom(event.Message); reason != monitorapi.PodIPReused {
+		if event.Message.Reason != monitorapi.PodIPReused {
 			continue
 		}
-		failures = append(failures, event.From.Format(time.RFC3339)+" "+event.Message)
+		failures = append(failures, event.From.Format(time.RFC3339)+" "+event.Message.OldMessage())
 	}
 
 	if len(failures) == 0 {
@@ -377,10 +375,10 @@ func testNoDNSLookupErrorsInDisruptionSamplers(events monitorapi.Intervals) []*j
 
 	failures := []string{}
 	for _, event := range events {
-		if reason := monitorapi.ReasonFrom(event.Message); reason != monitorapi.DisruptionSamplerOutageBeganEventReason {
+		if event.Message.Reason != monitorapi.DisruptionSamplerOutageBeganEventReason {
 			continue
 		}
-		failures = append(failures, event.From.Format(time.RFC3339)+" "+event.Message)
+		failures = append(failures, event.From.Format(time.RFC3339)+" "+event.Message.OldMessage())
 	}
 
 	if len(failures) == 0 {
@@ -414,8 +412,8 @@ func testNoOVSVswitchdUnreasonablyLongPollIntervals(events monitorapi.Intervals)
 	var failures []string
 	var maxDur time.Duration
 	for _, event := range events {
-		if strings.Contains(event.Message, "Unreasonably long") && strings.Contains(event.Message, "ovs-vswitchd") {
-			msg := fmt.Sprintf("%v - %v", event.Locator, event.Message)
+		if strings.Contains(event.Message.HumanMessage, "Unreasonably long") && strings.Contains(event.Message.HumanMessage, "ovs-vswitchd") {
+			msg := fmt.Sprintf("%v - %v", event.Locator.OldLocator(), event.Message.OldMessage())
 			failures = append(failures, msg)
 
 			dur := event.To.Sub(event.From)
@@ -450,8 +448,8 @@ func testNoTooManyNetlinkEventLogs(events monitorapi.Intervals) []*junitapi.JUni
 
 	var failures []string
 	for _, event := range events {
-		if strings.Contains(event.Message, "read: too many netlink events. Need to resynchronize platform cache") && strings.Contains(event.Message, "NetworkManager") {
-			msg := fmt.Sprintf("%v - %v", event.Locator, event.Message)
+		if strings.Contains(event.Message.HumanMessage, "read: too many netlink events. Need to resynchronize platform cache") && strings.Contains(event.Message.HumanMessage, "NetworkManager") {
+			msg := fmt.Sprintf("%v - %v", event.Locator.OldLocator(), event.Message.OldMessage())
 			failures = append(failures, msg)
 		}
 	}

@@ -177,7 +177,7 @@ func (r ingressServicePodRendering) WriteRunData(artifactDir string, _ monitorap
 				return true
 			case monitorapi.IsNode(eventInterval.Locator):
 				return true
-			case disruptionReasons.Has(monitorapi.ReasonFrom(eventInterval.Message)):
+			case disruptionReasons.Has(eventInterval.Message.Reason):
 				return true
 			}
 			return false

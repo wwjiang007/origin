@@ -6,22 +6,52 @@ import (
 	"strings"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+
 	"github.com/openshift/origin/pkg/monitortests/clusterversionoperator/operatorstateanalyzer"
+	"github.com/sirupsen/logrus"
 
 	configv1 "github.com/openshift/api/config/v1"
+	clientconfigv1 "github.com/openshift/client-go/config/clientset/versioned"
 	"github.com/openshift/origin/pkg/monitor/monitorapi"
 	"github.com/openshift/origin/pkg/monitortestlibrary/platformidentification"
 	platformidentification2 "github.com/openshift/origin/pkg/monitortestlibrary/platformidentification"
 	"github.com/openshift/origin/pkg/test/ginkgo/junitapi"
+	exutil "github.com/openshift/origin/test/extended/util"
 	"k8s.io/client-go/rest"
 )
 
 // exceptionCallback consumes a suspicious condition and returns an
 // exception string if does not think the condition should be fatal.
-type exceptionCallback func(operator string, condition *configv1.ClusterOperatorStatusCondition) (string, error)
+type exceptionCallback func(operator string, condition *configv1.ClusterOperatorStatusCondition, eventInterval monitorapi.Interval, clientConfig *rest.Config) (string, error)
 
-func testStableSystemOperatorStateTransitions(events monitorapi.Intervals) []*junitapi.JUnitTestCase {
-	except := func(_ string, condition *configv1.ClusterOperatorStatusCondition) (string, error) {
+type upgradeWindowHolder struct {
+	startInterval *monitorapi.Interval
+	endInterval   *monitorapi.Interval
+}
+
+func checkAuthenticationExceptions(condition *configv1.ClusterOperatorStatusCondition) bool {
+	if condition.Type == configv1.OperatorAvailable && condition.Status == configv1.ConditionFalse {
+		switch condition.Reason {
+		case "APIServices_Error", "APIServerDeployment_NoDeployment", "APIServerDeployment_NoPod",
+			"APIServerDeployment_PreconditionNotFulfilled", "APIServices_PreconditionNotReady",
+			"OAuthServerDeployment_NoDeployment", "OAuthServerRouteEndpointAccessibleController_EndpointUnavailable",
+			"OAuthServerServiceEndpointAccessibleController_EndpointUnavailable", "WellKnown_NotReady":
+			return true
+		}
+	}
+	return false
+}
+
+func testStableSystemOperatorStateTransitions(events monitorapi.Intervals, clientConfig *rest.Config) []*junitapi.JUnitTestCase {
+	isSingleNode, err := isSingleNodeCheck(clientConfig)
+	if err != nil {
+		logrus.Warnf("Error checking for Single Node configuration on upgrade (unable to make exception): %v", err)
+		isSingleNode = false
+	}
+
+	except := func(operator string, condition *configv1.ClusterOperatorStatusCondition, _ monitorapi.Interval, clientConfig *rest.Config) (string, error) {
 		if condition.Status == configv1.ConditionTrue {
 			if condition.Type == configv1.OperatorAvailable {
 				return fmt.Sprintf("%s=%s is the happy case", condition.Type, condition.Status), nil
@@ -32,14 +62,140 @@ func testStableSystemOperatorStateTransitions(events monitorapi.Intervals) []*ju
 			}
 		}
 
-		return "We are not worried about Available=False or Degraded=True blips for stable-system tests yet.", nil
+		if isSingleNode && condition.Type == configv1.OperatorAvailable && condition.Status == configv1.ConditionFalse {
+			switch operator {
+			case "dns":
+				if strings.Contains(condition.Message, `DNS "default" is unavailable.`) {
+					return "dns operator is allowed to have Available=False due to serial taint tests on single node", nil
+				}
+			case "openshift-apiserver":
+				if strings.Contains(condition.Message, `connect: connection refused`) {
+					return "openshift apiserver operator is allowed to have Available=False due kube-apiserver force rollout test on single node", nil
+				}
+			case "csi-snapshot-controller":
+				if strings.Contains(condition.Message, `Waiting for Deployment`) {
+					return "csi snapshot controller is allowed to have Available=False due to CSI webhook test on single node", nil
+				}
+			}
+		}
+
+		// For the non-upgrade case, if any operator has Available=False, fail the test.
+		if condition.Type == configv1.OperatorAvailable && condition.Status == configv1.ConditionFalse {
+			if operator == "authentication" {
+				if checkAuthenticationExceptions(condition) {
+					return "https://issues.redhat.com/browse/OCPBUGS-20056", nil
+				}
+			}
+			if operator == "image-registry" {
+				return "Image-registry operator is allowed to have Available=False on a non-upgrade scenario for now", nil
+			}
+			return "", nil
+		}
+		return "We are not worried about Degraded=True blips for stable-system tests yet.", nil
 	}
 
-	return testOperatorStateTransitions(events, []configv1.ClusterStatusConditionType{configv1.OperatorAvailable, configv1.OperatorDegraded}, except)
+	return testOperatorStateTransitions(events, []configv1.ClusterStatusConditionType{configv1.OperatorAvailable, configv1.OperatorDegraded}, except, clientConfig)
 }
 
-func testUpgradeOperatorStateTransitions(events monitorapi.Intervals) []*junitapi.JUnitTestCase {
-	except := func(operator string, condition *configv1.ClusterOperatorStatusCondition) (string, error) {
+func isSingleNodeCheck(clientConfig *rest.Config) (bool, error) {
+	configClient, err := clientconfigv1.NewForConfig(clientConfig)
+	if err != nil {
+		logrus.WithError(err).Error("Error creating config client to check for Single Node configuration")
+		return false, err
+	}
+	return exutil.IsSingleNode(context.Background(), configClient)
+}
+
+// isInUpgradeWindow determines if the given eventInterval falls within an upgrade window.
+// UpgradeStart and UpgradeRollback events start upgrade windows and can end and already started upgrade window.
+// UpgradeComplete and UpgradeFailed events end upgrade windows; if there was not an already started upgrade window,
+// we ignore the event.
+// If we don't find any upgrade ending point, we assume the ending point is at the end of the test.
+func getUpgradeWindows(eventList monitorapi.Intervals) []*upgradeWindowHolder {
+
+	var upgradeWindows []*upgradeWindowHolder
+	var currentWindow *upgradeWindowHolder
+
+	for _, event := range eventList {
+		if event.Source != monitorapi.SourceKubeEvent || event.Locator.Keys[monitorapi.LocatorClusterVersionKey] != "cluster" {
+			continue
+		}
+
+		switch event.Message.Reason {
+		case monitorapi.UpgradeStartedReason, monitorapi.UpgradeRollbackReason:
+			if currentWindow != nil {
+				// Close current window since there's already an upgrade window started
+				currentWindow.endInterval = &monitorapi.Interval{
+					Condition: monitorapi.Condition{
+						Message: monitorapi.Message{
+							Reason: event.Message.Reason,
+						},
+					},
+					From: event.From,
+					To:   event.To,
+				}
+			}
+
+			// Start new window
+			currentWindow = &upgradeWindowHolder{
+				startInterval: &monitorapi.Interval{
+					Condition: monitorapi.Condition{
+						Message: monitorapi.Message{
+							Reason: event.Message.Reason,
+						},
+					},
+					From: event.From,
+					To:   event.To,
+				},
+			}
+			upgradeWindows = append(upgradeWindows, currentWindow)
+		case monitorapi.UpgradeCompleteReason, monitorapi.UpgradeFailedReason:
+			if currentWindow != nil {
+				if currentWindow.endInterval == nil {
+					// End current window
+					currentWindow.endInterval = &monitorapi.Interval{
+						Condition: monitorapi.Condition{
+							Message: monitorapi.Message{
+								Reason: event.Message.Reason,
+							},
+						},
+						From: event.From,
+						To:   event.To,
+					}
+				}
+			} else {
+				// We have no current window which means that the events indicate we completed
+				// or failed an upgrade without starting one.  This is stange situation that
+				// we should not see; in this case, there is no upgrade window to check against.
+				logrus.Warnf("Found upgrade completion or failed event without a start or rollback event: %v", event)
+			}
+		}
+	}
+
+	return upgradeWindows
+}
+
+func isInUpgradeWindow(upgradeWindows []*upgradeWindowHolder, eventInterval monitorapi.Interval) bool {
+	for _, upgradeWindow := range upgradeWindows {
+		if eventInterval.From.After(upgradeWindow.startInterval.From) {
+			if upgradeWindow.endInterval == nil || eventInterval.To.Before(upgradeWindow.endInterval.To) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func testUpgradeOperatorStateTransitions(events monitorapi.Intervals, clientConfig *rest.Config) []*junitapi.JUnitTestCase {
+	upgradeWindows := getUpgradeWindows(events)
+	isSingleNode, err := isSingleNodeCheck(clientConfig)
+	if err != nil {
+		logrus.Warnf("Error checking for Single Node configuration on upgrade (unable to make exception): %v", err)
+		isSingleNode = false
+	}
+
+	except := func(operator string, condition *configv1.ClusterOperatorStatusCondition, eventInterval monitorapi.Interval, clientConfig *rest.Config) (string, error) {
 		if condition.Status == configv1.ConditionTrue {
 			if condition.Type == configv1.OperatorAvailable {
 				return fmt.Sprintf("%s=%s is the happy case", condition.Type, condition.Status), nil
@@ -54,9 +210,26 @@ func testUpgradeOperatorStateTransitions(events monitorapi.Intervals) []*junitap
 			return "We are not worried about Degraded=True blips for update tests yet.", nil
 		}
 
+		// we know the Status is not true and the Type is not degraded at this point indicating we are available=false
+		withinUpgradeWindowBuffer := isInUpgradeWindow(upgradeWindows, eventInterval) && eventInterval.To.Sub(eventInterval.From) < 10*time.Minute
+		if !withinUpgradeWindowBuffer {
+			switch operator {
+			// there are some known cases for authentication and image-registry that occur outside of upgrade window, so we will pass through and check for exceptions
+			case "authentication", "image-registry":
+				logrus.Infof("Operator %s is in Available=False state outside of upgrade window, but we will check for exceptions", operator)
+			default:
+				return "", nil
+			}
+		} else {
+			// SingleNode is expected to go Available=False for most / all operators during upgrade
+			if isSingleNode {
+				return fmt.Sprintf("Operator %s is in Available=False state running in single replica control plane, expected availability transition during upgrade", operator), nil
+			}
+		}
+
 		switch operator {
 		case "authentication":
-			if condition.Type == configv1.OperatorAvailable && condition.Status == configv1.ConditionFalse && (condition.Reason == "APIServices_Error" || condition.Reason == "APIServerDeployment_NoDeployment" || condition.Reason == "APIServerDeployment_NoPod" || condition.Reason == "APIServerDeployment_PreconditionNotFulfilled" || condition.Reason == "APIServices_PreconditionNotReady" || condition.Reason == "OAuthServerDeployment_NoDeployment" || condition.Reason == "OAuthServerRouteEndpointAccessibleController_EndpointUnavailable" || condition.Reason == "OAuthServerServiceEndpointAccessibleController_EndpointUnavailable" || condition.Reason == "WellKnown_NotReady") {
+			if checkAuthenticationExceptions(condition) {
 				return "https://issues.redhat.com/browse/OCPBUGS-20056", nil
 			}
 		case "console":
@@ -94,15 +267,40 @@ func testUpgradeOperatorStateTransitions(events monitorapi.Intervals) []*junitap
 			if condition.Type == configv1.OperatorAvailable && condition.Status == configv1.ConditionFalse && condition.Reason == "ClusterServiceVersionNotSucceeded" {
 				return "https://issues.redhat.com/browse/OCPBUGS-23744", nil
 			}
+		case "image-registry":
+			// this won't handle the replicaCount==2 serial test where both pods are on nodes that get tainted.
+			// need to consider how we detect that or modify the job to set replicaCount==3
+			if replicaCount, _ := checkReplicas("openshift-image-registry", operator, clientConfig); replicaCount == 1 {
+				return "https://issues.redhat.com/browse/OCPBUGS-22382", nil
+			}
 		}
 
 		return "", nil
 	}
 
-	return testOperatorStateTransitions(events, []configv1.ClusterStatusConditionType{configv1.OperatorAvailable, configv1.OperatorDegraded}, except)
+	return testOperatorStateTransitions(events, []configv1.ClusterStatusConditionType{configv1.OperatorAvailable, configv1.OperatorDegraded}, except, clientConfig)
 }
 
-func testOperatorStateTransitions(events monitorapi.Intervals, conditionTypes []configv1.ClusterStatusConditionType, except exceptionCallback) []*junitapi.JUnitTestCase {
+func checkReplicas(namespace string, operator string, clientConfig *rest.Config) (int32, error) {
+	kubeClient, err := kubernetes.NewForConfig(clientConfig)
+	if err != nil {
+		return 0, err
+	}
+	_, err = kubeClient.CoreV1().Namespaces().Get(context.Background(), namespace, metav1.GetOptions{})
+	if err != nil {
+		return 0, err
+	}
+	deployment, err := kubeClient.AppsV1().Deployments(namespace).Get(context.Background(), operator, metav1.GetOptions{})
+	if err != nil {
+		return 0, err
+	}
+	if deployment.Spec.Replicas != nil {
+		return *deployment.Spec.Replicas, nil
+	}
+	return 0, fmt.Errorf("Error fetching replicas")
+}
+
+func testOperatorStateTransitions(events monitorapi.Intervals, conditionTypes []configv1.ClusterStatusConditionType, except exceptionCallback, clientConfig *rest.Config) []*junitapi.JUnitTestCase {
 	ret := []*junitapi.JUnitTestCase{}
 
 	var start, stop time.Time
@@ -159,7 +357,7 @@ func testOperatorStateTransitions(events monitorapi.Intervals, conditionTypes []
 					if overlap.Level == monitorapi.Info {
 						continue
 					}
-					e2eTest, ok := monitorapi.E2ETestFromLocator(overlap.StructuredLocator)
+					e2eTest, ok := monitorapi.E2ETestFromLocator(overlap.Locator)
 					if !ok {
 						continue
 					}
@@ -169,8 +367,7 @@ func testOperatorStateTransitions(events monitorapi.Intervals, conditionTypes []
 				if len(concurrentE2E) > 0 {
 					failure = fmt.Sprintf("%s\n%d tests failed during this blip (%v to %v): %v", failure, len(concurrentE2E), eventInterval.From, eventInterval.From, strings.Join(concurrentE2E, "\n"))
 				}
-
-				exception, err := except(operatorName, condition)
+				exception, err := except(operatorName, condition, eventInterval, clientConfig)
 				if err != nil || exception == "" {
 					fatal = append(fatal, failure)
 				} else {
@@ -231,13 +428,13 @@ func testOperatorOSUpdateStaged(events monitorapi.Intervals, clientConfig *rest.
 	// Scan all OSUpdateStarted and OSUpdateStaged events, sort by node.
 	nodeNameToOSUpdateTimes := map[string]*startedStaged{}
 	for _, e := range events {
-		nodeName, _ := monitorapi.NodeFromLocator(e.Locator)
+		nodeName := e.Locator.Keys[monitorapi.LocatorNodeKey]
 		if len(nodeName) == 0 {
 			continue
 		}
 
-		reason := monitorapi.ReasonFrom(e.Message)
-		phase := monitorapi.PhaseFrom(e.Message)
+		reason := e.Message.Reason
+		phase := e.Message.Annotations[monitorapi.AnnotationPhase]
 		switch {
 		case reason == "OSUpdateStarted":
 			_, ok := nodeNameToOSUpdateTimes[nodeName]
@@ -342,23 +539,23 @@ func testOperatorOSUpdateStartedEventRecorded(events monitorapi.Intervals, clien
 	// Scan all OSUpdateStarted and OSUpdateStaged events, sort by node.
 	nodeOSUpdateTimes := map[string]*startedStaged{}
 	for _, e := range events {
-		if strings.Contains(e.Message, "reason/OSUpdateStarted") {
+		if e.Message.Reason == "OSUpdateStarted" {
 			// locator will be of the form: node/ci-op-j34hmfqt-253f3-cq852-master-1
-			_, ok := nodeOSUpdateTimes[e.Locator]
+			_, ok := nodeOSUpdateTimes[e.Locator.OldLocator()]
 			if !ok {
-				nodeOSUpdateTimes[e.Locator] = &startedStaged{}
+				nodeOSUpdateTimes[e.Locator.OldLocator()] = &startedStaged{}
 			}
 			// for this type of event, the from/to time are identical as this is a point in time event.
-			ss := nodeOSUpdateTimes[e.Locator]
+			ss := nodeOSUpdateTimes[e.Locator.OldLocator()]
 			ss.OSUpdateStarted = e.To
-		} else if strings.Contains(e.Message, "reason/OSUpdateStaged") {
+		} else if e.Message.Reason == "OSUpdateStaged" {
 			// locator will be of the form: node/ci-op-j34hmfqt-253f3-cq852-master-1
-			_, ok := nodeOSUpdateTimes[e.Locator]
+			_, ok := nodeOSUpdateTimes[e.Locator.OldLocator()]
 			if !ok {
-				nodeOSUpdateTimes[e.Locator] = &startedStaged{}
+				nodeOSUpdateTimes[e.Locator.OldLocator()] = &startedStaged{}
 			}
 			// for this type of event, the from/to time are identical as this is a point in time event.
-			ss := nodeOSUpdateTimes[e.Locator]
+			ss := nodeOSUpdateTimes[e.Locator.OldLocator()]
 			ss.OSUpdateStaged = e.To
 		}
 	}
@@ -397,7 +594,7 @@ func testOperatorOSUpdateStartedEventRecorded(events monitorapi.Intervals, clien
 func getEventsByOperator(events monitorapi.Intervals) map[string]monitorapi.Intervals {
 	eventsByClusterOperator := map[string]monitorapi.Intervals{}
 	for _, event := range events {
-		operatorName, ok := monitorapi.OperatorFromLocator(event.Locator)
+		operatorName, ok := event.Locator.Keys[monitorapi.LocatorClusterOperatorKey]
 		if !ok {
 			continue
 		}

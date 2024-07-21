@@ -2,9 +2,7 @@
   "items": [
     {
       "level": "Info",
-      "locator": "namespace/openshift-etcd pod/installer-9-ci-op-97t906zm-db044-bwrrn-master-0 node/ci-op-97t906zm-db044-bwrrn-master-0 uid/6fb10c53-7ed9-4f51-88db-f8a689050f21",
-      "message": "reason/Created ",
-      "tempStructuredLocator": {
+      "locator": {
         "type": "Pod",
         "keys": {
           "pod": "installer-9-ci-op-97t906zm-db044-bwrrn-master-0",
@@ -13,20 +11,20 @@
           "uid": "6fb10c53-7ed9-4f51-88db-f8a689050f21"
         }
       },
-      "tempStructuredMessage": {
+      "message": {
         "reason": "Created",
         "cause": "",
         "humanMessage": "",
-        "annotations": null
+        "annotations": {
+          "reason": "Created"
+        }
       },
       "from": "2022-03-21T21:37:20Z",
       "to": "2022-03-21T21:37:20Z"
     },
     {
       "level": "Info",
-      "locator": "namespace/openshift-etcd pod/installer-9-ci-op-97t906zm-db044-bwrrn-master-0 node/ci-op-97t906zm-db044-bwrrn-master-0 uid/6fb10c53-7ed9-4f51-88db-f8a689050f21",
-      "message": "reason/Scheduled node/ci-op-97t906zm-db044-bwrrn-master-0",
-      "tempStructuredLocator": {
+      "locator": {
         "type": "Pod",
         "keys": {
           "pod": "installer-9-ci-op-97t906zm-db044-bwrrn-master-0",
@@ -35,12 +33,13 @@
           "uid": "6fb10c53-7ed9-4f51-88db-f8a689050f21"
         }
       },
-      "tempStructuredMessage": {
+      "message": {
         "reason": "Scheduled",
         "cause": "",
         "humanMessage": "",
         "annotations": {
-          "node": "ci-op-97t906zm-db044-bwrrn-master-0"
+          "node": "ci-op-97t906zm-db044-bwrrn-master-0",
+          "reason": "Scheduled"
         }
       },
       "from": "2022-03-21T21:37:20Z",
@@ -48,9 +47,7 @@
     },
     {
       "level": "Warning",
-      "locator": "namespace/openshift-etcd pod/installer-9-ci-op-97t906zm-db044-bwrrn-master-0 node/ci-op-97t906zm-db044-bwrrn-master-0 uid/6fb10c53-7ed9-4f51-88db-f8a689050f21 container/installer",
-      "message": "reason/NotReady ",
-      "tempStructuredLocator": {
+      "locator": {
         "type": "Container",
         "keys": {
           "container": "installer",
@@ -60,20 +57,20 @@
           "uid": "6fb10c53-7ed9-4f51-88db-f8a689050f21"
         }
       },
-      "tempStructuredMessage": {
+      "message": {
         "reason": "NotReady",
         "cause": "",
         "humanMessage": "",
-        "annotations": null
+        "annotations": {
+          "reason": "NotReady"
+        }
       },
       "from": "2022-03-21T21:37:20Z",
       "to": "2022-03-21T21:37:20Z"
     },
     {
       "level": "Info",
-      "locator": "namespace/openshift-etcd pod/installer-9-ci-op-97t906zm-db044-bwrrn-master-0 node/ci-op-97t906zm-db044-bwrrn-master-0 uid/6fb10c53-7ed9-4f51-88db-f8a689050f21 container/installer",
-      "message": "reason/Ready ",
-      "tempStructuredLocator": {
+      "locator": {
         "type": "Container",
         "keys": {
           "container": "installer",
@@ -83,20 +80,20 @@
           "uid": "6fb10c53-7ed9-4f51-88db-f8a689050f21"
         }
       },
-      "tempStructuredMessage": {
+      "message": {
         "reason": "Ready",
         "cause": "",
         "humanMessage": "",
-        "annotations": null
+        "annotations": {
+          "reason": "Ready"
+        }
       },
       "from": "2022-03-21T21:37:23Z",
       "to": "2022-03-21T21:37:23Z"
     },
     {
       "level": "Info",
-      "locator": "namespace/openshift-etcd pod/installer-9-ci-op-97t906zm-db044-bwrrn-master-0 node/ci-op-97t906zm-db044-bwrrn-master-0 uid/6fb10c53-7ed9-4f51-88db-f8a689050f21 container/installer",
-      "message": "reason/ContainerStart cause/ duration/3.00s",
-      "tempStructuredLocator": {
+      "locator": {
         "type": "Container",
         "keys": {
           "container": "installer",
@@ -106,13 +103,14 @@
           "uid": "6fb10c53-7ed9-4f51-88db-f8a689050f21"
         }
       },
-      "tempStructuredMessage": {
+      "message": {
         "reason": "ContainerStart",
         "cause": "",
         "humanMessage": "",
         "annotations": {
           "cause": "",
-          "duration": "3.00s"
+          "duration": "3.00s",
+          "reason": "ContainerStart"
         }
       },
       "from": "2022-03-21T21:37:23Z",
@@ -120,9 +118,7 @@
     },
     {
       "level": "Warning",
-      "locator": "namespace/openshift-etcd pod/installer-9-ci-op-97t906zm-db044-bwrrn-master-0 node/ci-op-97t906zm-db044-bwrrn-master-0 uid/6fb10c53-7ed9-4f51-88db-f8a689050f21 container/installer",
-      "message": "reason/NotReady ",
-      "tempStructuredLocator": {
+      "locator": {
         "type": "Container",
         "keys": {
           "container": "installer",
@@ -132,20 +128,20 @@
           "uid": "6fb10c53-7ed9-4f51-88db-f8a689050f21"
         }
       },
-      "tempStructuredMessage": {
+      "message": {
         "reason": "NotReady",
         "cause": "",
         "humanMessage": "",
-        "annotations": null
+        "annotations": {
+          "reason": "NotReady"
+        }
       },
       "from": "2022-03-21T21:37:56Z",
       "to": "2022-03-21T21:37:56Z"
     },
     {
       "level": "Info",
-      "locator": "namespace/openshift-etcd pod/installer-9-ci-op-97t906zm-db044-bwrrn-master-0 node/ci-op-97t906zm-db044-bwrrn-master-0 uid/6fb10c53-7ed9-4f51-88db-f8a689050f21 container/installer",
-      "message": "reason/ContainerExit code/0 cause/Completed ",
-      "tempStructuredLocator": {
+      "locator": {
         "type": "Container",
         "keys": {
           "container": "installer",
@@ -155,13 +151,14 @@
           "uid": "6fb10c53-7ed9-4f51-88db-f8a689050f21"
         }
       },
-      "tempStructuredMessage": {
+      "message": {
         "reason": "ContainerExit",
         "cause": "Completed",
         "humanMessage": "",
         "annotations": {
           "cause": "Completed",
-          "code": "0"
+          "code": "0",
+          "reason": "ContainerExit"
         }
       },
       "from": "2022-03-21T21:37:56Z",
@@ -169,9 +166,7 @@
     },
     {
       "level": "Info",
-      "locator": "namespace/openshift-etcd pod/installer-9-ci-op-97t906zm-db044-bwrrn-master-0 node/ci-op-97t906zm-db044-bwrrn-master-0 uid/6fb10c53-7ed9-4f51-88db-f8a689050f21",
-      "message": "reason/DeletedAfterCompletion ",
-      "tempStructuredLocator": {
+      "locator": {
         "type": "Container",
         "keys": {
           "container": "installer",
@@ -181,20 +176,20 @@
           "uid": "6fb10c53-7ed9-4f51-88db-f8a689050f21"
         }
       },
-      "tempStructuredMessage": {
+      "message": {
         "reason": "DeletedAfterCompletion",
         "cause": "",
         "humanMessage": "",
-        "annotations": null
+        "annotations": {
+          "reason": "DeletedAfterCompletion"
+        }
       },
       "from": "2022-03-21T22:22:32Z",
       "to": "2022-03-21T22:22:32Z"
     },
     {
       "level": "Info",
-      "locator": "namespace/openshift-etcd pod/installer-9-ci-op-97t906zm-db044-bwrrn-master-0 node/ci-op-97t906zm-db044-bwrrn-master-0 uid/6fb10c53-7ed9-4f51-88db-f8a689050f21",
-      "message": "reason/Deleted ",
-      "tempStructuredLocator": {
+      "locator": {
         "type": "Pod",
         "keys": {
           "pod": "installer-9-ci-op-97t906zm-db044-bwrrn-master-0",
@@ -203,11 +198,13 @@
           "uid": "6fb10c53-7ed9-4f51-88db-f8a689050f21"
         }
       },
-      "tempStructuredMessage": {
+      "message": {
         "reason": "Deleted",
         "cause": "",
         "humanMessage": "",
-        "annotations": null
+        "annotations": {
+          "reason": "Deleted"
+        }
       },
       "from": "2022-03-21T22:22:32Z",
       "to": "2022-03-21T22:22:32Z"

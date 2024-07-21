@@ -1,0 +1,182 @@
+apiVersion: config.openshift.io/v1
+kind: TestReporting
+metadata:
+  creationTimestamp: null
+  name: cluster
+spec:
+  testsForFeatureGates:
+  - featureGate: CRDValidationRatcheting
+    tests:
+    - testName: '[sig-api-machinery] CRDValidationRatcheting [Privileged:ClusterAdmin]
+        [FeatureGate:CRDValidationRatcheting] [Beta] MUST NOT fail to update a resource
+        due to CRD Validation Rule errors on unchanged correlatable fields'
+    - testName: '[sig-api-machinery] CRDValidationRatcheting [Privileged:ClusterAdmin]
+        [FeatureGate:CRDValidationRatcheting] [Beta] MUST NOT fail to update a resource
+        due to JSONSchema errors on unchanged correlatable fields'
+    - testName: '[sig-api-machinery] CRDValidationRatcheting [Privileged:ClusterAdmin]
+        [FeatureGate:CRDValidationRatcheting] [Beta] MUST NOT ratchet errors raised
+        by transition rules'
+    - testName: '[sig-api-machinery] CRDValidationRatcheting [Privileged:ClusterAdmin]
+        [FeatureGate:CRDValidationRatcheting] [Beta] MUST evaluate a CRD Validation
+        Rule with oldSelf = nil for new values when optionalOldSelf is true'
+    - testName: '[sig-api-machinery] CRDValidationRatcheting [Privileged:ClusterAdmin]
+        [FeatureGate:CRDValidationRatcheting] [Beta] MUST fail to update a resource
+        due to CRD Validation Rule errors on changed fields'
+    - testName: '[sig-api-machinery] CRDValidationRatcheting [Privileged:ClusterAdmin]
+        [FeatureGate:CRDValidationRatcheting] [Beta] MUST fail to update a resource
+        due to CRD Validation Rule errors on unchanged uncorrelatable fields'
+    - testName: '[sig-api-machinery] CRDValidationRatcheting [Privileged:ClusterAdmin]
+        [FeatureGate:CRDValidationRatcheting] [Beta] MUST fail to update a resource
+        due to JSONSchema errors on changed fields'
+    - testName: '[sig-api-machinery] CRDValidationRatcheting [Privileged:ClusterAdmin]
+        [FeatureGate:CRDValidationRatcheting] [Beta] MUST fail to update a resource
+        due to JSONSchema errors on unchanged uncorrelatable fields'
+  - featureGate: ChunkSizeMiB
+    tests:
+    - testName: '[sig-imageregistry][OCPFeatureGate:ChunkSizeMiB][Conformance][apigroup:imageregistry.operator.openshift.io]
+        Image Registry Config ChunkSizeMiB should not accept invalid ChunkSizeMiB
+        value'
+    - testName: '[sig-imageregistry][OCPFeatureGate:ChunkSizeMiB][Conformance][apigroup:imageregistry.operator.openshift.io]
+        Image Registry Config ChunkSizeMiB should reject ChunkSizeMiB value greater
+        than 5 GiB'
+    - testName: '[sig-imageregistry][OCPFeatureGate:ChunkSizeMiB][Conformance][apigroup:imageregistry.operator.openshift.io]
+        Image Registry Config ChunkSizeMiB should set ChunkSizeMiB value'
+    - testName: '[sig-imageregistry][OCPFeatureGate:ChunkSizeMiB][Conformance][apigroup:imageregistry.operator.openshift.io]
+        Image Registry Config ChunkSizeMiB should set maximum valid ChunkSizeMiB value'
+    - testName: '[sig-imageregistry][OCPFeatureGate:ChunkSizeMiB][Conformance][apigroup:imageregistry.operator.openshift.io]
+        Image Registry Config ChunkSizeMiB should set minimum valid ChunkSizeMiB value'
+  - featureGate: DNSNameResolver
+    tests:
+    - testName: '[sig-network][OCPFeatureGate:DNSNameResolver][Feature:EgressFirewall]
+        when using openshift ovn-kubernetes should ensure egressfirewall with wildcard
+        dns rules is created'
+  - featureGate: Example
+    tests:
+    - testName: '[sig-arch][OCPFeatureGate:Example] should only run FeatureGated test
+        when enabled'
+  - featureGate: HardwareSpeed
+    tests:
+    - testName: '[sig-etcd][OCPFeatureGate:HardwareSpeed][Serial] etcd is able to
+        set the hardware speed to "" [Timeout:30m][apigroup:machine.openshift.io]'
+    - testName: '[sig-etcd][OCPFeatureGate:HardwareSpeed][Serial] etcd is able to
+        set the hardware speed to Slower [Timeout:30m][apigroup:machine.openshift.io]'
+    - testName: '[sig-etcd][OCPFeatureGate:HardwareSpeed][Serial] etcd is able to
+        set the hardware speed to Standard [Timeout:30m][apigroup:machine.openshift.io]'
+  - featureGate: NetworkDiagnosticsConfig
+    tests:
+    - testName: '[sig-network][OCPFeatureGate:NetworkDiagnosticsConfig][Serial] Should
+        be enabled by default'
+    - testName: '[sig-network][OCPFeatureGate:NetworkDiagnosticsConfig][Serial] Should
+        function without any target pods'
+    - testName: '[sig-network][OCPFeatureGate:NetworkDiagnosticsConfig][Serial] Should
+        move the source diagnostics pods based on the new selector and tolerations'
+    - testName: '[sig-network][OCPFeatureGate:NetworkDiagnosticsConfig][Serial] Should
+        move the target diagnostics pods based on the new selector and tolerations'
+    - testName: '[sig-network][OCPFeatureGate:NetworkDiagnosticsConfig][Serial] Should
+        remove all network diagnostics pods when disabled'
+    - testName: '[sig-network][OCPFeatureGate:NetworkDiagnosticsConfig][Serial] Should
+        set the condition to false if there are no nodes able to host the source pods'
+  - featureGate: SELinuxMount
+    tests:
+    - testName: '[sig-storage] CSI Mock selinux on mount SELinuxMount [LinuxOnly]
+        [Feature:SELinux] should not unstage RWO volume when starting a second pod
+        with the same SELinux context [FeatureGate:SELinuxMountReadWriteOncePod] [Beta]
+        [FeatureGate:SELinuxMount] [Alpha]'
+    - testName: '[sig-storage] CSI Mock selinux on mount SELinuxMount [LinuxOnly]
+        [Feature:SELinux] should pass SELinux mount option for RWO volume with SELinuxMount
+        enabled [FeatureGate:SELinuxMountReadWriteOncePod] [Beta] [FeatureGate:SELinuxMount]
+        [Alpha]'
+    - testName: '[sig-storage] CSI Mock selinux on mount SELinuxMount [LinuxOnly]
+        [Feature:SELinux] should unstage RWO volume when starting a second pod with
+        different SELinux context [FeatureGate:SELinuxMountReadWriteOncePod] [Beta]
+        [FeatureGate:SELinuxMount] [Alpha]'
+    - testName: '[sig-storage] CSI Mock selinux on mount metrics SELinuxMount metrics
+        [LinuxOnly] [Feature:SELinux] [Serial] error is bumped on two Pods with a
+        different context on RWO volume and SELinuxMount enabled [FeatureGate:SELinuxMountReadWriteOncePod]
+        [Beta] [FeatureGate:SELinuxMount] [Alpha]'
+    - testName: '[sig-storage] CSI Mock selinux on mount metrics SELinuxMount metrics
+        [LinuxOnly] [Feature:SELinux] [Serial] error is bumped on two Pods with a
+        different context on RWX volume and SELinuxMount enabled [FeatureGate:SELinuxMountReadWriteOncePod]
+        [Beta] [FeatureGate:SELinuxMount] [Alpha]'
+    - testName: '[sig-storage] CSI Mock selinux on mount metrics SELinuxMount metrics
+        [LinuxOnly] [Feature:SELinux] [Serial] error is not bumped on two Pods with
+        the same context on RWO volume and SELinuxMount enabled [FeatureGate:SELinuxMountReadWriteOncePod]
+        [Beta] [FeatureGate:SELinuxMount] [Alpha]'
+  - featureGate: SELinuxMountReadWriteOncePod
+    tests:
+    - testName: '[sig-storage] CSI Mock selinux on mount SELinuxMount [LinuxOnly]
+        [Feature:SELinux] should add SELinux mount option to existing mount options
+        [FeatureGate:SELinuxMountReadWriteOncePod] [Beta]'
+    - testName: '[sig-storage] CSI Mock selinux on mount SELinuxMount [LinuxOnly]
+        [Feature:SELinux] should not pass SELinux mount option for CSI driver that
+        does not support SELinux mount [FeatureGate:SELinuxMountReadWriteOncePod]
+        [Beta]'
+    - testName: '[sig-storage] CSI Mock selinux on mount SELinuxMount [LinuxOnly]
+        [Feature:SELinux] should not pass SELinux mount option for Pod without SELinux
+        context [FeatureGate:SELinuxMountReadWriteOncePod] [Beta]'
+    - testName: '[sig-storage] CSI Mock selinux on mount SELinuxMount [LinuxOnly]
+        [Feature:SELinux] should not pass SELinux mount option for RWO volume with
+        SELinuxMount disabled [FeatureGate:SELinuxMountReadWriteOncePod] [Beta] [Feature:SELinuxMountReadWriteOncePodOnly]'
+    - testName: '[sig-storage] CSI Mock selinux on mount SELinuxMount [LinuxOnly]
+        [Feature:SELinux] should not unstage RWO volume when starting a second pod
+        with the same SELinux context [FeatureGate:SELinuxMountReadWriteOncePod] [Beta]
+        [FeatureGate:SELinuxMount] [Alpha]'
+    - testName: '[sig-storage] CSI Mock selinux on mount SELinuxMount [LinuxOnly]
+        [Feature:SELinux] should not unstage RWOP volume when starting a second pod
+        with the same SELinux context [FeatureGate:SELinuxMountReadWriteOncePod] [Beta]'
+    - testName: '[sig-storage] CSI Mock selinux on mount SELinuxMount [LinuxOnly]
+        [Feature:SELinux] should pass SELinux mount option for RWO volume with SELinuxMount
+        enabled [FeatureGate:SELinuxMountReadWriteOncePod] [Beta] [FeatureGate:SELinuxMount]
+        [Alpha]'
+    - testName: '[sig-storage] CSI Mock selinux on mount SELinuxMount [LinuxOnly]
+        [Feature:SELinux] should pass SELinux mount option for RWOP volume and Pod
+        with SELinux context set [FeatureGate:SELinuxMountReadWriteOncePod] [Beta]'
+    - testName: '[sig-storage] CSI Mock selinux on mount SELinuxMount [LinuxOnly]
+        [Feature:SELinux] should unstage RWO volume when starting a second pod with
+        different SELinux context [FeatureGate:SELinuxMountReadWriteOncePod] [Beta]
+        [FeatureGate:SELinuxMount] [Alpha]'
+    - testName: '[sig-storage] CSI Mock selinux on mount SELinuxMount [LinuxOnly]
+        [Feature:SELinux] should unstage RWOP volume when starting a second pod with
+        different SELinux context [FeatureGate:SELinuxMountReadWriteOncePod] [Beta]'
+    - testName: '[sig-storage] CSI Mock selinux on mount metrics SELinuxMount metrics
+        [LinuxOnly] [Feature:SELinux] [Serial] error is bumped on two Pods with a
+        different context on RWO volume and SELinuxMount enabled [FeatureGate:SELinuxMountReadWriteOncePod]
+        [Beta] [FeatureGate:SELinuxMount] [Alpha]'
+    - testName: '[sig-storage] CSI Mock selinux on mount metrics SELinuxMount metrics
+        [LinuxOnly] [Feature:SELinux] [Serial] error is bumped on two Pods with a
+        different context on RWOP volume [FeatureGate:SELinuxMountReadWriteOncePod]
+        [Beta]'
+    - testName: '[sig-storage] CSI Mock selinux on mount metrics SELinuxMount metrics
+        [LinuxOnly] [Feature:SELinux] [Serial] error is bumped on two Pods with a
+        different context on RWX volume and SELinuxMount enabled [FeatureGate:SELinuxMountReadWriteOncePod]
+        [Beta] [FeatureGate:SELinuxMount] [Alpha]'
+    - testName: '[sig-storage] CSI Mock selinux on mount metrics SELinuxMount metrics
+        [LinuxOnly] [Feature:SELinux] [Serial] error is not bumped on two Pods with
+        the same context on RWO volume and SELinuxMount enabled [FeatureGate:SELinuxMountReadWriteOncePod]
+        [Beta] [FeatureGate:SELinuxMount] [Alpha]'
+    - testName: '[sig-storage] CSI Mock selinux on mount metrics SELinuxMount metrics
+        [LinuxOnly] [Feature:SELinux] [Serial] warning is bumped on two Pods with
+        a different context on RWO volume [FeatureGate:SELinuxMountReadWriteOncePod]
+        [Beta] [Feature:SELinuxMountReadWriteOncePodOnly]'
+    - testName: '[sig-storage] CSI Mock selinux on mount metrics SELinuxMount metrics
+        [LinuxOnly] [Feature:SELinux] [Serial] warning is not bumped on two Pods with
+        the same context on RWO volume [FeatureGate:SELinuxMountReadWriteOncePod]
+        [Beta] [Feature:SELinuxMountReadWriteOncePodOnly]'
+  - featureGate: VSphereDriverConfiguration
+    tests:
+    - testName: '[sig-storage][FeatureGate:VSphereDriverConfiguration][Serial][apigroup:operator.openshift.io]
+        vSphere CSI Driver Configuration snapshot options in clusterCSIDriver should
+        allow all limits to be set at once'
+    - testName: '[sig-storage][FeatureGate:VSphereDriverConfiguration][Serial][apigroup:operator.openshift.io]
+        vSphere CSI Driver Configuration snapshot options in clusterCSIDriver should
+        allow setting VSAN limit'
+    - testName: '[sig-storage][FeatureGate:VSphereDriverConfiguration][Serial][apigroup:operator.openshift.io]
+        vSphere CSI Driver Configuration snapshot options in clusterCSIDriver should
+        allow setting VVOL limit'
+    - testName: '[sig-storage][FeatureGate:VSphereDriverConfiguration][Serial][apigroup:operator.openshift.io]
+        vSphere CSI Driver Configuration snapshot options in clusterCSIDriver should
+        allow setting global snapshot limit'
+    - testName: '[sig-storage][FeatureGate:VSphereDriverConfiguration][Serial][apigroup:operator.openshift.io]
+        vSphere CSI Driver Configuration snapshot options in clusterCSIDriver should
+        use default when unset'
+status: {}

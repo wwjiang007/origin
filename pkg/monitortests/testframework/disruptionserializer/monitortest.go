@@ -99,10 +99,10 @@ func computeDisruptionData(eventIntervals monitorapi.Intervals) *BackendDisrupti
 		),
 	)
 	for _, eventInterval := range allDisruptionEventsIntervals {
-		locatorParts := monitorapi.LocatorParts(eventInterval.Locator)
-		backendDisruptionName := monitorapi.BackendDisruptionNameFrom(locatorParts)
-		connectionType := monitorapi.DisruptionConnectionTypeFrom(locatorParts)
-		backendDisruptionNamesToConnectionType[backendDisruptionName] = connectionType
+		backendDisruptionName := monitorapi.BackendDisruptionNameFromLocator(eventInterval.Locator)
+		connectionType := eventInterval.Locator.Keys[monitorapi.LocatorConnectionKey]
+
+		backendDisruptionNamesToConnectionType[backendDisruptionName] = monitorapi.BackendConnectionType(connectionType)
 	}
 
 	for backendDisruptionName, connectionType := range backendDisruptionNamesToConnectionType {

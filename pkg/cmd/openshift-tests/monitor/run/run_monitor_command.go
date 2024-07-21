@@ -20,7 +20,6 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/openshift/origin/pkg/defaultmonitortests"
-	"github.com/openshift/origin/pkg/disruption/backend/sampler"
 	"github.com/openshift/origin/pkg/monitor"
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -156,7 +155,6 @@ func (o *RunMonitorOptions) Run() error {
 	go func() {
 		<-abortCh
 		fmt.Fprintf(o.ErrOut, "Interrupted, terminating\n")
-		sampler.TearDownInClusterMonitors(restConfig)
 		cancelFn()
 
 		sig := <-abortCh
@@ -184,9 +182,9 @@ func (o *RunMonitorOptions) Run() error {
 
 	<-ctx.Done()
 
-	fmt.Fprintf(o.Out, "Monitor shutting down, this may take up to five minutes...\n")
+	fmt.Fprintf(o.Out, "Monitor shutting down, this may take up to twenty minutes...\n")
 
-	cleanupContext, cleanupCancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	cleanupContext, cleanupCancel := context.WithTimeout(context.Background(), 20*time.Minute)
 	defer cleanupCancel()
 	// ignore the ResultState because we're interested in whether we collected, not whether what we collected passed.
 	if _, err := m.Stop(cleanupContext); err != nil {

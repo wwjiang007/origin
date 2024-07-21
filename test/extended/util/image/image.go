@@ -24,7 +24,9 @@ var (
 	releasePullSpecInitializationLock sync.RWMutex
 	releasePullSpecInitialized        bool
 	availablePullSpecs                = map[string]string{
-		"cli":   "image-registry.openshift-image-registry.svc:5000/openshift/cli:latest",
+		"cli":         "image-registry.openshift-image-registry.svc:5000/openshift/cli:latest",
+		"must-gather": "image-registry.openshift-image-registry.svc:5000/openshift/must-gather:latest",
+		// tools during transition period, can be on a different rhel level
 		"tools": "image-registry.openshift-image-registry.svc:5000/openshift/tools:latest",
 	}
 	imageRegistryPullSpecRegex = regexp.MustCompile(`image-registry\.openshift-image-registry\.svc:5000\/openshift\/([A-Za-z0-9._-]+)[@:A-Za-z0-9._-]*`)
@@ -51,7 +53,7 @@ var (
 
 		// allowed upstream kube images - index and value must match upstream or
 		// tests will fail (vendor/k8s.io/kubernetes/test/utils/image/manifest.go)
-		"registry.k8s.io/e2e-test-images/agnhost:2.45": 1,
+		"registry.k8s.io/e2e-test-images/agnhost:2.47": 1,
 		"registry.k8s.io/e2e-test-images/nginx:1.15-4": 21,
 	}
 )
@@ -180,6 +182,13 @@ func ShellImage() string {
 	return GetPullSpecForOrPanic("tools")
 }
 
+// MustGatherImage returns a docker pull spec that any pod on the cluster
+// has access to that contains bash and standard commandline tools.
+// This image has oc and must-gather scripts.
+func MustGatherImage() string {
+	return GetPullSpecForOrPanic("must-gather")
+}
+
 // LimitedShellImage returns a docker pull spec that any pod on the cluster
 // has access to that contains bash and standard commandline tools.
 // This image should be used when you only need oc and can't use the shell image.
@@ -205,13 +214,10 @@ func OriginalImages() map[string]k8simage.ImageID {
 // Exceptions is a list of images we don't mirror temporarily due to various
 // problems. This list should ideally be empty.
 var Exceptions = sets.NewString(
-	"mcr.microsoft.com/windows:1809", // https://issues.redhat.com/browse/PROJQUAY-1874
-	// this image has 3 windows/amd64 manifests, where layers are not compressed,
+	// this image has 2 windows/amd64 manifests, where layers are not compressed,
 	// ie. application/vnd.docker.image.rootfs.diff.tar which are not accepted
 	// by quay.io, this has to be manually mirrored with --filter-by-os=linux.*
 	"registry.k8s.io/pause:3.9",
-	// this image was removed
-	"registry.k8s.io/e2e-test-images/volume/rbd",
 )
 
 // GetMappedImages returns the images if they were mapped to the provided

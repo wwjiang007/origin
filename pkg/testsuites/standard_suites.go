@@ -236,15 +236,22 @@ var staticSuites = []ginkgo.TestSuite{
 			if isDisabled(name) {
 				return false
 			}
-
-			if strings.Contains(name, `provisioning should provision storage with any volume data source`) {
-				// TODO: these CSI tests are disabled since Pods created by these tests
-				//  pull image directly: https://bugzilla.redhat.com/show_bug.cgi?id=2093339
-				return false
-			}
-
 			return strings.Contains(name, "External Storage [Driver:") && !strings.Contains(name, "[Disruptive]")
 		},
+	},
+	{
+		Name: "openshift/network/ipsec",
+		Description: templates.LongDesc(`
+		This test suite performs IPsec e2e tests covering control plane and data plane for east west and north south traffic scenarios.
+		`),
+		Matches: func(name string) bool {
+			if isDisabled(name) {
+				return false
+			}
+			return strings.Contains(name, "[Suite:openshift/network/ipsec")
+		},
+		Parallelism: 1,
+		TestTimeout: 120 * time.Minute,
 	},
 	{
 		Name: "openshift/network/stress",
@@ -347,8 +354,24 @@ var staticSuites = []ginkgo.TestSuite{
 			return strings.Contains(name, "[Suite:openshift/etcd/recovery") || strings.Contains(name, "[Feature:EtcdRecovery]") || isStandardEarlyOrLateTest(name)
 		},
 		// etcd's restore test can take a while for apiserver rollouts to stabilize
+		Parallelism:                1,
 		TestTimeout:                120 * time.Minute,
 		ClusterStabilityDuringTest: ginkgo.Disruptive,
+	},
+	{
+		Name: "openshift/etcd/certrotation",
+		Description: templates.LongDesc(`
+		This test suite runs etcd cert rotation tests to exercise the the automatic and manual certificate rotation.
+		`),
+		Matches: func(name string) bool {
+			if isDisabled(name) {
+				return false
+			}
+			return strings.Contains(name, "[Suite:openshift/etcd/certrotation") || strings.Contains(name, "[Feature:CertRotation]") || isStandardEarlyOrLateTest(name)
+		},
+		TestTimeout:                60 * time.Minute,
+		Parallelism:                1,
+		ClusterStabilityDuringTest: ginkgo.Stable,
 	},
 	{
 		Name: "openshift/nodes/realtime",

@@ -14,8 +14,8 @@ func testEtcdShouldNotLogSlowFdataSyncs(events monitorapi.Intervals) []*junitapi
 
 	var failures []string
 	for _, event := range events {
-		if strings.Contains(event.Message, "slow fdatasync") {
-			failures = append(failures, fmt.Sprintf("%v - %v", event.Locator, event.Message))
+		if strings.Contains(event.Message.HumanMessage, "slow fdatasync") {
+			failures = append(failures, fmt.Sprintf("%v - %v", event.Locator.OldLocator(), event.Message.OldMessage()))
 		}
 	}
 
@@ -41,8 +41,8 @@ func testEtcdShouldNotLogDroppedRaftMessages(events monitorapi.Intervals) []*jun
 
 	var failures []string
 	for _, event := range events {
-		if strings.Contains(event.Message, "dropped internal Raft message since sending buffer is full") {
-			failures = append(failures, fmt.Sprintf("%v - %v", event.Locator, event.Message))
+		if strings.Contains(event.Message.HumanMessage, "dropped internal Raft message since sending buffer is full") {
+			failures = append(failures, fmt.Sprintf("%v - %v", event.Locator.OldLocator(), event.Message.OldMessage()))
 		}
 	}
 
@@ -60,4 +60,45 @@ func testEtcdShouldNotLogDroppedRaftMessages(events monitorapi.Intervals) []*jun
 	}
 	// TODO: marked flaky until we have monitored it for consistency
 	return []*junitapi.JUnitTestCase{failure, success}
+}
+
+// etcdRequestsTookTooLongLimit is the max number of "took too long" etcd log message intervals we'll tolerate
+// before we fail this test on the assumption etcd was simply not healthy through the run.
+// Virtually all jobs log these messages at some point, we're just interested in the ones that do so excessively.
+// At time of writing TRT's bigquery interals tables indicate that Azure and GCP can see values of 3-5k
+// regularly, what we're worried about are the runs showing 30-70k.
+const etcdRequestsTookTooLongLimit = 10000
+
+func testEtcdDoesNotLogExcessiveTookTooLongMessages(events monitorapi.Intervals, isFlaky bool) []*junitapi.JUnitTestCase {
+	const testName = "[sig-etcd] etcd should not log excessive took too long messages"
+	success := &junitapi.JUnitTestCase{Name: testName}
+
+	counter := 0
+	for _, event := range events {
+		if event.Source == monitorapi.SourceEtcdLog &&
+			strings.Contains(event.Message.HumanMessage, "took too long") {
+			counter++
+		}
+	}
+
+	if counter < etcdRequestsTookTooLongLimit {
+		return []*junitapi.JUnitTestCase{success}
+	}
+
+	msg := fmt.Sprintf("Etcd logged %d 'took too long' messages, this test fails on any value over %d as "+
+		"this is a strong indicator that etcd was very unhealthy throughout the run. This can cause sparodic e2e "+
+		"failures and disruption and typically indicates faster disks are needed. These log message intervals are "+
+		"included in spyglass chart artifacts and can be used to correlate with disruption and failed tests.",
+		counter, etcdRequestsTookTooLongLimit)
+	failure := &junitapi.JUnitTestCase{
+		Name: testName,
+		FailureOutput: &junitapi.FailureOutput{
+			Output: msg,
+		},
+	}
+	// see TRT-1688 - conditionally count this as a flake instead of failure
+	if isFlaky {
+		return []*junitapi.JUnitTestCase{failure, success}
+	}
+	return []*junitapi.JUnitTestCase{failure}
 }

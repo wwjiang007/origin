@@ -3,27 +3,24 @@ package defaultmonitortests
 import (
 	"fmt"
 
-	"github.com/openshift/origin/pkg/monitortests/testframework/watchrequestcountscollector"
-	"github.com/sirupsen/logrus"
-
-	"github.com/openshift/origin/pkg/monitortests/kubeapiserver/disruptionnewapiserver"
-
-	"github.com/openshift/origin/pkg/monitortests/testframework/alertanalyzer"
-	"github.com/openshift/origin/pkg/monitortests/testframework/pathologicaleventanalyzer"
-
-	"github.com/openshift/origin/pkg/monitortests/kubeapiserver/apiservergracefulrestart"
-
 	"github.com/openshift/origin/pkg/monitortestframework"
 	"github.com/openshift/origin/pkg/monitortests/authentication/legacyauthenticationmonitortests"
+	"github.com/openshift/origin/pkg/monitortests/authentication/requiredsccmonitortests"
 	azuremetrics "github.com/openshift/origin/pkg/monitortests/cloud/azure/metrics"
 	"github.com/openshift/origin/pkg/monitortests/clusterversionoperator/legacycvomonitortests"
 	"github.com/openshift/origin/pkg/monitortests/clusterversionoperator/operatorstateanalyzer"
+	"github.com/openshift/origin/pkg/monitortests/clusterversionoperator/terminationmessagepolicy"
 	"github.com/openshift/origin/pkg/monitortests/etcd/etcdloganalyzer"
 	"github.com/openshift/origin/pkg/monitortests/etcd/legacyetcdmonitortests"
 	"github.com/openshift/origin/pkg/monitortests/imageregistry/disruptionimageregistry"
+	"github.com/openshift/origin/pkg/monitortests/kubeapiserver/apiservergracefulrestart"
 	"github.com/openshift/origin/pkg/monitortests/kubeapiserver/auditloganalyzer"
+	"github.com/openshift/origin/pkg/monitortests/kubeapiserver/disruptioninclusterapiserver"
 	"github.com/openshift/origin/pkg/monitortests/kubeapiserver/disruptionlegacyapiservers"
+	"github.com/openshift/origin/pkg/monitortests/kubeapiserver/disruptionnewapiserver"
 	"github.com/openshift/origin/pkg/monitortests/kubeapiserver/legacykubeapiservermonitortests"
+	"github.com/openshift/origin/pkg/monitortests/monitoring/disruptionmetricsapi"
+	"github.com/openshift/origin/pkg/monitortests/monitoring/statefulsetsrecreation"
 	"github.com/openshift/origin/pkg/monitortests/network/disruptioningress"
 	"github.com/openshift/origin/pkg/monitortests/network/disruptionpodnetwork"
 	"github.com/openshift/origin/pkg/monitortests/network/disruptionserviceloadbalancer"
@@ -35,17 +32,26 @@ import (
 	"github.com/openshift/origin/pkg/monitortests/node/watchpods"
 	"github.com/openshift/origin/pkg/monitortests/storage/legacystoragemonitortests"
 	"github.com/openshift/origin/pkg/monitortests/testframework/additionaleventscollector"
+	"github.com/openshift/origin/pkg/monitortests/testframework/alertanalyzer"
 	"github.com/openshift/origin/pkg/monitortests/testframework/clusterinfoserializer"
+	"github.com/openshift/origin/pkg/monitortests/testframework/disruptionexternalawscloudservicemonitoring"
+	"github.com/openshift/origin/pkg/monitortests/testframework/disruptionexternalazurecloudservicemonitoring"
+	"github.com/openshift/origin/pkg/monitortests/testframework/disruptionexternalgcpcloudservicemonitoring"
 	"github.com/openshift/origin/pkg/monitortests/testframework/disruptionexternalservicemonitoring"
 	"github.com/openshift/origin/pkg/monitortests/testframework/disruptionserializer"
 	"github.com/openshift/origin/pkg/monitortests/testframework/e2etestanalyzer"
+
 	"github.com/openshift/origin/pkg/monitortests/testframework/intervalserializer"
 	"github.com/openshift/origin/pkg/monitortests/testframework/knownimagechecker"
 	"github.com/openshift/origin/pkg/monitortests/testframework/legacytestframeworkmonitortests"
+	"github.com/openshift/origin/pkg/monitortests/testframework/metricsendpointdown"
+	"github.com/openshift/origin/pkg/monitortests/testframework/pathologicaleventanalyzer"
 	"github.com/openshift/origin/pkg/monitortests/testframework/timelineserializer"
 	"github.com/openshift/origin/pkg/monitortests/testframework/trackedresourcesserializer"
 	"github.com/openshift/origin/pkg/monitortests/testframework/watchclusteroperators"
 	"github.com/openshift/origin/pkg/monitortests/testframework/watchevents"
+	"github.com/openshift/origin/pkg/monitortests/testframework/watchrequestcountscollector"
+	"github.com/sirupsen/logrus"
 )
 
 // ListAllMonitorTests is a helper that returns a simple list of
@@ -102,15 +108,23 @@ func newDefaultMonitorTests(info monitortestframework.MonitorTestInitializationI
 
 	monitorTestRegistry.AddMonitorTestOrDie("apiserver-availability", "kube-apiserver", disruptionlegacyapiservers.NewAvailabilityInvariant())
 	monitorTestRegistry.AddMonitorTestOrDie("apiserver-new-disruption-invariant", "kube-apiserver", disruptionnewapiserver.NewDisruptionInvariant())
+	monitorTestRegistry.AddMonitorTestOrDie("apiserver-incluster-availability", "kube-apiserver", disruptioninclusterapiserver.NewInvariantInClusterDisruption(info))
 
 	monitorTestRegistry.AddMonitorTestOrDie("pod-network-avalibility", "Network / ovn-kubernetes", disruptionpodnetwork.NewPodNetworkAvalibilityInvariant(info))
 	monitorTestRegistry.AddMonitorTestOrDie("service-type-load-balancer-availability", "Networking / router", disruptionserviceloadbalancer.NewAvailabilityInvariant())
 	monitorTestRegistry.AddMonitorTestOrDie("ingress-availability", "Networking / router", disruptioningress.NewAvailabilityInvariant())
 
 	monitorTestRegistry.AddMonitorTestOrDie("alert-summary-serializer", "Test Framework", alertanalyzer.NewAlertSummarySerializer())
+	monitorTestRegistry.AddMonitorTestOrDie("metrics-endpoints-down", "Test Framework", metricsendpointdown.NewMetricsEndpointDown())
 	monitorTestRegistry.AddMonitorTestOrDie("external-service-availability", "Test Framework", disruptionexternalservicemonitoring.NewAvailabilityInvariant())
+	monitorTestRegistry.AddMonitorTestOrDie("external-gcp-cloud-service-availability", "Test Framework", disruptionexternalgcpcloudservicemonitoring.NewCloudAvailabilityInvariant())
+	monitorTestRegistry.AddMonitorTestOrDie("external-aws-cloud-service-availability", "Test Framework", disruptionexternalawscloudservicemonitoring.NewCloudAvailabilityInvariant())
+	monitorTestRegistry.AddMonitorTestOrDie("external-azure-cloud-service-availability", "Test Framework", disruptionexternalazurecloudservicemonitoring.NewCloudAvailabilityInvariant())
 	monitorTestRegistry.AddMonitorTestOrDie("pathological-event-analyzer", "Test Framework", pathologicaleventanalyzer.NewAnalyzer())
 	monitorTestRegistry.AddMonitorTestOrDie("disruption-summary-serializer", "Test Framework", disruptionserializer.NewDisruptionSummarySerializer())
+
+	monitorTestRegistry.AddMonitorTestOrDie("monitoring-statefulsets-recreation", "Monitoring", statefulsetsrecreation.NewStatefulsetsChecker())
+	monitorTestRegistry.AddMonitorTestOrDie("metrics-api-availability", "Monitoring", disruptionmetricsapi.NewAvailabilityInvariant())
 
 	return monitorTestRegistry
 }
@@ -136,7 +150,9 @@ func newUniversalMonitorTests(info monitortestframework.MonitorTestInitializatio
 	monitorTestRegistry.AddMonitorTestOrDie("legacy-authentication-invariants", "apiserver-auth", legacyauthenticationmonitortests.NewLegacyTests())
 
 	monitorTestRegistry.AddMonitorTestOrDie("legacy-cvo-invariants", "Cluster Version Operator", legacycvomonitortests.NewLegacyTests())
+	monitorTestRegistry.AddMonitorTestOrDie("termination-message-policy", "Cluster Version Operator", terminationmessagepolicy.NewAnalyzer())
 	monitorTestRegistry.AddMonitorTestOrDie("operator-state-analyzer", "Cluster Version Operator", operatorstateanalyzer.NewAnalyzer())
+	monitorTestRegistry.AddMonitorTestOrDie("required-scc-annotation-checker", "Cluster Version Operator", requiredsccmonitortests.NewAnalyzer())
 
 	monitorTestRegistry.AddMonitorTestOrDie("etcd-log-analyzer", "etcd", etcdloganalyzer.NewEtcdLogAnalyzer())
 	monitorTestRegistry.AddMonitorTestOrDie("legacy-etcd-invariants", "etcd", legacyetcdmonitortests.NewLegacyTests())

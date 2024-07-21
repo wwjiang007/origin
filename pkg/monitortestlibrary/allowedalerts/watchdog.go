@@ -74,15 +74,15 @@ func (a *watchdogAlertTest) TestAlert(ctx context.Context, prometheusClient prom
 }
 
 func IsWatchdogAlert(eventInterval monitorapi.Interval) bool {
-	return eventInterval.StructuredLocator.Keys[monitorapi.LocatorAlertKey] == "Watchdog" &&
-		eventInterval.StructuredLocator.Keys[monitorapi.LocatorNamespaceKey] == "openshift-monitoring"
+	return eventInterval.Locator.Keys[monitorapi.LocatorAlertKey] == "Watchdog" &&
+		eventInterval.Locator.Keys[monitorapi.LocatorNamespaceKey] == "openshift-monitoring"
 }
 
 func (a *watchdogAlertTest) InvariantCheck(alertIntervals monitorapi.Intervals, _ monitorapi.ResourcesMap) ([]*junitapi.JUnitTestCase, error) {
 
 	// If this is a single node upgrade job, we can skip the test
 	// Or cluster stability is disruptive in which we don't query prometheus alert data
-	if (a.jobType.Topology == "single" && a.jobType.FromRelease == "") || (a.clusterStability != nil && *a.clusterStability == monitortestframework.Disruptive) {
+	if (a.jobType.Topology == "single" && a.jobType.FromRelease != "") || (a.clusterStability != nil && *a.clusterStability == monitortestframework.Disruptive) {
 		return []*junitapi.JUnitTestCase{}, nil
 	}
 

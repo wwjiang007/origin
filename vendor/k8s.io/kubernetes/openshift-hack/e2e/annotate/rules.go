@@ -10,23 +10,33 @@ var (
 		// alpha features that are not gated
 		"[Disabled:Alpha]": {
 			`\[Feature:StorageVersionAPI\]`,
-			`\[Feature:UserNamespacesSupport\]`,
 			`\[Feature:InPlacePodVerticalScaling\]`,
 			`\[Feature:RecoverVolumeExpansionFailure\]`,
 			`\[Feature:WatchList\]`,
 			`\[Feature:ServiceCIDRs\]`,
-			`\[Feature:PodLifecycleSleepAction\]`,
 			`\[Feature:ClusterTrustBundle\]`,
+			`\[Feature:SELinuxMount\]`,
+			`\[FeatureGate:SELinuxMount\]`,
+			`\[Feature:RelaxedEnvironmentVariableValidation\]`,
+			`\[Feature:UserNamespacesPodSecurityStandards\]`,
+			`\[Feature:Traffic Distribution\]`,
+			`\[Feature:UserNamespacesSupport\]`,
+			`\[Feature:DynamicResourceAllocation\]`,
+			`\[Feature:GPUUpgrade\]`,
 		},
 		// tests for features that are not implemented in openshift
 		"[Disabled:Unimplemented]": {
-			`Monitoring`,               // Not installed, should be
-			`Cluster level logging`,    // Not installed yet
-			`Kibana`,                   // Not installed
-			`Ubernetes`,                // Can't set zone labels today
-			`kube-ui`,                  // Not installed by default
-			`Kubernetes Dashboard`,     // Not installed by default (also probably slow image pull)
-			`should proxy to cadvisor`, // we don't expose cAdvisor port directly for security reasons
+			`Monitoring`,                  // Not installed, should be
+			`Cluster level logging`,       // Not installed yet
+			`Kibana`,                      // Not installed
+			`Ubernetes`,                   // Can't set zone labels today
+			`kube-ui`,                     // Not installed by default
+			`Kubernetes Dashboard`,        // Not installed by default (also probably slow image pull)
+			`should proxy to cadvisor`,    // we don't expose cAdvisor port directly for security reasons
+			`\[Feature:BootstrapTokens\]`, // we don't serve cluster-info configmap
+			`\[Feature:KubeProxyDaemonSetMigration\]`,    // upgrades are run separately
+			`\[Feature:BoundServiceAccountTokenVolume\]`, // upgrades are run separately
+			`\[Feature:StatefulUpgrade\]`,                // upgrades are run separately
 		},
 		// tests that rely on special configuration that we do not yet support
 		"[Disabled:SpecialConfig]": {
@@ -48,6 +58,11 @@ var (
 
 			// https://bugzilla.redhat.com/show_bug.cgi?id=2079958
 			`\[sig-network\] \[Feature:Topology Hints\] should distribute endpoints evenly`,
+
+			// Tests require SSH configuration and is part of the parallel suite, which does not create the bastion
+			// host. Enabling the test would result in the  bastion being created for every parallel test execution.
+			// Given that we have existing oc and WMCO tests that cover this functionality, we can safely disable it.
+			`\[Feature:NodeLogQuery\]`,
 		},
 		// tests that are known broken and need to be fixed upstream or in openshift
 		// always add an issue here
@@ -134,6 +149,12 @@ var (
 
 			// https://bugzilla.redhat.com/show_bug.cgi?id=1953478
 			`\[sig-storage\] Dynamic Provisioning Invalid AWS KMS key should report an error and create no PV`,
+
+			// https://issues.redhat.com/browse/OCPBUGS-34577
+			`\[sig-storage\] Multi-AZ Cluster Volumes should schedule pods in the same zones as statically provisioned PVs`,
+
+			// https://issues.redhat.com/browse/OCPBUGS-34594
+			`\[sig-node\] \[Feature:PodLifecycleSleepAction\] when create a pod with lifecycle hook using sleep action valid prestop hook using sleep action`,
 		},
 		// tests that need to be temporarily disabled while the rebase is in progress.
 		"[Disabled:RebaseInProgress]": {
@@ -142,17 +163,8 @@ var (
 			`\[sig-network\] Connectivity Pod Lifecycle should be able to connect to other Pod from a terminating Pod`, // TODO(network): simple test in k8s 1.27, needs investigation
 			`\[sig-cli\] Kubectl client Kubectl prune with applyset should apply and prune objects`,                    // TODO(workloads): alpha feature in k8s 1.27. It's failing with `error: unknown flag: --applyset`. Needs investigation
 
-			// https://issues.redhat.com/browse/OCPBUGS-16760
-			`\[Feature:NodeLogQuery\]`,
-
 			// https://issues.redhat.com/browse/OCPBUGS-17194
 			`\[sig-node\] ImageCredentialProvider \[Feature:KubeletCredentialProviders\] should be able to create pod with image credentials fetched from external credential provider`,
-
-			// https://issues.redhat.com/browse/OCPBUGS-17202
-			`\[sig-apps\] StatefulSet Scaling StatefulSetStartOrdinal \[Feature:StatefulSetStartOrdinal\] Removing \.start\.ordinal`,
-
-			// https://issues.redhat.com/browse/OCPBUGS-24481
-			`\[Feature:SELinux\]`,
 		},
 		// tests that may work, but we don't support them
 		"[Disabled:Unsupported]": {
@@ -161,7 +173,11 @@ var (
 			`\[Driver: gluster\]`,       // OpenShift 4.x does not support Gluster
 			`Volumes GlusterFS`,         // OpenShift 4.x does not support Gluster
 			`GlusterDynamicProvisioner`, // OpenShift 4.x does not support Gluster
-
+			// OCP 4.16 and newer does not support PersistentVolumeLabel admission plugin and thus
+			// the test can's create in-tree PVs.
+			`Multi-AZ Cluster Volumes should schedule pods in the same zones as statically provisioned PVs`,
+			`PersistentVolumes GCEPD`,
+			`\[Driver: azure-disk\] \[Testpattern: Pre-provisioned PV`,
 			// Skip vSphere-specific storage tests. The standard in-tree storage tests for vSphere
 			// (prefixed with `In-tree Volumes [Driver: vsphere]`) are enough for testing this plugin.
 			// https://bugzilla.redhat.com/show_bug.cgi?id=2019115
@@ -312,6 +328,7 @@ var (
 			`\[sig-node\] NoExecuteTaintManager Single Pod \[Serial\] eventually evict pod with finite tolerations from tainted nodes`,
 			`\[sig-node\] NoExecuteTaintManager Single Pod \[Serial\] evicts pods from tainted nodes`,
 			`\[sig-node\] NoExecuteTaintManager Single Pod \[Serial\] removing taint cancels eviction \[Disruptive\] \[Conformance\]`,
+			`\[sig-node\] NoExecuteTaintManager Single Pod \[Serial\] pods evicted from tainted nodes have pod disruption condition`,
 			`\[sig-node\] NoExecuteTaintManager Multiple Pods \[Serial\] evicts pods with minTolerationSeconds \[Disruptive\] \[Conformance\]`,
 			`\[sig-node\] NoExecuteTaintManager Multiple Pods \[Serial\] only evicts pods without tolerations from tainted nodes`,
 			`\[sig-cli\] Kubectl client Kubectl taint \[Serial\] should remove all the taints with the same key off a node`,

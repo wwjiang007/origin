@@ -21,7 +21,6 @@ import (
 	"crypto/sha256"
 	"encoding/base32"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -37,7 +36,6 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/crypto/cryptobyte"
 
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -323,11 +321,6 @@ type Config struct {
 	// NOTE: this option is applicable to Microshift only,
 	//  this should never be enabled for OCP.
 	SendRetryAfterWhileNotReadyOnce bool
-}
-
-// EventSink allows to create events.
-type EventSink interface {
-	Create(event *corev1.Event) (*corev1.Event, error)
 }
 
 type RecommendedConfig struct {
@@ -692,6 +685,11 @@ func (c *Config) DrainedNotify() <-chan struct{} {
 	return c.lifecycleSignals.InFlightRequestsDrained.Signaled()
 }
 
+// ShutdownInitiated returns a lifecycle signal of apiserver shutdown having been initiated.
+func (c *Config) ShutdownInitiatedNotify() <-chan struct{} {
+	return c.lifecycleSignals.ShutdownInitiated.Signaled()
+}
+
 // HasBeenReadySignal exposes a server's lifecycle signal which is signaled when the readyz endpoint succeeds for the first time.
 func (c *Config) HasBeenReadySignal() <-chan struct{} {
 	return c.lifecycleSignals.HasBeenReady.Signaled()
@@ -764,8 +762,8 @@ func (c *RecommendedConfig) Complete() CompletedConfig {
 			if len(ns) == 0 {
 				ns = "default"
 			}
-			c.EventSink = &v1.EventSinkImpl{
-				Interface: kubernetes.NewForConfigOrDie(c.ClientConfig).CoreV1().Events(ns),
+			c.EventSink = clientEventSink{
+				&v1.EventSinkImpl{Interface: kubernetes.NewForConfigOrDie(c.ClientConfig).CoreV1().Events(ns)},
 			}
 		}
 	}
@@ -777,39 +775,6 @@ var allowedMediaTypes = []string{
 	runtime.ContentTypeJSON,
 	runtime.ContentTypeYAML,
 	runtime.ContentTypeProtobuf,
-}
-
-func eventReference() (*corev1.ObjectReference, error) {
-	ns := os.Getenv("POD_NAMESPACE")
-	pod := os.Getenv("POD_NAME")
-	if len(ns) == 0 && len(pod) > 0 {
-		serviceAccountNamespaceFile := "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
-		if _, err := os.Stat(serviceAccountNamespaceFile); err == nil {
-			bs, err := ioutil.ReadFile(serviceAccountNamespaceFile)
-			if err != nil {
-				return nil, err
-			}
-			ns = string(bs)
-		}
-	}
-	if len(ns) == 0 {
-		pod = ""
-		ns = "openshift-kube-apiserver"
-	}
-	if len(pod) == 0 {
-		return &corev1.ObjectReference{
-			Kind:       "Namespace",
-			Name:       ns,
-			APIVersion: "v1",
-		}, nil
-	}
-
-	return &corev1.ObjectReference{
-		Kind:       "Pod",
-		Namespace:  ns,
-		Name:       pod,
-		APIVersion: "v1",
-	}, nil
 }
 
 // New creates a new server which logically combines the handling chain with the passed server.
@@ -881,15 +846,14 @@ func (c completedConfig) New(name string, delegationTarget DelegationTarget) (*G
 		preShutdownHooks:       map[string]preShutdownHookEntry{},
 		disabledPostStartHooks: c.DisabledPostStartHooks,
 
-		healthzChecks:    c.HealthzChecks,
-		livezChecks:      c.LivezChecks,
-		readyzChecks:     c.ReadyzChecks,
+		healthzRegistry:  healthCheckRegistry{path: "/healthz", checks: c.HealthzChecks},
+		livezRegistry:    healthCheckRegistry{path: "/livez", checks: c.LivezChecks, clock: clock.RealClock{}},
+		readyzRegistry:   healthCheckRegistry{path: "/readyz", checks: c.ReadyzChecks},
 		livezGracePeriod: c.LivezGracePeriod,
 
 		DiscoveryGroupManager: discovery.NewRootAPIsHandler(c.DiscoveryAddresses, c.Serializer),
 
 		maxRequestBodyBytes: c.MaxRequestBodyBytes,
-		livezClock:          clock.RealClock{},
 
 		lifecycleSignals:       c.lifecycleSignals,
 		ShutdownSendRetryAfter: c.ShutdownSendRetryAfter,
@@ -901,14 +865,17 @@ func (c completedConfig) New(name string, delegationTarget DelegationTarget) (*G
 
 		muxAndDiscoveryCompleteSignals: map[string]<-chan struct{}{},
 
-		eventSink: c.EventSink,
+		OpenShiftGenericAPIServerPatch: OpenShiftGenericAPIServerPatch{
+			eventSink: c.EventSink,
+		},
 	}
 
 	ref, err := eventReference()
 	if err != nil {
 		klog.Warningf("Failed to derive event reference, won't create events: %v", err)
-		c.EventSink = nullEventSink{}
+		s.OpenShiftGenericAPIServerPatch.eventSink = nullEventSink{}
 	}
+	s.RegisterDestroyFunc(c.EventSink.Destroy)
 	s.eventRef = ref
 
 	if utilfeature.DefaultFeatureGate.Enabled(genericfeatures.AggregatedDiscoveryEndpoint) {
@@ -1109,6 +1076,10 @@ func DefaultBuildHandlerChain(apiHandler http.Handler, c *Config) http.Handler {
 
 	handler = genericfilters.WithCORS(handler, c.CorsAllowedOriginList, nil, nil, nil, "true")
 
+	// WithWarningRecorder must be wrapped by the timeout handler
+	// to make the addition of warning headers threadsafe
+	handler = genericapifilters.WithWarningRecorder(handler)
+
 	// WithTimeoutForNonLongRunningRequests will call the rest of the request handling in a go-routine with the
 	// context with deadline. The go-routine can keep running, while the timeout logic will return a timeout to the client.
 	handler = genericfilters.WithTimeoutForNonLongRunningRequests(handler, c.LongRunningFunc)
@@ -1124,7 +1095,6 @@ func DefaultBuildHandlerChain(apiHandler http.Handler, c *Config) http.Handler {
 	if c.SecureServing != nil && !c.SecureServing.DisableHTTP2 && c.GoawayChance > 0 {
 		handler = genericfilters.WithProbabilisticGoaway(handler, c.GoawayChance)
 	}
-	handler = genericapifilters.WithWarningRecorder(handler)
 	handler = genericapifilters.WithCacheControl(handler)
 	handler = genericfilters.WithHSTS(handler, c.HSTSDirectives)
 	if c.ShutdownSendRetryAfter {
@@ -1137,6 +1107,12 @@ func DefaultBuildHandlerChain(apiHandler http.Handler, c *Config) http.Handler {
 		handler = genericapifilters.WithTracing(handler, c.TracerProvider)
 	}
 	handler = genericapifilters.WithLatencyTrackers(handler)
+	// WithRoutine will execute future handlers in a separate goroutine and serving
+	// handler in current goroutine to minimize the stack memory usage. It must be
+	// after WithPanicRecover() to be protected from panics.
+	if utilfeature.DefaultFeatureGate.Enabled(genericfeatures.APIServingWithRoutine) {
+		handler = genericfilters.WithRoutine(handler, c.LongRunningFunc)
+	}
 	handler = genericapifilters.WithRequestInfo(handler, c.RequestInfoResolver)
 	handler = genericapifilters.WithRequestReceivedTimestamp(handler)
 	handler = genericapifilters.WithMuxAndDiscoveryComplete(handler, c.lifecycleSignals.MuxAndDiscoveryComplete.Signaled())
@@ -1257,10 +1233,4 @@ func SetHostnameFuncForTests(name string) {
 		err = nil
 		return
 	}
-}
-
-type nullEventSink struct{}
-
-func (nullEventSink) Create(event *corev1.Event) (*corev1.Event, error) {
-	return nil, nil
 }

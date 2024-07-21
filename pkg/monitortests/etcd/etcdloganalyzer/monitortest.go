@@ -91,12 +91,12 @@ func (*etcdLogAnalyzer) ConstructComputedIntervals(ctx context.Context, starting
 	etcdMemberIDToPod := podaccess.NonUniqueEtcdMemberToPod(startingIntervals)
 
 	for _, currInterval := range startingIntervals {
-		reason := monitorapi.ReasonFrom(currInterval.Message)
+		reason := currInterval.Message.Reason
 		if !interestingReasons.Has(string(reason)) {
 			continue
 		}
 
-		annotations := monitorapi.AnnotationsFromMessage(currInterval.Message)
+		annotations := currInterval.Message.Annotations
 		newLeader := annotations[monitorapi.AnnotationEtcdLeader]
 		newTerm := annotations[monitorapi.AnnotationEtcdTerm]
 
@@ -123,7 +123,7 @@ func (*etcdLogAnalyzer) ConstructComputedIntervals(ctx context.Context, starting
 						WithAnnotation(monitorapi.AnnotationEtcdLeader, newLeader).
 						WithAnnotation(monitorapi.AnnotationEtcdTerm, newTerm).
 						HumanMessage(""),
-				)
+				).Display()
 			startTime = currInterval.From
 
 		}
@@ -194,6 +194,7 @@ func (g etcdRecorder) HandleLogLine(logLine podaccess.LogLineContent) {
 					monitorapi.NewMessage().
 						HumanMessage(parsedLine.Msg),
 				).
+				Display().
 				Build(parsedLine.Timestamp, parsedLine.Timestamp.Add(1*time.Second)))
 	}
 
@@ -268,6 +269,7 @@ func (g etcdRecorder) HandleLogLine(logLine podaccess.LogLineContent) {
 			monitorapi.NewInterval(etcdSource, monitorapi.Warning).
 				Locator(logLine.Locator).
 				Message(message).
+				Display().
 				Build(logLine.Instant, logLine.Instant.Add(time.Second)),
 		)
 	}

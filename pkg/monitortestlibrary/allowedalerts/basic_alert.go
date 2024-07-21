@@ -427,15 +427,12 @@ func AlertFiringInNamespace(alertName, namespace string) monitorapi.EventInterva
 	return func(eventInterval monitorapi.Interval) bool {
 		return monitorapi.And(
 			func(eventInterval monitorapi.Interval) bool {
-				locatorParts := monitorapi.LocatorParts(eventInterval.Locator)
-				eventAlertName := monitorapi.AlertFrom(locatorParts)
+				eventAlertName := eventInterval.Locator.Keys[monitorapi.LocatorAlertKey]
 				if eventAlertName != alertName {
 					return false
 				}
-				if strings.Contains(eventInterval.Message, `alertstate="firing"`) {
-					return true
-				}
-				return false
+
+				return eventInterval.Message.Annotations[monitorapi.AnnotationAlertState] == "firing"
 			},
 			InNamespace(namespace),
 		)(eventInterval)
@@ -446,15 +443,11 @@ func AlertPendingInNamespace(alertName, namespace string) monitorapi.EventInterv
 	return func(eventInterval monitorapi.Interval) bool {
 		return monitorapi.And(
 			func(eventInterval monitorapi.Interval) bool {
-				locatorParts := monitorapi.LocatorParts(eventInterval.Locator)
-				eventAlertName := monitorapi.AlertFrom(locatorParts)
+				eventAlertName := eventInterval.Locator.Keys[monitorapi.LocatorAlertKey]
 				if eventAlertName != alertName {
 					return false
 				}
-				if strings.Contains(eventInterval.Message, `alertstate="pending"`) {
-					return true
-				}
-				return false
+				return eventInterval.Message.Annotations[monitorapi.AnnotationAlertState] == "pending"
 			},
 			InNamespace(namespace),
 		)(eventInterval)

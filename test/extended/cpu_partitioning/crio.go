@@ -15,6 +15,7 @@ import (
 	exutil "github.com/openshift/origin/test/extended/util"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/fields"
@@ -26,7 +27,7 @@ import (
 	"k8s.io/utils/cpuset"
 )
 
-// This collection script queries CRIO for all it's containers, that data is then filtered down to only a subset
+// This collection script queries CRI-O for all it's containers, that data is then filtered down to only a subset
 // of information needed for validating workload partitioning and the PIDs are mapped to their corresponding host
 // CPUSet via the taskset command.
 const collectionScript = `
@@ -40,7 +41,9 @@ workload_containers=$(echo $container_data | jq -rs '[
 	.[] | select(.info.runtimeSpec.annotations["target.workload.openshift.io/management"]) | 
 	{
 		cpuSet: (.info.runtimeSpec.linux.resources.cpu.cpus // ""),
-        cpuShare: .info.runtimeSpec.linux.resources.cpu.shares,
+        cpuShares: .info.runtimeSpec.linux.resources.cpu.shares,
+        cpuQuota: .info.runtimeSpec.linux.resources.cpu.quota,
+        cpuPeriod: .info.runtimeSpec.linux.resources.cpu.period,
 		annotations: .info.runtimeSpec.annotations,
         podNamespace: .info.runtimeSpec.annotations["io.kubernetes.pod.namespace"],
         podName: .info.runtimeSpec.annotations["io.kubernetes.pod.name"],
@@ -62,19 +65,27 @@ final_results=$(echo "$workload_containers $workload_host_cpu_set" | jq -rs '.[0
 echo "$final_results" | jq -rc '[.[] | select(.hostCPUSet != "-1")]'
 `
 
-const jsonKeyCPUShare = "cpushares"
-
 // Collection data for each container in a node
 type crioContainerData struct {
 	PodNamespace string            `json:"podNamespace"`
 	PodName      string            `json:"podName"`
 	Name         string            `json:"name"`
 	CPUSet       string            `json:"cpuSet"`
-	CPUShare     int               `json:"cpuShare"`
+	CPUShares    int64             `json:"cpuShares"`
+	CPUQuota     int64             `json:"cpuQuota"`
+	CPUPeriod    int64             `json:"cpuPeriod"`
 	Annotations  map[string]string `json:"annotations"`
 	HostCPUSet   string            `json:"hostCPUSet"`
 	Hostname     string            `json:"hostname"`
 	Pid          int               `json:"pid"`
+}
+
+// Parse the workload cpu resource annotation
+type crioCPUResource struct {
+	// Specifies the number of CPU shares this Pod has access to.
+	CPUShares int64 `json:"cpushares,omitempty"`
+	// Specifies the CPU limit in millicores. This will be used to calculate the CPU quota.
+	CPULimit int64 `json:"cpulimit,omitempty"`
 }
 
 // Container struct for master and worker node CPUSets
@@ -84,40 +95,40 @@ type nodeCPUSets struct {
 }
 
 // getAnnotationCPUShare Looks through the annotations to find the workload partitioning annotation and
-// returns the cpushares or error if no such annotation exists.
-func (c *crioContainerData) getAnnotationCPUShare() (int, error) {
-	anno := fmt.Sprintf("%s/%s", WorkloadAnnotationPrefix, c.Name)
-	cpuShare, ok := c.Annotations[anno]
+// returns the crio cpu resources or error if no such annotation exists.
+func (c *crioContainerData) getAnnotationCPUResources() (crioCPUResource, error) {
+	annotationCPUResource := crioCPUResource{}
+	anno := fmt.Sprintf("%s/%s", workloadAnnotationPrefix, c.Name)
+	cpuResources, ok := c.Annotations[anno]
 	if !ok {
-		return 0, fmt.Errorf("workload annotation of [%s] was expected but not found", anno)
+		return annotationCPUResource, fmt.Errorf("workload annotation of [%s] was expected but not found", anno)
 	}
 
-	// workload cpushare annotations have a json string that will contain `{ "cpushares": <share int> }`
-	// we parse and return that value here.
-	temp := map[string]int{}
-	err := json.Unmarshal([]byte(cpuShare), &temp)
+	// workload annotations have a json string that will contain the cpushares and cpulimit
+	// these values are passed down from kubernetes, we parse and return that value here to validate.
+	err := json.Unmarshal([]byte(cpuResources), &annotationCPUResource)
 	if err != nil {
-		return 0, fmt.Errorf("err parsing cpushare json annotation: %w", err)
+		return annotationCPUResource, fmt.Errorf("err parsing cpushare json annotation: %w", err)
 	}
 
-	value, ok := temp[jsonKeyCPUShare]
-	if !ok {
-		return 0, fmt.Errorf("err cpushare annotation was incorrect expected format {\"cpushares\": <int> }")
-	}
-
-	return value, nil
+	return annotationCPUResource, nil
 }
 
 var _ = g.Describe("[sig-node][apigroup:config.openshift.io] CPU Partitioning node validation", func() {
 
 	var (
 		oc                      = exutil.NewCLIWithoutNamespace("cpu-partitioning").AsAdmin()
+		managedNamespace        = exutil.NewCLI("managed-namespace").SetManagedNamespace().AsAdmin()
 		ctx                     = context.Background()
 		isClusterCPUPartitioned = false
 	)
 
 	g.BeforeEach(func() {
 		isClusterCPUPartitioned = getCpuPartitionedStatus(oc) == ocpv1.CPUPartitioningAllNodes
+	})
+
+	g.AfterEach(func() {
+		o.Expect(cleanup(managedNamespace, managedNamespace.Namespace())).To(o.Succeed())
 	})
 
 	g.It("should have correct cpuset and cpushare set in crio containers", func() {
@@ -130,6 +141,18 @@ var _ = g.Describe("[sig-node][apigroup:config.openshift.io] CPU Partitioning no
 		if *controlPlaneTopology == ocpv1.ExternalTopologyMode {
 			g.Skip("Clusters with external control plane topology do not run PerformanceProfile Controller")
 		}
+
+		// Create deployment with limits to validate cpu limits are respected
+		requests := corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("20m"),
+			corev1.ResourceMemory: resource.MustParse("100Mi"),
+		}
+		limits := corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("30m"),
+			corev1.ResourceMemory: resource.MustParse("100Mi"),
+		}
+		_, err = createManagedDeployment(managedNamespace, requests, limits)
+		o.Expect(err).ToNot(o.HaveOccurred(), "error creating deployment with cpu limits")
 
 		nodes, err := oc.AdminKubeClient().CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 		o.Expect(err).ToNot(o.HaveOccurred(), "error listing cluster nodes")
@@ -168,27 +191,31 @@ var _ = g.Describe("[sig-node][apigroup:config.openshift.io] CPU Partitioning no
 			}
 
 			for _, containerInfo := range crioData {
+				failLocation := fmt.Sprintf("node: %s pod: %s/%s container: %s", node.Name, containerInfo.PodNamespace, containerInfo.PodName, containerInfo.Name)
 				parsedContainer, err := cpuset.Parse(containerInfo.CPUSet)
-				o.Expect(err).ToNot(o.HaveOccurred(), fmt.Sprintf("error parsing crio container cpuset %s", containerInfo.CPUSet))
+				o.Expect(err).ToNot(o.HaveOccurred(), fmt.Sprintf("%s | error parsing crio container cpuset %s", failLocation, containerInfo.CPUSet))
 				parsedHost, err := cpuset.Parse(containerInfo.HostCPUSet)
-				o.Expect(err).ToNot(o.HaveOccurred(), fmt.Sprintf("error parsing host cpuset %s", containerInfo.HostCPUSet))
+				o.Expect(err).ToNot(o.HaveOccurred(), fmt.Sprintf("%s | error parsing host cpuset %s", failLocation, containerInfo.HostCPUSet))
 
 				o.Expect(parsedContainer.Equals(expectedCPUSet)).To(o.BeTrue(), "cpusets do not match between container and desired")
 
 				// Empty CPUSets mean wide open, so we check the processes are not being limited.
 				// If the expected CPUSet is not empty, we make sure the host is respecting it.
 				if expectedCPUSet.IsEmpty() {
-					o.Expect(parsedHost.Equals(parsedFullNodeCPUSet)).To(o.BeTrue(), fmt.Sprintf("expected host CPUSet: %s got: %s", parsedHost, parsedFullNodeCPUSet))
+					o.Expect(parsedHost.Equals(parsedFullNodeCPUSet)).To(o.BeTrue(), fmt.Sprintf("%s | expected container pid CPUset to be: %s but got: %s", failLocation, parsedFullNodeCPUSet, parsedHost))
 				} else {
-					o.Expect(parsedContainer.Equals(parsedHost)).To(o.BeTrue(), fmt.Sprintf("expected: %s got: %s", parsedContainer, parsedHost))
+					o.Expect(parsedContainer.Equals(parsedHost)).To(o.BeTrue(), fmt.Sprintf("%s | expected container pid CPUset to be: %s got: %s", failLocation, parsedHost, parsedContainer))
 				}
 
 				// If we are in a CPU Partitioned cluster, containers MUST be annotated with the correct CPU Share at the CRIO level
 				// and the desired annotation cpu shares must equal the crio config cpu shares
 				if isClusterCPUPartitioned {
-					share, err := containerInfo.getAnnotationCPUShare()
-					o.Expect(err).ToNot(o.HaveOccurred(), "failed to get cpushares annotation json", err)
-					o.Expect(share).To(o.Equal(containerInfo.CPUShare), "cpushares do not match between crio config and desired")
+					resource, err := containerInfo.getAnnotationCPUResources()
+					o.Expect(err).ToNot(o.HaveOccurred(), fmt.Sprintf("%s | failed to get container resource annotation json", failLocation), err)
+					o.Expect(resource.CPUShares).To(o.Equal(containerInfo.CPUShares), fmt.Sprintf("%s | cpushares do not match between crio config and desired", failLocation))
+
+					desiredCPUQuota := milliCPUToQuota(resource.CPULimit, containerInfo.CPUPeriod)
+					o.Expect(desiredCPUQuota).To(o.Equal(containerInfo.CPUQuota), fmt.Sprintf("%s | cpuquota do not match between crio config and desired", failLocation))
 				}
 			}
 		}

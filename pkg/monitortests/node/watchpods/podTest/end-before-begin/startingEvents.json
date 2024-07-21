@@ -2,9 +2,7 @@
   "items": [
     {
       "level": "Info",
-      "locator": "namespace/openshift-kube-apiserver pod/revision-pruner-7-ip-10-0-214-214.us-west-1.compute.internal node/ip-10-0-214-214.us-west-1.compute.internal uid/6a81964d-169c-47e0-a986-551429370ae9",
-      "message": "reason/Created ",
-      "tempStructuredLocator": {
+      "locator": {
         "type": "Pod",
         "keys": {
           "pod": "revision-pruner-7-ip-10-0-214-214.us-west-1.compute.internal",
@@ -13,20 +11,20 @@
           "uid": "6a81964d-169c-47e0-a986-551429370ae9"
         }
       },
-      "tempStructuredMessage": {
+      "message": {
         "reason": "Created",
         "cause": "",
         "humanMessage": "",
-        "annotations": null
+        "annotations": {
+          "reason": "Created"
+        }
       },
       "from": "2022-03-21T16:43:39Z",
       "to": "2022-03-21T16:43:39Z"
     },
     {
       "level": "Info",
-      "locator": "namespace/openshift-kube-apiserver pod/revision-pruner-7-ip-10-0-214-214.us-west-1.compute.internal node/ip-10-0-214-214.us-west-1.compute.internal uid/6a81964d-169c-47e0-a986-551429370ae9",
-      "message": "reason/Scheduled node/ip-10-0-214-214.us-west-1.compute.internal",
-      "tempStructuredLocator": {
+      "locator": {
         "type": "Pod",
         "keys": {
           "pod": "revision-pruner-7-ip-10-0-214-214.us-west-1.compute.internal",
@@ -35,12 +33,13 @@
           "uid": "6a81964d-169c-47e0-a986-551429370ae9"
         }
       },
-      "tempStructuredMessage": {
-        "reason": "Created",
+      "message": {
+        "reason": "Scheduled",
         "cause": "",
         "humanMessage": "",
         "annotations": {
-          "node": "ip-10-0-214-214.us-west-1.compute.internal"
+          "node": "ip-10-0-214-214.us-west-1.compute.internal",
+          "reason": "Scheduled"
         }
       },
       "from": "2022-03-21T16:43:39Z",
@@ -48,9 +47,7 @@
     },
     {
       "level": "Warning",
-      "locator": "namespace/openshift-kube-apiserver pod/revision-pruner-7-ip-10-0-214-214.us-west-1.compute.internal node/ip-10-0-214-214.us-west-1.compute.internal uid/6a81964d-169c-47e0-a986-551429370ae9 container/pruner",
-      "message": "reason/NotReady ",
-      "tempStructuredLocator": {
+      "locator": {
         "type": "Pruner",
         "keys": {
           "container": "pruner",
@@ -60,11 +57,13 @@
           "uid": "6a81964d-169c-47e0-a986-551429370ae9"
         }
       },
-      "tempStructuredMessage": {
+      "message": {
         "reason": "NotReady",
         "cause": "",
         "humanMessage": "",
-        "annotations": null
+        "annotations": {
+          "reason": "NotReady"
+        }
       },
       "from": "2022-03-21T16:43:39Z",
       "to": "2022-03-21T16:43:39Z"

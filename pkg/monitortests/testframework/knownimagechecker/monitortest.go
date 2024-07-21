@@ -16,11 +16,11 @@ import (
 
 	monitorserialization "github.com/openshift/origin/pkg/monitor/serialization"
 
-	configv1client "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1"
 	imagev1 "github.com/openshift/client-go/image/clientset/versioned/typed/image/v1"
 	"github.com/openshift/library-go/pkg/image/reference"
 	"github.com/openshift/origin/pkg/monitor/monitorapi"
 	"github.com/openshift/origin/pkg/test/ginkgo/junitapi"
+	exutil "github.com/openshift/origin/test/extended/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
@@ -107,7 +107,7 @@ func (w *clusterImageValidator) EvaluateTestsFromConstructedIntervals(ctx contex
 	}
 	allowedPrefixes.Insert(imageStreamPrefixes.UnsortedList()...)
 
-	releaseImage, err := getReleaseImage(w.adminKubeConfig)
+	releaseImage, err := exutil.GetReleaseImage(ctx, w.adminKubeConfig)
 	if err != nil {
 		klog.Errorf("failed to get release image: %v", err)
 	} else {
@@ -132,50 +132,50 @@ func (w *clusterImageValidator) EvaluateTestsFromConstructedIntervals(ctx contex
 
 	for _, event := range finalIntervals {
 		// only messages that include a Pulled reason
-		if !strings.Contains(" "+event.Message, " reason/Pulled ") {
+		if event.Message.Reason != "Pulled" {
 			continue
 		}
 		// only look at pull events from an e2e-* namespace
-		if !strings.Contains(" "+event.Locator, " ns/e2e-") {
+		if !strings.HasPrefix(event.Locator.Keys[monitorapi.LocatorNamespaceKey], "e2e-") {
 			continue
 		}
 
-		images := imageRe.FindStringSubmatch(event.Message)
+		images := imageRe.FindStringSubmatch(event.Message.HumanMessage)
 		// the images will contain full match and two group matches, see above
 		// for the regexp definition, so we skip the first in the below for-loop
 		if len(images) < 3 {
 			continue
 		}
-		image := ""
+		img := ""
 		for i := 1; i < len(images); i++ {
-			image = images[i]
+			img = images[i]
 			// the match will be either 2nd or 3rd element in the list
-			if image != "" {
+			if img != "" {
 				break
 			}
 		}
-		if hasAnyStringPrefix(image, allowedPrefixesSlice) || allowedImages.Has(image) {
+		if hasAnyStringPrefix(img, allowedPrefixesSlice) || allowedImages.Has(img) {
 			continue
 		}
-		byImage, ok := pulls[image]
+		byImage, ok := pulls[img]
 		if !ok {
 			byImage = sets.NewString()
-			pulls[image] = byImage
-			fmt.Printf("[sig-arch] unknown image: %s (%v)\n", image, event.Message)
+			pulls[img] = byImage
+			fmt.Printf("[sig-arch] unknown image: %s (%v)\n", img, event.Message.OldMessage())
 		}
-		byImage.Insert(event.Locator)
+		byImage.Insert(event.Locator.OldLocator())
 	}
 
 	if len(pulls) > 0 {
 		images := make([]string, 0, len(pulls))
-		for image := range pulls {
-			images = append(images, image)
+		for img := range pulls {
+			images = append(images, img)
 		}
 		sort.Strings(images)
 		buf := &bytes.Buffer{}
-		for _, image := range images {
-			fmt.Fprintf(buf, "%s from pods:\n", image)
-			for _, locator := range pulls[image].List() {
+		for _, img := range images {
+			fmt.Fprintf(buf, "%s from pods:\n", img)
+			for _, locator := range pulls[img].List() {
 				fmt.Fprintf(buf, "  %s\n", locator)
 			}
 		}
@@ -264,19 +264,4 @@ func imagePrefixesFromNamespaceImageStreams(ns string) (sets.String, error) {
 		}
 	}
 	return allowedPrefixes, nil
-}
-
-// getReleaseImage does exactly that. We need to add it as exception, as there are some oauth tests that use it to find the
-// oauth server image when the ControlPlaneToplogy is external, where there is no oauth server deployed inside the cluster that
-// could be used: https://github.com/openshift/origin/blob/176aeb92845af9eb50b1d0fe8e98a78dee29215e/test/extended/util/oauthserver/oauthserver.go#L489-L532
-func getReleaseImage(cfg *rest.Config) (string, error) {
-	client, err := configv1client.NewForConfig(cfg)
-	if err != nil {
-		return "", fmt.Errorf("failed to construct configv1client: %w", err)
-	}
-	cv, err := client.ClusterVersions().Get(context.Background(), "version", metav1.GetOptions{})
-	if err != nil {
-		return "", fmt.Errorf("failed to get clusterversion: %w", err)
-	}
-	return cv.Status.Desired.Image, nil
 }

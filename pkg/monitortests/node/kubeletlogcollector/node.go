@@ -221,6 +221,7 @@ func readinessFailure(nodeName, logLine string) monitorapi.Intervals {
 		monitorapi.NewInterval(monitorapi.SourceKubeletLog, monitorapi.Info).
 			Locator(containerRef).
 			Message(monitorapi.NewMessage().Reason(monitorapi.ContainerReasonReadinessFailed).Node(nodeName).HumanMessage(message)).
+			Display().
 			Build(failureTime, failureTime),
 	}
 }
@@ -252,6 +253,7 @@ func readinessError(nodeName, logLine string) monitorapi.Intervals {
 					Node(nodeName).
 					HumanMessage(message),
 			).
+			Display().
 			Build(failureTime, failureTime),
 	}
 }
@@ -278,12 +280,13 @@ func errParsingSignature(nodeName, logLine string) monitorapi.Intervals {
 					Cause(monitorapi.ContainerUnrecognizedSignatureFormat).
 					Node(nodeName),
 			).
+			Display().
 			Build(failureTime, failureTime),
 	}
 }
 
 // startupProbeError extracts locator information from kubelet logs of the form:
-// "Probe failed" probeType="Startup" pod="<some_ns>/<some_pod" podUID=<some_pod_uid> containerName="<some_container_name>" .* output="<some_output>"
+// "Probe failed" probeType="Startup" pod="<some_ns>/<some_pod" podUID="<some_pod_uid>" containerName="<some_container_name>" .* output="<some_output>"
 // and returns an Interval (which will show up in the junit/events...json file and the intervals chart).
 func startupProbeError(nodeName, logLine string) monitorapi.Intervals {
 	if !strings.Contains(logLine, `Probe failed`) {
@@ -323,13 +326,14 @@ func startupProbeError(nodeName, logLine string) monitorapi.Intervals {
 					Node(nodeName).
 					HumanMessage(message),
 			).
+			Display().
 			Build(failureTime, failureTime),
 	}
 }
 
-var imagePullContainerRefRegex = regexp.MustCompile(`err=.*for \\"(?P<CONTAINER>[a-z0-9.-]+)\\".*pod="(?P<NS>[a-z0-9.-]+)\/(?P<POD>[a-z0-9.-]+)" podUID=(?P<PODUID>[a-z0-9.-]+)`)
+var imagePullContainerRefRegex = regexp.MustCompile(`err=.*for \\"(?P<CONTAINER>[a-z0-9.-]+)\\".*pod="(?P<NS>[a-z0-9.-]+)\/(?P<POD>[a-z0-9.-]+)" podUID="(?P<PODUID>[a-z0-9.-]+)"`)
 
-var containerRefRegex = regexp.MustCompile(`pod="(?P<NS>[a-z0-9.-]+)\/(?P<POD>[a-z0-9.-]+)" podUID=(?P<PODUID>[a-z0-9.-]+) containerName="(?P<CONTAINER>[a-z0-9.-]+)"`)
+var containerRefRegex = regexp.MustCompile(`pod="(?P<NS>[a-z0-9.-]+)\/(?P<POD>[a-z0-9.-]+)" podUID="(?P<PODUID>[a-z0-9.-]+)" containerName="(?P<CONTAINER>[a-z0-9.-]+)"`)
 var readinessFailureOutputRegex = regexp.MustCompile(`"Probe failed" probeType="Readiness".*output="(?P<OUTPUT>.+)"`)
 var readinessErrorOutputRegex = regexp.MustCompile(`"Probe errored" err="(?P<OUTPUT>.+)" probeType="Readiness"`)
 var startupFailureOutputRegex = regexp.MustCompile(`"Probe failed" probeType="Startup".*output="(?P<OUTPUT>.+)"`)
@@ -394,7 +398,7 @@ func reflectorHttpClientConnectionLostError(nodeName, logLine string) monitorapi
 	})
 }
 
-var statusRefRegex = regexp.MustCompile(`podUID=(?P<PODUID>[a-z0-9.-]+) pod="(?P<NS>[a-z0-9.-]+)\/(?P<POD>[a-z0-9.-]+)"`)
+var statusRefRegex = regexp.MustCompile(`podUID="(?P<PODUID>[a-z0-9.-]+)" pod="(?P<NS>[a-z0-9.-]+)\/(?P<POD>[a-z0-9.-]+)"`)
 var statusOutputRegex = regexp.MustCompile(`err="(?P<OUTPUT>.+)"`)
 
 func statusHttpClientConnectionLostError(nodeName, logLine string) monitorapi.Intervals {
@@ -423,6 +427,7 @@ func failedToDeleteCGroupsPath(nodeLocator monitorapi.Locator, logLine string) m
 		monitorapi.NewInterval(monitorapi.SourceKubeletLog, monitorapi.Error).
 			Locator(nodeLocator).
 			Message(monitorapi.NewMessage().Reason(monitorapi.FailedToDeleteCGroupsPath).HumanMessage(logLine)).
+			Display().
 			Build(failureTime, failureTime.Add(1*time.Second)),
 	}
 }
@@ -439,6 +444,7 @@ func anonymousCertConnectionError(nodeLocator monitorapi.Locator, logLine string
 			Locator(nodeLocator).
 			Message(monitorapi.NewMessage().Reason(monitorapi.FailedToAuthenticateWithOpenShiftUser).
 				HumanMessage(logLine)).
+			Display().
 			Build(failureTime, failureTime.Add(1*time.Second)),
 	}
 }
@@ -491,6 +497,7 @@ func leaseUpdateError(nodeLocator monitorapi.Locator, logLine string) monitorapi
 			Message(
 				monitorapi.NewMessage().Reason(monitorapi.NodeFailedLease).HumanMessage(fmt.Sprintf("%s - %s", url, msg)),
 			).
+			Display().
 			Build(failureTime, failureTime.Add(1*time.Second)),
 	}
 }
@@ -533,6 +540,7 @@ func commonErrorInterval(nodeName, logLine string, messageExp *regexp.Regexp, re
 			Message(
 				monitorapi.NewMessage().Reason(reason).Node(nodeName).HumanMessage(message),
 			).
+			Display().
 			Build(failureTime, failureTime),
 	}
 }

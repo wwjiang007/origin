@@ -173,14 +173,27 @@ func TestAllowedRepeatedEvents(t *testing.T) {
 			expectedAllowName: "",
 			expectedMatchName: "EtcdReadinessProbeFailuresPerRevisionChange",
 		},
+		{
+			name: "multiple versions found probably in transition",
+			locator: monitorapi.Locator{
+				Keys: map[monitorapi.LocatorKey]string{
+					monitorapi.LocatorNamespaceKey:  "openshift-kube-scheduler-operator",
+					monitorapi.LocatorDeploymentKey: "openshift-kube-scheduler-operator",
+				},
+			},
+
+			msg: monitorapi.NewMessage().HumanMessage("multiple versions found, probably in transition: registry.build05.ci.openshift.org/ci-op-322dfkrq/stable-initial@sha256:c5a14ed931427603ac0cc4f342c59e9d63ed66ef4fa16f4c9c3a6ae7bc3307a7,registry.build05.ci.openshift.org/ci-op-322dfkrq/stable@sha256:c5a14ed931427603ac0cc4f342c59e9d63ed66ef4fa16f4c9c3a6ae7bc3307a7").
+				Reason("MultipleVersions").Build(),
+			expectedAllowName: "OperatorMultipleVersions",
+		},
 	}
 	for _, test := range tests {
-		registry := NewUniversalPathologicalEventMatchers(nil, nil)
+		registry := NewUpgradePathologicalEventMatchers(nil, nil)
 		t.Run(test.name, func(t *testing.T) {
 			i := monitorapi.Interval{
 				Condition: monitorapi.Condition{
-					StructuredMessage: test.msg,
-					StructuredLocator: test.locator,
+					Message: test.msg,
+					Locator: test.locator,
 				},
 			}
 			allowed, matchedAllowedDupe := registry.AllowedByAny(i, test.topology)
@@ -233,7 +246,7 @@ func TestPathologicalEventsWithNamespaces(t *testing.T) {
 			namespace:       "openshift",
 			platform:        v1.AWSPlatformType,
 			topology:        v1.SingleReplicaTopologyMode,
-			expectedMessage: "1 events happened too frequently\n\nevent happened 22 times, something is wrong: namespace/openshift - reason/SomeEvent1 foo From: 04:00:00Z To: 04:00:00Z result=reject ",
+			expectedMessage: "1 events happened too frequently\n\nevent happened 22 times, something is wrong: namespace/openshift - reason/SomeEvent1 foo (04:00:00Z) result=reject ",
 		},
 		{
 			name: "matches 22 with namespace e2e",
@@ -249,7 +262,7 @@ func TestPathologicalEventsWithNamespaces(t *testing.T) {
 			namespace:       "",
 			platform:        v1.AWSPlatformType,
 			topology:        v1.SingleReplicaTopologyMode,
-			expectedMessage: "1 events happened too frequently\n\nevent happened 22 times, something is wrong: namespace/random - reason/SomeEvent1 foo From: 04:00:00Z To: 04:00:00Z result=reject ",
+			expectedMessage: "1 events happened too frequently\n\nevent happened 22 times, something is wrong: namespace/random - reason/SomeEvent1 foo (04:00:00Z) result=reject ",
 		},
 		{
 			name: "matches 22 with no namespace",
@@ -263,7 +276,7 @@ func TestPathologicalEventsWithNamespaces(t *testing.T) {
 			namespace:       "",
 			platform:        v1.AWSPlatformType,
 			topology:        v1.SingleReplicaTopologyMode,
-			expectedMessage: "1 events happened too frequently\n\nevent happened 22 times, something is wrong:  - reason/SomeEvent1 foo From: 04:00:00Z To: 04:00:00Z result=reject ",
+			expectedMessage: "1 events happened too frequently\n\nevent happened 22 times, something is wrong:  - reason/SomeEvent1 foo (04:00:00Z) result=reject ",
 		},
 		{
 			name: "matches 12 with namespace openshift",
@@ -288,11 +301,11 @@ func TestPathologicalEventsWithNamespaces(t *testing.T) {
 				{
 					Condition: monitorapi.Condition{
 						Level: monitorapi.Info,
-						StructuredLocator: monitorapi.Locator{
+						Locator: monitorapi.Locator{
 							Type: monitorapi.LocatorTypeNode,
 							Keys: map[monitorapi.LocatorKey]string{}, // what node doesn't matter, all we can do is see if masters are updating
 						},
-						StructuredMessage: monitorapi.Message{
+						Message: monitorapi.Message{
 							Reason:       monitorapi.NodeUpdateReason,
 							HumanMessage: "config/rendered-master-5ab4844b3b5a58958785e2c27d99f50f phase/Update roles/control-plane,master reached desired config roles/control-plane,master",
 							Annotations: map[monitorapi.AnnotationKey]string{
@@ -337,7 +350,7 @@ func TestPathologicalEventsWithNamespaces(t *testing.T) {
 			namespace:       "openshift-controller-manager",
 			platform:        v1.AWSPlatformType,
 			topology:        v1.HighlyAvailableTopologyMode,
-			expectedMessage: "1 events happened too frequently\n\nevent happened 22 times, something is wrong: namespace/openshift-controller-manager - reason/FailedScheduling 0/6 nodes are available: 2 node(s) were unschedulable, 4 node(s) didn't match pod anti-affinity rules. preemption: 0/6 nodes are available: 2 Preemption is not helpful for scheduling, 4 No preemption victims found for incoming pod.. From: 04:00:00Z To: 04:00:00Z result=reject ",
+			expectedMessage: "1 events happened too frequently\n\nevent happened 22 times, something is wrong: namespace/openshift-controller-manager - reason/FailedScheduling 0/6 nodes are available: 2 node(s) were unschedulable, 4 node(s) didn't match pod anti-affinity rules. preemption: 0/6 nodes are available: 2 Preemption is not helpful for scheduling, 4 No preemption victims found for incoming pod.. (04:00:00Z) result=reject ",
 		},
 		{
 			// This still matches despite the masters updating because it's not in an openshift namespace
@@ -346,11 +359,11 @@ func TestPathologicalEventsWithNamespaces(t *testing.T) {
 				{
 					Condition: monitorapi.Condition{
 						Level: monitorapi.Info,
-						StructuredLocator: monitorapi.Locator{
+						Locator: monitorapi.Locator{
 							Type: monitorapi.LocatorTypeNode,
 							Keys: map[monitorapi.LocatorKey]string{}, // what node doesn't matter, all we can do is see if masters are updating
 						},
-						StructuredMessage: monitorapi.Message{
+						Message: monitorapi.Message{
 							Reason:       monitorapi.NodeUpdateReason,
 							HumanMessage: "config/rendered-master-5ab4844b3b5a58958785e2c27d99f50f phase/Update roles/control-plane,master reached desired config roles/control-plane,master",
 							Annotations: map[monitorapi.AnnotationKey]string{
@@ -376,7 +389,7 @@ func TestPathologicalEventsWithNamespaces(t *testing.T) {
 			namespace:       "mynamespace",
 			platform:        v1.AWSPlatformType,
 			topology:        v1.HighlyAvailableTopologyMode,
-			expectedMessage: "1 events happened too frequently\n\nevent happened 22 times, something is wrong:  - ns/mynamespace reason/FailedScheduling 0/6 nodes are available: 2 node(s) were unschedulable, 4 node(s) didn't match pod anti-affinity rules. preemption: 0/6 nodes are available: 2 Preemption is not helpful for scheduling, 4 No preemption victims found for incoming pod.. From: 04:00:00Z To: 04:00:00Z result=reject ",
+			expectedMessage: "1 events happened too frequently\n\nevent happened 22 times, something is wrong:  - ns/mynamespace reason/FailedScheduling 0/6 nodes are available: 2 node(s) were unschedulable, 4 node(s) didn't match pod anti-affinity rules. preemption: 0/6 nodes are available: 2 Preemption is not helpful for scheduling, 4 No preemption victims found for incoming pod.. (04:00:00Z) result=reject ",
 		},
 	}
 
@@ -552,13 +565,13 @@ func TestPathologicalEventsTopologyAwareHintsDisabled(t *testing.T) {
 				{
 					Condition: monitorapi.Condition{
 						Level: monitorapi.Info,
-						StructuredLocator: monitorapi.Locator{
+						Locator: monitorapi.Locator{
 							Type: monitorapi.LocatorTypeE2ETest,
 							Keys: map[monitorapi.LocatorKey]string{
 								monitorapi.LocatorE2ETestKey: "[sig-node] NoExecuteTaintManager Single Pod [Serial] doesn't evict pod with tolerations from tainted nodes [Skipped:SingleReplicaTopology] [Suite:openshift/conformance/serial] [Suite:k8s]",
 							},
 						},
-						StructuredMessage: monitorapi.Message{},
+						Message: monitorapi.Message{},
 					},
 					Source: monitorapi.SourceE2ETest,
 					From:   from.Add(-10 * time.Minute),
@@ -567,14 +580,14 @@ func TestPathologicalEventsTopologyAwareHintsDisabled(t *testing.T) {
 				{
 					Condition: monitorapi.Condition{
 						Level: monitorapi.Info,
-						StructuredLocator: monitorapi.Locator{
+						Locator: monitorapi.Locator{
 							Type: monitorapi.LocatorTypePod,
 							Keys: map[monitorapi.LocatorKey]string{
 								monitorapi.LocatorNamespaceKey: "openshift-dns",
 								monitorapi.LocatorPodKey:       "dns-default-jq2qn",
 							},
 						},
-						StructuredMessage: monitorapi.Message{
+						Message: monitorapi.Message{
 							Reason: monitorapi.PodReasonGracefulDeleteStarted,
 							Annotations: map[monitorapi.AnnotationKey]string{
 								monitorapi.AnnotationConstructed: "pod-lifecycle-constructor",
@@ -589,7 +602,7 @@ func TestPathologicalEventsTopologyAwareHintsDisabled(t *testing.T) {
 				{
 					Condition: monitorapi.Condition{
 						Level: monitorapi.Info,
-						StructuredLocator: monitorapi.Locator{
+						Locator: monitorapi.Locator{
 							Type: "",
 							Keys: map[monitorapi.LocatorKey]string{
 								monitorapi.LocatorNamespaceKey:   "openshift-dns",
@@ -597,7 +610,7 @@ func TestPathologicalEventsTopologyAwareHintsDisabled(t *testing.T) {
 								monitorapi.LocatorHmsgKey:        "ade328ddf3",
 							},
 						},
-						StructuredMessage: monitorapi.Message{
+						Message: monitorapi.Message{
 							Reason:       "TopologyAwareHintsDisabled",
 							HumanMessage: "Unable to allocate minimum required endpoints to each zone without exceeding overload threshold (5 endpoints, 3 zones), addressType: IPv4",
 							Annotations: map[monitorapi.AnnotationKey]string{
@@ -613,7 +626,7 @@ func TestPathologicalEventsTopologyAwareHintsDisabled(t *testing.T) {
 				{
 					Condition: monitorapi.Condition{
 						Level: monitorapi.Info,
-						StructuredLocator: monitorapi.Locator{
+						Locator: monitorapi.Locator{
 							Type: monitorapi.LocatorTypeContainer,
 							Keys: map[monitorapi.LocatorKey]string{
 								monitorapi.LocatorNamespaceKey: "openshift-dns",
@@ -621,7 +634,7 @@ func TestPathologicalEventsTopologyAwareHintsDisabled(t *testing.T) {
 								monitorapi.LocatorPodKey:       "dns-default-jq2qn",
 							},
 						},
-						StructuredMessage: monitorapi.Message{
+						Message: monitorapi.Message{
 							Reason: monitorapi.ContainerReasonReady,
 							Annotations: map[monitorapi.AnnotationKey]string{
 								monitorapi.AnnotationConstructed: "pod-lifecycle-constructor",
